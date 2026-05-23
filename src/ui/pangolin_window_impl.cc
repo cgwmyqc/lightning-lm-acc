@@ -215,7 +215,7 @@ bool PangolinWindowImpl::UpdatePerformance() {
     perf_frame_text_ = frame_ss.str();
 
     std::ostringstream fps_ss;
-    fps_ss << std::fixed << std::setprecision(3) << snapshot.slam_fps;
+    fps_ss << std::fixed << std::setprecision(3) << snapshot.processing_fps;
     perf_fps_text_ = fps_ss.str();
 
     perf_backend_text_ = snapshot.backend;
@@ -241,10 +241,9 @@ bool PangolinWindowImpl::UpdatePerformance() {
     lines.emplace_back(make_line("Point ICP", snapshot.point_icp_ms));
     lines.emplace_back(make_line("Mapping", snapshot.mapping_ms));
 
-    std::ostringstream fps_line;
-    fps_line << std::fixed << std::setprecision(3) << "input_fps/slam_fps: " << snapshot.input_fps << " / "
-             << snapshot.slam_fps;
-    lines.emplace_back(fps_line.str());
+    lines.emplace_back(make_line("Lidar FPS", snapshot.input_fps, ""));
+    lines.emplace_back(make_line("SLAM throughput FPS", snapshot.slam_fps, ""));
+    lines.emplace_back(make_line("Processing FPS", snapshot.processing_fps, ""));
 
     std::ostringstream pts_line;
     pts_line << "surface/icp pts: " << snapshot.effective_surface_points << " / " << snapshot.effective_icp_points;
@@ -444,7 +443,7 @@ void PangolinWindowImpl::Render() {
     pangolin::Var<float> menu_intensity("menu.intensity", 0.5, 0.0, 1.0);                // 亮度
     pangolin::Var<std::string> menu_perf_backend("menu.Perf backend", perf_backend_text_, false);
     pangolin::Var<std::string> menu_perf_frame("menu.Frame time", perf_frame_text_, false);
-    pangolin::Var<std::string> menu_perf_fps("menu.SLAM FPS", perf_fps_text_, false);
+    pangolin::Var<std::string> menu_perf_fps("menu.Processing FPS", perf_fps_text_, false);
     pangolin::Var<std::string> menu_perf_effect("menu.Surface pts", perf_effect_text_, false);
 
     // display layout

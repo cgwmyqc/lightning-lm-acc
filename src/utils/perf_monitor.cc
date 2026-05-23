@@ -118,6 +118,8 @@ void PerfMonitor::EndFrame(bool processed) {
 
     const auto now = Clock::now();
     current_.snapshot.frame_total_ms = ToMs(now - current_.start_time);
+    current_.snapshot.processing_fps =
+        current_.snapshot.frame_total_ms > 1e-9 ? 1000.0 / current_.snapshot.frame_total_ms : 0.0;
     if (processed) {
         if (!have_first_processed_time_) {
             first_processed_time_ = now;
@@ -254,7 +256,8 @@ std::string PerfMonitor::FormatProfileLine(const PerfSnapshot& snapshot) {
        << " eskf_update_ms=" << snapshot.eskf_update_ms << " obs_total_ms=" << snapshot.obs_total_ms
        << " lidar_match_ms=" << snapshot.lidar_match_ms << " plane_icp_ms=" << snapshot.plane_icp_ms
        << " point_icp_ms=" << snapshot.point_icp_ms << " mapping_ms=" << snapshot.mapping_ms
-       << " input_fps=" << snapshot.input_fps << " slam_fps=" << snapshot.slam_fps
+       << " lidar_fps=" << snapshot.input_fps << " slam_throughput_fps=" << snapshot.slam_fps
+       << " processing_fps=" << snapshot.processing_fps
        << " input_points=" << snapshot.input_points << " downsampled_points=" << snapshot.downsampled_points
        << " effective_surface_points=" << snapshot.effective_surface_points
        << " effective_icp_points=" << snapshot.effective_icp_points;
@@ -279,7 +282,7 @@ void PerfMonitor::AppendCsvRow(const PerfSnapshot& snapshot) {
         << snapshot.eskf_update_ms << "," << snapshot.obs_total_ms << "," << snapshot.lidar_match_ms << ","
         << snapshot.plane_icp_ms << "," << snapshot.point_icp_ms << "," << snapshot.mapping_ms << ","
         << snapshot.h2c_ms << "," << snapshot.kernel_ms << "," << snapshot.c2h_ms << "," << snapshot.compare_ms
-        << "," << snapshot.fallback_count << "\n";
+        << "," << snapshot.fallback_count << "," << snapshot.processing_fps << "\n";
 }
 
 void PerfMonitor::EnsureCsvHeader() {
@@ -308,7 +311,8 @@ void PerfMonitor::EnsureCsvHeader() {
         ofs << "frame_id,timestamp,backend,input_frames,processed_frames,skipped_frames,input_fps,slam_fps,"
                "input_points,downsampled_points,effective_surface_points,effective_icp_points,frame_total_ms,"
                "preprocess_ms,sync_ms,imu_undistort_ms,downsample_ms,eskf_update_ms,obs_total_ms,lidar_match_ms,"
-               "plane_icp_ms,point_icp_ms,mapping_ms,h2c_ms,kernel_ms,c2h_ms,compare_ms,fallback_count\n";
+               "plane_icp_ms,point_icp_ms,mapping_ms,h2c_ms,kernel_ms,c2h_ms,compare_ms,fallback_count,"
+               "processing_fps\n";
     }
     if (!g_csv_path_logged) {
         LOG(INFO) << "[profile] csv writing to " << config_.csv_path;

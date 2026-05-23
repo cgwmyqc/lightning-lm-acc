@@ -29,6 +29,7 @@ struct PerfSnapshot {
     uint64_t skipped_frames = 0;
     double input_fps = 0.0;
     double slam_fps = 0.0;
+    double processing_fps = 0.0;
 
     int input_points = 0;
     int downsampled_points = 0;
