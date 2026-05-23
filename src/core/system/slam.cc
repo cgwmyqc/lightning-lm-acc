@@ -8,6 +8,7 @@
 #include "core/loop_closing/loop_closing.h"
 #include "core/maps/tiled_map.h"
 #include "ui/pangolin_window.h"
+#include "utils/perf_monitor.h"
 #include "wrapper/ros_utils.h"
 
 #include <yaml-cpp/yaml.h>
@@ -22,13 +23,15 @@ SlamSystem::SlamSystem(lightning::SlamSystem::Options options) : options_(option
 }
 
 bool SlamSystem::Init(const std::string& yaml_path) {
+    auto yaml = YAML::LoadFile(yaml_path);
+    PerfMonitor::ConfigureFromYaml(yaml);
+
     lio_ = std::make_shared<LaserMapping>();
     if (!lio_->Init(yaml_path)) {
         LOG(ERROR) << "failed to init lio module";
         return false;
     }
 
-    auto yaml = YAML::LoadFile(yaml_path);
     options_.with_loop_closing_ = yaml["system"]["with_loop_closing"].as<bool>();
     options_.with_visualization_ = yaml["system"]["with_ui"].as<bool>();
     options_.with_2dvisualization_ = yaml["system"]["with_2dui"].as<bool>();
@@ -243,17 +246,26 @@ void SlamSystem::ProcessLidar(const sensor_msgs::msg::PointCloud2::SharedPtr& cl
         return;
     }
 
+    PerfMonitor::BeginFrame(ToSec(cloud->header.stamp));
     lio_->ProcessPointCloud2(cloud);
-    lio_->Run();
+    const bool processed = lio_->Run();
 
     auto kf = lio_->GetKeyframe();
     if (kf != cur_kf_) {
         cur_kf_ = kf;
     } else {
+        PerfMonitor::EndFrame(processed);
+        if (ui_ && PerfMonitor::UiEnabled()) {
+            ui_->UpdatePerfStats(PerfMonitor::GetLatestSnapshot());
+        }
         return;
     }
 
     if (cur_kf_ == nullptr) {
+        PerfMonitor::EndFrame(processed);
+        if (ui_ && PerfMonitor::UiEnabled()) {
+            ui_->UpdatePerfStats(PerfMonitor::GetLatestSnapshot());
+        }
         return;
     }
 
@@ -267,6 +279,11 @@ void SlamSystem::ProcessLidar(const sensor_msgs::msg::PointCloud2::SharedPtr& cl
 
     if (ui_) {
         ui_->UpdateKF(cur_kf_);
+    }
+
+    PerfMonitor::EndFrame(processed);
+    if (ui_ && PerfMonitor::UiEnabled()) {
+        ui_->UpdatePerfStats(PerfMonitor::GetLatestSnapshot());
     }
 }
 
@@ -275,17 +292,26 @@ void SlamSystem::ProcessLidar(const livox_ros_driver2::msg::CustomMsg::SharedPtr
         return;
     }
 
+    PerfMonitor::BeginFrame(ToSec(cloud->header.stamp));
     lio_->ProcessPointCloud2(cloud);
-    lio_->Run();
+    const bool processed = lio_->Run();
 
     auto kf = lio_->GetKeyframe();
     if (kf != cur_kf_) {
         cur_kf_ = kf;
     } else {
+        PerfMonitor::EndFrame(processed);
+        if (ui_ && PerfMonitor::UiEnabled()) {
+            ui_->UpdatePerfStats(PerfMonitor::GetLatestSnapshot());
+        }
         return;
     }
 
     if (cur_kf_ == nullptr) {
+        PerfMonitor::EndFrame(processed);
+        if (ui_ && PerfMonitor::UiEnabled()) {
+            ui_->UpdatePerfStats(PerfMonitor::GetLatestSnapshot());
+        }
         return;
     }
 
@@ -299,6 +325,11 @@ void SlamSystem::ProcessLidar(const livox_ros_driver2::msg::CustomMsg::SharedPtr
 
     if (ui_) {
         ui_->UpdateKF(cur_kf_);
+    }
+
+    PerfMonitor::EndFrame(processed);
+    if (ui_ && PerfMonitor::UiEnabled()) {
+        ui_->UpdatePerfStats(PerfMonitor::GetLatestSnapshot());
     }
 }
 

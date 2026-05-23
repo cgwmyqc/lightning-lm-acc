@@ -12,9 +12,11 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <vector>
 
 #include "common/keyframe.h"
 #include "common/loop_candidate.h"
+#include "utils/perf_monitor.h"
 
 #include "ui/pangolin_window.h"
 #include "ui/ui_car.h"
@@ -59,6 +61,7 @@ class PangolinWindowImpl {
     std::mutex mtx_map_cloud_;
     std::mutex mtx_current_scan_;
     std::mutex mtx_nav_state_;
+    std::mutex mtx_perf_;
     std::mutex mtx_gps_pose_;
     std::mutex mtx_loop_info_;
 
@@ -71,6 +74,7 @@ class PangolinWindowImpl {
     std::atomic<bool> kf_result_need_update_;      // 卡尔曼滤波结果
     std::atomic<bool> current_scan_need_update_;   // 更新当前扫描
     std::atomic<bool> lidarloc_need_update_;       // 雷达位置？
+    std::atomic<bool> perf_need_update_{false};    // 性能统计是否需要更新
 
     pcl::PointCloud<PointType>::Ptr current_scan_ = nullptr;  // 当前scan
     SE3 newest_frontend_pose_;                                // 最新pose
@@ -95,6 +99,7 @@ class PangolinWindowImpl {
     Sophus::SE3d T_imu_lidar_;
     int max_size_of_current_scan_ = 200;  // 当前扫描数据保留多少个
     std::vector<std::shared_ptr<Keyframe>> all_keyframes_;
+    PerfSnapshot perf_snapshot_;
 
     //////////////////////////////// 以下和render相关 ///////////////////////////
    private:
@@ -112,6 +117,7 @@ class PangolinWindowImpl {
     bool UpdateDynamicMap();
     bool UpdateState();
     bool UpdateCurrentScan();
+    bool UpdatePerformance();
 
     void RenderLabels();
 
@@ -137,6 +143,7 @@ class PangolinWindowImpl {
     // text
     pangolin::GlText gltext_label_global_;
     pangolin::GlText gltext_label_state_;
+    std::vector<pangolin::GlText> gltext_label_perf_lines_;
 
     // camera
     pangolin::OpenGlRenderState s_cam_main_;
@@ -169,6 +176,11 @@ class PangolinWindowImpl {
     std::unique_ptr<pangolin::Plotter> plotter_confidence_ = nullptr;
     std::unique_ptr<pangolin::Plotter> plotter_err_ = nullptr;
     std::unique_ptr<pangolin::Plotter> plotter_err_eval_ = nullptr;
+
+    std::string perf_backend_text_ = "CPU";
+    std::string perf_frame_text_ = "0.000 ms";
+    std::string perf_fps_text_ = "0.000";
+    std::string perf_effect_text_ = "0";
 };
 
 }  // namespace lightning::ui

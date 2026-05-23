@@ -9,6 +9,7 @@
 #include "common/loop_candidate.h"
 #include "common/nav_state.h"
 #include "common/point_def.h"
+#include "utils/perf_monitor.h"
 
 namespace lightning::ui {
 
@@ -49,6 +50,8 @@ class PangolinWindow {
     void UpdateScan(CloudPtr cloud, const SE3& pose);
 
     void UpdateKF(std::shared_ptr<Keyframe> kf);
+
+    void UpdatePerfStats(const PerfSnapshot& snapshot);
 
     /// 等待显示线程结束，并释放资源
     void Quit();

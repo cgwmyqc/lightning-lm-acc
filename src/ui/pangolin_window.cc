@@ -10,6 +10,7 @@ bool PangolinWindow::Init() {
     impl_->kf_result_need_update_.store(false);
     impl_->lidarloc_need_update_.store(false);
     impl_->current_scan_need_update_.store(false);
+    impl_->perf_need_update_.store(false);
 
     bool inited = impl_->Init();
     // 创建渲染线程
@@ -90,6 +91,12 @@ void PangolinWindow::UpdateScan(CloudPtr cloud, const SE3& pose) {
 void PangolinWindow::UpdateKF(std::shared_ptr<Keyframe> kf) {
     UL lock(impl_->mtx_current_scan_);
     impl_->all_keyframes_.emplace_back(kf);
+}
+
+void PangolinWindow::UpdatePerfStats(const PerfSnapshot& snapshot) {
+    std::lock_guard<std::mutex> lock(impl_->mtx_perf_);
+    impl_->perf_snapshot_ = snapshot;
+    impl_->perf_need_update_.store(true);
 }
 
 void PangolinWindow::SetCurrentScanSize(int current_scan_size) { impl_->max_size_of_current_scan_ = current_scan_size; }

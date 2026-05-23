@@ -198,6 +198,66 @@ bool PangolinWindowImpl::UpdateState() {
     return false;
 }
 
+bool PangolinWindowImpl::UpdatePerformance() {
+    if (!perf_need_update_.load()) {
+        return false;
+    }
+
+    PerfSnapshot snapshot;
+    {
+        std::lock_guard<std::mutex> lock(mtx_perf_);
+        snapshot = perf_snapshot_;
+        perf_need_update_.store(false);
+    }
+
+    std::ostringstream frame_ss;
+    frame_ss << std::fixed << std::setprecision(3) << snapshot.frame_total_ms << " ms";
+    perf_frame_text_ = frame_ss.str();
+
+    std::ostringstream fps_ss;
+    fps_ss << std::fixed << std::setprecision(3) << snapshot.slam_fps;
+    perf_fps_text_ = fps_ss.str();
+
+    perf_backend_text_ = snapshot.backend;
+    perf_effect_text_ = std::to_string(snapshot.effective_surface_points);
+
+    auto make_line = [](const std::string &name, double value, const std::string &unit = " ms") {
+        std::ostringstream ss;
+        ss << std::fixed << std::setprecision(3) << name << ": " << value << unit;
+        return ss.str();
+    };
+
+    std::vector<std::string> lines;
+    lines.emplace_back("profile backend: " + snapshot.backend);
+    lines.emplace_back(make_line("Frame total", snapshot.frame_total_ms));
+    lines.emplace_back(make_line("Preprocess", snapshot.preprocess_ms));
+    lines.emplace_back(make_line("SyncPackages", snapshot.sync_ms));
+    lines.emplace_back(make_line("IMU Undistort", snapshot.imu_undistort_ms));
+    lines.emplace_back(make_line("Downsample", snapshot.downsample_ms));
+    lines.emplace_back(make_line("ESKF Update", snapshot.eskf_update_ms));
+    lines.emplace_back(make_line("ObsModel", snapshot.obs_total_ms));
+    lines.emplace_back(make_line("Lidar Match", snapshot.lidar_match_ms));
+    lines.emplace_back(make_line("Plane ICP HTH/HTr", snapshot.plane_icp_ms));
+    lines.emplace_back(make_line("Point ICP", snapshot.point_icp_ms));
+    lines.emplace_back(make_line("Mapping", snapshot.mapping_ms));
+
+    std::ostringstream fps_line;
+    fps_line << std::fixed << std::setprecision(3) << "input_fps/slam_fps: " << snapshot.input_fps << " / "
+             << snapshot.slam_fps;
+    lines.emplace_back(fps_line.str());
+
+    std::ostringstream pts_line;
+    pts_line << "surface/icp pts: " << snapshot.effective_surface_points << " / " << snapshot.effective_icp_points;
+    lines.emplace_back(pts_line.str());
+
+    gltext_label_perf_lines_.clear();
+    gltext_label_perf_lines_.reserve(lines.size());
+    for (const auto &line : lines) {
+        gltext_label_perf_lines_.emplace_back(pangolin::default_font().Text(line));
+    }
+    return true;
+}
+
 void PangolinWindowImpl::DrawAll() {
     /// 地图
     for (const auto &pc : cloud_map_ui_) {
@@ -267,6 +327,7 @@ void PangolinWindowImpl::RenderClouds() {
     UpdateDynamicMap();
     UpdateState();
     UpdateCurrentScan();
+    UpdatePerformance();
 
     // 绘制
     pangolin::Display(dis_3d_main_name_).Activate(s_cam_main_);
@@ -299,6 +360,12 @@ void PangolinWindowImpl::RenderLabels() {
     glTranslatef(0.0f, -1.5f * gltext_label_global_.Height(), 0.0f);
     glColor3ub(180, 220, 180);
     gltext_label_state_.Draw();
+
+    glColor3ub(220, 220, 120);
+    for (const auto &line : gltext_label_perf_lines_) {
+        glTranslatef(0.0f, -1.25f * line.Height(), 0.0f);
+        line.Draw();
+    }
 
     // Restore modelview / project matrices
     glMatrixMode(GL_PROJECTION);
@@ -375,6 +442,10 @@ void PangolinWindowImpl::Render() {
     pangolin::Var<bool> menu_step("menu.Step", false, false);                            // 单步调试
     pangolin::Var<float> menu_play_speed("menu.Play speed", 10.0, 0.1, 10.0);            // 运行速度
     pangolin::Var<float> menu_intensity("menu.intensity", 0.5, 0.0, 1.0);                // 亮度
+    pangolin::Var<std::string> menu_perf_backend("menu.Perf backend", perf_backend_text_, false);
+    pangolin::Var<std::string> menu_perf_frame("menu.Frame time", perf_frame_text_, false);
+    pangolin::Var<std::string> menu_perf_fps("menu.SLAM FPS", perf_fps_text_, false);
+    pangolin::Var<std::string> menu_perf_effect("menu.Surface pts", perf_effect_text_, false);
 
     // display layout
     CreateDisplayLayout();
@@ -410,6 +481,10 @@ void PangolinWindowImpl::Render() {
 
         debug::play_speed = menu_play_speed;
         ui::opacity = menu_intensity;
+        menu_perf_backend = perf_backend_text_;
+        menu_perf_frame = perf_frame_text_;
+        menu_perf_fps = perf_fps_text_;
+        menu_perf_effect = perf_effect_text_;
 
         // Render pointcloud
         RenderClouds();
@@ -444,6 +519,8 @@ void PangolinWindowImpl::AllocateBuffer() {
     auto &font = pangolin::default_font();
     gltext_label_global_ = font.Text(global_text);
     gltext_label_state_ = font.Text("ba: [0.0000, 0.0000, 0.0000]");
+    gltext_label_perf_lines_.clear();
+    gltext_label_perf_lines_.emplace_back(font.Text("profile: waiting for lidar frame"));
 }
 
 void PangolinWindowImpl::ReleaseBuffer() {}

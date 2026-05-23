@@ -11,6 +11,7 @@
 #include <opencv2/imgproc.hpp>
 
 #include "ui/pangolin_window.h"
+#include "utils/perf_monitor.h"
 #include "wrapper/ros_utils.h"
 
 namespace lightning {
@@ -167,13 +168,21 @@ void LaserMapping::ProcessIMU(const lightning::IMUPtr &imu) {
 }
 
 bool LaserMapping::Run() {
-    if (!SyncPackages()) {
+    bool sync_ok = false;
+    {
+        ScopedPerfStage perf("SyncPackages");
+        sync_ok = SyncPackages();
+    }
+    if (!sync_ok) {
         LOG(WARNING) << "sync package failed";
         return false;
     }
 
     /// IMU process, kf prediction, undistortion
-    p_imu_->Process(measures_, kf_, scan_undistort_);
+    {
+        ScopedPerfStage perf("IMU Undistort");
+        p_imu_->Process(measures_, kf_, scan_undistort_);
+    }
 
     if (scan_undistort_->empty() || (scan_undistort_ == nullptr)) {
         LOG(WARNING) << "No point, skip this scan!";
@@ -225,26 +234,31 @@ bool LaserMapping::Run() {
     flg_EKF_inited_ = (measures_.lidar_begin_time_ - first_lidar_time_) >= fasterlio::INIT_TIME;
 
     /// downsample
-    voxel_scan_.setInputCloud(scan_undistort_);
-    voxel_scan_.filter(*scan_down_body_);
+    {
+        ScopedPerfStage perf("Downsample");
+        voxel_scan_.setInputCloud(scan_undistort_);
+        voxel_scan_.filter(*scan_down_body_);
 
-    // if (options_.proj_kfs_) {
-    //     ProjectKFs();
-    // }
+        // if (options_.proj_kfs_) {
+        //     ProjectKFs();
+        // }
+
+        int cur_pts = scan_down_body_->size();
+
+        if (cur_pts < (scan_undistort_->size() * 0.1) || cur_pts < options_.min_pts) {
+            /// 降采样太狠了,有效点数不够，用0.1分辨率代替
+            // LOG(INFO) << "too few points, using 0.1 resol";
+            auto v = voxel_scan_;
+            v.setLeafSize(0.1, 0.1, 0.1);
+            v.setInputCloud(scan_undistort_);
+            v.filter(*scan_down_body_);
+
+            // LOG(INFO) << "Now pts: " << scan_down_body_->size() << ", before: " << cur_pts;
+        }
+    }
 
     int cur_pts = scan_down_body_->size();
-
-    if (cur_pts < (scan_undistort_->size() * 0.1) || cur_pts < options_.min_pts) {
-        /// 降采样太狠了,有效点数不够，用0.1分辨率代替
-        // LOG(INFO) << "too few points, using 0.1 resol";
-        auto v = voxel_scan_;
-        v.setLeafSize(0.1, 0.1, 0.1);
-        v.setInputCloud(scan_undistort_);
-        v.filter(*scan_down_body_);
-
-        // LOG(INFO) << "Now pts: " << scan_down_body_->size() << ", before: " << cur_pts;
-        cur_pts = scan_down_body_->size();
-    }
+    PerfMonitor::SetFramePointStats(static_cast<int>(scan_undistort_->size()), cur_pts);
 
     if (cur_pts < 5) {
         LOG(WARNING) << "Too few points, skip this scan!" << scan_undistort_->size() << ", " << scan_down_body_->size();
@@ -264,7 +278,10 @@ bool LaserMapping::Run() {
     // pred_state.pos_ = state_point_.pos_;  // 假定位置不动行不行,防止速度漂移
     // kf_.ChangeX(pred_state);
 
-    kf_.Update(ESKF::ObsType::LIDAR, 1.0);
+    {
+        ScopedPerfStage perf("ESKF Update total");
+        kf_.Update(ESKF::ObsType::LIDAR, 1.0);
+    }
 
     state_point_ = kf_.GetX();
     state_point_.timestamp_ = measures_.lidar_end_time_;
@@ -386,7 +403,12 @@ void LaserMapping::MakeKF() {
     last_kf_ = kf;
 
     // 有keyframes时更新local map
-    Timer::Evaluate([&, this]() { MapIncremental(); }, "    Incremental Mapping");
+    Timer::Evaluate(
+        [&, this]() {
+            ScopedPerfStage perf("Incremental Mapping");
+            MapIncremental();
+        },
+        "    Incremental Mapping");
 
     /// 更新project kfs
     if (proj_kfs_.size() >= options_.max_proj_kfs_) {
@@ -413,6 +435,7 @@ void LaserMapping::ProcessPointCloud2(const sensor_msgs::msg::PointCloud2::Share
     UL lock(mtx_buffer_);
     Timer::Evaluate(
         [&, this]() {
+            ScopedPerfStage perf("Preprocess");
             scan_count_++;
             double timestamp = ToSec(msg->header.stamp);
             if (timestamp < last_timestamp_lidar_) {
@@ -437,6 +460,7 @@ void LaserMapping::ProcessPointCloud2(const livox_ros_driver2::msg::CustomMsg::S
     UL lock(mtx_buffer_);
     Timer::Evaluate(
         [&, this]() {
+            ScopedPerfStage perf("Preprocess");
             scan_count_++;
             double timestamp = ToSec(msg->header.stamp);
             if (timestamp < last_timestamp_lidar_) {
@@ -461,6 +485,7 @@ void LaserMapping::ProcessPointCloud2(CloudPtr cloud) {
     UL lock(mtx_buffer_);
     Timer::Evaluate(
         [&, this]() {
+            ScopedPerfStage perf("Preprocess");
             scan_count_++;
 
             double timestamp = math::ToSec(cloud->header.stamp);
@@ -611,6 +636,7 @@ void LaserMapping::MapIncremental() {
  * @param ekfom_data H matrix
  */
 void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
+    ScopedPerfStage obs_perf("ObsModel total");
     int cnt_pts = scan_down_body_->size();
 
     std::vector<size_t> index(cnt_pts);
@@ -622,6 +648,7 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
 
     Timer::Evaluate(
         [&, this]() {
+            ScopedPerfStage perf("ObsModel Lidar Match");
             Mat3f R_wl = (s.rot_.matrix() * offset_R_lidar_fixed_).cast<float>();
             Vec3f t_wl = (s.rot_ * offset_t_lidar_fixed_ + s.pos_).cast<float>();
 
@@ -687,6 +714,7 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
 
     corr_pts_.resize(effect_feat_surf_);
     corr_norm_.resize(effect_feat_surf_);
+    PerfMonitor::SetEffectivePointStats(effect_feat_surf_, effect_feat_icp_);
 
     if (effect_feat_surf_ < 20) {
         obs.valid_ = false;
@@ -709,36 +737,39 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
 
     std::vector<double> res_sq(index.size());
 
-    std::for_each(std::execution::par_unseq, index.begin(), index.end(), [&](const size_t &i) {
-        Vec3f point_this_be = corr_pts_[i].head<3>();
-        Vec3f point_this = off_R * point_this_be + off_t;
-        Mat3f point_crossmat = math::SKEW_SYM_MATRIX(point_this);
+    {
+        ScopedPerfStage perf("Plane ICP HTH/HTr CPU", effect_feat_surf_, effect_feat_surf_, "CPU");
+        std::for_each(std::execution::par_unseq, index.begin(), index.end(), [&](const size_t &i) {
+            Vec3f point_this_be = corr_pts_[i].head<3>();
+            Vec3f point_this = off_R * point_this_be + off_t;
+            Mat3f point_crossmat = math::SKEW_SYM_MATRIX(point_this);
 
-        /*** get the normal vector of closest surface/corner ***/
-        Vec3f norm_vec = corr_norm_[i].head<3>();
+            /*** get the normal vector of closest surface/corner ***/
+            Vec3f norm_vec = corr_norm_[i].head<3>();
 
-        /*** calculate the Measurement Jacobian matrix H ***/
-        Vec3f C(Rt * norm_vec);
-        Vec3f A(point_crossmat * C);
+            /*** calculate the Measurement Jacobian matrix H ***/
+            Vec3f C(Rt * norm_vec);
+            Vec3f A(point_crossmat * C);
 
-        Eigen::Matrix<double, 1, ESKF::pose_obs_dim_> J;
-        J.setZero();
-        J << norm_vec[0], norm_vec[1], norm_vec[2], A[0], A[1], A[2];
+            Eigen::Matrix<double, 1, ESKF::pose_obs_dim_> J;
+            J.setZero();
+            J << norm_vec[0], norm_vec[1], norm_vec[2], A[0], A[1], A[2];
 
-        float res = -corr_pts_[i][3];
+            float res = -corr_pts_[i][3];
 
-        // double w = huber_weight(res);
-        double w = 1.0;
+            // double w = huber_weight(res);
+            double w = 1.0;
 
-        JTJ[i] = (J.transpose() * J).eval() * w;
-        JTr[i] = J.transpose() * res * w;
+            JTJ[i] = (J.transpose() * J).eval() * w;
+            JTr[i] = J.transpose() * res * w;
 
-        res_sq[i] = res * res;
-    });
+            res_sq[i] = res * res;
+        });
 
-    for (int i = 0; i < index.size(); ++i) {
-        obs.HTH_ += JTJ[i] * options_.plane_icp_weight_;
-        obs.HTr_ += JTr[i] * options_.plane_icp_weight_;
+        for (int i = 0; i < index.size(); ++i) {
+            obs.HTH_ += JTJ[i] * options_.plane_icp_weight_;
+            obs.HTr_ += JTr[i] * options_.plane_icp_weight_;
+        }
     }
 
     if (!res_sq.empty()) {
@@ -752,6 +783,7 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
     /// 点到点ICP部分
 
     if (options_.enable_icp_part_) {
+        ScopedPerfStage perf("Point ICP CPU", cnt_pts, effect_feat_icp_, "CPU");
         JTJ.resize(cnt_pts);
         JTr.resize(cnt_pts);
 

@@ -30,6 +30,7 @@ add_library(${PROJECT_NAME}.libs SHARED
         core/localization/localization.cpp
 
         utils/timer.cc
+        utils/perf_monitor.cc
         utils/pointcloud_utils.cc
 
         ui/pangolin_window.cc

@@ -43,6 +43,17 @@ fasterlio:
   min_pts: 300
   imu_filter: true
 
+profile:
+  enable: true
+  ui_enable: true
+  csv_enable: true
+  csv_path: ./data/profile/slam_perf.csv
+  log_every_n_frames: 10
+
+fpga:
+  enable: false
+  mode: cpu
+
 g2p5:
   esti_floor: false   # 是否动态估计地面
   lidar_height: 0.0   # 雷达安装高度
