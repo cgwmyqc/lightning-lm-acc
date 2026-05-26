@@ -636,7 +636,6 @@ void LaserMapping::MapIncremental() {
  * @param ekfom_data H matrix
  */
 void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
-    ScopedPerfStage obs_perf("ObsModel total");
     int cnt_pts = scan_down_body_->size();
 
     std::vector<size_t> index(cnt_pts);
@@ -648,48 +647,63 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
 
     Timer::Evaluate(
         [&, this]() {
-            ScopedPerfStage perf("ObsModel Lidar Match");
+            ScopedPerfStage lidar_match_perf("ObsModel Lidar Match");
             Mat3f R_wl = (s.rot_.matrix() * offset_R_lidar_fixed_).cast<float>();
             Vec3f t_wl = (s.rot_ * offset_t_lidar_fixed_ + s.pos_).cast<float>();
 
-            std::for_each(std::execution::par_unseq, index.begin(), index.end(), [&](const size_t &i) {
-                PointType &point_body = scan_down_body_->points[i];
-                PointType &point_world = scan_down_world_->points[i];
+            {
+                ScopedPerfStage perf("ObsModel iVox KNN Search");
+                std::for_each(std::execution::par_unseq, index.begin(), index.end(), [&](const size_t &i) {
+                    PointType &point_body = scan_down_body_->points[i];
+                    PointType &point_world = scan_down_world_->points[i];
 
-                /* transform to world frame */
-                Vec3f p_body = point_body.getVector3fMap();
-                point_world.getVector3fMap() = R_wl * p_body + t_wl;
-                point_world.intensity = point_body.intensity;
+                    /* transform to world frame */
+                    Vec3f p_body = point_body.getVector3fMap();
+                    point_world.getVector3fMap() = R_wl * p_body + t_wl;
+                    point_world.intensity = point_body.intensity;
 
-                auto &points_near = nearest_points_[i];
-                points_near.clear();
+                    auto &points_near = nearest_points_[i];
+                    points_near.clear();
 
-                /** Find the closest surfaces in the map **/
-                ivox_->GetClosestPoint(point_world, points_near, fasterlio::NUM_MATCH_POINTS);
-                point_selected_surf_[i] = points_near.size() >= fasterlio::MIN_NUM_MATCH_POINTS;
+                    /** Find the closest surfaces in the map **/
+                    ivox_->GetClosestPoint(point_world, points_near, fasterlio::NUM_MATCH_POINTS);
+                    point_selected_surf_[i] = points_near.size() >= fasterlio::MIN_NUM_MATCH_POINTS;
+                    point_selected_icp_[i] = point_selected_surf_[i];
+                });
+            }
 
-                point_selected_icp_[i] = point_selected_surf_[i];
-
-                /// 能找到3个点以上，则估计平面
-                if (point_selected_surf_[i]) {
-                    point_selected_surf_[i] =
-                        math::esti_plane(plane_coef_[i], points_near, fasterlio::ESTI_PLANE_THRESHOLD);
-                }
-
-                /// 计算平面阈值
-                if (point_selected_surf_[i]) {
-                    auto temp = point_world.getVector4fMap();
-                    temp[3] = 1.0;
-                    float pd2 = plane_coef_[i].dot(temp);
-
-                    if (p_body.norm() > 81 * pd2 * pd2) {
-                        point_selected_surf_[i] = true;
-                        residuals_[i] = pd2;
-                    } else {
-                        point_selected_surf_[i] = false;
+            {
+                ScopedPerfStage perf("ObsModel Plane Fit");
+                std::for_each(std::execution::par_unseq, index.begin(), index.end(), [&](const size_t &i) {
+                    /// 能找到3个点以上，则估计平面
+                    if (point_selected_surf_[i]) {
+                        point_selected_surf_[i] =
+                            math::esti_plane(plane_coef_[i], nearest_points_[i], fasterlio::ESTI_PLANE_THRESHOLD);
                     }
-                }
-            });
+                });
+            }
+
+            {
+                ScopedPerfStage perf("ObsModel Valid Point Check");
+                std::for_each(std::execution::par_unseq, index.begin(), index.end(), [&](const size_t &i) {
+                    /// 计算平面阈值
+                    if (point_selected_surf_[i]) {
+                        PointType &point_body = scan_down_body_->points[i];
+                        PointType &point_world = scan_down_world_->points[i];
+                        Vec3f p_body = point_body.getVector3fMap();
+                        auto temp = point_world.getVector4fMap();
+                        temp[3] = 1.0;
+                        float pd2 = plane_coef_[i].dot(temp);
+
+                        if (p_body.norm() > 81 * pd2 * pd2) {
+                            point_selected_surf_[i] = true;
+                            residuals_[i] = pd2;
+                        } else {
+                            point_selected_surf_[i] = false;
+                        }
+                    }
+                });
+            }
         },
         "    ObsModel (Lidar Match)");
 
@@ -739,36 +753,42 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
 
     {
         ScopedPerfStage perf("Plane ICP HTH/HTr CPU", effect_feat_surf_, effect_feat_surf_, "CPU");
-        std::for_each(std::execution::par_unseq, index.begin(), index.end(), [&](const size_t &i) {
-            Vec3f point_this_be = corr_pts_[i].head<3>();
-            Vec3f point_this = off_R * point_this_be + off_t;
-            Mat3f point_crossmat = math::SKEW_SYM_MATRIX(point_this);
+        {
+            ScopedPerfStage sub_perf("Plane ICP Residual/Jacobian");
+            std::for_each(std::execution::par_unseq, index.begin(), index.end(), [&](const size_t &i) {
+                Vec3f point_this_be = corr_pts_[i].head<3>();
+                Vec3f point_this = off_R * point_this_be + off_t;
+                Mat3f point_crossmat = math::SKEW_SYM_MATRIX(point_this);
 
-            /*** get the normal vector of closest surface/corner ***/
-            Vec3f norm_vec = corr_norm_[i].head<3>();
+                /*** get the normal vector of closest surface/corner ***/
+                Vec3f norm_vec = corr_norm_[i].head<3>();
 
-            /*** calculate the Measurement Jacobian matrix H ***/
-            Vec3f C(Rt * norm_vec);
-            Vec3f A(point_crossmat * C);
+                /*** calculate the Measurement Jacobian matrix H ***/
+                Vec3f C(Rt * norm_vec);
+                Vec3f A(point_crossmat * C);
 
-            Eigen::Matrix<double, 1, ESKF::pose_obs_dim_> J;
-            J.setZero();
-            J << norm_vec[0], norm_vec[1], norm_vec[2], A[0], A[1], A[2];
+                Eigen::Matrix<double, 1, ESKF::pose_obs_dim_> J;
+                J.setZero();
+                J << norm_vec[0], norm_vec[1], norm_vec[2], A[0], A[1], A[2];
 
-            float res = -corr_pts_[i][3];
+                float res = -corr_pts_[i][3];
 
-            // double w = huber_weight(res);
-            double w = 1.0;
+                // double w = huber_weight(res);
+                double w = 1.0;
 
-            JTJ[i] = (J.transpose() * J).eval() * w;
-            JTr[i] = J.transpose() * res * w;
+                JTJ[i] = (J.transpose() * J).eval() * w;
+                JTr[i] = J.transpose() * res * w;
 
-            res_sq[i] = res * res;
-        });
+                res_sq[i] = res * res;
+            });
+        }
 
-        for (int i = 0; i < index.size(); ++i) {
-            obs.HTH_ += JTJ[i] * options_.plane_icp_weight_;
-            obs.HTr_ += JTr[i] * options_.plane_icp_weight_;
+        {
+            ScopedPerfStage sub_perf("Plane ICP HTH/HTr Accumulate");
+            for (int i = 0; i < index.size(); ++i) {
+                obs.HTH_ += JTJ[i] * options_.plane_icp_weight_;
+                obs.HTr_ += JTr[i] * options_.plane_icp_weight_;
+            }
         }
     }
 

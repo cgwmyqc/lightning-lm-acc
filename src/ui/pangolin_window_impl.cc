@@ -235,10 +235,24 @@ bool PangolinWindowImpl::UpdatePerformance() {
     lines.emplace_back(make_line("IMU Undistort", snapshot.imu_undistort_ms));
     lines.emplace_back(make_line("Downsample", snapshot.downsample_ms));
     lines.emplace_back(make_line("ESKF Update", snapshot.eskf_update_ms));
-    lines.emplace_back(make_line("ObsModel", snapshot.obs_total_ms));
+    lines.emplace_back(make_line("ESKF Iter Loop", snapshot.iter_loop_total_ms));
+    lines.emplace_back(make_line("ObsModel total", snapshot.obs_total_ms));
+    lines.emplace_back(make_line("ObsModel avg", snapshot.obs_model_avg_ms));
+    lines.emplace_back(make_line("ObsModel calls", static_cast<double>(snapshot.obs_model_calls), ""));
     lines.emplace_back(make_line("Lidar Match", snapshot.lidar_match_ms));
+    lines.emplace_back(make_line("iVox KNN", snapshot.ivox_knn_search_ms));
+    lines.emplace_back(make_line("Plane Fit", snapshot.plane_fit_ms));
+    lines.emplace_back(make_line("Valid Check", snapshot.valid_point_check_ms));
     lines.emplace_back(make_line("Plane ICP HTH/HTr", snapshot.plane_icp_ms));
+    lines.emplace_back(make_line("Residual/Jacobian", snapshot.residual_jacobian_ms));
+    lines.emplace_back(make_line("HTH/HTr Accumulate", snapshot.hth_htr_accumulate_ms));
     lines.emplace_back(make_line("Point ICP", snapshot.point_icp_ms));
+    lines.emplace_back(make_line("Solve Matrix", snapshot.solve_matrix_ms));
+    lines.emplace_back(make_line("State Update", snapshot.state_update_ms));
+    lines.emplace_back(make_line("Covariance Update", snapshot.covariance_update_ms));
+    lines.emplace_back(make_line("Convergence Check", snapshot.convergence_check_ms));
+    lines.emplace_back(make_line("ESKF misc", snapshot.eskf_misc_ms));
+    lines.emplace_back(make_line("ObsModel misc", snapshot.obs_model_misc_ms));
     lines.emplace_back(make_line("Mapping", snapshot.mapping_ms));
 
     lines.emplace_back(make_line("Lidar FPS", snapshot.input_fps, ""));

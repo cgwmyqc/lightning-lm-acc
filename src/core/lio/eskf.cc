@@ -4,6 +4,7 @@
 
 #include "core/lio/eskf.hpp"
 #include "core/lightning_math.hpp"
+#include "utils/perf_monitor.h"
 
 #include <Eigen/Eigenvalues>
 #include <algorithm>
@@ -123,53 +124,63 @@ void ESKF::Update(ESKF::ObsType obs, const double& R) {
     static double iterated_num = 0;
     static double update_num = 0;
     update_num += 1;
+    {
+    ScopedPerfStage iter_loop_perf("ESKF Iter Loop total");
     for (int i = -1; i < maximum_iter_; i++) {
         custom_obs_model_.valid_ = true;
 
         /// 计算observation function，主要是residual_, h_x_, s_
         /// x_ 在每次迭代中都是更新的，线性化点也会更新
-        if (obs == ObsType::LIDAR || obs == ObsType::WHEEL_SPEED_AND_LIDAR) {
-            lidar_obs_func_(x_, custom_obs_model_);
-        } else if (obs == ObsType::WHEEL_SPEED) {
-            wheelspeed_obs_func_(x_, custom_obs_model_);
-        } else if (obs == ObsType::ACC_AS_GRAVITY) {
-            acc_as_gravity_obs_func_(x_, custom_obs_model_);
-        } else if (obs == ObsType::GPS) {
-            gps_obs_func_(x_, custom_obs_model_);
-        } else if (obs == ObsType::BIAS) {
-            bias_obs_func_(x_, custom_obs_model_);
-        }
-
-        if (custom_obs_model_.valid_ == false) {
-            x_ = last_x;
-            P_ = P_propagated;
-            return;
-        }
-
-        if (use_aa_ && i > -1 && (obs == ObsType::LIDAR || obs == ObsType::WHEEL_SPEED_AND_LIDAR) &&
-            custom_obs_model_.lidar_residual_mean_ >= last_lidar_res * 1.01) {
-            x_ = last_x;
-            break;
-        }
-        iterated_num += 1;
-
-        if (!custom_obs_model_.valid_) {
-            continue;
-        }
-
-        if (i == -1) {
-            init_res = custom_obs_model_.lidar_residual_mean_;
-            if (init_res < 1e-9) {
-                init_res = 1e-9;  // 可能有零
+        {
+            ScopedPerfStage perf("ESKF ObsModel call");
+            if (obs == ObsType::LIDAR || obs == ObsType::WHEEL_SPEED_AND_LIDAR) {
+                lidar_obs_func_(x_, custom_obs_model_);
+            } else if (obs == ObsType::WHEEL_SPEED) {
+                wheelspeed_obs_func_(x_, custom_obs_model_);
+            } else if (obs == ObsType::ACC_AS_GRAVITY) {
+                acc_as_gravity_obs_func_(x_, custom_obs_model_);
+            } else if (obs == ObsType::GPS) {
+                gps_obs_func_(x_, custom_obs_model_);
+            } else if (obs == ObsType::BIAS) {
+                bias_obs_func_(x_, custom_obs_model_);
             }
         }
 
-        iterations_ = i + 2;  // i从-1开始计
-        final_res_ = custom_obs_model_.lidar_residual_mean_ / init_res;
+        {
+            ScopedPerfStage perf("ESKF Convergence Check");
+            if (custom_obs_model_.valid_ == false) {
+                x_ = last_x;
+                P_ = P_propagated;
+                return;
+            }
+
+            if (use_aa_ && i > -1 && (obs == ObsType::LIDAR || obs == ObsType::WHEEL_SPEED_AND_LIDAR) &&
+                custom_obs_model_.lidar_residual_mean_ >= last_lidar_res * 1.01) {
+                x_ = last_x;
+                break;
+            }
+            iterated_num += 1;
+
+            if (!custom_obs_model_.valid_) {
+                continue;
+            }
+
+            if (i == -1) {
+                init_res = custom_obs_model_.lidar_residual_mean_;
+                if (init_res < 1e-9) {
+                    init_res = 1e-9;  // 可能有零
+                }
+            }
+
+            iterations_ = i + 2;  // i从-1开始计
+            final_res_ = custom_obs_model_.lidar_residual_mean_ / init_res;
+        }
 
         StateVecType dx = x_.boxminus(start_x);  // 当前x与起点之间的dx
         dx_current = dx;                         //
 
+        {
+        ScopedPerfStage perf("ESKF Covariance Update");
         P_ = P_propagated;
 
         /// 更新P 和 dx
@@ -191,7 +202,11 @@ void ESKF::Update(ESKF::ObsType obs, const double& R) {
                 P_.block<1, 3>(j, idx) = (P_.block<1, 3>(j, idx)) * res_temp_SO3.transpose();
             }
         }
+        }
 
+        int nullity = 0;
+        {
+        ScopedPerfStage perf("ESKF Solve Matrix");
         Mat6d HTH = custom_obs_model_.HTH_;
         Vec6d HTr = custom_obs_model_.HTr_;
         Mat6d HTH_sym = 0.5 * (HTH + HTH.transpose());
@@ -210,7 +225,6 @@ void ESKF::Update(ESKF::ObsType obs, const double& R) {
         // LOG(INFO) << "eigen values of HTH: " << eigen_values.transpose();
 
         Vec6d observable_mask = Vec6d::Zero();
-        int nullity = 0;
         for (int k = 0; k < observable_mask.size(); ++k) {
             if (eigen_values(k) > degeneracy_threshold) {
                 observable_mask(k) = 1.0;
@@ -246,7 +260,10 @@ void ESKF::Update(ESKF::ObsType obs, const double& R) {
         //           << ", prior: " << ((K_H - Eigen::Matrix<double, state_dim_, state_dim_>::Identity()) * dx_current).transpose();
 
         dx_current = K_r + (K_H - Eigen::Matrix<double, state_dim_, state_dim_>::Identity()) * dx_current;
+        }
 
+        {
+        ScopedPerfStage perf("ESKF State Update");
         // check nan
         for (int j = 0; j < state_dim_; ++j) {
             if (std::isnan(dx_current(j, 0))) {
@@ -293,27 +310,35 @@ void ESKF::Update(ESKF::ObsType obs, const double& R) {
         }
 
         last_x = x_;
-
-        // update last res
-        last_lidar_res = custom_obs_model_.lidar_residual_mean_;
-        custom_obs_model_.converge_ = true;
-
-        for (int j = 0; j < state_dim_; j++) {
-            if (std::fabs(dx_current[j]) > limit_[j]) {
-                custom_obs_model_.converge_ = false;
-                break;
-            }
         }
 
-        if (custom_obs_model_.converge_) {
-            converged_times++;
-        }
-
-        if (!converged_times && i == maximum_iter_ - 2) {
+        bool should_finish_update = false;
+        {
+            ScopedPerfStage perf("ESKF Convergence Check");
+            // update last res
+            last_lidar_res = custom_obs_model_.lidar_residual_mean_;
             custom_obs_model_.converge_ = true;
+
+            for (int j = 0; j < state_dim_; j++) {
+                if (std::fabs(dx_current[j]) > limit_[j]) {
+                    custom_obs_model_.converge_ = false;
+                    break;
+                }
+            }
+
+            if (custom_obs_model_.converge_) {
+                converged_times++;
+            }
+
+            if (!converged_times && i == maximum_iter_ - 2) {
+                custom_obs_model_.converge_ = true;
+            }
+
+            should_finish_update = converged_times > 0 || i == maximum_iter_ - 1;
         }
 
-        if (converged_times > 0 || i == maximum_iter_ - 1) {
+        if (should_finish_update) {
+            ScopedPerfStage perf("ESKF Covariance Update");
             /// 结束条件：已经收敛
             /// 更新P阵, using (45)
             L_ = P_;
@@ -351,8 +376,13 @@ void ESKF::Update(ESKF::ObsType obs, const double& R) {
             break;
         }
     }
+    }
 
-    SymmetrizeAndFloorCovariance(P_, options_.min_cov_diag_);
+    {
+        ScopedPerfStage perf("ESKF Covariance Update");
+        SymmetrizeAndFloorCovariance(P_, options_.min_cov_diag_);
+    }
+
 }
 
 }  // namespace lightning

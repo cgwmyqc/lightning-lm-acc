@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -132,6 +133,7 @@ void PerfMonitor::EndFrame(bool processed) {
         current_.snapshot.slam_fps = latest_.slam_fps;
     }
 
+    UpdateDerivedMetrics(current_.snapshot);
     current_.snapshot.stage_summaries = BuildStageSummaries();
     latest_ = current_.snapshot;
     current_.active = false;
@@ -213,17 +215,38 @@ void PerfMonitor::ApplyStageToSnapshot(PerfSnapshot& snapshot, const std::string
         snapshot.downsample_ms = ms;
     } else if (name == "ESKF Update total") {
         snapshot.eskf_update_ms = ms;
-    } else if (name == "ObsModel total") {
-        snapshot.obs_total_ms = ms;
+    } else if (name == "ESKF Iter Loop total") {
+        snapshot.iter_loop_total_ms += ms;
+    } else if (name == "ESKF ObsModel call" || name == "ObsModel total") {
+        snapshot.obs_total_ms += ms;
+        snapshot.obs_model_calls += 1;
     } else if (name == "ObsModel Lidar Match") {
-        snapshot.lidar_match_ms = ms;
+        snapshot.lidar_match_ms += ms;
+    } else if (name == "ObsModel iVox KNN Search") {
+        snapshot.ivox_knn_search_ms += ms;
+    } else if (name == "ObsModel Plane Fit") {
+        snapshot.plane_fit_ms += ms;
+    } else if (name == "ObsModel Valid Point Check") {
+        snapshot.valid_point_check_ms += ms;
     } else if (name == "Plane ICP HTH/HTr CPU" || name == "Plane ICP HTH/HTr CPU_SIM" ||
                name == "Plane ICP HTH/HTr FPGA" || name == "Plane ICP HTH/HTr FALLBACK_CPU") {
-        snapshot.plane_icp_ms = ms;
+        snapshot.plane_icp_ms += ms;
+    } else if (name == "Plane ICP Residual/Jacobian") {
+        snapshot.residual_jacobian_ms += ms;
+    } else if (name == "Plane ICP HTH/HTr Accumulate") {
+        snapshot.hth_htr_accumulate_ms += ms;
     } else if (name == "Point ICP CPU") {
-        snapshot.point_icp_ms = ms;
+        snapshot.point_icp_ms += ms;
     } else if (name == "Incremental Mapping") {
         snapshot.mapping_ms = ms;
+    } else if (name == "ESKF Solve Matrix") {
+        snapshot.solve_matrix_ms += ms;
+    } else if (name == "ESKF State Update") {
+        snapshot.state_update_ms += ms;
+    } else if (name == "ESKF Covariance Update") {
+        snapshot.covariance_update_ms += ms;
+    } else if (name == "ESKF Convergence Check") {
+        snapshot.convergence_check_ms += ms;
     } else if (name == "FPGA H2C") {
         snapshot.h2c_ms = ms;
     } else if (name == "FPGA Kernel") {
@@ -233,6 +256,18 @@ void PerfMonitor::ApplyStageToSnapshot(PerfSnapshot& snapshot, const std::string
     } else if (name == "FPGA Compare") {
         snapshot.compare_ms = ms;
     }
+}
+
+void PerfMonitor::UpdateDerivedMetrics(PerfSnapshot& snapshot) {
+    if (snapshot.obs_model_calls > 0) {
+        snapshot.obs_model_avg_ms = snapshot.obs_total_ms / static_cast<double>(snapshot.obs_model_calls);
+    }
+
+    const double obs_children_ms =
+        snapshot.lidar_match_ms + snapshot.plane_icp_ms + snapshot.point_icp_ms;
+    snapshot.obs_model_misc_ms = std::max(0.0, snapshot.obs_total_ms - obs_children_ms);
+
+    snapshot.eskf_misc_ms = std::max(0.0, snapshot.eskf_update_ms - snapshot.iter_loop_total_ms);
 }
 
 double PerfMonitor::ElapsedFps(uint64_t frames, Clock::time_point start_time, Clock::time_point now) {
@@ -253,9 +288,19 @@ std::string PerfMonitor::FormatProfileLine(const PerfSnapshot& snapshot) {
        << " skipped=" << snapshot.skipped_frames << " frame_total_ms=" << snapshot.frame_total_ms
        << " preprocess_ms=" << snapshot.preprocess_ms << " sync_ms=" << snapshot.sync_ms
        << " imu_undistort_ms=" << snapshot.imu_undistort_ms << " downsample_ms=" << snapshot.downsample_ms
-       << " eskf_update_ms=" << snapshot.eskf_update_ms << " obs_total_ms=" << snapshot.obs_total_ms
-       << " lidar_match_ms=" << snapshot.lidar_match_ms << " plane_icp_ms=" << snapshot.plane_icp_ms
-       << " point_icp_ms=" << snapshot.point_icp_ms << " mapping_ms=" << snapshot.mapping_ms
+       << " eskf_update_ms=" << snapshot.eskf_update_ms << " iter_loop_total_ms=" << snapshot.iter_loop_total_ms
+       << " obs_total_ms=" << snapshot.obs_total_ms << " obs_model_calls=" << snapshot.obs_model_calls
+       << " obs_model_avg_ms=" << snapshot.obs_model_avg_ms << " lidar_match_ms=" << snapshot.lidar_match_ms
+       << " ivox_knn_search_ms=" << snapshot.ivox_knn_search_ms << " plane_fit_ms=" << snapshot.plane_fit_ms
+       << " valid_point_check_ms=" << snapshot.valid_point_check_ms << " plane_icp_ms=" << snapshot.plane_icp_ms
+       << " residual_jacobian_ms=" << snapshot.residual_jacobian_ms
+       << " hth_htr_accumulate_ms=" << snapshot.hth_htr_accumulate_ms
+       << " point_icp_ms=" << snapshot.point_icp_ms << " solve_matrix_ms=" << snapshot.solve_matrix_ms
+       << " state_update_ms=" << snapshot.state_update_ms
+       << " covariance_update_ms=" << snapshot.covariance_update_ms
+       << " convergence_check_ms=" << snapshot.convergence_check_ms
+       << " eskf_misc_ms=" << snapshot.eskf_misc_ms << " obs_model_misc_ms=" << snapshot.obs_model_misc_ms
+       << " mapping_ms=" << snapshot.mapping_ms
        << " lidar_fps=" << snapshot.input_fps << " slam_throughput_fps=" << snapshot.slam_fps
        << " processing_fps=" << snapshot.processing_fps
        << " input_points=" << snapshot.input_points << " downsampled_points=" << snapshot.downsampled_points
@@ -279,10 +324,16 @@ void PerfMonitor::AppendCsvRow(const PerfSnapshot& snapshot) {
         << snapshot.input_points << "," << snapshot.downsampled_points << "," << snapshot.effective_surface_points
         << "," << snapshot.effective_icp_points << "," << snapshot.frame_total_ms << "," << snapshot.preprocess_ms
         << "," << snapshot.sync_ms << "," << snapshot.imu_undistort_ms << "," << snapshot.downsample_ms << ","
-        << snapshot.eskf_update_ms << "," << snapshot.obs_total_ms << "," << snapshot.lidar_match_ms << ","
-        << snapshot.plane_icp_ms << "," << snapshot.point_icp_ms << "," << snapshot.mapping_ms << ","
-        << snapshot.h2c_ms << "," << snapshot.kernel_ms << "," << snapshot.c2h_ms << "," << snapshot.compare_ms
-        << "," << snapshot.fallback_count << "," << snapshot.processing_fps << "\n";
+        << snapshot.eskf_update_ms << "," << snapshot.iter_loop_total_ms << "," << snapshot.obs_total_ms << ","
+        << snapshot.obs_model_calls << "," << snapshot.obs_model_avg_ms << "," << snapshot.lidar_match_ms << ","
+        << snapshot.ivox_knn_search_ms << "," << snapshot.plane_fit_ms << "," << snapshot.valid_point_check_ms
+        << "," << snapshot.plane_icp_ms << "," << snapshot.residual_jacobian_ms << ","
+        << snapshot.hth_htr_accumulate_ms << "," << snapshot.point_icp_ms << "," << snapshot.solve_matrix_ms
+        << "," << snapshot.state_update_ms << "," << snapshot.covariance_update_ms << ","
+        << snapshot.convergence_check_ms << "," << snapshot.eskf_misc_ms << "," << snapshot.obs_model_misc_ms
+        << "," << snapshot.mapping_ms << "," << snapshot.h2c_ms << "," << snapshot.kernel_ms << ","
+        << snapshot.c2h_ms << "," << snapshot.compare_ms << "," << snapshot.fallback_count << ","
+        << snapshot.processing_fps << "\n";
 }
 
 void PerfMonitor::EnsureCsvHeader() {
@@ -300,19 +351,32 @@ void PerfMonitor::EnsureCsvHeader() {
         }
     }
 
+    const char* header =
+        "frame_id,timestamp,backend,input_frames,processed_frames,skipped_frames,input_fps,slam_fps,"
+        "input_points,downsampled_points,effective_surface_points,effective_icp_points,frame_total_ms,"
+        "preprocess_ms,sync_ms,imu_undistort_ms,downsample_ms,eskf_update_ms,iter_loop_total_ms,"
+        "obs_total_ms,obs_model_calls,obs_model_avg_ms,lidar_match_ms,ivox_knn_search_ms,plane_fit_ms,"
+        "valid_point_check_ms,plane_icp_ms,residual_jacobian_ms,hth_htr_accumulate_ms,point_icp_ms,"
+        "solve_matrix_ms,state_update_ms,covariance_update_ms,convergence_check_ms,eskf_misc_ms,"
+        "obs_model_misc_ms,mapping_ms,h2c_ms,kernel_ms,c2h_ms,compare_ms,fallback_count,processing_fps\n";
+
     const bool exists = std::filesystem::exists(csv_path) && std::filesystem::file_size(csv_path) > 0;
+    bool needs_header = !exists;
+    if (exists) {
+        std::ifstream ifs(config_.csv_path);
+        std::string first_line;
+        std::getline(ifs, first_line);
+        needs_header = first_line.find("iter_loop_total_ms") == std::string::npos;
+    }
+
     std::ofstream ofs(config_.csv_path, std::ios::out | std::ios::app);
     if (!ofs.is_open()) {
         LOG(ERROR) << "Failed to open profile csv: " << config_.csv_path;
         return;
     }
 
-    if (!exists) {
-        ofs << "frame_id,timestamp,backend,input_frames,processed_frames,skipped_frames,input_fps,slam_fps,"
-               "input_points,downsampled_points,effective_surface_points,effective_icp_points,frame_total_ms,"
-               "preprocess_ms,sync_ms,imu_undistort_ms,downsample_ms,eskf_update_ms,obs_total_ms,lidar_match_ms,"
-               "plane_icp_ms,point_icp_ms,mapping_ms,h2c_ms,kernel_ms,c2h_ms,compare_ms,fallback_count,"
-               "processing_fps\n";
+    if (needs_header) {
+        ofs << header;
     }
     if (!g_csv_path_logged) {
         LOG(INFO) << "[profile] csv writing to " << config_.csv_path;

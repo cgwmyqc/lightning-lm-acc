@@ -42,11 +42,25 @@ struct PerfSnapshot {
     double imu_undistort_ms = 0.0;
     double downsample_ms = 0.0;
     double eskf_update_ms = 0.0;
+    double iter_loop_total_ms = 0.0;
     double obs_total_ms = 0.0;
+    uint64_t obs_model_calls = 0;
+    double obs_model_avg_ms = 0.0;
     double lidar_match_ms = 0.0;
+    double ivox_knn_search_ms = 0.0;
+    double plane_fit_ms = 0.0;
+    double valid_point_check_ms = 0.0;
     double plane_icp_ms = 0.0;
+    double residual_jacobian_ms = 0.0;
+    double hth_htr_accumulate_ms = 0.0;
     double point_icp_ms = 0.0;
     double mapping_ms = 0.0;
+    double solve_matrix_ms = 0.0;
+    double state_update_ms = 0.0;
+    double covariance_update_ms = 0.0;
+    double convergence_check_ms = 0.0;
+    double eskf_misc_ms = 0.0;
+    double obs_model_misc_ms = 0.0;
 
     double h2c_ms = 0.0;
     double kernel_ms = 0.0;
@@ -99,6 +113,7 @@ class PerfMonitor {
 
     static double ToMs(Clock::duration duration);
     static void ApplyStageToSnapshot(PerfSnapshot& snapshot, const std::string& name, double ms);
+    static void UpdateDerivedMetrics(PerfSnapshot& snapshot);
     static double ElapsedFps(uint64_t frames, Clock::time_point start_time, Clock::time_point now);
     static std::string FormatProfileLine(const PerfSnapshot& snapshot);
     static void AppendCsvRow(const PerfSnapshot& snapshot);
