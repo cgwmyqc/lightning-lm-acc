@@ -25,11 +25,20 @@ if (OPENMP_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif ()
 
+string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" LIGHTNING_TARGET_PROCESSOR)
+message(STATUS "Target processor: ${CMAKE_SYSTEM_PROCESSOR}")
+
 if (BUILD_WITH_MARCH_NATIVE)
     add_compile_options(-march=native)
-else ()
+    message(STATUS "Enable -march=native: ON")
+elseif (LIGHTNING_TARGET_PROCESSOR MATCHES "^(x86_64|amd64|i386|i686)$")
     add_definitions(-msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2")
+    message(STATUS "Enable x86 SSE flags: ON")
+elseif (LIGHTNING_TARGET_PROCESSOR MATCHES "^(aarch64|arm64|armv7|armv7l)$")
+    message(STATUS "Enable x86 SSE flags: OFF")
+else ()
+    message(STATUS "Enable x86 SSE flags: OFF")
 endif ()
 
 include_directories(
@@ -68,4 +77,3 @@ set(third_party_libs
         tbb
         ${rosbag2_cpp_LIBRARIES}
 )
-
