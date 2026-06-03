@@ -222,9 +222,9 @@ void PerfMonitor::ApplyStageToSnapshot(PerfSnapshot& snapshot, const std::string
         snapshot.obs_model_calls += 1;
     } else if (name == "ObsModel Lidar Match") {
         snapshot.lidar_match_ms += ms;
-    } else if (name == "ObsModel iVox KNN Search") {
+    } else if (name == "ObsModel iVox KNN Search" || name == "ObsModel iVox KNN Fallback") {
         snapshot.ivox_knn_search_ms += ms;
-    } else if (name == "ObsModel Plane Fit") {
+    } else if (name == "ObsModel Plane Fit" || name == "ObsModel Plane Fit Fallback") {
         snapshot.plane_fit_ms += ms;
     } else if (name == "ObsModel Valid Point Check") {
         snapshot.valid_point_check_ms += ms;

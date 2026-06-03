@@ -10,6 +10,7 @@
 #include "common/imu.h"
 #include "common/keyframe.h"
 #include "common/options.h"
+#include "core/block_surfel_map/block_surfel_map.h"
 #include "core/ivox3d/ivox3d.h"
 #include "core/lio/eskf.hpp"
 #include "core/lio/imu_processing.hpp"
@@ -47,6 +48,10 @@ class LaserMapping {
 
         bool proj_kfs_ = false;
         int max_proj_kfs_ = 5;
+
+        bool enable_surfel_map_ = true;
+        std::string surfel_fallback_mode_ = "ivox";
+        double surfel_fallback_warn_ratio_ = 0.05;
     };
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -148,6 +153,8 @@ class LaserMapping {
     /// modules
     IVoxType::Options ivox_options_;
     std::shared_ptr<IVoxType> ivox_ = nullptr;                    // localmap in ivox
+    BlockSurfelMapOptions surfel_map_options_;
+    std::shared_ptr<BlockSurfelMap> surfel_map_ = nullptr;
     std::shared_ptr<PointCloudPreprocess> preprocess_ = nullptr;  // point cloud preprocess
     std::shared_ptr<ImuProcess> p_imu_ = nullptr;                 // imu process
 
@@ -178,6 +185,7 @@ class LaserMapping {
     std::vector<float> residuals_;             // point-to-plane residuals
     std::vector<char> point_selected_surf_;    // selected points
     std::vector<Vec4f> plane_coef_;            // plane coeffs
+    std::vector<SurfelCorrespondence, Eigen::aligned_allocator<SurfelCorrespondence>> surfel_corr_;
 
     /// 点到点相关
     std::vector<char> point_selected_icp_;  // 点到点的selected points
@@ -209,6 +217,8 @@ class LaserMapping {
     double lidar_mean_scantime_ = 0.0;
     int scan_num_ = 0;
     int effect_feat_surf_ = 0, frame_num_ = 0, effect_feat_icp_ = 0;
+    int surfel_hit_num_ = 0, surfel_fallback_num_ = 0;
+    SurfelLookupStats surfel_lookup_stats_;
 
     double last_lidar_time_ = 0;
 

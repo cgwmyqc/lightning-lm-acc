@@ -24,6 +24,9 @@ bool LaserMapping::Init(const std::string &config_yaml) {
 
     // localmap init (after LoadParams)
     ivox_ = std::make_shared<IVoxType>(ivox_options_);
+    if (options_.enable_surfel_map_) {
+        surfel_map_ = std::make_shared<BlockSurfelMap>(surfel_map_options_);
+    }
 
     // esekf init
     ESKF::Options eskf_options;
@@ -64,6 +67,10 @@ bool LaserMapping::LoadParamsFromYAML(const std::string &yaml_file) {
         extrinR_ = yaml["fasterlio"]["extrinsic_R"].as<std::vector<double>>();
 
         ivox_options_.resolution_ = yaml["fasterlio"]["ivox_grid_resolution"].as<float>();
+        surfel_map_options_.cell_resolution = ivox_options_.resolution_;
+        if (yaml["fasterlio"]["surfel_cell_resolution"]) {
+            surfel_map_options_.cell_resolution = yaml["fasterlio"]["surfel_cell_resolution"].as<float>();
+        }
         ivox_nearby_type = yaml["fasterlio"]["ivox_nearby_type"].as<int>();
         use_aa_ = yaml["fasterlio"]["use_aa"].as<bool>();
 
@@ -80,6 +87,27 @@ bool LaserMapping::LoadParamsFromYAML(const std::string &yaml_file) {
         options_.enable_icp_part_ = yaml["fasterlio"]["enable_icp_part"].as<bool>();
         options_.min_pts = yaml["fasterlio"]["min_pts"].as<int>();
         options_.plane_icp_weight_ = yaml["fasterlio"]["plane_icp_weight"].as<float>();
+        if (yaml["fasterlio"]["enable_surfel_map"]) {
+            options_.enable_surfel_map_ = yaml["fasterlio"]["enable_surfel_map"].as<bool>();
+        }
+        if (yaml["fasterlio"]["surfel_min_support"]) {
+            surfel_map_options_.min_support = yaml["fasterlio"]["surfel_min_support"].as<int>();
+        }
+        if (yaml["fasterlio"]["surfel_quality_max"]) {
+            surfel_map_options_.quality_max = yaml["fasterlio"]["surfel_quality_max"].as<float>();
+        }
+        if (yaml["fasterlio"]["surfel_block_capacity"]) {
+            surfel_map_options_.block_capacity = yaml["fasterlio"]["surfel_block_capacity"].as<size_t>();
+        }
+        if (yaml["fasterlio"]["surfel_lookup_nearby_type"]) {
+            surfel_map_options_.lookup_nearby_type = yaml["fasterlio"]["surfel_lookup_nearby_type"].as<int>();
+        }
+        if (yaml["fasterlio"]["surfel_fallback_mode"]) {
+            options_.surfel_fallback_mode_ = yaml["fasterlio"]["surfel_fallback_mode"].as<std::string>();
+        }
+        if (yaml["fasterlio"]["surfel_fallback_warn_ratio"]) {
+            options_.surfel_fallback_warn_ratio_ = yaml["fasterlio"]["surfel_fallback_warn_ratio"].as<double>();
+        }
 
         bool use_imu_filter = yaml["fasterlio"]["imu_filter"].as<bool>();
         p_imu_->SetUseIMUFilter(use_imu_filter);
@@ -199,6 +227,9 @@ bool LaserMapping::Run() {
             PointBodyToWorld(scan_undistort_->points[i], scan_down_world_->points[i]);
         }
         ivox_->AddPoints(scan_down_world_->points);
+        if (surfel_map_) {
+            surfel_map_->Initialize(scan_down_world_->points);
+        }
 
         first_lidar_time_ = measures_.lidar_end_time_;
         state_point_.timestamp_ = lidar_end_time_;
@@ -273,6 +304,7 @@ bool LaserMapping::Run() {
     point_selected_surf_.resize(cur_pts, 1);
     point_selected_icp_.resize(cur_pts, 1);
     plane_coef_.resize(cur_pts, Vec4f::Zero());
+    surfel_corr_.resize(cur_pts);
 
     auto pred_state = kf_.GetX();
     // pred_state.pos_ = state_point_.pos_;  // 假定位置不动行不行,防止速度漂移
@@ -293,8 +325,12 @@ bool LaserMapping::Run() {
     const double current_speed = state_point_.vel_.norm();
 
     LOG(INFO) << "[ mapping ]: In num: " << scan_undistort_->points.size() << " down " << cur_pts
-              << " Map grid num: " << ivox_->NumValidGrids() << " effect num : " << effect_feat_surf_ << ", "
-              << effect_feat_icp_;
+              << " Map grid num: " << ivox_->NumValidGrids()
+              << (surfel_map_ ? " surfel blocks: " + std::to_string(surfel_map_->NumBlocks()) +
+                                     " valid surfels: " + std::to_string(surfel_map_->NumValidSurfels())
+                               : "")
+              << " effect num : " << effect_feat_surf_ << ", " << effect_feat_icp_
+              << " surfel hit/fallback: " << surfel_hit_num_ << "/" << surfel_fallback_num_;
     LOG(INFO) << "delta trans: " << (pred_state.pos_ - state_point_.pos_).transpose()
               << ", ang: " << delta_rotation_deg;
     // LOG(INFO) << "P diag: " << kf_.GetP().diagonal().transpose();
@@ -570,10 +606,12 @@ bool LaserMapping::SyncPackages() {
 void LaserMapping::MapIncremental() {
     PointVector points_to_add;
     PointVector point_no_need_downsample;
+    PointVector surfel_points_to_update;
 
     size_t cur_pts = scan_down_body_->size();
     points_to_add.reserve(cur_pts);
     point_no_need_downsample.reserve(cur_pts);
+    surfel_points_to_update.reserve(cur_pts);
 
     std::vector<size_t> index(cur_pts);
     for (size_t i = 0; i < cur_pts; ++i) {
@@ -586,6 +624,9 @@ void LaserMapping::MapIncremental() {
 
         /* decide if need add to map */
         PointType &point_world = scan_down_world_->points[i];
+        if (surfel_map_) {
+            surfel_points_to_update.emplace_back(point_world);
+        }
         if (!nearest_points_[i].empty() && flg_EKF_inited_) {
             const PointVector &points_near = nearest_points_[i];
 
@@ -624,8 +665,11 @@ void LaserMapping::MapIncremental() {
         [&, this]() {
             ivox_->AddPoints(points_to_add);
             ivox_->AddPoints(point_no_need_downsample);
+            if (surfel_map_) {
+                surfel_map_->BatchUpdate(surfel_points_to_update);
+            }
         },
-        "    IVox Add Points");
+        "    Local Map Add Points");
 }
 
 /**
@@ -652,7 +696,7 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
             Vec3f t_wl = (s.rot_ * offset_t_lidar_fixed_ + s.pos_).cast<float>();
 
             {
-                ScopedPerfStage perf("ObsModel iVox KNN Search");
+                ScopedPerfStage perf("ObsModel Surfel Lookup");
                 std::for_each(std::execution::par_unseq, index.begin(), index.end(), [&](const size_t &i) {
                     PointType &point_body = scan_down_body_->points[i];
                     PointType &point_world = scan_down_world_->points[i];
@@ -664,8 +708,42 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
 
                     auto &points_near = nearest_points_[i];
                     points_near.clear();
+                    residuals_[i] = 0.0f;
+                    plane_coef_[i] = Vec4f::Zero();
+                    surfel_corr_[i] = SurfelCorrespondence();
+                    point_selected_surf_[i] = false;
+                    point_selected_icp_[i] = false;
 
-                    /** Find the closest surfaces in the map **/
+                    if (surfel_map_ && surfel_map_->LookupSurfel(point_world, surfel_corr_[i])) {
+                        plane_coef_[i] = surfel_corr_[i].plane;
+                        PointType centroid;
+                        centroid.x = surfel_corr_[i].centroid.x();
+                        centroid.y = surfel_corr_[i].centroid.y();
+                        centroid.z = surfel_corr_[i].centroid.z();
+                        centroid.intensity = point_body.intensity;
+                        centroid.time = point_body.time;
+                        points_near.emplace_back(centroid);
+                        point_selected_surf_[i] = true;
+                        point_selected_icp_[i] = true;
+                    } else {
+                        surfel_corr_[i].fallback = true;
+                        if (surfel_map_) {
+                            surfel_map_->EnqueueFallback(point_world);
+                        }
+                    }
+                });
+            }
+
+            if (!surfel_map_ || options_.surfel_fallback_mode_ == "ivox") {
+                ScopedPerfStage perf("ObsModel iVox KNN Fallback");
+                std::for_each(std::execution::par_unseq, index.begin(), index.end(), [&](const size_t &i) {
+                    if (!surfel_corr_[i].fallback) {
+                        return;
+                    }
+                    PointType &point_world = scan_down_world_->points[i];
+                    auto &points_near = nearest_points_[i];
+                    points_near.clear();
+
                     ivox_->GetClosestPoint(point_world, points_near, fasterlio::NUM_MATCH_POINTS);
                     point_selected_surf_[i] = points_near.size() >= fasterlio::MIN_NUM_MATCH_POINTS;
                     point_selected_icp_[i] = point_selected_surf_[i];
@@ -673,10 +751,10 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
             }
 
             {
-                ScopedPerfStage perf("ObsModel Plane Fit");
+                ScopedPerfStage perf("ObsModel Plane Fit Fallback");
                 std::for_each(std::execution::par_unseq, index.begin(), index.end(), [&](const size_t &i) {
                     /// 能找到3个点以上，则估计平面
-                    if (point_selected_surf_[i]) {
+                    if (point_selected_surf_[i] && surfel_corr_[i].fallback) {
                         point_selected_surf_[i] =
                             math::esti_plane(plane_coef_[i], nearest_points_[i], fasterlio::ESTI_PLANE_THRESHOLD);
                     }
@@ -706,6 +784,54 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
             }
         },
         "    ObsModel (Lidar Match)");
+
+    surfel_hit_num_ = 0;
+    surfel_fallback_num_ = 0;
+    surfel_lookup_stats_ = SurfelLookupStats();
+    for (int i = 0; i < cnt_pts; ++i) {
+        if (surfel_corr_[i].valid && !surfel_corr_[i].fallback) {
+            ++surfel_hit_num_;
+            if (surfel_corr_[i].hit_neighbor) {
+                ++surfel_lookup_stats_.hit_neighbor;
+            } else {
+                ++surfel_lookup_stats_.hit_exact;
+            }
+        }
+        if (surfel_corr_[i].fallback) {
+            ++surfel_fallback_num_;
+            switch (surfel_corr_[i].miss_reason) {
+                case SurfelMissReason::NO_BLOCK:
+                    ++surfel_lookup_stats_.miss_no_block;
+                    break;
+                case SurfelMissReason::EMPTY_CELL:
+                    ++surfel_lookup_stats_.miss_empty_cell;
+                    break;
+                case SurfelMissReason::SUPPORT_LOW:
+                    ++surfel_lookup_stats_.miss_support_low;
+                    break;
+                case SurfelMissReason::QUALITY_BAD:
+                    ++surfel_lookup_stats_.miss_quality_bad;
+                    break;
+                case SurfelMissReason::NONE:
+                default:
+                    break;
+            }
+        }
+    }
+    if (surfel_map_ && cnt_pts > 0) {
+        const double fallback_ratio = static_cast<double>(surfel_fallback_num_) / static_cast<double>(cnt_pts);
+        LOG(INFO) << "surfel stats exact=" << surfel_lookup_stats_.hit_exact
+                  << " neighbor=" << surfel_lookup_stats_.hit_neighbor
+                  << " no_block=" << surfel_lookup_stats_.miss_no_block
+                  << " empty=" << surfel_lookup_stats_.miss_empty_cell
+                  << " support_low=" << surfel_lookup_stats_.miss_support_low
+                  << " quality_bad=" << surfel_lookup_stats_.miss_quality_bad
+                  << " fallback=" << surfel_fallback_num_ << "/" << cnt_pts;
+        if (fallback_ratio > options_.surfel_fallback_warn_ratio_) {
+            LOG(WARNING) << "Surfel fallback ratio is high: " << fallback_ratio << " fallback "
+                         << surfel_fallback_num_ << "/" << cnt_pts;
+        }
+    }
 
     effect_feat_surf_ = 0;
     effect_feat_icp_ = 0;
