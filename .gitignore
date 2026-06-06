@@ -10,3 +10,50 @@ bin
 
 **cmake-build-debug**
 **cmake-build-release**
+
+# Vivado generated files
+*.jou
+*.log
+*.str
+*.dmp
+*.backup
+*.wdb
+*.wcfg
+
+# Vivado project generated dirs
+*.cache/
+*.runs/
+*.sim/
+*.hw/
+*.ip_user_files/
+*.gen/
+.Xil/
+
+# HLS generated dirs
+solution*/
+.sim/
+.syn/
+.impl/
+.tb/
+csim/
+csynth/
+vitis_hls.log
+vivado_hls.log
+
+# Bitstream / hardware export - optional
+*.bit
+*.ltx
+*.hwh
+*.xsa
+
+# Large golden data
+/tmp/
+fpga/golden/
+fpga/golden_large/
+*.bag
+*.db3
+
+# Zip archives
+*.zip
+*.7z
+*.tar.gz
