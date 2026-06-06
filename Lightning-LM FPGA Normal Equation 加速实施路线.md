@@ -1,8 +1,95 @@
 # Lightning-LM FPGA Normal Equation 加速实施路线
 
-## 1. 当前项目目录约定
+## 1. 当前目标
 
-当前项目根目录为：
+本项目基于当前已经改造好的 Lightning-LM surfel 版本，继续实现 FPGA 协处理器加速。
+
+当前 Lightning-LM 已具备：
+
+```text
+1. BlockSurfelMap
+2. surfel 主路径 + iVox fallback
+3. surfel_min_support: 3
+4. surfel_cell_resolution: 0.8
+5. surfel_lookup_nearby_type: 26
+6. surfel fallback ratio 已经降到可接受范围
+```
+
+第一阶段 FPGA 目标为：
+
+```text
+P0：加速 surfel 命中点的 residual / Jacobian / HTH-HTr 累加
+```
+
+第一阶段不做：
+
+```text
+1. 不做完整 SLAM
+2. 不做 iVox KNN
+3. 不做 surfel map lookup
+4. 不做 ESKF solve
+5. 不做地图更新
+6. 不做 fixed-point
+7. 不做多 lane 并行优化
+```
+
+第一阶段的核心原则：
+
+```text
+CPU 负责找对应关系；
+FPGA 负责数值累加；
+CPU 继续做 ESKF 更新。
+```
+
+------
+
+## 2. Git 开发策略
+
+本项目统一在一个分支上开发：
+
+```bash
+dev
+```
+
+所有 Orin 端、Windows HLS 端、Vivado 端修改都在 `dev` 分支完成。
+
+推荐两端工作前都执行：
+
+```bash
+git checkout dev
+git pull
+git status
+```
+
+每次完成一个小阶段后及时提交：
+
+```bash
+git add .
+git commit -m "说明本次修改"
+git push
+```
+
+------
+
+## 3. 为什么统一使用 dev 分支
+
+当前项目由同一人同时在 AGX Orin 和 Windows 上开发。统一使用 `dev` 分支的好处是：
+
+```text
+1. Orin 改了接口，Windows pull 后马上能看到。
+2. Windows 改了 HLS/testbench，Orin pull 后马上能看到。
+3. 不需要在多个分支之间 merge。
+4. INTERFACE_SPEC.md、GOLDEN_DATA_FORMAT.md、fpga_types.h 能保持同步。
+5. Codex 不容易拿到旧接口。
+```
+
+虽然统一使用 `dev` 分支，但仍然必须严格保持目录边界，避免 Orin 端和 Windows 端互相污染。
+
+------
+
+## 4. 当前项目目录约定
+
+当前项目根目录结构：
 
 ```text
 lightning-lm-acc/
@@ -20,14 +107,14 @@ lightning-lm-acc/
 └── .git/
 ```
 
-建议新增：
+新增 FPGA 相关目录后，推荐结构：
 
 ```text
 lightning-lm-acc/
 ├── src/
-│   └── fpga/                         # Orin 端会参与 Lightning-LM 编译的 C++ FPGA 后端
+│   └── fpga/                         # Orin 端参与 Lightning-LM 编译的 C++ FPGA 后端
 │
-└── fpga/                             # 新增：FPGA 工程、文档、HLS、Vivado、host_tools
+└── fpga/                             # FPGA 相关工程、文档、HLS、Vivado、测试工具
     ├── docs/
     ├── hls/
     ├── vivado/
@@ -36,94 +123,207 @@ lightning-lm-acc/
     └── README.md
 ```
 
-目录职责如下：
+------
+
+## 5. 各目录职责
+
+### 5.1 `src/fpga/`
+
+该目录放 Orin 端会参与 Lightning-LM 主程序编译的 C++ 代码。
+
+建议文件：
 
 ```text
 src/fpga/
-  Orin 端 C++ 代码，会被 Lightning-LM 主程序编译。
-  例如 NormalEquationBackend、CpuBackend、FpgaBackend、XDMA runtime、golden writer。
+├── fpga_types.h
+├── normal_equation_backend.h
+├── cpu_normal_equation_backend.h
+├── cpu_normal_equation_backend.cc
+├── fpga_normal_equation_backend.h
+├── fpga_normal_equation_backend.cc
+├── fpga_golden_writer.h
+├── fpga_golden_writer.cc
+├── xdma_user.h
+└── xdma_user.cc
+```
 
+职责：
+
+```text
+1. 定义 CPU/FPGA 共用数据结构
+2. 定义 NormalEquationBackend 抽象接口
+3. 实现 CPU backend
+4. 实现 FPGA backend
+5. 生成 golden data
+6. 封装 XDMA 用户态读写
+```
+
+------
+
+### 5.2 `fpga/docs/`
+
+两端共用文档目录。
+
+建议文件：
+
+```text
 fpga/docs/
-  两端共用文档，给 Codex、人、Orin、Windows HLS 统一接口。
+├── FPGA_NORMAL_EQ_IMPLEMENTATION_ROADMAP.md
+├── INTERFACE_SPEC.md
+├── GOLDEN_DATA_FORMAT.md
+├── BUILD_AND_TEST.md
+└── CURRENT_STATUS.md
+```
 
+职责：
+
+```text
+1. 记录总体路线
+2. 固定 CPU/FPGA 接口
+3. 固定 golden 文件格式
+4. 记录构建和测试方法
+5. 记录当前开发状态
+```
+
+所有接口变化必须先更新：
+
+```text
+fpga/docs/INTERFACE_SPEC.md
+fpga/docs/GOLDEN_DATA_FORMAT.md
+fpga/docs/CURRENT_STATUS.md
+```
+
+------
+
+### 5.3 `fpga/hls/`
+
+Windows 端 HLS 工程目录。
+
+建议结构：
+
+```text
 fpga/hls/
-  Windows 端 HLS 加速核工程。
+└── normal_eq_accel/
+    ├── normal_eq_accel.h
+    ├── normal_eq_accel.cpp
+    ├── testbench.cpp
+    ├── run_csim.tcl
+    ├── run_csynth.tcl
+    ├── export_ip.tcl
+    └── README.md
+```
 
+职责：
+
+```text
+1. 实现 HLS normal_eq_accel 内核
+2. 实现 HLS C simulation testbench
+3. 读取 Orin 导出的 golden data
+4. 输出 H_upper[21]、b[6]
+5. 和 CPU golden 结果对齐
+6. 导出 HLS IP
+```
+
+------
+
+### 5.4 `fpga/vivado/`
+
+Vivado 工程脚本目录。
+
+建议结构：
+
+```text
 fpga/vivado/
-  Vivado 工程脚本、BD 重建脚本、约束文件、IP repo，不放大量自动生成文件。
+├── README.md
+├── scripts/
+│   ├── create_project.tcl
+│   ├── build_bitstream.tcl
+│   └── export_hardware.tcl
+├── constraints/
+│   └── top.xdc
+├── bd/
+│   └── design_1_bd.tcl
+└── ip_repo/
+    └── normal_eq_accel/
+```
 
+职责：
+
+```text
+1. 保存 Vivado 工程重建脚本
+2. 保存 BD 脚本
+3. 保存 XDC 约束
+4. 保存 HLS 导出的 IP repo
+5. 记录地址映射和寄存器偏移
+```
+
+不要提交 Vivado 自动生成目录。
+
+------
+
+### 5.5 `fpga/host_tools/`
+
+Orin 端独立测试工具目录。
+
+建议结构：
+
+```text
 fpga/host_tools/
-  Orin 端独立测试工具，例如 normal_eq_replay、xdma_test。
+├── normal_eq_replay/
+│   ├── CMakeLists.txt
+│   ├── normal_eq_replay.cpp
+│   └── README.md
+└── xdma_test/
+    ├── CMakeLists.txt
+    ├── xdma_basic_test.cpp
+    └── README.md
+```
 
+职责：
+
+```text
+1. 不启动 ROS2，也能测试 golden -> FPGA -> result
+2. 独立测试 XDMA H2C / C2H / user BAR
+3. 对比 CPU/FPGA HTH-HTr 误差
+```
+
+------
+
+### 5.6 `fpga/golden_small/`
+
+少量小 golden 文件目录。
+
+```text
 fpga/golden_small/
-  少量小 golden 文件，可提交 Git，用于 HLS testbench 回归。
+├── README.md
+└── frame_000100.bin
 ```
 
----
-
-## 2. Git 分支约定
-
-当前采用双分支开发：
+职责：
 
 ```text
-dev_orin:
-  AGX Orin 端开发分支。
-
-dev_win_hls:
-  Windows HLS / Vivado 端开发分支。
+1. 保存少量小型 golden 文件
+2. 用于 Windows HLS testbench 回归
+3. 可以提交 Git
 ```
 
-### 2.1 dev_orin 分支职责
-
-`dev_orin` 主要修改：
+大 golden 文件不要提交 Git，应放在：
 
 ```text
-src/
-config/
-cmake/
-scripts/
-fpga/docs/
-fpga/host_tools/
+/tmp/lightning_fpga_golden/
+fpga/golden_large/
 ```
 
-`dev_orin` 不应修改：
+并由 `.gitignore` 忽略。
 
-```text
-fpga/hls/
-fpga/vivado/
-```
+------
 
-除非只是同步接口文档。
+## 6. 目录创建命令
 
-### 2.2 dev_win_hls 分支职责
-
-`dev_win_hls` 主要修改：
-
-```text
-fpga/hls/
-fpga/vivado/
-fpga/docs/
-fpga/golden_small/
-```
-
-`dev_win_hls` 不应修改：
-
-```text
-src/
-config/
-cmake/
-ROS2 主工程逻辑
-```
-
-除非只是同步接口文档。
-
----
-
-## 3. 推荐新增目录
-
-在项目根目录执行：
+Linux / Orin：
 
 ```bash
+mkdir -p src/fpga
 mkdir -p fpga/docs
 mkdir -p fpga/hls/normal_eq_accel
 mkdir -p fpga/vivado/scripts
@@ -133,12 +333,12 @@ mkdir -p fpga/vivado/ip_repo
 mkdir -p fpga/host_tools/normal_eq_replay
 mkdir -p fpga/host_tools/xdma_test
 mkdir -p fpga/golden_small
-mkdir -p src/fpga
 ```
 
-Windows PowerShell 等价：
+Windows PowerShell：
 
 ```powershell
+mkdir src\fpga
 mkdir fpga
 mkdir fpga\docs
 mkdir fpga\hls
@@ -152,82 +352,65 @@ mkdir fpga\host_tools
 mkdir fpga\host_tools\normal_eq_replay
 mkdir fpga\host_tools\xdma_test
 mkdir fpga\golden_small
-mkdir src\fpga
 ```
 
----
+------
 
-## 4. 推荐最终目录结构
+## 7. 单分支下的目录边界
+
+虽然统一使用 `dev` 分支，但 Orin 和 Windows 仍然按目录分工。
+
+### 7.1 Orin 端主要修改
+
+Orin 端主要允许修改：
 
 ```text
-lightning-lm-acc/
-├── src/
-│   ├── ...
-│   └── fpga/
-│       ├── fpga_types.h
-│       ├── normal_equation_backend.h
-│       ├── cpu_normal_equation_backend.h
-│       ├── cpu_normal_equation_backend.cc
-│       ├── fpga_normal_equation_backend.h
-│       ├── fpga_normal_equation_backend.cc
-│       ├── fpga_golden_writer.h
-│       ├── fpga_golden_writer.cc
-│       ├── xdma_user.h
-│       └── xdma_user.cc
-│
-├── fpga/
-│   ├── README.md
-│   │
-│   ├── docs/
-│   │   ├── FPGA_NORMAL_EQ_IMPLEMENTATION_ROADMAP.md
-│   │   ├── INTERFACE_SPEC.md
-│   │   ├── GOLDEN_DATA_FORMAT.md
-│   │   ├── BUILD_AND_TEST.md
-│   │   └── CURRENT_STATUS.md
-│   │
-│   ├── hls/
-│   │   └── normal_eq_accel/
-│   │       ├── normal_eq_accel.h
-│   │       ├── normal_eq_accel.cpp
-│   │       ├── testbench.cpp
-│   │       ├── run_csim.tcl
-│   │       ├── run_csynth.tcl
-│   │       ├── export_ip.tcl
-│   │       └── README.md
-│   │
-│   ├── vivado/
-│   │   ├── README.md
-│   │   ├── scripts/
-│   │   │   ├── create_project.tcl
-│   │   │   ├── build_bitstream.tcl
-│   │   │   └── export_hardware.tcl
-│   │   ├── constraints/
-│   │   │   └── top.xdc
-│   │   ├── bd/
-│   │   │   └── design_1_bd.tcl
-│   │   └── ip_repo/
-│   │       └── normal_eq_accel/
-│   │
-│   ├── host_tools/
-│   │   ├── normal_eq_replay/
-│   │   │   ├── CMakeLists.txt
-│   │   │   ├── normal_eq_replay.cpp
-│   │   │   └── README.md
-│   │   └── xdma_test/
-│   │       ├── CMakeLists.txt
-│   │       ├── xdma_basic_test.cpp
-│   │       └── README.md
-│   │
-│   └── golden_small/
-│       ├── README.md
-│       └── frame_000100.bin
+src/
+config/
+cmake/
+scripts/
+fpga/docs/
+fpga/host_tools/
 ```
 
----
+Orin 端原则上不要修改：
 
-## 5. .gitignore 建议
+```text
+fpga/hls/
+fpga/vivado/
+```
 
-在根目录 `.gitignore` 追加：
+除非只是同步 README 或接口文档。
+
+------
+
+### 7.2 Windows 端主要修改
+
+Windows 端主要允许修改：
+
+```text
+fpga/hls/
+fpga/vivado/
+fpga/docs/
+fpga/golden_small/
+```
+
+Windows 端原则上不要修改：
+
+```text
+src/
+config/
+cmake/
+ROS2 主工程逻辑
+```
+
+除非只是同步接口文档。
+
+------
+
+## 8. `.gitignore` 建议
+
+在根目录 `.gitignore` 中追加：
 
 ```gitignore
 # Vivado generated files
@@ -277,13 +460,13 @@ fpga/golden_large/
 *.tar.gz
 ```
 
-如果需要保留正式发布 bitstream，可新增：
+如果需要保留正式 bitstream，可新增：
 
 ```text
 fpga/releases/
 ```
 
-并在 `.gitignore` 中加例外：
+并添加例外：
 
 ```gitignore
 !fpga/releases/*.bit
@@ -292,50 +475,177 @@ fpga/releases/
 !fpga/releases/README.md
 ```
 
----
+------
 
-## 6. 实施阶段总览
+## 9. 单分支 Git 工作流
 
-整体分为 6 个阶段：
+### 9.1 每次开始工作前
 
-```text
-阶段 0：整理目录和文档
-阶段 1：Orin 端 CPU backend + golden dump
-阶段 2：Windows 端 HLS normal_eq_accel + testbench
-阶段 3：Orin 端 XDMA wrapper + normal_eq_replay
-阶段 4：Windows 端 Vivado IP/bitstream 集成
-阶段 5：Orin 端 run_slam_online fpga_check / fpga active 接入
+Orin 和 Windows 两端都执行：
+
+```bash
+git checkout dev
+git pull
+git status
 ```
 
-当前第一目标不是马上提速，而是：
+如果有未提交内容，先处理完再 pull。
 
-```text
-1. 接口稳定
-2. golden data 可复现
-3. CPU/HLS/FPGA 数值一致
-4. XDMA 数据通路跑通
-5. Lightning-LM 可切换 backend
+------
+
+### 9.2 Orin 端提交
+
+Orin 端修改后：
+
+```bash
+colcon build --symlink-install
+
+git status
+git add src config cmake scripts fpga/docs fpga/host_tools
+git commit -m "orin: add normal equation backend and golden dump"
+git push
 ```
 
----
+如果只改文档，可以不执行 `colcon build`，但 commit message 要说明。
 
-# 阶段 0：整理目录和文档
+------
 
-## 0.1 新增 docs
+### 9.3 Windows 端提交
 
-在 `fpga/docs/` 下新增：
+Windows 端修改后：
 
-```text
-FPGA_NORMAL_EQ_IMPLEMENTATION_ROADMAP.md
-INTERFACE_SPEC.md
-GOLDEN_DATA_FORMAT.md
-BUILD_AND_TEST.md
-CURRENT_STATUS.md
+```powershell
+git status
+git add fpga\hls fpga\vivado fpga\docs fpga\golden_small
+git commit -m "win: add HLS normal equation accelerator"
+git push
 ```
 
-### `INTERFACE_SPEC.md`
+如果修改 HLS 内核，提交前应运行 HLS C simulation。
 
-必须定义：
+------
+
+### 9.4 避免冲突的原则
+
+```text
+1. 不要让 Orin 和 Windows 同时修改同一个文件。
+2. 接口变化必须先改 docs。
+3. 改完一个小阶段就 commit + push。
+4. 另一端开始工作前必须 pull。
+5. 不提交 Vivado/HLS 自动生成的大量中间文件。
+6. 如果 Codex 改动跨越了不该改的目录，必须人工 review 后再提交。
+```
+
+------
+
+## 10. 给 Orin Codex 的提示词
+
+在 Orin 上运行 Codex 时使用：
+
+```text
+当前 Git 分支是 dev。
+你在 Jetson AGX Orin Ubuntu 22.04 上开发 Lightning-LM 主程序。
+
+你主要允许修改：
+- src/
+- config/
+- cmake/
+- scripts/
+- fpga/docs/
+- fpga/host_tools/
+
+你不要修改：
+- fpga/hls/
+- fpga/vivado/
+
+当前目标是实现 FPGA P0 的 Orin 侧接入：
+1. 新增 src/fpga/fpga_types.h；
+2. 新增 NormalEquationBackend 抽象接口；
+3. 新增 CpuNormalEquationBackend；
+4. 新增 FpgaNormalEquationBackend；
+5. 从 surfel 命中点构造 FpgaCorrInput；
+6. fallback 点继续走原 CPU iVox 路径；
+7. 新增 golden data dump；
+8. 新增 fpga_check 模式；
+9. 新增 XDMA wrapper；
+10. 新增 normal_eq_replay 工具；
+11. 保证 normal_equation_backend=cpu 时结果和当前代码一致；
+12. 每次修改后优先运行 colcon build --symlink-install。
+
+请先阅读：
+- fpga/docs/FPGA_NORMAL_EQ_IMPLEMENTATION_ROADMAP.md
+- fpga/docs/INTERFACE_SPEC.md
+- fpga/docs/GOLDEN_DATA_FORMAT.md
+- fpga/docs/CURRENT_STATUS.md
+
+不要重写整个 LaserMapping。
+不要删除 iVox。
+不要把 surfel lookup 放到 FPGA。
+不要实现 ESKF solve。
+第一阶段只实现 surfel 命中点的 normal equation backend。
+```
+
+------
+
+## 11. 给 Windows Codex 的提示词
+
+在 Windows 上运行 Codex 时使用：
+
+```text
+当前 Git 分支是 dev。
+你在 Windows 上开发 HLS/Vivado 工程。
+
+你主要允许修改：
+- fpga/hls/
+- fpga/vivado/
+- fpga/docs/
+- fpga/golden_small/
+
+你不要修改：
+- src/
+- config/
+- cmake/
+- ROS2 主工程
+
+当前目标是实现 normal_eq_accel HLS 内核和 testbench：
+1. 输入 FpgaStateInput + FpgaCorrInput array；
+2. 输出 FpgaNormalEqOutput；
+3. 使用 float32；
+4. 计算 residual；
+5. 计算 Jacobian；
+6. 累加 H_upper[21]；
+7. 累加 b[6]；
+8. 写 testbench.cpp，读取 golden bin；
+9. 输出 max_abs_error 和 max_rel_error；
+10. 编写 run_csim.tcl、run_csynth.tcl、export_ip.tcl；
+11. HLS C simulation 必须通过。
+
+请先阅读：
+- fpga/docs/FPGA_NORMAL_EQ_IMPLEMENTATION_ROADMAP.md
+- fpga/docs/INTERFACE_SPEC.md
+- fpga/docs/GOLDEN_DATA_FORMAT.md
+- fpga/docs/CURRENT_STATUS.md
+
+不要实现 surfel lookup。
+不要实现 KNN。
+不要实现 ESKF。
+不要实现地图更新。
+第一阶段只做 residual/Jacobian/HTH-HTr。
+```
+
+------
+
+# 阶段 0：文档和接口冻结
+
+## 0.1 新增 `INTERFACE_SPEC.md`
+
+路径：
+
+```text
+fpga/docs/INTERFACE_SPEC.md
+```
+
+内容必须包括：
 
 ```text
 1. 接口版本号
@@ -349,9 +659,17 @@ CURRENT_STATUS.md
 9. float32 / little-endian / 对齐要求
 ```
 
-### `GOLDEN_DATA_FORMAT.md`
+------
 
-必须定义：
+## 0.2 新增 `GOLDEN_DATA_FORMAT.md`
+
+路径：
+
+```text
+fpga/docs/GOLDEN_DATA_FORMAT.md
+```
+
+内容必须包括：
 
 ```text
 1. GoldenHeader 结构
@@ -362,34 +680,78 @@ CURRENT_STATUS.md
 6. normal_eq_replay 如何读取
 ```
 
-### `CURRENT_STATUS.md`
+------
 
-每次阶段推进后更新，包含：
+## 0.3 新增 `CURRENT_STATUS.md`
+
+路径：
 
 ```text
-1. 当前接口版本
-2. 当前参数
-3. dev_orin 状态
-4. dev_win_hls 状态
-5. 最新 golden 文件
-6. 当前误差
-7. 当前问题
-8. 下一步
+fpga/docs/CURRENT_STATUS.md
 ```
 
+模板：
+
+~~~markdown
+# Current Status
+
+## Branch
+
+- Current branch: dev
+
+## Interface
+
+- Interface version: 1
+- FpgaCorrInput size: 32 bytes
+- FpgaStateInput size: TBD
+- FpgaNormalEqOutput size: TBD
+- GoldenHeader size: TBD
+
+## Current Surfel Parameters
+
+```yaml
+surfel_min_support: 3
+surfel_cell_resolution: 0.8
+surfel_lookup_nearby_type: 26
+surfel_quality_max: 0.05
+~~~
+
+## Orin Side
+
+-  NormalEquationBackend
+-  CpuNormalEquationBackend
+-  FpgaNormalEquationBackend
+-  golden dump
+-  XDMA wrapper
+-  fpga_check mode
+-  colcon build passed
+
+## Windows HLS Side
+
+-  normal_eq_accel.cpp
+-  testbench.cpp
+-  run_csim.tcl
+-  run_csynth.tcl
+-  export_ip.tcl
+-  C simulation passed
+-  C synthesis passed
+
+## Latest Golden Files
+
+- TBD
+
+## Notes
+
+记录当前问题、下一步任务、已知限制。
+
+```
 ---
 
 # 阶段 1：Orin 端 CPU backend + golden dump
 
-工作分支：
-
-```bash
-git checkout dev_orin
-```
-
 ## 1.1 新增 `src/fpga/fpga_types.h`
 
-定义统一二进制结构：
+定义统一数据结构。
 
 ```cpp
 #pragma once
@@ -462,19 +824,19 @@ static_assert(sizeof(FpgaCorrInput) == 32, "FpgaCorrInput must be 32 bytes");
 }  // namespace lightning::fpga
 ```
 
-注意：如果实际 namespace 和项目风格不同，Codex 可以按项目现有风格调整，但必须同步更新 `INTERFACE_SPEC.md`。
+如果 namespace 与项目不一致，Codex 可按现有代码风格调整，但必须同步更新文档。
 
----
+------
 
-## 1.2 新增 backend 抽象接口
+## 1.2 新增 NormalEquationBackend
 
-新增：
+路径：
 
 ```text
 src/fpga/normal_equation_backend.h
 ```
 
-接口：
+内容：
 
 ```cpp
 #pragma once
@@ -518,11 +880,11 @@ public:
 }  // namespace lightning::fpga
 ```
 
----
+------
 
 ## 1.3 新增 CPU backend
 
-新增：
+路径：
 
 ```text
 src/fpga/cpu_normal_equation_backend.h
@@ -541,26 +903,26 @@ H += weight * J^T * J
 b += weight * J^T * r
 ```
 
-要求：
+验收：
 
 ```text
-1. 使用 float。
-2. 输出完整 6x6 H。
-3. b 是 6x1。
-4. CPU backend 结果要和原始代码中 surfel 命中点的 HTH/HTr 一致。
+1. CPU backend 输出与原 CPU surfel 命中点 HTH/HTr 结果一致。
+2. normal_equation_backend=cpu 时轨迹不变。
 ```
 
----
+------
 
-## 1.4 在 LaserMapping 中构造 `FpgaCorrInput`
+## 1.4 在 LaserMapping 中构造 FpgaCorrInput
 
-在当前 surfel 命中分支中新增：
+找到 surfel 命中分支。
+
+新增：
 
 ```cpp
 std::vector<lightning::fpga::FpgaCorrInput> fpga_corrs;
 ```
 
-每个 surfel 命中点：
+对于 surfel 命中点：
 
 ```cpp
 lightning::fpga::FpgaCorrInput corr;
@@ -580,16 +942,16 @@ fpga_corrs.push_back(corr);
 注意：
 
 ```text
-p_body 必须与现有 CPU Jacobian 使用的点坐标一致。
-normal/d 必须与当前 residual 使用的平面一致。
-fallback 点不要加入 fpga_corrs。
+1. p_body 必须与当前 CPU Jacobian 使用的点坐标一致。
+2. normal/d 必须与当前 residual 使用的平面一致。
+3. fallback 点不要加入 fpga_corrs。
 ```
 
----
+------
 
-## 1.5 fallback 点保持原 CPU 路径
+## 1.5 保留 fallback CPU 路径
 
-当前 fallback 逻辑继续保留：
+fallback 点继续走：
 
 ```text
 surfel invalid
@@ -601,18 +963,18 @@ esti_plane
 CPU residual/Jacobian/HTH-HTr
 ```
 
-最终合并：
+最终：
 
 ```text
 H_total = H_surfel_backend + H_fallback_cpu
 b_total = b_surfel_backend + b_fallback_cpu
 ```
 
----
+------
 
 ## 1.6 新增配置项
 
-在配置文件中新增：
+在配置文件中增加：
 
 ```yaml
 normal_equation_backend: cpu   # cpu / fpga_check / fpga
@@ -639,11 +1001,11 @@ fpga:
   fallback_to_cpu_on_error: true
 ```
 
----
+------
 
 ## 1.7 新增 golden writer
 
-新增：
+路径：
 
 ```text
 src/fpga/fpga_golden_writer.h
@@ -659,13 +1021,7 @@ src/fpga/fpga_golden_writer.cc
 4. 文件名为 frame_XXXXXX.bin。
 ```
 
-默认导出路径：
-
-```text
-/tmp/lightning_fpga_golden/
-```
-
----
+------
 
 ## 1.8 阶段 1 验收
 
@@ -702,27 +1058,13 @@ taskset -c 4-11 ros2 run lightning run_slam_online --ros-args \
 [ ] /tmp/lightning_fpga_golden/ 生成 frame_xxxxxx.bin
 ```
 
-提交：
-
-```bash
-git add .
-git commit -m "orin: add normal equation CPU backend and golden dump"
-git push origin dev_orin
-```
-
----
+------
 
 # 阶段 2：Windows HLS normal_eq_accel
 
-工作分支：
+## 2.1 新增 HLS 工程文件
 
-```bash
-git checkout dev_win_hls
-```
-
-## 2.1 新增 HLS 文件
-
-在：
+路径：
 
 ```text
 fpga/hls/normal_eq_accel/
@@ -740,11 +1082,11 @@ export_ip.tcl
 README.md
 ```
 
----
+------
 
 ## 2.2 HLS 内核接口
 
-函数建议：
+函数：
 
 ```cpp
 void normal_eq_accel(
@@ -768,18 +1110,18 @@ HLS pragma：
 #pragma HLS INTERFACE s_axilite port=return bundle=control
 ```
 
-第一版使用：
+第一版：
 
 ```text
-float32
-single lane
-不做 fixed-point
-不做 lookup
-不做 KNN
-不做 ESKF
+1. 使用 float32
+2. single lane
+3. 不做 fixed-point
+4. 不做 surfel lookup
+5. 不做 KNN
+6. 不做 ESKF
 ```
 
----
+------
 
 ## 2.3 HLS 计算内容
 
@@ -811,11 +1153,11 @@ for i in 0..num_points-1:
 write output
 ```
 
----
+------
 
 ## 2.4 HLS testbench
 
-`testbench.cpp` 必须支持：
+`testbench.cpp` 支持：
 
 ```powershell
 normal_eq_csim.exe path\to\frame_002290.bin
@@ -840,44 +1182,13 @@ max_abs_error <= 1e-2
 max_rel_error <= 1e-3
 ```
 
----
+------
 
-## 2.5 阶段 2 验收
-
-执行 HLS C simulation。
-
-验收：
-
-```text
-[ ] HLS C simulation PASS
-[ ] 能读取 Orin 导出的 golden 文件
-[ ] H_upper 对齐
-[ ] b 对齐
-[ ] residual_sum 对齐
-[ ] README 记录运行方式
-```
-
-提交：
-
-```bash
-git add .
-git commit -m "win_hls: add normal equation HLS kernel and csim"
-git push origin dev_win_hls
-```
-
----
-
-# 阶段 3：Orin 端 XDMA wrapper + normal_eq_replay
-
-工作分支：
-
-```bash
-git checkout dev_orin
-```
+# 阶段 3：Orin XDMA wrapper + normal_eq_replay
 
 ## 3.1 新增 XDMA wrapper
 
-新增：
+路径：
 
 ```text
 src/fpga/xdma_user.h
@@ -909,11 +1220,11 @@ public:
 };
 ```
 
----
+------
 
 ## 3.2 新增 FPGA backend
 
-新增：
+路径：
 
 ```text
 src/fpga/fpga_normal_equation_backend.h
@@ -933,7 +1244,7 @@ src/fpga/fpga_normal_equation_backend.cc
 8. 转换为 NormalEquationResult。
 ```
 
-如果 FPGA 未连接，可先实现 fake mode：
+如果 FPGA 尚未准备好，先实现 fake mode：
 
 ```text
 fpga_backend_fake:
@@ -941,22 +1252,14 @@ fpga_backend_fake:
   用于验证 Lightning-LM backend 切换流程
 ```
 
----
+------
 
 ## 3.3 新增 normal_eq_replay
 
-在：
+路径：
 
 ```text
 fpga/host_tools/normal_eq_replay/
-```
-
-新增工具：
-
-```text
-normal_eq_replay.cpp
-CMakeLists.txt
-README.md
 ```
 
 功能：
@@ -973,93 +1276,33 @@ README.md
 不启动 ROS2，也能测试 golden -> XDMA -> FPGA -> output -> compare。
 ```
 
----
+------
 
-## 3.4 阶段 3 验收
+# 阶段 4：Windows Vivado IP / bitstream
 
-```text
-[ ] XDMA wrapper 可编译
-[ ] normal_eq_replay 可编译
-[ ] backend fake mode 可运行
-[ ] 如果 FPGA 已连接，能跑单帧 replay
-[ ] 错误处理完整：设备不存在、timeout、误差超限
-```
+## 4.1 HLS 导出 IP
 
-提交：
-
-```bash
-git add .
-git commit -m "orin: add xdma wrapper and normal equation replay"
-git push origin dev_orin
-```
-
----
-
-# 阶段 4：Windows Vivado IP / bitstream 集成
-
-工作分支：
-
-```bash
-git checkout dev_win_hls
-```
-
-## 4.1 导出 HLS IP
-
-Windows 端完成：
-
-```text
-fpga/hls/normal_eq_accel/export_ip.tcl
-```
-
-导出到：
+输出目录：
 
 ```text
 fpga/vivado/ip_repo/normal_eq_accel/
 ```
 
----
+------
 
 ## 4.2 Vivado 工程脚本化
 
-在：
-
-```text
-fpga/vivado/scripts/
-```
-
 新增：
 
 ```text
-create_project.tcl
-build_bitstream.tcl
-export_hardware.tcl
+fpga/vivado/scripts/create_project.tcl
+fpga/vivado/scripts/build_bitstream.tcl
+fpga/vivado/scripts/export_hardware.tcl
+fpga/vivado/bd/design_1_bd.tcl
+fpga/vivado/constraints/top.xdc
 ```
 
-在：
-
-```text
-fpga/vivado/bd/
-```
-
-新增：
-
-```text
-design_1_bd.tcl
-```
-
-在：
-
-```text
-fpga/vivado/constraints/
-```
-
-新增：
-
-```text
-top.xdc
-```
-
-不要提交 Vivado 自动生成目录：
+不要提交：
 
 ```text
 *.runs/
@@ -1070,36 +1313,11 @@ top.xdc
 .Xil/
 ```
 
----
+------
 
-## 4.3 阶段 4 验收
+# 阶段 5：run_slam_online 接入 FPGA
 
-```text
-[ ] HLS IP export 成功
-[ ] Vivado project 可由 Tcl 重建
-[ ] bitstream 可生成
-[ ] README 记录地址映射和寄存器偏移
-```
-
-提交：
-
-```bash
-git add .
-git commit -m "win_hls: add vivado scripts for normal equation accelerator"
-git push origin dev_win_hls
-```
-
----
-
-# 阶段 5：Orin run_slam_online 接入 FPGA
-
-工作分支：
-
-```bash
-git checkout dev_orin
-```
-
-## 5.1 fpga_check 模式
+## 5.1 `fpga_check` 模式
 
 行为：
 
@@ -1118,19 +1336,9 @@ taskset -c 4-11 ros2 run lightning run_slam_online --ros-args \
   -p normal_equation_backend:=fpga_check
 ```
 
-验收：
+------
 
-```text
-[ ] 连续运行不崩溃
-[ ] max_abs_error 在阈值内
-[ ] max_rel_error 在阈值内
-[ ] 超限帧保存 golden
-[ ] 轨迹不变
-```
-
----
-
-## 5.2 fpga active 模式
+## 5.2 `fpga` active 模式
 
 行为：
 
@@ -1148,67 +1356,78 @@ taskset -c 4-11 ros2 run lightning run_slam_online --ros-args \
   -p normal_equation_backend:=fpga
 ```
 
-验收：
+------
+
+# 阶段 6：验收标准
+
+## 6.1 Orin 端验收
 
 ```text
-[ ] 轨迹不发散
-[ ] gravity norm 约 9.81
-[ ] effective_surface_points 无异常下降
-[ ] surfel hit/fallback 正常
-[ ] fpga_total_ms 可观测
-[ ] obs_total_ms / plane_icp_ms 有可测变化
+[ ] colcon build 通过
+[ ] normal_equation_backend=cpu 正常运行
+[ ] golden dump 正常生成
+[ ] CpuNormalEquationBackend 和原逻辑一致
+[ ] fallback 点仍走 iVox
+[ ] fpga_check 模式可启动
+[ ] profile 字段正常输出
 ```
 
----
+------
 
-# 20. 给 Codex 的开发边界
-
-## Orin Codex 必须遵守
+## 6.2 Windows HLS 端验收
 
 ```text
-1. 只在 dev_orin 分支工作。
-2. 不修改 fpga/hls 和 fpga/vivado。
-3. 不删除 iVox。
-4. 不重写 LaserMapping。
-5. 不修改 HLS 内核。
-6. normal_equation_backend=cpu 必须保持原结果。
-7. 所有新功能必须有配置开关。
-8. colcon build 必须通过。
+[ ] normal_eq_accel.cpp 实现
+[ ] testbench.cpp 实现
+[ ] 能读取 golden bin
+[ ] H_upper 对齐
+[ ] b 对齐
+[ ] residual_sum 对齐
+[ ] C simulation PASS
+[ ] C synthesis PASS
+[ ] export IP 成功
 ```
 
-## Windows Codex 必须遵守
+------
+
+## 6.3 集成验收
 
 ```text
-1. 只在 dev_win_hls 分支工作。
-2. 不修改 src 和 ROS2 主工程。
-3. 不实现 surfel lookup。
-4. 不实现 KNN。
-5. 不实现 ESKF。
-6. 第一版使用 float32。
-7. 必须能读取 golden bin。
-8. HLS C simulation 必须通过。
+[ ] Orin 能通过 XDMA 调用 FPGA
+[ ] normal_eq_replay fpga_check PASS
+[ ] run_slam_online fpga_check PASS
+[ ] run_slam_online fpga active 不发散
+[ ] profile 中 fpga_total_ms 可观测
+[ ] CPU/FPGA 轨迹对比无明显异常
 ```
 
----
+------
 
-# 21. 当前阶段最终目标
+# 阶段 7：后续扩展，不属于当前 P0
 
-完成当前 P0 后，应达到：
+当前 P0 完成后，再考虑：
 
 ```text
-1. Orin 能生成 golden data。
-2. Windows HLS 能读取 golden data。
-3. HLS 输出 H/b 与 CPU 对齐。
-4. Orin 能通过 XDMA 调用 FPGA。
-5. run_slam_online 支持 cpu / fpga_check / fpga 三种模式。
-6. FPGA P0 可稳定运行。
+P1：FPGA LookupBatch
+P2：FPGA BatchUpdate / dirty surfel refit
+P3：iVox fallback 批量化
+P4：fixed-point 和多 lane 优化
 ```
 
-下一阶段再考虑：
+当前不要提前做这些，避免开发范围失控。
+
+------
+
+# 8. 当前最重要原则
 
 ```text
-P1: FPGA LookupBatch
-P2: FPGA BatchUpdate / dirty surfel refit
-P3: iVox fallback 批量化
-P4: fixed-point 和多 lane 优化
+1. 全部在 dev 分支开发。
+2. 严格保持目录边界。
+3. 接口变化先改文档。
+4. Orin 改完 push，Windows pull。
+5. Windows 改完 push，Orin pull。
+6. 不提交 Vivado/HLS 自动生成中间文件。
+7. 不删除 iVox。
+8. 不重写 LaserMapping。
+9. 第一阶段只做 normal equation acceleration。
 ```
