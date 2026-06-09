@@ -1,9 +1,15 @@
 #include <pcl/common/transforms.h>
 #include <yaml-cpp/yaml.h>
+
+#include <algorithm>
+#include <cctype>
+#include <execution>
 #include <fstream>
 
 #include "common/options.h"
 #include "core/lightning_math.hpp"
+#include "fpga/cpu_normal_equation_backend.h"
+#include "fpga/fpga_normal_equation_backend.h"
 #include "laser_mapping.h"
 
 #include <opencv2/core/mat.hpp>
@@ -16,6 +22,28 @@
 
 namespace lightning {
 
+namespace {
+
+template <typename T>
+T GetYamlValue(const YAML::Node& node, const std::string& key, const T& default_value) {
+    if (node && node[key]) {
+        return node[key].as<T>();
+    }
+    return default_value;
+}
+
+std::string NormalizeFpgaMode(std::string mode) {
+    std::transform(mode.begin(), mode.end(), mode.begin(), [](unsigned char c) {
+        if (c == '-') {
+            return '_';
+        }
+        return static_cast<char>(std::toupper(c));
+    });
+    return mode.empty() ? "CPU" : mode;
+}
+
+}  // namespace
+
 bool LaserMapping::Init(const std::string &config_yaml) {
     LOG(INFO) << "init laser mapping from " << config_yaml;
     if (!LoadParamsFromYAML(config_yaml)) {
@@ -26,6 +54,14 @@ bool LaserMapping::Init(const std::string &config_yaml) {
     ivox_ = std::make_shared<IVoxType>(ivox_options_);
     if (options_.enable_surfel_map_) {
         surfel_map_ = std::make_shared<BlockSurfelMap>(surfel_map_options_);
+    }
+    if (options_.fpga_enable_ && options_.normal_equation_backend_ == "CPU_SIM") {
+        normal_equation_backend_ = std::make_shared<fpga::CpuNormalEquationBackend>();
+        fpga_golden_writer_ = std::make_unique<fpga::FpgaGoldenWriter>(options_.fpga_golden_options_);
+        LOG(INFO) << "[fpga] normal equation backend: " << normal_equation_backend_->Name();
+    } else if (options_.fpga_enable_ && options_.normal_equation_backend_ == "FPGA") {
+        normal_equation_backend_ = std::make_shared<fpga::FpgaNormalEquationBackend>();
+        LOG(WARNING) << "[fpga] FPGA backend is a phase-1 stub; CPU path will be used if it is selected.";
     }
 
     // esekf init
@@ -107,6 +143,18 @@ bool LaserMapping::LoadParamsFromYAML(const std::string &yaml_file) {
         }
         if (yaml["fasterlio"]["surfel_fallback_warn_ratio"]) {
             options_.surfel_fallback_warn_ratio_ = yaml["fasterlio"]["surfel_fallback_warn_ratio"].as<double>();
+        }
+
+        const YAML::Node fpga = yaml["fpga"];
+        options_.fpga_enable_ = GetYamlValue(fpga, "enable", false);
+        options_.normal_equation_backend_ = NormalizeFpgaMode(GetYamlValue(fpga, "mode", std::string("cpu")));
+        options_.fpga_golden_options_.enable = GetYamlValue(fpga, "golden_dump_enable", false);
+        options_.fpga_golden_options_.dump_dir =
+            GetYamlValue(fpga, "golden_dump_dir", std::string("/tmp/lightning_fpga_golden"));
+        options_.fpga_golden_options_.every_n_frames = GetYamlValue(fpga, "golden_dump_every_n_frames", 100);
+        options_.fpga_golden_options_.max_files = GetYamlValue(fpga, "golden_dump_max_files", 50);
+        if (!options_.fpga_enable_) {
+            options_.normal_equation_backend_ = "CPU";
         }
 
         bool use_imu_filter = yaml["fasterlio"]["imu_filter"].as<bool>();
@@ -838,11 +886,45 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
 
     corr_pts_.resize(cnt_pts);
     corr_norm_.resize(cnt_pts);
+    const bool use_cpu_sim_backend = options_.normal_equation_backend_ == "CPU_SIM" && normal_equation_backend_;
+    std::vector<fpga::FpgaCorrInput> fpga_corrs;
+    std::vector<size_t> fallback_effect_indices;
+    if (use_cpu_sim_backend) {
+        fpga_corrs.reserve(cnt_pts);
+        fallback_effect_indices.reserve(cnt_pts);
+    }
+
+    const Mat3f off_R = offset_R_lidar_fixed_.cast<float>();
+    const Vec3f off_t = offset_t_lidar_fixed_.cast<float>();
+    const Mat3f R_wi = s.rot_.matrix().cast<float>();
+    const Vec3f t_wi = s.pos_.cast<float>();
+    const Mat3f Rt = R_wi.transpose();
+
     for (int i = 0; i < cnt_pts; i++) {
         if (point_selected_surf_[i]) {
+            const size_t effect_idx = static_cast<size_t>(effect_feat_surf_);
             corr_norm_[effect_feat_surf_] = plane_coef_[i];
             corr_pts_[effect_feat_surf_] = scan_down_body_->points[i].getVector4fMap();
             corr_pts_[effect_feat_surf_][3] = residuals_[i];
+
+            if (use_cpu_sim_backend && surfel_corr_[i].valid && !surfel_corr_[i].fallback) {
+                const Vec3f p_lidar = scan_down_body_->points[i].getVector3fMap();
+                const Vec3f p_imu = off_R * p_lidar + off_t;
+                const Vec4f& plane = plane_coef_[i];
+
+                fpga::FpgaCorrInput corr;
+                corr.px = p_imu.x();
+                corr.py = p_imu.y();
+                corr.pz = p_imu.z();
+                corr.nx = plane.x();
+                corr.ny = plane.y();
+                corr.nz = plane.z();
+                corr.d = plane.w();
+                corr.weight = 1.0f;
+                fpga_corrs.emplace_back(corr);
+            } else if (use_cpu_sim_backend) {
+                fallback_effect_indices.emplace_back(effect_idx);
+            }
 
             effect_feat_surf_++;
         }
@@ -864,24 +946,30 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
     }
 
     index.resize(effect_feat_surf_);
-    const Mat3f off_R = offset_R_lidar_fixed_.cast<float>();
-    const Vec3f off_t = offset_t_lidar_fixed_.cast<float>();
-    const Mat3f Rt = s.rot_.matrix().transpose().cast<float>();
 
     /// 点面ICP部分
     obs.HTH_.setZero();
     obs.HTr_.setZero();
 
-    std::vector<Mat6d> JTJ(effect_feat_surf_);
-    std::vector<Vec6d> JTr(effect_feat_surf_);
-
     std::vector<double> res_sq(index.size());
+    for (size_t i = 0; i < index.size(); ++i) {
+        const double res = -corr_pts_[i][3];
+        res_sq[i] = res * res;
+    }
 
-    {
-        ScopedPerfStage perf("Plane ICP HTH/HTr CPU", effect_feat_surf_, effect_feat_surf_, "CPU");
+    auto accumulate_cpu_indices = [&](const std::vector<size_t>& cpu_indices, const std::string& perf_name,
+                                      const std::string& backend_name) {
+        if (cpu_indices.empty()) {
+            return;
+        }
+
+        std::vector<Mat6d> JTJ(effect_feat_surf_);
+        std::vector<Vec6d> JTr(effect_feat_surf_);
+
+        ScopedPerfStage perf(perf_name, effect_feat_surf_, static_cast<int>(cpu_indices.size()), backend_name);
         {
             ScopedPerfStage sub_perf("Plane ICP Residual/Jacobian");
-            std::for_each(std::execution::par_unseq, index.begin(), index.end(), [&](const size_t &i) {
+            std::for_each(std::execution::par_unseq, cpu_indices.begin(), cpu_indices.end(), [&](const size_t &i) {
                 Vec3f point_this_be = corr_pts_[i].head<3>();
                 Vec3f point_this = off_R * point_this_be + off_t;
                 Mat3f point_crossmat = math::SKEW_SYM_MATRIX(point_this);
@@ -904,18 +992,43 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
 
                 JTJ[i] = (J.transpose() * J).eval() * w;
                 JTr[i] = J.transpose() * res * w;
-
-                res_sq[i] = res * res;
             });
         }
 
         {
             ScopedPerfStage sub_perf("Plane ICP HTH/HTr Accumulate");
-            for (int i = 0; i < index.size(); ++i) {
+            for (const size_t i : cpu_indices) {
                 obs.HTH_ += JTJ[i] * options_.plane_icp_weight_;
                 obs.HTr_ += JTr[i] * options_.plane_icp_weight_;
             }
         }
+    };
+
+    if (use_cpu_sim_backend) {
+        ScopedPerfStage perf("Plane ICP HTH/HTr CPU_SIM", effect_feat_surf_, static_cast<int>(fpga_corrs.size()),
+                             "CPU_SIM");
+
+        fpga::NormalEquationState ne_state;
+        ne_state.R_wi = R_wi;
+        ne_state.t_wi = t_wi;
+
+        fpga::NormalEquationResult ne_result;
+        if (normal_equation_backend_->Accumulate(fpga_corrs, ne_state, &ne_result)) {
+            obs.HTH_ += ne_result.H.cast<double>() * options_.plane_icp_weight_;
+            obs.HTr_ += ne_result.b.cast<double>() * options_.plane_icp_weight_;
+            if (fpga_golden_writer_) {
+                fpga_golden_writer_->MaybeWrite(static_cast<uint32_t>(scan_count_), ne_state, fpga_corrs, ne_result);
+            }
+        } else {
+            LOG(WARNING) << "Normal equation backend " << normal_equation_backend_->Name()
+                         << " failed, falling back to CPU for surfel-hit points.";
+            accumulate_cpu_indices(index, "Plane ICP HTH/HTr FALLBACK_CPU", "FALLBACK_CPU");
+            fallback_effect_indices.clear();
+        }
+
+        accumulate_cpu_indices(fallback_effect_indices, "Plane ICP HTH/HTr FALLBACK_CPU", "FALLBACK_CPU");
+    } else {
+        accumulate_cpu_indices(index, "Plane ICP HTH/HTr CPU", "CPU");
     }
 
     if (!res_sq.empty()) {
@@ -930,8 +1043,8 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
 
     if (options_.enable_icp_part_) {
         ScopedPerfStage perf("Point ICP CPU", cnt_pts, effect_feat_icp_, "CPU");
-        JTJ.resize(cnt_pts);
-        JTr.resize(cnt_pts);
+        std::vector<Mat6d> JTJ(cnt_pts);
+        std::vector<Vec6d> JTr(cnt_pts);
 
         std::vector<size_t> index(cnt_pts);
         for (size_t i = 0; i < index.size(); ++i) {

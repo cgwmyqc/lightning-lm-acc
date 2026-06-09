@@ -14,6 +14,8 @@
 #include "core/ivox3d/ivox3d.h"
 #include "core/lio/eskf.hpp"
 #include "core/lio/imu_processing.hpp"
+#include "fpga/fpga_golden_writer.h"
+#include "fpga/normal_equation_backend.h"
 #include "pointcloud_preprocess.h"
 
 #include "livox_ros_driver2/msg/custom_msg.hpp"
@@ -52,6 +54,10 @@ class LaserMapping {
         bool enable_surfel_map_ = true;
         std::string surfel_fallback_mode_ = "ivox";
         double surfel_fallback_warn_ratio_ = 0.05;
+
+        bool fpga_enable_ = false;
+        std::string normal_equation_backend_ = "cpu";
+        fpga::FpgaGoldenWriter::Options fpga_golden_options_;
     };
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -155,6 +161,8 @@ class LaserMapping {
     std::shared_ptr<IVoxType> ivox_ = nullptr;                    // localmap in ivox
     BlockSurfelMapOptions surfel_map_options_;
     std::shared_ptr<BlockSurfelMap> surfel_map_ = nullptr;
+    std::shared_ptr<fpga::NormalEquationBackend> normal_equation_backend_ = nullptr;
+    std::unique_ptr<fpga::FpgaGoldenWriter> fpga_golden_writer_ = nullptr;
     std::shared_ptr<PointCloudPreprocess> preprocess_ = nullptr;  // point cloud preprocess
     std::shared_ptr<ImuProcess> p_imu_ = nullptr;                 // imu process
 

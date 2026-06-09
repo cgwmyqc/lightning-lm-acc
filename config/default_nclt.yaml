@@ -61,6 +61,10 @@ profile:
 fpga:
   enable: false
   mode: cpu
+  golden_dump_enable: false
+  golden_dump_dir: /tmp/lightning_fpga_golden
+  golden_dump_every_n_frames: 100
+  golden_dump_max_files: 50
 
 g2p5:
   esti_floor: false   # 是否动态估计地面

@@ -48,15 +48,15 @@ CPU 继续做 ESKF 更新。
 本项目统一在一个分支上开发：
 
 ```bash
-dev
+dev-fpga
 ```
 
-所有 Orin 端、Windows HLS 端、Vivado 端修改都在 `dev` 分支完成。
+所有 Orin 端、Windows HLS 端、Vivado 端修改都在 `dev-fpga` 分支完成。
 
 推荐两端工作前都执行：
 
 ```bash
-git checkout dev
+git checkout dev-fpga
 git pull
 git status
 ```
@@ -71,9 +71,9 @@ git push
 
 ------
 
-## 3. 为什么统一使用 dev 分支
+## 3. 为什么统一使用 dev-fpga 分支
 
-当前项目由同一人同时在 AGX Orin 和 Windows 上开发。统一使用 `dev` 分支的好处是：
+当前项目由同一人同时在 AGX Orin 和 Windows 上开发。统一使用 `dev-fpga` 分支的好处是：
 
 ```text
 1. Orin 改了接口，Windows pull 后马上能看到。
@@ -83,7 +83,7 @@ git push
 5. Codex 不容易拿到旧接口。
 ```
 
-虽然统一使用 `dev` 分支，但仍然必须严格保持目录边界，避免 Orin 端和 Windows 端互相污染。
+虽然统一使用 `dev-fpga` 分支，但仍然必须严格保持目录边界，避免 Orin 端和 Windows 端互相污染。
 
 ------
 
@@ -358,7 +358,7 @@ mkdir fpga\golden_small
 
 ## 7. 单分支下的目录边界
 
-虽然统一使用 `dev` 分支，但 Orin 和 Windows 仍然按目录分工。
+虽然统一使用 `dev-fpga` 分支，但 Orin 和 Windows 仍然按目录分工。
 
 ### 7.1 Orin 端主要修改
 
@@ -484,7 +484,7 @@ fpga/releases/
 Orin 和 Windows 两端都执行：
 
 ```bash
-git checkout dev
+git checkout dev-fpga
 git pull
 git status
 ```
@@ -543,7 +543,7 @@ git push
 在 Orin 上运行 Codex 时使用：
 
 ```text
-当前 Git 分支是 dev。
+当前 Git 分支是 dev-fpga。
 你在 Jetson AGX Orin Ubuntu 22.04 上开发 Lightning-LM 主程序。
 
 你主要允许修改：
@@ -592,7 +592,7 @@ git push
 在 Windows 上运行 Codex 时使用：
 
 ```text
-当前 Git 分支是 dev。
+当前 Git 分支是 dev-fpga。
 你在 Windows 上开发 HLS/Vivado 工程。
 
 你主要允许修改：
@@ -697,7 +697,7 @@ fpga/docs/CURRENT_STATUS.md
 
 ## Branch
 
-- Current branch: dev
+- Current branch: dev-fpga
 
 ## Interface
 
@@ -986,9 +986,9 @@ fpga:
   golden_dump_every_n_frames: 100
   golden_dump_max_files: 50
 
-  xdma_h2c: "/dev/xdma0_h2c_0"
-  xdma_c2h: "/dev/xdma0_c2h_0"
-  xdma_user: "/dev/xdma0_user"
+  xdma_h2c: "/dev-fpga/xdma0_h2c_0"
+  xdma_c2h: "/dev-fpga/xdma0_c2h_0"
+  xdma_user: "/dev-fpga/xdma0_user"
 
   input_addr: 0x02000000
   output_addr: 0x03000000
@@ -1421,7 +1421,7 @@ P4：fixed-point 和多 lane 优化
 # 8. 当前最重要原则
 
 ```text
-1. 全部在 dev 分支开发。
+1. 全部在 dev-fpga 分支开发。
 2. 严格保持目录边界。
 3. 接口变化先改文档。
 4. Orin 改完 push，Windows pull。

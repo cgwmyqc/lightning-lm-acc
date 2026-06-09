@@ -11,6 +11,9 @@ add_library(${PROJECT_NAME}.libs SHARED
         core/lio/laser_mapping.cc
         core/lio/pointcloud_preprocess.cc
         core/block_surfel_map/block_surfel_map.cc
+        fpga/cpu_normal_equation_backend.cc
+        fpga/fpga_golden_writer.cc
+        fpga/fpga_normal_equation_backend.cc
         core/loop_closing/loop_closing.cc
 
         core/g2p5/g2p5_map.cc
