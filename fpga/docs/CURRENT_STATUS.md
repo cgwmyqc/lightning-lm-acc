@@ -11,6 +11,9 @@
 - `FpgaStateInput`: 64-byte aligned
 - `FpgaNormalEqOutput`: 64-byte aligned
 - `GoldenHeader`: 64-byte aligned
+- Windows HLS top: `normal_eq_accel(const uint32_t* input, uint32_t* output, int num_points)`
+- DDR input layout: `FpgaStateInput` at byte offset 0, then `FpgaCorrInput[num_points]` at byte offset 128
+- DDR output layout: `FpgaNormalEqOutput` at byte offset 0
 
 ## Current Surfel Parameters
 
@@ -38,19 +41,27 @@ surfel_quality_max: 0.05
 
 ## Windows HLS Side
 
-- [ ] `normal_eq_accel.cpp`
-- [ ] `testbench.cpp`
-- [ ] `run_csim.tcl`
-- [ ] `run_csynth.tcl`
-- [ ] `export_ip.tcl`
-- [ ] C simulation passed
-- [ ] C synthesis passed
+- [x] `normal_eq_accel.cpp`
+- [x] `testbench.cpp`
+- [x] `run_csim.tcl`
+- [x] `run_csynth.tcl`
+- [x] `export_ip.tcl`
+- [x] C simulation passed on Windows Vivado HLS 2018.3
+- [x] C synthesis passed on Windows Vivado HLS 2018.3
+- [x] IP export passed on Windows Vivado HLS 2018.3
 
 ## Latest Golden Files
 
-- TBD after running Orin with `fpga.mode: cpu_sim` and `fpga.golden_dump_enable: true`.
+- `fpga/golden_small/frame_000100.bin`
+- `fpga/golden_small/frame_000200.bin`
+- `fpga/golden_small/frame_000300.bin`
 
 ## Notes
 
 - Phase 1 does not move surfel lookup, iVox fallback, ESKF solve, or map update to FPGA.
 - Golden files contain surfel-hit effective points only; fallback CPU contributions are not included.
+- Windows HLS C simulation uses `abs_error <= 1.0e-4 OR rel_error <= 1.0e-3` for each checked field to account for cross-platform float32 accumulation rounding.
+- Current DDR-buffer HLS interface avoids AXI-Lite struct-field expansion. Synthesized AXI-Lite registers are `control`, `input_r`, `output_r`, and `num_points`.
+- HLS clock target is 10 ns, matching the 100 MHz `normal_eq_accel_0/ap_clk` used in Vivado BD.
+- Latest 10 ns C synthesis result: 9.151 ns estimated clock, main accumulation loop II=8 and depth=60, BRAM_18K 2, DSP48E 36, FF 10219, LUT 9415.
+- Vivado HLS 2018.3 IP export requires compatibility workarounds for unsupported `export_design -output` and oversized date-based `core_revision` values.

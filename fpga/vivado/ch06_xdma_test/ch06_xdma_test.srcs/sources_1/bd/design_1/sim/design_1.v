@@ -1,7 +1,7 @@
 //Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.
 //--------------------------------------------------------------------------------
 //Tool Version: Vivado v.2018.3 (win64) Build 2405991 Thu Dec  6 23:38:27 MST 2018
-//Date        : Sun May 31 21:10:02 2026
+//Date        : Wed Jun 10 16:54:14 2026
 //Host        : DESKTOP-QEQDV5I running 64-bit major release  (build 9200)
 //Command     : generate_target design_1.bd
 //Design      : design_1
@@ -9,7 +9,7 @@
 //--------------------------------------------------------------------------------
 `timescale 1 ps / 1 ps
 
-(* CORE_GENERATION_INFO = "design_1,IP_Integrator,{x_ipVendor=xilinx.com,x_ipLibrary=BlockDiagram,x_ipName=design_1,x_ipVersion=1.00.a,x_ipLanguage=VERILOG,numBlks=7,numReposBlks=7,numNonXlnxBlks=0,numHierBlks=0,maxHierDepth=0,numSysgenBlks=0,numHlsBlks=1,numHdlrefBlks=0,numPkgbdBlks=0,bdsource=USER,da_axi4_cnt=3,da_board_cnt=1,da_ps7_cnt=1,synth_mode=OOC_per_IP}" *) (* HW_HANDOFF = "design_1.hwdef" *) 
+(* CORE_GENERATION_INFO = "design_1,IP_Integrator,{x_ipVendor=xilinx.com,x_ipLibrary=BlockDiagram,x_ipName=design_1,x_ipVersion=1.00.a,x_ipLanguage=VERILOG,numBlks=7,numReposBlks=7,numNonXlnxBlks=1,numHierBlks=0,maxHierDepth=0,numSysgenBlks=0,numHlsBlks=1,numHdlrefBlks=0,numPkgbdBlks=0,bdsource=USER,da_axi4_cnt=3,da_board_cnt=1,da_ps7_cnt=1,synth_mode=Global}" *) (* HW_HANDOFF = "design_1.hwdef" *) 
 module design_1
    (DDR_addr,
     DDR_ba,
@@ -140,6 +140,39 @@ module design_1
   wire axi_smc_M00_AXI_WREADY;
   wire [7:0]axi_smc_M00_AXI_WSTRB;
   wire axi_smc_M00_AXI_WVALID;
+  wire [31:0]normal_eq_accel_0_m_axi_gmem_ARADDR;
+  wire [1:0]normal_eq_accel_0_m_axi_gmem_ARBURST;
+  wire [3:0]normal_eq_accel_0_m_axi_gmem_ARCACHE;
+  wire [7:0]normal_eq_accel_0_m_axi_gmem_ARLEN;
+  wire [1:0]normal_eq_accel_0_m_axi_gmem_ARLOCK;
+  wire [2:0]normal_eq_accel_0_m_axi_gmem_ARPROT;
+  wire [3:0]normal_eq_accel_0_m_axi_gmem_ARQOS;
+  wire normal_eq_accel_0_m_axi_gmem_ARREADY;
+  wire [2:0]normal_eq_accel_0_m_axi_gmem_ARSIZE;
+  wire normal_eq_accel_0_m_axi_gmem_ARVALID;
+  wire [31:0]normal_eq_accel_0_m_axi_gmem_AWADDR;
+  wire [1:0]normal_eq_accel_0_m_axi_gmem_AWBURST;
+  wire [3:0]normal_eq_accel_0_m_axi_gmem_AWCACHE;
+  wire [7:0]normal_eq_accel_0_m_axi_gmem_AWLEN;
+  wire [1:0]normal_eq_accel_0_m_axi_gmem_AWLOCK;
+  wire [2:0]normal_eq_accel_0_m_axi_gmem_AWPROT;
+  wire [3:0]normal_eq_accel_0_m_axi_gmem_AWQOS;
+  wire normal_eq_accel_0_m_axi_gmem_AWREADY;
+  wire [2:0]normal_eq_accel_0_m_axi_gmem_AWSIZE;
+  wire normal_eq_accel_0_m_axi_gmem_AWVALID;
+  wire normal_eq_accel_0_m_axi_gmem_BREADY;
+  wire [1:0]normal_eq_accel_0_m_axi_gmem_BRESP;
+  wire normal_eq_accel_0_m_axi_gmem_BVALID;
+  wire [31:0]normal_eq_accel_0_m_axi_gmem_RDATA;
+  wire normal_eq_accel_0_m_axi_gmem_RLAST;
+  wire normal_eq_accel_0_m_axi_gmem_RREADY;
+  wire [1:0]normal_eq_accel_0_m_axi_gmem_RRESP;
+  wire normal_eq_accel_0_m_axi_gmem_RVALID;
+  wire [31:0]normal_eq_accel_0_m_axi_gmem_WDATA;
+  wire normal_eq_accel_0_m_axi_gmem_WLAST;
+  wire normal_eq_accel_0_m_axi_gmem_WREADY;
+  wire [3:0]normal_eq_accel_0_m_axi_gmem_WSTRB;
+  wire normal_eq_accel_0_m_axi_gmem_WVALID;
   wire pcie_perst_n_1;
   wire [14:0]processing_system7_0_DDR_ADDR;
   wire [2:0]processing_system7_0_DDR_BA;
@@ -162,39 +195,6 @@ module design_1
   wire processing_system7_0_FIXED_IO_PS_CLK;
   wire processing_system7_0_FIXED_IO_PS_PORB;
   wire processing_system7_0_FIXED_IO_PS_SRSTB;
-  wire [31:0]simple_accel_core_0_m_axi_gmem_ARADDR;
-  wire [1:0]simple_accel_core_0_m_axi_gmem_ARBURST;
-  wire [3:0]simple_accel_core_0_m_axi_gmem_ARCACHE;
-  wire [7:0]simple_accel_core_0_m_axi_gmem_ARLEN;
-  wire [1:0]simple_accel_core_0_m_axi_gmem_ARLOCK;
-  wire [2:0]simple_accel_core_0_m_axi_gmem_ARPROT;
-  wire [3:0]simple_accel_core_0_m_axi_gmem_ARQOS;
-  wire simple_accel_core_0_m_axi_gmem_ARREADY;
-  wire [2:0]simple_accel_core_0_m_axi_gmem_ARSIZE;
-  wire simple_accel_core_0_m_axi_gmem_ARVALID;
-  wire [31:0]simple_accel_core_0_m_axi_gmem_AWADDR;
-  wire [1:0]simple_accel_core_0_m_axi_gmem_AWBURST;
-  wire [3:0]simple_accel_core_0_m_axi_gmem_AWCACHE;
-  wire [7:0]simple_accel_core_0_m_axi_gmem_AWLEN;
-  wire [1:0]simple_accel_core_0_m_axi_gmem_AWLOCK;
-  wire [2:0]simple_accel_core_0_m_axi_gmem_AWPROT;
-  wire [3:0]simple_accel_core_0_m_axi_gmem_AWQOS;
-  wire simple_accel_core_0_m_axi_gmem_AWREADY;
-  wire [2:0]simple_accel_core_0_m_axi_gmem_AWSIZE;
-  wire simple_accel_core_0_m_axi_gmem_AWVALID;
-  wire simple_accel_core_0_m_axi_gmem_BREADY;
-  wire [1:0]simple_accel_core_0_m_axi_gmem_BRESP;
-  wire simple_accel_core_0_m_axi_gmem_BVALID;
-  wire [31:0]simple_accel_core_0_m_axi_gmem_RDATA;
-  wire simple_accel_core_0_m_axi_gmem_RLAST;
-  wire simple_accel_core_0_m_axi_gmem_RREADY;
-  wire [1:0]simple_accel_core_0_m_axi_gmem_RRESP;
-  wire simple_accel_core_0_m_axi_gmem_RVALID;
-  wire [31:0]simple_accel_core_0_m_axi_gmem_WDATA;
-  wire simple_accel_core_0_m_axi_gmem_WLAST;
-  wire simple_accel_core_0_m_axi_gmem_WREADY;
-  wire [3:0]simple_accel_core_0_m_axi_gmem_WSTRB;
-  wire simple_accel_core_0_m_axi_gmem_WVALID;
   wire [0:0]util_ds_buf_0_IBUF_OUT;
   wire [63:0]xdma_0_M_AXI_ARADDR;
   wire [1:0]xdma_0_M_AXI_ARBURST;
@@ -357,39 +357,39 @@ module design_1
         .S00_AXI_wready(xdma_0_M_AXI_WREADY),
         .S00_AXI_wstrb(xdma_0_M_AXI_WSTRB),
         .S00_AXI_wvalid(xdma_0_M_AXI_WVALID),
-        .S01_AXI_araddr(simple_accel_core_0_m_axi_gmem_ARADDR),
-        .S01_AXI_arburst(simple_accel_core_0_m_axi_gmem_ARBURST),
-        .S01_AXI_arcache(simple_accel_core_0_m_axi_gmem_ARCACHE),
-        .S01_AXI_arlen(simple_accel_core_0_m_axi_gmem_ARLEN),
-        .S01_AXI_arlock(simple_accel_core_0_m_axi_gmem_ARLOCK[0]),
-        .S01_AXI_arprot(simple_accel_core_0_m_axi_gmem_ARPROT),
-        .S01_AXI_arqos(simple_accel_core_0_m_axi_gmem_ARQOS),
-        .S01_AXI_arready(simple_accel_core_0_m_axi_gmem_ARREADY),
-        .S01_AXI_arsize(simple_accel_core_0_m_axi_gmem_ARSIZE),
-        .S01_AXI_arvalid(simple_accel_core_0_m_axi_gmem_ARVALID),
-        .S01_AXI_awaddr(simple_accel_core_0_m_axi_gmem_AWADDR),
-        .S01_AXI_awburst(simple_accel_core_0_m_axi_gmem_AWBURST),
-        .S01_AXI_awcache(simple_accel_core_0_m_axi_gmem_AWCACHE),
-        .S01_AXI_awlen(simple_accel_core_0_m_axi_gmem_AWLEN),
-        .S01_AXI_awlock(simple_accel_core_0_m_axi_gmem_AWLOCK[0]),
-        .S01_AXI_awprot(simple_accel_core_0_m_axi_gmem_AWPROT),
-        .S01_AXI_awqos(simple_accel_core_0_m_axi_gmem_AWQOS),
-        .S01_AXI_awready(simple_accel_core_0_m_axi_gmem_AWREADY),
-        .S01_AXI_awsize(simple_accel_core_0_m_axi_gmem_AWSIZE),
-        .S01_AXI_awvalid(simple_accel_core_0_m_axi_gmem_AWVALID),
-        .S01_AXI_bready(simple_accel_core_0_m_axi_gmem_BREADY),
-        .S01_AXI_bresp(simple_accel_core_0_m_axi_gmem_BRESP),
-        .S01_AXI_bvalid(simple_accel_core_0_m_axi_gmem_BVALID),
-        .S01_AXI_rdata(simple_accel_core_0_m_axi_gmem_RDATA),
-        .S01_AXI_rlast(simple_accel_core_0_m_axi_gmem_RLAST),
-        .S01_AXI_rready(simple_accel_core_0_m_axi_gmem_RREADY),
-        .S01_AXI_rresp(simple_accel_core_0_m_axi_gmem_RRESP),
-        .S01_AXI_rvalid(simple_accel_core_0_m_axi_gmem_RVALID),
-        .S01_AXI_wdata(simple_accel_core_0_m_axi_gmem_WDATA),
-        .S01_AXI_wlast(simple_accel_core_0_m_axi_gmem_WLAST),
-        .S01_AXI_wready(simple_accel_core_0_m_axi_gmem_WREADY),
-        .S01_AXI_wstrb(simple_accel_core_0_m_axi_gmem_WSTRB),
-        .S01_AXI_wvalid(simple_accel_core_0_m_axi_gmem_WVALID),
+        .S01_AXI_araddr(normal_eq_accel_0_m_axi_gmem_ARADDR),
+        .S01_AXI_arburst(normal_eq_accel_0_m_axi_gmem_ARBURST),
+        .S01_AXI_arcache(normal_eq_accel_0_m_axi_gmem_ARCACHE),
+        .S01_AXI_arlen(normal_eq_accel_0_m_axi_gmem_ARLEN),
+        .S01_AXI_arlock(normal_eq_accel_0_m_axi_gmem_ARLOCK[0]),
+        .S01_AXI_arprot(normal_eq_accel_0_m_axi_gmem_ARPROT),
+        .S01_AXI_arqos(normal_eq_accel_0_m_axi_gmem_ARQOS),
+        .S01_AXI_arready(normal_eq_accel_0_m_axi_gmem_ARREADY),
+        .S01_AXI_arsize(normal_eq_accel_0_m_axi_gmem_ARSIZE),
+        .S01_AXI_arvalid(normal_eq_accel_0_m_axi_gmem_ARVALID),
+        .S01_AXI_awaddr(normal_eq_accel_0_m_axi_gmem_AWADDR),
+        .S01_AXI_awburst(normal_eq_accel_0_m_axi_gmem_AWBURST),
+        .S01_AXI_awcache(normal_eq_accel_0_m_axi_gmem_AWCACHE),
+        .S01_AXI_awlen(normal_eq_accel_0_m_axi_gmem_AWLEN),
+        .S01_AXI_awlock(normal_eq_accel_0_m_axi_gmem_AWLOCK[0]),
+        .S01_AXI_awprot(normal_eq_accel_0_m_axi_gmem_AWPROT),
+        .S01_AXI_awqos(normal_eq_accel_0_m_axi_gmem_AWQOS),
+        .S01_AXI_awready(normal_eq_accel_0_m_axi_gmem_AWREADY),
+        .S01_AXI_awsize(normal_eq_accel_0_m_axi_gmem_AWSIZE),
+        .S01_AXI_awvalid(normal_eq_accel_0_m_axi_gmem_AWVALID),
+        .S01_AXI_bready(normal_eq_accel_0_m_axi_gmem_BREADY),
+        .S01_AXI_bresp(normal_eq_accel_0_m_axi_gmem_BRESP),
+        .S01_AXI_bvalid(normal_eq_accel_0_m_axi_gmem_BVALID),
+        .S01_AXI_rdata(normal_eq_accel_0_m_axi_gmem_RDATA),
+        .S01_AXI_rlast(normal_eq_accel_0_m_axi_gmem_RLAST),
+        .S01_AXI_rready(normal_eq_accel_0_m_axi_gmem_RREADY),
+        .S01_AXI_rresp(normal_eq_accel_0_m_axi_gmem_RRESP),
+        .S01_AXI_rvalid(normal_eq_accel_0_m_axi_gmem_RVALID),
+        .S01_AXI_wdata(normal_eq_accel_0_m_axi_gmem_WDATA),
+        .S01_AXI_wlast(normal_eq_accel_0_m_axi_gmem_WLAST),
+        .S01_AXI_wready(normal_eq_accel_0_m_axi_gmem_WREADY),
+        .S01_AXI_wstrb(normal_eq_accel_0_m_axi_gmem_WSTRB),
+        .S01_AXI_wvalid(normal_eq_accel_0_m_axi_gmem_WVALID),
         .aclk(xdma_0_axi_aclk),
         .aresetn(xdma_0_axi_aresetn));
   design_1_axi_smc_1 axi_smc1
@@ -448,6 +448,59 @@ module design_1
         .S00_AXI_wvalid(xdma_0_M_AXI_LITE_WVALID),
         .aclk(xdma_0_axi_aclk),
         .aresetn(xdma_0_axi_aresetn));
+  design_1_normal_eq_accel_0_2 normal_eq_accel_0
+       (.ap_clk(xdma_0_axi_aclk),
+        .ap_rst_n(xdma_0_axi_aresetn),
+        .m_axi_gmem_ARADDR(normal_eq_accel_0_m_axi_gmem_ARADDR),
+        .m_axi_gmem_ARBURST(normal_eq_accel_0_m_axi_gmem_ARBURST),
+        .m_axi_gmem_ARCACHE(normal_eq_accel_0_m_axi_gmem_ARCACHE),
+        .m_axi_gmem_ARLEN(normal_eq_accel_0_m_axi_gmem_ARLEN),
+        .m_axi_gmem_ARLOCK(normal_eq_accel_0_m_axi_gmem_ARLOCK),
+        .m_axi_gmem_ARPROT(normal_eq_accel_0_m_axi_gmem_ARPROT),
+        .m_axi_gmem_ARQOS(normal_eq_accel_0_m_axi_gmem_ARQOS),
+        .m_axi_gmem_ARREADY(normal_eq_accel_0_m_axi_gmem_ARREADY),
+        .m_axi_gmem_ARSIZE(normal_eq_accel_0_m_axi_gmem_ARSIZE),
+        .m_axi_gmem_ARVALID(normal_eq_accel_0_m_axi_gmem_ARVALID),
+        .m_axi_gmem_AWADDR(normal_eq_accel_0_m_axi_gmem_AWADDR),
+        .m_axi_gmem_AWBURST(normal_eq_accel_0_m_axi_gmem_AWBURST),
+        .m_axi_gmem_AWCACHE(normal_eq_accel_0_m_axi_gmem_AWCACHE),
+        .m_axi_gmem_AWLEN(normal_eq_accel_0_m_axi_gmem_AWLEN),
+        .m_axi_gmem_AWLOCK(normal_eq_accel_0_m_axi_gmem_AWLOCK),
+        .m_axi_gmem_AWPROT(normal_eq_accel_0_m_axi_gmem_AWPROT),
+        .m_axi_gmem_AWQOS(normal_eq_accel_0_m_axi_gmem_AWQOS),
+        .m_axi_gmem_AWREADY(normal_eq_accel_0_m_axi_gmem_AWREADY),
+        .m_axi_gmem_AWSIZE(normal_eq_accel_0_m_axi_gmem_AWSIZE),
+        .m_axi_gmem_AWVALID(normal_eq_accel_0_m_axi_gmem_AWVALID),
+        .m_axi_gmem_BREADY(normal_eq_accel_0_m_axi_gmem_BREADY),
+        .m_axi_gmem_BRESP(normal_eq_accel_0_m_axi_gmem_BRESP),
+        .m_axi_gmem_BVALID(normal_eq_accel_0_m_axi_gmem_BVALID),
+        .m_axi_gmem_RDATA(normal_eq_accel_0_m_axi_gmem_RDATA),
+        .m_axi_gmem_RLAST(normal_eq_accel_0_m_axi_gmem_RLAST),
+        .m_axi_gmem_RREADY(normal_eq_accel_0_m_axi_gmem_RREADY),
+        .m_axi_gmem_RRESP(normal_eq_accel_0_m_axi_gmem_RRESP),
+        .m_axi_gmem_RVALID(normal_eq_accel_0_m_axi_gmem_RVALID),
+        .m_axi_gmem_WDATA(normal_eq_accel_0_m_axi_gmem_WDATA),
+        .m_axi_gmem_WLAST(normal_eq_accel_0_m_axi_gmem_WLAST),
+        .m_axi_gmem_WREADY(normal_eq_accel_0_m_axi_gmem_WREADY),
+        .m_axi_gmem_WSTRB(normal_eq_accel_0_m_axi_gmem_WSTRB),
+        .m_axi_gmem_WVALID(normal_eq_accel_0_m_axi_gmem_WVALID),
+        .s_axi_control_ARADDR(axi_smc1_M01_AXI_ARADDR),
+        .s_axi_control_ARREADY(axi_smc1_M01_AXI_ARREADY),
+        .s_axi_control_ARVALID(axi_smc1_M01_AXI_ARVALID),
+        .s_axi_control_AWADDR(axi_smc1_M01_AXI_AWADDR),
+        .s_axi_control_AWREADY(axi_smc1_M01_AXI_AWREADY),
+        .s_axi_control_AWVALID(axi_smc1_M01_AXI_AWVALID),
+        .s_axi_control_BREADY(axi_smc1_M01_AXI_BREADY),
+        .s_axi_control_BRESP(axi_smc1_M01_AXI_BRESP),
+        .s_axi_control_BVALID(axi_smc1_M01_AXI_BVALID),
+        .s_axi_control_RDATA(axi_smc1_M01_AXI_RDATA),
+        .s_axi_control_RREADY(axi_smc1_M01_AXI_RREADY),
+        .s_axi_control_RRESP(axi_smc1_M01_AXI_RRESP),
+        .s_axi_control_RVALID(axi_smc1_M01_AXI_RVALID),
+        .s_axi_control_WDATA(axi_smc1_M01_AXI_WDATA),
+        .s_axi_control_WREADY(axi_smc1_M01_AXI_WREADY),
+        .s_axi_control_WSTRB(axi_smc1_M01_AXI_WSTRB),
+        .s_axi_control_WVALID(axi_smc1_M01_AXI_WVALID));
   design_1_processing_system7_0_0 processing_system7_0
        (.DDR_Addr(DDR_addr[14:0]),
         .DDR_BankAddr(DDR_ba[2:0]),
@@ -509,59 +562,6 @@ module design_1
         .S_AXI_HP0_WRISSUECAP1_EN(1'b0),
         .S_AXI_HP0_WSTRB(axi_smc_M00_AXI_WSTRB),
         .S_AXI_HP0_WVALID(axi_smc_M00_AXI_WVALID));
-  design_1_simple_accel_core_0_3 simple_accel_core_0
-       (.ap_clk(xdma_0_axi_aclk),
-        .ap_rst_n(xdma_0_axi_aresetn),
-        .m_axi_gmem_ARADDR(simple_accel_core_0_m_axi_gmem_ARADDR),
-        .m_axi_gmem_ARBURST(simple_accel_core_0_m_axi_gmem_ARBURST),
-        .m_axi_gmem_ARCACHE(simple_accel_core_0_m_axi_gmem_ARCACHE),
-        .m_axi_gmem_ARLEN(simple_accel_core_0_m_axi_gmem_ARLEN),
-        .m_axi_gmem_ARLOCK(simple_accel_core_0_m_axi_gmem_ARLOCK),
-        .m_axi_gmem_ARPROT(simple_accel_core_0_m_axi_gmem_ARPROT),
-        .m_axi_gmem_ARQOS(simple_accel_core_0_m_axi_gmem_ARQOS),
-        .m_axi_gmem_ARREADY(simple_accel_core_0_m_axi_gmem_ARREADY),
-        .m_axi_gmem_ARSIZE(simple_accel_core_0_m_axi_gmem_ARSIZE),
-        .m_axi_gmem_ARVALID(simple_accel_core_0_m_axi_gmem_ARVALID),
-        .m_axi_gmem_AWADDR(simple_accel_core_0_m_axi_gmem_AWADDR),
-        .m_axi_gmem_AWBURST(simple_accel_core_0_m_axi_gmem_AWBURST),
-        .m_axi_gmem_AWCACHE(simple_accel_core_0_m_axi_gmem_AWCACHE),
-        .m_axi_gmem_AWLEN(simple_accel_core_0_m_axi_gmem_AWLEN),
-        .m_axi_gmem_AWLOCK(simple_accel_core_0_m_axi_gmem_AWLOCK),
-        .m_axi_gmem_AWPROT(simple_accel_core_0_m_axi_gmem_AWPROT),
-        .m_axi_gmem_AWQOS(simple_accel_core_0_m_axi_gmem_AWQOS),
-        .m_axi_gmem_AWREADY(simple_accel_core_0_m_axi_gmem_AWREADY),
-        .m_axi_gmem_AWSIZE(simple_accel_core_0_m_axi_gmem_AWSIZE),
-        .m_axi_gmem_AWVALID(simple_accel_core_0_m_axi_gmem_AWVALID),
-        .m_axi_gmem_BREADY(simple_accel_core_0_m_axi_gmem_BREADY),
-        .m_axi_gmem_BRESP(simple_accel_core_0_m_axi_gmem_BRESP),
-        .m_axi_gmem_BVALID(simple_accel_core_0_m_axi_gmem_BVALID),
-        .m_axi_gmem_RDATA(simple_accel_core_0_m_axi_gmem_RDATA),
-        .m_axi_gmem_RLAST(simple_accel_core_0_m_axi_gmem_RLAST),
-        .m_axi_gmem_RREADY(simple_accel_core_0_m_axi_gmem_RREADY),
-        .m_axi_gmem_RRESP(simple_accel_core_0_m_axi_gmem_RRESP),
-        .m_axi_gmem_RVALID(simple_accel_core_0_m_axi_gmem_RVALID),
-        .m_axi_gmem_WDATA(simple_accel_core_0_m_axi_gmem_WDATA),
-        .m_axi_gmem_WLAST(simple_accel_core_0_m_axi_gmem_WLAST),
-        .m_axi_gmem_WREADY(simple_accel_core_0_m_axi_gmem_WREADY),
-        .m_axi_gmem_WSTRB(simple_accel_core_0_m_axi_gmem_WSTRB),
-        .m_axi_gmem_WVALID(simple_accel_core_0_m_axi_gmem_WVALID),
-        .s_axi_control_ARADDR(axi_smc1_M01_AXI_ARADDR),
-        .s_axi_control_ARREADY(axi_smc1_M01_AXI_ARREADY),
-        .s_axi_control_ARVALID(axi_smc1_M01_AXI_ARVALID),
-        .s_axi_control_AWADDR(axi_smc1_M01_AXI_AWADDR),
-        .s_axi_control_AWREADY(axi_smc1_M01_AXI_AWREADY),
-        .s_axi_control_AWVALID(axi_smc1_M01_AXI_AWVALID),
-        .s_axi_control_BREADY(axi_smc1_M01_AXI_BREADY),
-        .s_axi_control_BRESP(axi_smc1_M01_AXI_BRESP),
-        .s_axi_control_BVALID(axi_smc1_M01_AXI_BVALID),
-        .s_axi_control_RDATA(axi_smc1_M01_AXI_RDATA),
-        .s_axi_control_RREADY(axi_smc1_M01_AXI_RREADY),
-        .s_axi_control_RRESP(axi_smc1_M01_AXI_RRESP),
-        .s_axi_control_RVALID(axi_smc1_M01_AXI_RVALID),
-        .s_axi_control_WDATA(axi_smc1_M01_AXI_WDATA),
-        .s_axi_control_WREADY(axi_smc1_M01_AXI_WREADY),
-        .s_axi_control_WSTRB(axi_smc1_M01_AXI_WSTRB),
-        .s_axi_control_WVALID(axi_smc1_M01_AXI_WVALID));
   design_1_util_ds_buf_0_0 util_ds_buf_0
        (.IBUF_DS_N(CLK_IN_D_0_1_CLK_N),
         .IBUF_DS_P(CLK_IN_D_0_1_CLK_P),

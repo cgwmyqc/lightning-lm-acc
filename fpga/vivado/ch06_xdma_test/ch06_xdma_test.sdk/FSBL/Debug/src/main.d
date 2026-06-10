@@ -16,7 +16,7 @@ src/main.o src/main.o: ../src/main.c ../src/fsbl.h \
  ../../FSBL_bsp/ps7_cortexa9_0/include/xil_io.h \
  ../../FSBL_bsp/ps7_cortexa9_0/include/xstatus.h \
  ../../FSBL_bsp/ps7_cortexa9_0/include/xil_assert.h ../src/fsbl_debug.h \
- C:\Users\admin\Desktop\ch06_xdma_test\ch06_xdma_test.sdk\design_1_wrapper_hw_platform_0/ps7_init.h \
+ F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\ch06_xdma_test\ch06_xdma_test.sdk\design_1_wrapper_hw_platform_0/ps7_init.h \
  ../src/qspi.h ../src/nand.h ../src/nor.h ../src/sd.h \
  ../src/image_mover.h ../../FSBL_bsp/ps7_cortexa9_0/include/xil_cache.h \
  ../../FSBL_bsp/ps7_cortexa9_0/include/xil_exception.h \
@@ -63,7 +63,7 @@ src/main.o src/main.o: ../src/main.c ../src/fsbl.h \
 
 ../src/fsbl_debug.h:
 
-C:\Users\admin\Desktop\ch06_xdma_test\ch06_xdma_test.sdk\design_1_wrapper_hw_platform_0/ps7_init.h:
+F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\ch06_xdma_test\ch06_xdma_test.sdk\design_1_wrapper_hw_platform_0/ps7_init.h:
 
 ../src/qspi.h:
 

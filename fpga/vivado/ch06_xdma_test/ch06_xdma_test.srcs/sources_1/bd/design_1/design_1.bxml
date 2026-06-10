@@ -2,10 +2,10 @@
 <Root MajorVersion="0" MinorVersion="36">
   <CompositeFile CompositeFileTopName="design_1" CanBeSetAsTop="false" CanDisplayChildGraph="true">
     <Description>Composite Fileset</Description>
-    <Generation Name="SYNTHESIS" State="GENERATED" Timestamp="1780233017"/>
-    <Generation Name="IMPLEMENTATION" State="GENERATED" Timestamp="1780233017"/>
-    <Generation Name="SIMULATION" State="GENERATED" Timestamp="1780233017"/>
-    <Generation Name="HW_HANDOFF" State="GENERATED" Timestamp="1780233017"/>
+    <Generation Name="SYNTHESIS" State="GENERATED" Timestamp="1781081686"/>
+    <Generation Name="IMPLEMENTATION" State="GENERATED" Timestamp="1781081686"/>
+    <Generation Name="SIMULATION" State="GENERATED" Timestamp="1781081686"/>
+    <Generation Name="HW_HANDOFF" State="GENERATED" Timestamp="1781081686"/>
     <FileCollection Name="SOURCES" Type="SOURCES">
       <File Name="ip\design_1_xdma_0_0\design_1_xdma_0_0.xci" Type="IP">
         <Instance HierarchyPath="xdma_0"/>
@@ -55,14 +55,6 @@
         <UsedIn Val="IMPLEMENTATION"/>
         <UsedIn Val="SIMULATION"/>
       </File>
-      <File Name="ip\design_1_simple_accel_core_0_3\design_1_simple_accel_core_0_3.xci" Type="IP">
-        <Instance HierarchyPath="simple_accel_core_0"/>
-        <Properties IsEditable="false" IsVisible="true" Timestamp="0" IsTrackable="true" IsStatusTracked="true"/>
-        <Library Name="xil_defaultlib"/>
-        <UsedIn Val="SYNTHESIS"/>
-        <UsedIn Val="IMPLEMENTATION"/>
-        <UsedIn Val="SIMULATION"/>
-      </File>
       <File Name="synth\design_1.v" Type="Verilog">
         <Properties IsEditable="false" IsVisible="true" Timestamp="0" IsTrackable="false" IsStatusTracked="false"/>
         <Library Name="xil_defaultlib"/>
@@ -72,6 +64,14 @@
       <File Name="sim\design_1.v" Type="Verilog">
         <Properties IsEditable="false" IsVisible="true" Timestamp="0" IsTrackable="false" IsStatusTracked="false"/>
         <Library Name="xil_defaultlib"/>
+        <UsedIn Val="SIMULATION"/>
+      </File>
+      <File Name="ip\design_1_normal_eq_accel_0_2\design_1_normal_eq_accel_0_2.xci" Type="IP">
+        <Instance HierarchyPath="normal_eq_accel_0"/>
+        <Properties IsEditable="false" IsVisible="true" Timestamp="0" IsTrackable="true" IsStatusTracked="true"/>
+        <Library Name="xil_defaultlib"/>
+        <UsedIn Val="SYNTHESIS"/>
+        <UsedIn Val="IMPLEMENTATION"/>
         <UsedIn Val="SIMULATION"/>
       </File>
       <File Name="design_1_ooc.xdc" Type="XDC">

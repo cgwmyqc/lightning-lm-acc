@@ -45,6 +45,87 @@ float residual_abs_sum
 float reserved1[7]
 ```
 
+## HLS DDR Buffer Interface
+
+The Windows Vivado HLS phase-1 top function uses raw DDR word buffers:
+
+```cpp
+void normal_eq_accel(const uint32_t* input, uint32_t* output, int num_points);
+```
+
+This interface shape is intentional. It keeps bulk data in DDR and prevents Vivado HLS 2018.3 from expanding `FpgaStateInput`, `FpgaCorrInput`, or `FpgaNormalEqOutput` fields into many AXI-Lite registers.
+
+Input DDR layout:
+
+```text
+byte offset 0:
+  FpgaStateInput              # 128 bytes
+
+byte offset 128:
+  FpgaCorrInput[num_points]   # 32 bytes each
+```
+
+Input word offsets:
+
+```text
+0   magic
+1   version
+2   num_points
+3   reserved0
+4   R[0]
+...
+12  R[8]
+13  t[0]
+14  t[1]
+15  t[2]
+32  FpgaCorrInput[0].px
+33  FpgaCorrInput[0].py
+...
+39  FpgaCorrInput[0].weight
+40  FpgaCorrInput[1].px
+```
+
+Output DDR layout:
+
+```text
+byte offset 0:
+  FpgaNormalEqOutput          # 192 bytes
+```
+
+Output word offsets:
+
+```text
+0   magic
+1   version
+2   valid_count
+3   reserved0
+4   H_upper[0]
+...
+24  H_upper[20]
+25  b[0]
+...
+30  b[5]
+31  residual_sum
+32  residual_abs_sum
+33  reserved1[0]
+...
+39  reserved1[6]
+```
+
+Vivado HLS 2018.3 AXI-Lite register map from C synthesis:
+
+```text
+0x00  control
+0x04  GIE
+0x08  IER
+0x0c  ISR
+0x10  input_r      # DDR input buffer pointer
+0x18  output_r     # DDR output buffer pointer
+0x20  num_points
+```
+
+Vivado HLS renames `input` and `output` to `input_r` and `output_r` in the generated register map because they are HDL keywords. Use the generated `xnormal_eq_accel_hw.h` after IP export as the final source of truth for host-side offsets.
+
 ## H_upper Order
 
 `H_upper[21]` stores the upper triangle of the 6x6 matrix in row-major triangular order:

@@ -62,11 +62,18 @@ The Windows HLS testbench should:
 1. Read `GoldenHeader`.
 2. Verify `magic` and `version`.
 3. Read exactly `num_points` `FpgaCorrInput` records.
-4. Run the HLS normal equation kernel with the header state and corr array.
-5. Compare output against `H_upper_cpu` and `b_cpu`.
+4. Pack `GoldenHeader.R/t` and the corr array into the HLS DDR input buffer layout.
+5. Run `normal_eq_accel(input_words, output_words, num_points)`.
+6. Unpack the HLS DDR output buffer.
+7. Compare output against `H_upper_cpu`, `b_cpu`, `residual_sum_cpu`, and `residual_abs_sum_cpu`.
 
-Suggested phase-1 tolerance:
+Suggested phase-1 tolerance for Windows HLS C simulation:
 
 ```text
-max_abs_error <= 1.0e-4 for C simulation
+PASS if each checked field satisfies:
+  abs_error <= 1.0e-4
+  OR
+  rel_error <= 1.0e-3
 ```
+
+The relative tolerance is needed because Orin-generated CPU references and Windows HLS C simulation can differ slightly in float32 accumulation rounding for large `H_upper` entries.

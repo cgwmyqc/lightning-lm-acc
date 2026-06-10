@@ -4,7 +4,7 @@
       "boundary_crc": "0x423778218EBF488B",
       "device": "xc7z015clg485-2",
       "name": "design_1",
-      "synth_flow_mode": "Hierarchical",
+      "synth_flow_mode": "None",
       "tool_version": "2018.3",
       "validated": "true"
     },
@@ -15,7 +15,7 @@
       "axi_smc": "",
       "axi_smc1": "",
       "axi_gpio_0": "",
-      "simple_accel_core_0": ""
+      "normal_eq_accel_0": ""
     },
     "interface_ports": {
       "ref_clk": {
@@ -499,12 +499,60 @@
           }
         }
       },
-      "simple_accel_core_0": {
-        "vlnv": "xilinx.com:hls:simple_accel_core:1.0",
-        "xci_name": "design_1_simple_accel_core_0_3"
+      "normal_eq_accel_0": {
+        "vlnv": "lightning-lm-acc:hls:normal_eq_accel:1.0",
+        "xci_name": "design_1_normal_eq_accel_0_2"
       }
     },
     "interface_nets": {
+      "normal_eq_accel_0_m_axi_gmem": {
+        "interface_ports": [
+          "normal_eq_accel_0/m_axi_gmem",
+          "axi_smc/S01_AXI"
+        ]
+      },
+      "axi_smc1_M01_AXI": {
+        "interface_ports": [
+          "normal_eq_accel_0/s_axi_control",
+          "axi_smc1/M01_AXI"
+        ]
+      },
+      "xdma_0_M_AXI_LITE": {
+        "interface_ports": [
+          "xdma_0/M_AXI_LITE",
+          "axi_smc1/S00_AXI"
+        ]
+      },
+      "xdma_0_M_AXI": {
+        "interface_ports": [
+          "xdma_0/M_AXI",
+          "axi_smc/S00_AXI"
+        ]
+      },
+      "xdma_0_pcie_mgt": {
+        "interface_ports": [
+          "pcie_mgt",
+          "xdma_0/pcie_mgt"
+        ]
+      },
+      "axi_gpio_0_GPIO": {
+        "interface_ports": [
+          "GPIO_0",
+          "axi_gpio_0/GPIO"
+        ]
+      },
+      "CLK_IN_D_0_1": {
+        "interface_ports": [
+          "ref_clk",
+          "util_ds_buf_0/CLK_IN_D"
+        ]
+      },
+      "axi_smc1_M00_AXI": {
+        "interface_ports": [
+          "axi_smc1/M00_AXI",
+          "axi_gpio_0/S_AXI"
+        ]
+      },
       "processing_system7_0_DDR": {
         "interface_ports": [
           "DDR",
@@ -517,58 +565,10 @@
           "processing_system7_0/FIXED_IO"
         ]
       },
-      "axi_smc1_M00_AXI": {
-        "interface_ports": [
-          "axi_smc1/M00_AXI",
-          "axi_gpio_0/S_AXI"
-        ]
-      },
-      "CLK_IN_D_0_1": {
-        "interface_ports": [
-          "ref_clk",
-          "util_ds_buf_0/CLK_IN_D"
-        ]
-      },
-      "xdma_0_M_AXI": {
-        "interface_ports": [
-          "xdma_0/M_AXI",
-          "axi_smc/S00_AXI"
-        ]
-      },
-      "xdma_0_M_AXI_LITE": {
-        "interface_ports": [
-          "xdma_0/M_AXI_LITE",
-          "axi_smc1/S00_AXI"
-        ]
-      },
-      "axi_gpio_0_GPIO": {
-        "interface_ports": [
-          "GPIO_0",
-          "axi_gpio_0/GPIO"
-        ]
-      },
-      "axi_smc1_M01_AXI": {
-        "interface_ports": [
-          "axi_smc1/M01_AXI",
-          "simple_accel_core_0/s_axi_control"
-        ]
-      },
-      "xdma_0_pcie_mgt": {
-        "interface_ports": [
-          "pcie_mgt",
-          "xdma_0/pcie_mgt"
-        ]
-      },
       "axi_smc_M00_AXI": {
         "interface_ports": [
           "axi_smc/M00_AXI",
           "processing_system7_0/S_AXI_HP0"
-        ]
-      },
-      "simple_accel_core_0_m_axi_gmem": {
-        "interface_ports": [
-          "simple_accel_core_0/m_axi_gmem",
-          "axi_smc/S01_AXI"
         ]
       }
     },
@@ -586,7 +586,7 @@
           "processing_system7_0/S_AXI_HP0_ACLK",
           "axi_smc1/aclk",
           "axi_gpio_0/s_axi_aclk",
-          "simple_accel_core_0/ap_clk"
+          "normal_eq_accel_0/ap_clk"
         ]
       },
       "xdma_0_axi_aresetn": {
@@ -595,7 +595,7 @@
           "axi_smc/aresetn",
           "axi_smc1/aresetn",
           "axi_gpio_0/s_axi_aresetn",
-          "simple_accel_core_0/ap_rst_n"
+          "normal_eq_accel_0/ap_rst_n"
         ]
       },
       "pcie_perst_n_1": {
@@ -628,8 +628,8 @@
                 "offset": "0x00000000",
                 "range": "4K"
               },
-              "SEG_simple_accel_core_0_Reg": {
-                "address_block": "/simple_accel_core_0/s_axi_control/Reg",
+              "SEG_normal_eq_accel_0_Reg": {
+                "address_block": "/normal_eq_accel_0/s_axi_control/Reg",
                 "offset": "0x00001000",
                 "range": "4K"
               }
@@ -637,7 +637,7 @@
           }
         }
       },
-      "/simple_accel_core_0": {
+      "/normal_eq_accel_0": {
         "address_spaces": {
           "Data_m_axi_gmem": {
             "range": "4G",

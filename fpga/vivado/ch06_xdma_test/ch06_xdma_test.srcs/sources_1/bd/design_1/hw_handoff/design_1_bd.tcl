@@ -184,6 +184,9 @@ proc create_root_design { parentCell } {
    CONFIG.NUM_SI {1} \
  ] $axi_smc1
 
+  # Create instance: normal_eq_accel_0, and set properties
+  set normal_eq_accel_0 [ create_bd_cell -type ip -vlnv lightning-lm-acc:hls:normal_eq_accel:1.0 normal_eq_accel_0 ]
+
   # Create instance: processing_system7_0, and set properties
   set processing_system7_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:processing_system7:5.5 processing_system7_0 ]
   set_property -dict [ list \
@@ -348,9 +351,6 @@ proc create_root_design { parentCell } {
    CONFIG.PCW_USE_S_AXI_HP0 {1} \
  ] $processing_system7_0
 
-  # Create instance: simple_accel_core_0, and set properties
-  set simple_accel_core_0 [ create_bd_cell -type ip -vlnv xilinx.com:hls:simple_accel_core:1.0 simple_accel_core_0 ]
-
   # Create instance: util_ds_buf_0, and set properties
   set util_ds_buf_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 util_ds_buf_0 ]
   set_property -dict [ list \
@@ -378,11 +378,11 @@ proc create_root_design { parentCell } {
   connect_bd_intf_net -intf_net CLK_IN_D_0_1 [get_bd_intf_ports ref_clk] [get_bd_intf_pins util_ds_buf_0/CLK_IN_D]
   connect_bd_intf_net -intf_net axi_gpio_0_GPIO [get_bd_intf_ports GPIO_0] [get_bd_intf_pins axi_gpio_0/GPIO]
   connect_bd_intf_net -intf_net axi_smc1_M00_AXI [get_bd_intf_pins axi_gpio_0/S_AXI] [get_bd_intf_pins axi_smc1/M00_AXI]
-  connect_bd_intf_net -intf_net axi_smc1_M01_AXI [get_bd_intf_pins axi_smc1/M01_AXI] [get_bd_intf_pins simple_accel_core_0/s_axi_control]
+  connect_bd_intf_net -intf_net axi_smc1_M01_AXI [get_bd_intf_pins axi_smc1/M01_AXI] [get_bd_intf_pins normal_eq_accel_0/s_axi_control]
   connect_bd_intf_net -intf_net axi_smc_M00_AXI [get_bd_intf_pins axi_smc/M00_AXI] [get_bd_intf_pins processing_system7_0/S_AXI_HP0]
+  connect_bd_intf_net -intf_net normal_eq_accel_0_m_axi_gmem [get_bd_intf_pins axi_smc/S01_AXI] [get_bd_intf_pins normal_eq_accel_0/m_axi_gmem]
   connect_bd_intf_net -intf_net processing_system7_0_DDR [get_bd_intf_ports DDR] [get_bd_intf_pins processing_system7_0/DDR]
   connect_bd_intf_net -intf_net processing_system7_0_FIXED_IO [get_bd_intf_ports FIXED_IO] [get_bd_intf_pins processing_system7_0/FIXED_IO]
-  connect_bd_intf_net -intf_net simple_accel_core_0_m_axi_gmem [get_bd_intf_pins axi_smc/S01_AXI] [get_bd_intf_pins simple_accel_core_0/m_axi_gmem]
   connect_bd_intf_net -intf_net xdma_0_M_AXI [get_bd_intf_pins axi_smc/S00_AXI] [get_bd_intf_pins xdma_0/M_AXI]
   connect_bd_intf_net -intf_net xdma_0_M_AXI_LITE [get_bd_intf_pins axi_smc1/S00_AXI] [get_bd_intf_pins xdma_0/M_AXI_LITE]
   connect_bd_intf_net -intf_net xdma_0_pcie_mgt [get_bd_intf_ports pcie_mgt] [get_bd_intf_pins xdma_0/pcie_mgt]
@@ -390,14 +390,14 @@ proc create_root_design { parentCell } {
   # Create port connections
   connect_bd_net -net pcie_perst_n_1 [get_bd_ports pcie_perst_n] [get_bd_pins xdma_0/sys_rst_n]
   connect_bd_net -net util_ds_buf_0_IBUF_OUT [get_bd_pins util_ds_buf_0/IBUF_OUT] [get_bd_pins xdma_0/sys_clk]
-  connect_bd_net -net xdma_0_axi_aclk [get_bd_pins axi_gpio_0/s_axi_aclk] [get_bd_pins axi_smc/aclk] [get_bd_pins axi_smc1/aclk] [get_bd_pins processing_system7_0/S_AXI_HP0_ACLK] [get_bd_pins simple_accel_core_0/ap_clk] [get_bd_pins xdma_0/axi_aclk]
-  connect_bd_net -net xdma_0_axi_aresetn [get_bd_pins axi_gpio_0/s_axi_aresetn] [get_bd_pins axi_smc/aresetn] [get_bd_pins axi_smc1/aresetn] [get_bd_pins simple_accel_core_0/ap_rst_n] [get_bd_pins xdma_0/axi_aresetn]
+  connect_bd_net -net xdma_0_axi_aclk [get_bd_pins axi_gpio_0/s_axi_aclk] [get_bd_pins axi_smc/aclk] [get_bd_pins axi_smc1/aclk] [get_bd_pins normal_eq_accel_0/ap_clk] [get_bd_pins processing_system7_0/S_AXI_HP0_ACLK] [get_bd_pins xdma_0/axi_aclk]
+  connect_bd_net -net xdma_0_axi_aresetn [get_bd_pins axi_gpio_0/s_axi_aresetn] [get_bd_pins axi_smc/aresetn] [get_bd_pins axi_smc1/aresetn] [get_bd_pins normal_eq_accel_0/ap_rst_n] [get_bd_pins xdma_0/axi_aresetn]
 
   # Create address segments
-  create_bd_addr_seg -range 0x02000000 -offset 0x02000000 [get_bd_addr_spaces simple_accel_core_0/Data_m_axi_gmem] [get_bd_addr_segs processing_system7_0/S_AXI_HP0/HP0_DDR_LOWOCM] SEG_processing_system7_0_HP0_DDR_LOWOCM
+  create_bd_addr_seg -range 0x02000000 -offset 0x02000000 [get_bd_addr_spaces normal_eq_accel_0/Data_m_axi_gmem] [get_bd_addr_segs processing_system7_0/S_AXI_HP0/HP0_DDR_LOWOCM] SEG_processing_system7_0_HP0_DDR_LOWOCM
   create_bd_addr_seg -range 0x00001000 -offset 0x00000000 [get_bd_addr_spaces xdma_0/M_AXI_LITE] [get_bd_addr_segs axi_gpio_0/S_AXI/Reg] SEG_axi_gpio_0_Reg
+  create_bd_addr_seg -range 0x00001000 -offset 0x00001000 [get_bd_addr_spaces xdma_0/M_AXI_LITE] [get_bd_addr_segs normal_eq_accel_0/s_axi_control/Reg] SEG_normal_eq_accel_0_Reg
   create_bd_addr_seg -range 0x40000000 -offset 0x00000000 [get_bd_addr_spaces xdma_0/M_AXI] [get_bd_addr_segs processing_system7_0/S_AXI_HP0/HP0_DDR_LOWOCM] SEG_processing_system7_0_HP0_DDR_LOWOCM
-  create_bd_addr_seg -range 0x00001000 -offset 0x00001000 [get_bd_addr_spaces xdma_0/M_AXI_LITE] [get_bd_addr_segs simple_accel_core_0/s_axi_control/Reg] SEG_simple_accel_core_0_Reg
 
 
   # Restore current instance
