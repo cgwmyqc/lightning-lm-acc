@@ -168,6 +168,16 @@ The SLAM code applies `plane_icp_weight` after backend accumulation.
 
 Only surfel-hit effective points are sent to the backend. iVox fallback, surfel lookup, KNN, ESKF solve, and map update remain on CPU.
 
+For surfel-only experiments, set:
+
+```yaml
+fasterlio:
+  surfel_fallback_mode: none
+  min_pts_when_no_ivox_fallback: 20
+```
+
+This disables the CPU iVox KNN fallback in `ObsModel`. Surfel miss points remain visible in fallback statistics but are not used for CPU fallback normal-equation accumulation.
+
 ## Orin Online FPGA Backend
 
 The Orin-side online backend uses the same DDR layout and AXI-Lite register map as `normal_eq_replay`.

@@ -55,6 +55,7 @@ class LaserMapping {
         bool enable_surfel_map_ = true;
         std::string surfel_fallback_mode_ = "ivox";
         double surfel_fallback_warn_ratio_ = 0.05;
+        int min_pts_when_no_ivox_fallback_ = 20;
 
         bool fpga_enable_ = false;
         std::string normal_equation_backend_ = "cpu";

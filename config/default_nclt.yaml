@@ -29,6 +29,7 @@ fasterlio:
   surfel_lookup_nearby_type: 26
   surfel_fallback_mode: ivox
   surfel_fallback_warn_ratio: 0.05
+  min_pts_when_no_ivox_fallback: 20
 
   use_aa: false  # use anderson-acceleration
 

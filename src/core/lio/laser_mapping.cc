@@ -195,6 +195,10 @@ bool LaserMapping::LoadParamsFromYAML(const std::string &yaml_file) {
         if (yaml["fasterlio"]["surfel_fallback_warn_ratio"]) {
             options_.surfel_fallback_warn_ratio_ = yaml["fasterlio"]["surfel_fallback_warn_ratio"].as<double>();
         }
+        if (yaml["fasterlio"]["min_pts_when_no_ivox_fallback"]) {
+            options_.min_pts_when_no_ivox_fallback_ =
+                yaml["fasterlio"]["min_pts_when_no_ivox_fallback"].as<int>();
+        }
 
         const YAML::Node fpga = yaml["fpga"];
         options_.fpga_enable_ = GetYamlValue(fpga, "enable", false);
@@ -798,6 +802,8 @@ void LaserMapping::MapIncremental() {
  */
 void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
     int cnt_pts = scan_down_body_->size();
+    const bool ivox_fallback_enabled = options_.surfel_fallback_mode_ == "ivox" || !surfel_map_;
+    const bool ivox_fallback_disabled = options_.surfel_fallback_mode_ == "none" && surfel_map_;
 
     std::vector<size_t> index(cnt_pts);
     for (size_t i = 0; i < index.size(); ++i) {
@@ -851,7 +857,7 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
                 });
             }
 
-            if (!surfel_map_ || options_.surfel_fallback_mode_ == "ivox") {
+            if (ivox_fallback_enabled) {
                 ScopedPerfStage perf("ObsModel iVox KNN Fallback");
                 std::for_each(std::execution::par_unseq, index.begin(), index.end(), [&](const size_t &i) {
                     if (!surfel_corr_[i].fallback) {
@@ -943,7 +949,8 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
                   << " empty=" << surfel_lookup_stats_.miss_empty_cell
                   << " support_low=" << surfel_lookup_stats_.miss_support_low
                   << " quality_bad=" << surfel_lookup_stats_.miss_quality_bad
-                  << " fallback=" << surfel_fallback_num_ << "/" << cnt_pts;
+                  << " fallback=" << surfel_fallback_num_ << "/" << cnt_pts
+                  << (ivox_fallback_disabled ? " ivox_fallback=disabled" : "");
         if (fallback_ratio > options_.surfel_fallback_warn_ratio_) {
             LOG(WARNING) << "Surfel fallback ratio is high: " << fallback_ratio << " fallback "
                          << surfel_fallback_num_ << "/" << cnt_pts;
@@ -994,7 +1001,7 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
                 corr.d = plane.w();
                 corr.weight = 1.0f;
                 fpga_corrs.emplace_back(corr);
-            } else if (use_normal_equation_backend) {
+            } else if (use_normal_equation_backend && !ivox_fallback_disabled) {
                 fallback_effect_indices.emplace_back(effect_idx);
             }
 
@@ -1010,10 +1017,17 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
     corr_norm_.resize(effect_feat_surf_);
     PerfMonitor::SetEffectivePointStats(effect_feat_surf_, effect_feat_icp_);
 
-    if (effect_feat_surf_ < 20) {
+    const int min_effective_surface_points =
+        ivox_fallback_disabled ? options_.min_pts_when_no_ivox_fallback_ : 20;
+    if (effect_feat_surf_ < min_effective_surface_points) {
         obs.valid_ = false;
-        LOG(WARNING) << "No enough effective surface points: " << effect_feat_surf_ << ", icp: " << effect_feat_icp_
-                     << ", required: " << 20;
+        if (ivox_fallback_disabled) {
+            LOG(WARNING) << "No enough effective surface points with ivox fallback disabled: " << effect_feat_surf_
+                         << ", icp: " << effect_feat_icp_ << ", required: " << min_effective_surface_points;
+        } else {
+            LOG(WARNING) << "No enough effective surface points: " << effect_feat_surf_ << ", icp: "
+                         << effect_feat_icp_ << ", required: " << min_effective_surface_points;
+        }
         return;
     }
 

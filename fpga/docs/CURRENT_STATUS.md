@@ -80,6 +80,13 @@ The tested Orin setup used bus id `0005:01:00.0`.
 - `compare_with_cpu: true` runs a CPU_SIM reference for surfel-hit points and logs the maximum FPGA/CPU error.
 - `fallback_to_cpu_on_error: true` keeps SLAM running if XDMA, timeout, output validation, or compare checks fail.
 
+## Surfel-Only Experiment
+
+- `fasterlio.surfel_fallback_mode: none` disables `ObsModel iVox KNN Fallback`.
+- In this mode, surfel miss/fallback points are counted for diagnostics but are not sent to CPU iVox KNN, CPU plane fitting, or CPU fallback normal-equation accumulation.
+- iVox map maintenance is still kept for compatibility with the existing local map code.
+- If effective surfel-hit points fall below `fasterlio.min_pts_when_no_ivox_fallback`, the observation is rejected instead of falling back to CPU iVox.
+
 ## Notes
 
 - Phase 1 does not move surfel lookup, iVox fallback, ESKF solve, or map update to FPGA.
