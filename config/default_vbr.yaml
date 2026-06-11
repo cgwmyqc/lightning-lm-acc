@@ -66,6 +66,17 @@ fpga:
   golden_dump_dir: /tmp/lightning_fpga_golden
   golden_dump_every_n_frames: 100
   golden_dump_max_files: 50
+  xdma_h2c: /dev/xdma0_h2c_0
+  xdma_c2h: /dev/xdma0_c2h_0
+  xdma_user: /dev/xdma0_user
+  normal_eq_ctrl_addr: 0x1000
+  input_addr: 0x02000000
+  output_addr: 0x02100000
+  timeout_ms: 1000
+  compare_with_cpu: false
+  compare_abs_tol: 1.0e-3
+  compare_rel_tol: 1.0e-5
+  fallback_to_cpu_on_error: true
 
 g2p5:
   esti_floor: false   # 是否动态估计地面

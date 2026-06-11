@@ -34,9 +34,9 @@ surfel_quality_max: 0.05
 - [x] Golden dump writer
 - [x] `cpu` mode preserves legacy CPU path
 - [x] `cpu_sim` mode routes surfel-hit points through backend
-- [ ] XDMA wrapper
-- [ ] Real FPGA backend
-- [ ] `normal_eq_replay` host tool
+- [x] XDMA wrapper
+- [x] Real FPGA backend
+- [x] `normal_eq_replay` host tool
 - [x] `colcon build --symlink-install` passed
 
 ## Windows HLS Side
@@ -55,6 +55,30 @@ surfel_quality_max: 0.05
 - `fpga/golden_small/frame_000100.bin`
 - `fpga/golden_small/frame_000200.bin`
 - `fpga/golden_small/frame_000300.bin`
+
+## Orin Hardware Replay
+
+- `normal_eq_replay` built and ran against the Orin PCIe FPGA through XDMA.
+- Hardware replay passed for:
+  - `frame_000100.bin`: 620 points, max abs error `0.000244141`
+  - `frame_000200.bin`: 732 points, max abs error `0.000488281`
+  - `frame_000300.bin`: 951 points, max abs error `0.0078125`, max rel error `1.90632e-7`
+- Replay tolerance used on Orin hardware: `abs_error <= 1.0e-3 OR rel_error <= 1.0e-5`.
+- PCIe bus mastering must be enabled before DMA. If `lspci -vv -s <bus-id>` shows `BusMaster-`, run:
+
+```bash
+sudo setpci -s <bus-id> COMMAND=0006
+```
+
+The tested Orin setup used bus id `0005:01:00.0`.
+
+## Orin Online FPGA Backend
+
+- `FpgaNormalEquationBackend` now implements the same XDMA data path verified by `normal_eq_replay`.
+- `fpga.mode: fpga` routes surfel-hit effective points through the FPGA backend.
+- iVox fallback points remain on the CPU and are added to the FPGA `H/b` result.
+- `compare_with_cpu: true` runs a CPU_SIM reference for surfel-hit points and logs the maximum FPGA/CPU error.
+- `fallback_to_cpu_on_error: true` keeps SLAM running if XDMA, timeout, output validation, or compare checks fail.
 
 ## Notes
 

@@ -167,3 +167,49 @@ The SLAM code applies `plane_icp_weight` after backend accumulation.
 ## Scope
 
 Only surfel-hit effective points are sent to the backend. iVox fallback, surfel lookup, KNN, ESKF solve, and map update remain on CPU.
+
+## Orin Online FPGA Backend
+
+The Orin-side online backend uses the same DDR layout and AXI-Lite register map as `normal_eq_replay`.
+
+Default XDMA/device configuration:
+
+```yaml
+fpga:
+  enable: true
+  mode: fpga
+  golden_dump_enable: false
+  xdma_h2c: /dev/xdma0_h2c_0
+  xdma_c2h: /dev/xdma0_c2h_0
+  xdma_user: /dev/xdma0_user
+  normal_eq_ctrl_addr: 0x1000
+  input_addr: 0x02000000
+  output_addr: 0x02100000
+  timeout_ms: 1000
+  compare_with_cpu: true
+  compare_abs_tol: 1.0e-3
+  compare_rel_tol: 1.0e-5
+  fallback_to_cpu_on_error: true
+```
+
+Runtime sequence per frame:
+
+1. Pack `FpgaStateInput` and `FpgaCorrInput[num_points]` into the DDR input buffer.
+2. Write input through `/dev/xdma0_h2c_0` at `input_addr`.
+3. Clear the output buffer through `/dev/xdma0_h2c_0` at `output_addr`.
+4. Write AXI-Lite registers through `/dev/xdma0_user`: `input_r`, `output_r`, `num_points`, then `ap_start`.
+5. Poll AP control until `ap_done` or `timeout_ms`.
+6. Read `FpgaNormalEqOutput` through `/dev/xdma0_c2h_0`.
+7. Validate `magic`, `version`, and `valid_count`, then convert `H_upper[21]` back to the symmetric 6x6 matrix.
+
+Before online testing, confirm the PCIe device has `BusMaster+`:
+
+```bash
+lspci -vv -s <bus-id> | grep Control
+```
+
+If it shows `BusMaster-`, enable bus mastering manually:
+
+```bash
+sudo setpci -s <bus-id> COMMAND=0006
+```

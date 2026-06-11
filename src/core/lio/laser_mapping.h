@@ -15,6 +15,7 @@
 #include "core/lio/eskf.hpp"
 #include "core/lio/imu_processing.hpp"
 #include "fpga/fpga_golden_writer.h"
+#include "fpga/fpga_normal_equation_backend.h"
 #include "fpga/normal_equation_backend.h"
 #include "pointcloud_preprocess.h"
 
@@ -58,6 +59,11 @@ class LaserMapping {
         bool fpga_enable_ = false;
         std::string normal_equation_backend_ = "cpu";
         fpga::FpgaGoldenWriter::Options fpga_golden_options_;
+        fpga::FpgaNormalEquationBackend::Options fpga_backend_options_;
+        bool fpga_compare_with_cpu_ = false;
+        float fpga_compare_abs_tol_ = 1.0e-3f;
+        float fpga_compare_rel_tol_ = 1.0e-5f;
+        bool fpga_fallback_to_cpu_on_error_ = true;
     };
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW

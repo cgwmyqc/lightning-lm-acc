@@ -3,8 +3,11 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <execution>
 #include <fstream>
+#include <sstream>
+#include <stdexcept>
 
 #include "common/options.h"
 #include "core/lightning_math.hpp"
@@ -42,6 +45,54 @@ std::string NormalizeFpgaMode(std::string mode) {
     return mode.empty() ? "CPU" : mode;
 }
 
+uint64_t GetYamlUint64(const YAML::Node& node, const std::string& key, uint64_t default_value) {
+    if (!node || !node[key]) {
+        return default_value;
+    }
+    const std::string text = node[key].as<std::string>();
+    std::size_t pos = 0;
+    const uint64_t value = std::stoull(text, &pos, 0);
+    if (pos != text.size()) {
+        throw std::runtime_error("invalid uint64 yaml value for " + key + ": " + text);
+    }
+    return value;
+}
+
+struct NormalEquationCompareStats {
+    float max_abs_error = 0.0f;
+    float max_rel_error = 0.0f;
+    std::string max_name;
+};
+
+void UpdateCompareStats(NormalEquationCompareStats* stats, const std::string& name, float actual, float expected) {
+    const float abs_error = std::fabs(actual - expected);
+    const float rel_error = abs_error / std::max(1.0f, std::fabs(expected));
+    if (abs_error > stats->max_abs_error) {
+        stats->max_abs_error = abs_error;
+        stats->max_rel_error = rel_error;
+        stats->max_name = name;
+    }
+}
+
+NormalEquationCompareStats CompareNormalEquationResults(const fpga::NormalEquationResult& actual,
+                                                        const fpga::NormalEquationResult& expected) {
+    NormalEquationCompareStats stats;
+    for (int r = 0; r < 6; ++r) {
+        for (int c = 0; c < 6; ++c) {
+            UpdateCompareStats(&stats, "H(" + std::to_string(r) + "," + std::to_string(c) + ")", actual.H(r, c),
+                               expected.H(r, c));
+        }
+        UpdateCompareStats(&stats, "b(" + std::to_string(r) + ")", actual.b(r), expected.b(r));
+    }
+    UpdateCompareStats(&stats, "residual_sum", actual.residual_sum, expected.residual_sum);
+    UpdateCompareStats(&stats, "residual_abs_sum", actual.residual_abs_sum, expected.residual_abs_sum);
+    return stats;
+}
+
+bool IsComparePass(const NormalEquationCompareStats& stats, float abs_tol, float rel_tol) {
+    return stats.max_abs_error <= abs_tol || stats.max_rel_error <= rel_tol;
+}
+
 }  // namespace
 
 bool LaserMapping::Init(const std::string &config_yaml) {
@@ -60,8 +111,8 @@ bool LaserMapping::Init(const std::string &config_yaml) {
         fpga_golden_writer_ = std::make_unique<fpga::FpgaGoldenWriter>(options_.fpga_golden_options_);
         LOG(INFO) << "[fpga] normal equation backend: " << normal_equation_backend_->Name();
     } else if (options_.fpga_enable_ && options_.normal_equation_backend_ == "FPGA") {
-        normal_equation_backend_ = std::make_shared<fpga::FpgaNormalEquationBackend>();
-        LOG(WARNING) << "[fpga] FPGA backend is a phase-1 stub; CPU path will be used if it is selected.";
+        normal_equation_backend_ = std::make_shared<fpga::FpgaNormalEquationBackend>(options_.fpga_backend_options_);
+        LOG(INFO) << "[fpga] normal equation backend: " << normal_equation_backend_->Name();
     }
 
     // esekf init
@@ -153,6 +204,24 @@ bool LaserMapping::LoadParamsFromYAML(const std::string &yaml_file) {
             GetYamlValue(fpga, "golden_dump_dir", std::string("/tmp/lightning_fpga_golden"));
         options_.fpga_golden_options_.every_n_frames = GetYamlValue(fpga, "golden_dump_every_n_frames", 100);
         options_.fpga_golden_options_.max_files = GetYamlValue(fpga, "golden_dump_max_files", 50);
+        options_.fpga_backend_options_.xdma_h2c =
+            GetYamlValue(fpga, "xdma_h2c", options_.fpga_backend_options_.xdma_h2c);
+        options_.fpga_backend_options_.xdma_c2h =
+            GetYamlValue(fpga, "xdma_c2h", options_.fpga_backend_options_.xdma_c2h);
+        options_.fpga_backend_options_.xdma_user =
+            GetYamlValue(fpga, "xdma_user", options_.fpga_backend_options_.xdma_user);
+        options_.fpga_backend_options_.normal_eq_ctrl_addr =
+            GetYamlUint64(fpga, "normal_eq_ctrl_addr", options_.fpga_backend_options_.normal_eq_ctrl_addr);
+        options_.fpga_backend_options_.input_addr =
+            GetYamlUint64(fpga, "input_addr", options_.fpga_backend_options_.input_addr);
+        options_.fpga_backend_options_.output_addr =
+            GetYamlUint64(fpga, "output_addr", options_.fpga_backend_options_.output_addr);
+        options_.fpga_backend_options_.timeout_ms =
+            GetYamlValue(fpga, "timeout_ms", options_.fpga_backend_options_.timeout_ms);
+        options_.fpga_compare_with_cpu_ = GetYamlValue(fpga, "compare_with_cpu", false);
+        options_.fpga_compare_abs_tol_ = GetYamlValue(fpga, "compare_abs_tol", 1.0e-3f);
+        options_.fpga_compare_rel_tol_ = GetYamlValue(fpga, "compare_rel_tol", 1.0e-5f);
+        options_.fpga_fallback_to_cpu_on_error_ = GetYamlValue(fpga, "fallback_to_cpu_on_error", true);
         if (!options_.fpga_enable_) {
             options_.normal_equation_backend_ = "CPU";
         }
@@ -886,10 +955,13 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
 
     corr_pts_.resize(cnt_pts);
     corr_norm_.resize(cnt_pts);
-    const bool use_cpu_sim_backend = options_.normal_equation_backend_ == "CPU_SIM" && normal_equation_backend_;
+    const bool use_normal_equation_backend =
+        (options_.normal_equation_backend_ == "CPU_SIM" || options_.normal_equation_backend_ == "FPGA") &&
+        normal_equation_backend_;
+    const bool use_fpga_backend = options_.normal_equation_backend_ == "FPGA" && normal_equation_backend_;
     std::vector<fpga::FpgaCorrInput> fpga_corrs;
     std::vector<size_t> fallback_effect_indices;
-    if (use_cpu_sim_backend) {
+    if (use_normal_equation_backend) {
         fpga_corrs.reserve(cnt_pts);
         fallback_effect_indices.reserve(cnt_pts);
     }
@@ -907,7 +979,7 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
             corr_pts_[effect_feat_surf_] = scan_down_body_->points[i].getVector4fMap();
             corr_pts_[effect_feat_surf_][3] = residuals_[i];
 
-            if (use_cpu_sim_backend && surfel_corr_[i].valid && !surfel_corr_[i].fallback) {
+            if (use_normal_equation_backend && surfel_corr_[i].valid && !surfel_corr_[i].fallback) {
                 const Vec3f p_lidar = scan_down_body_->points[i].getVector3fMap();
                 const Vec3f p_imu = off_R * p_lidar + off_t;
                 const Vec4f& plane = plane_coef_[i];
@@ -922,7 +994,7 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
                 corr.d = plane.w();
                 corr.weight = 1.0f;
                 fpga_corrs.emplace_back(corr);
-            } else if (use_cpu_sim_backend) {
+            } else if (use_normal_equation_backend) {
                 fallback_effect_indices.emplace_back(effect_idx);
             }
 
@@ -1004,16 +1076,46 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
         }
     };
 
-    if (use_cpu_sim_backend) {
-        ScopedPerfStage perf("Plane ICP HTH/HTr CPU_SIM", effect_feat_surf_, static_cast<int>(fpga_corrs.size()),
-                             "CPU_SIM");
+    if (use_normal_equation_backend) {
+        const std::string backend_name = normal_equation_backend_->Name();
+        ScopedPerfStage perf("Plane ICP HTH/HTr " + backend_name, effect_feat_surf_, static_cast<int>(fpga_corrs.size()),
+                             backend_name);
 
         fpga::NormalEquationState ne_state;
         ne_state.R_wi = R_wi;
         ne_state.t_wi = t_wi;
 
         fpga::NormalEquationResult ne_result;
-        if (normal_equation_backend_->Accumulate(fpga_corrs, ne_state, &ne_result)) {
+        bool use_backend_result = normal_equation_backend_->Accumulate(fpga_corrs, ne_state, &ne_result);
+        fpga::NormalEquationResult cpu_compare_result;
+        if (use_backend_result && use_fpga_backend && options_.fpga_compare_with_cpu_) {
+            fpga::CpuNormalEquationBackend cpu_backend;
+            const bool cpu_ok = cpu_backend.Accumulate(fpga_corrs, ne_state, &cpu_compare_result);
+            if (cpu_ok) {
+                const NormalEquationCompareStats stats = CompareNormalEquationResults(ne_result, cpu_compare_result);
+                const bool compare_pass =
+                    IsComparePass(stats, options_.fpga_compare_abs_tol_, options_.fpga_compare_rel_tol_);
+                LOG(INFO) << "[fpga] compare_with_cpu " << (compare_pass ? "PASS" : "FAIL")
+                          << " max_abs_error=" << stats.max_abs_error
+                          << " max_rel_error=" << stats.max_rel_error
+                          << " at " << stats.max_name
+                          << " valid_count=" << ne_result.valid_count;
+                if (!compare_pass) {
+                    if (options_.fpga_fallback_to_cpu_on_error_) {
+                        ne_result = cpu_compare_result;
+                        LOG(WARNING) << "[fpga] compare failed; using CPU_SIM normal equation for surfel-hit points.";
+                    } else {
+                        obs.valid_ = false;
+                        LOG(ERROR) << "[fpga] compare failed and fallback_to_cpu_on_error=false; reject observation.";
+                        return;
+                    }
+                }
+            } else {
+                LOG(WARNING) << "[fpga] CPU compare backend failed; comparison skipped.";
+            }
+        }
+
+        if (use_backend_result) {
             obs.HTH_ += ne_result.H.cast<double>() * options_.plane_icp_weight_;
             obs.HTr_ += ne_result.b.cast<double>() * options_.plane_icp_weight_;
             if (fpga_golden_writer_) {
@@ -1022,8 +1124,14 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
         } else {
             LOG(WARNING) << "Normal equation backend " << normal_equation_backend_->Name()
                          << " failed, falling back to CPU for surfel-hit points.";
-            accumulate_cpu_indices(index, "Plane ICP HTH/HTr FALLBACK_CPU", "FALLBACK_CPU");
-            fallback_effect_indices.clear();
+            if (use_fpga_backend && !options_.fpga_fallback_to_cpu_on_error_) {
+                obs.valid_ = false;
+                LOG(ERROR) << "[fpga] backend failed and fallback_to_cpu_on_error=false; reject observation.";
+                return;
+            } else {
+                accumulate_cpu_indices(index, "Plane ICP HTH/HTr FALLBACK_CPU", "FALLBACK_CPU");
+                fallback_effect_indices.clear();
+            }
         }
 
         accumulate_cpu_indices(fallback_effect_indices, "Plane ICP HTH/HTr FALLBACK_CPU", "FALLBACK_CPU");
