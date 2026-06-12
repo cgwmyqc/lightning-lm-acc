@@ -12,7 +12,9 @@ add_library(${PROJECT_NAME}.libs SHARED
         core/lio/pointcloud_preprocess.cc
         core/block_surfel_map/block_surfel_map.cc
         fpga/cpu_normal_equation_backend.cc
+        fpga/cpu_surfel_lookup_backend.cc
         fpga/fpga_golden_writer.cc
+        fpga/fpga_lookup_golden_writer.cc
         fpga/fpga_normal_equation_backend.cc
         core/loop_closing/loop_closing.cc
 

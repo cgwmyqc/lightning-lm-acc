@@ -420,6 +420,54 @@ bool BlockSurfelMap::TryCell(const PointType&, const BlockKey& block_key, int ce
     return true;
 }
 
+fpga::LookupBatchInput BlockSurfelMap::ExportLookupBatchInput(const PointCloudType& points_world) const {
+    fpga::LookupBatchInput input;
+    input.params.magic = fpga::kFpgaMagic;
+    input.params.version = fpga::kLookupInterfaceVersion;
+    input.params.num_points = static_cast<uint32_t>(points_world.size());
+    input.params.num_blocks = static_cast<uint32_t>(blocks_.size());
+    input.params.cell_resolution = options_.cell_resolution;
+    input.params.inv_cell_resolution = inv_resolution_;
+    input.params.min_support = static_cast<uint32_t>(options_.min_support);
+    input.params.lookup_nearby_type = static_cast<uint32_t>(options_.lookup_nearby_type);
+
+    input.points.reserve(points_world.size());
+    for (const auto& p : points_world.points) {
+        fpga::FpgaLookupPointInput point;
+        point.x = p.x;
+        point.y = p.y;
+        point.z = p.z;
+        point.intensity = p.intensity;
+        input.points.emplace_back(point);
+    }
+
+    input.blocks.reserve(blocks_.size());
+    for (const auto& kv : blocks_) {
+        fpga::FpgaLookupBlock block;
+        block.bx = kv.first.x;
+        block.by = kv.first.y;
+        block.bz = kv.first.z;
+        block.valid_cell_count = kv.second->valid_cell_count;
+        for (int i = 0; i < BlockGeom::CELLS_PER_BLOCK; ++i) {
+            const VoxelCell& src = kv.second->cells[i];
+            fpga::FpgaLookupCell& dst = block.cells[i];
+            dst.count = src.count;
+            dst.flags = src.flags;
+            dst.sum[0] = src.sum[0];
+            dst.sum[1] = src.sum[1];
+            dst.sum[2] = src.sum[2];
+            dst.nx = src.nx;
+            dst.ny = src.ny;
+            dst.nz = src.nz;
+            dst.d = src.d;
+            dst.quality = src.quality;
+        }
+        input.blocks.emplace_back(block);
+    }
+
+    return input;
+}
+
 void BlockSurfelMap::EnqueueFallback(const PointType&) {
     fallback_count_.fetch_add(1, std::memory_order_relaxed);
 }

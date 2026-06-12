@@ -10,6 +10,7 @@
 
 #include "common/eigen_types.h"
 #include "common/point_def.h"
+#include "fpga/fpga_lookup_types.h"
 
 namespace lightning {
 
@@ -126,6 +127,7 @@ class BlockSurfelMap {
     size_t NumValidCells() const;
     size_t NumValidSurfels() const;
     const BlockSurfelMapOptions& Options() const { return options_; }
+    fpga::LookupBatchInput ExportLookupBatchInput(const PointCloudType& points_world) const;
     void ExportCentroidCloud(PointVector& out) const;
 
    private:

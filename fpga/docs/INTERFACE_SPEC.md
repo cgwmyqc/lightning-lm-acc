@@ -223,3 +223,12 @@ If it shows `BusMaster-`, enable bus mastering manually:
 ```bash
 sudo setpci -s <bus-id> COMMAND=0006
 ```
+
+## LookupBatch P1-A
+
+Surfel lookup acceleration uses a separate interface from the normal-equation backend. The detailed layout is documented in:
+
+- `fpga/docs/LOOKUP_BATCH_INTERFACE_SPEC.md`
+- `fpga/docs/LOOKUP_GOLDEN_DATA_FORMAT.md`
+
+The Orin-side P1-A implementation supports `lookup_mode: cpu_sim`, using a flattened `BlockSurfelMap` snapshot as the future HLS input model. The default remains the legacy CPU lookup path.

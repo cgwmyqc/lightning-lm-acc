@@ -30,13 +30,16 @@ surfel_quality_max: 0.05
 
 - [x] `NormalEquationBackend`
 - [x] `CpuNormalEquationBackend`
-- [x] `FpgaNormalEquationBackend` compile-only stub
+- [x] `FpgaNormalEquationBackend`
 - [x] Golden dump writer
 - [x] `cpu` mode preserves legacy CPU path
 - [x] `cpu_sim` mode routes surfel-hit points through backend
 - [x] XDMA wrapper
 - [x] Real FPGA backend
 - [x] `normal_eq_replay` host tool
+- [x] `SurfelLookupBackend` interface
+- [x] `CpuSurfelLookupBackend` CPU_SIM flattened-snapshot implementation
+- [x] LookupBatch golden dump writer
 - [x] `colcon build --symlink-install` passed
 
 ## Windows HLS Side
@@ -87,9 +90,18 @@ The tested Orin setup used bus id `0005:01:00.0`.
 - iVox map maintenance is still kept for compatibility with the existing local map code.
 - If effective surfel-hit points fall below `fasterlio.min_pts_when_no_ivox_fallback`, the observation is rejected instead of falling back to CPU iVox.
 
+## P1-A LookupBatch Orin Side
+
+- `fpga.lookup_enable: false` keeps the legacy direct CPU `BlockSurfelMap::LookupSurfel()` loop.
+- `fpga.lookup_mode: cpu_sim` routes surfel lookup through a flattened `BlockSurfelMap` snapshot and `CpuSurfelLookupBackend`.
+- `lookup_compare_with_cpu: true` compares CPU_SIM output with direct CPU lookup and logs PASS/FAIL.
+- Lookup golden files are written as `lookup_frame_XXXXXX.bin` under `/tmp/lightning_fpga_lookup_golden` when `lookup_golden_dump_enable: true`.
+- The golden layout is `LookupGoldenHeader`, `FpgaLookupPointInput[num_points]`, `FpgaLookupBlock[num_blocks]`, and `FpgaLookupResult[num_points]`.
+
 ## Notes
 
-- Phase 1 does not move surfel lookup, iVox fallback, ESKF solve, or map update to FPGA.
+- Phase 1 did not move surfel lookup, iVox fallback, ESKF solve, or map update to FPGA.
+- P1-A prepares surfel lookup for FPGA by freezing the Orin-side batch interface and golden format; Windows/HLS lookup logic is not implemented in this step.
 - Golden files contain surfel-hit effective points only; fallback CPU contributions are not included.
 - Windows HLS C simulation uses `abs_error <= 1.0e-4 OR rel_error <= 1.0e-3` for each checked field to account for cross-platform float32 accumulation rounding.
 - Current DDR-buffer HLS interface avoids AXI-Lite struct-field expansion. Synthesized AXI-Lite registers are `control`, `input_r`, `output_r`, and `num_points`.

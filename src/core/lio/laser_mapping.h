@@ -14,9 +14,11 @@
 #include "core/ivox3d/ivox3d.h"
 #include "core/lio/eskf.hpp"
 #include "core/lio/imu_processing.hpp"
+#include "fpga/fpga_lookup_golden_writer.h"
 #include "fpga/fpga_golden_writer.h"
 #include "fpga/fpga_normal_equation_backend.h"
 #include "fpga/normal_equation_backend.h"
+#include "fpga/surfel_lookup_backend.h"
 #include "pointcloud_preprocess.h"
 
 #include "livox_ros_driver2/msg/custom_msg.hpp"
@@ -65,6 +67,10 @@ class LaserMapping {
         float fpga_compare_abs_tol_ = 1.0e-3f;
         float fpga_compare_rel_tol_ = 1.0e-5f;
         bool fpga_fallback_to_cpu_on_error_ = true;
+        bool fpga_lookup_enable_ = false;
+        std::string fpga_lookup_mode_ = "CPU";
+        fpga::FpgaLookupGoldenWriter::Options fpga_lookup_golden_options_;
+        bool fpga_lookup_compare_with_cpu_ = true;
     };
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -169,7 +175,9 @@ class LaserMapping {
     BlockSurfelMapOptions surfel_map_options_;
     std::shared_ptr<BlockSurfelMap> surfel_map_ = nullptr;
     std::shared_ptr<fpga::NormalEquationBackend> normal_equation_backend_ = nullptr;
+    std::shared_ptr<fpga::SurfelLookupBackend> surfel_lookup_backend_ = nullptr;
     std::unique_ptr<fpga::FpgaGoldenWriter> fpga_golden_writer_ = nullptr;
+    std::unique_ptr<fpga::FpgaLookupGoldenWriter> fpga_lookup_golden_writer_ = nullptr;
     std::shared_ptr<PointCloudPreprocess> preprocess_ = nullptr;  // point cloud preprocess
     std::shared_ptr<ImuProcess> p_imu_ = nullptr;                 // imu process
 

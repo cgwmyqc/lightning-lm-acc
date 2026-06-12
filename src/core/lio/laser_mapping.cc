@@ -12,6 +12,7 @@
 #include "common/options.h"
 #include "core/lightning_math.hpp"
 #include "fpga/cpu_normal_equation_backend.h"
+#include "fpga/cpu_surfel_lookup_backend.h"
 #include "fpga/fpga_normal_equation_backend.h"
 #include "laser_mapping.h"
 
@@ -93,6 +94,121 @@ bool IsComparePass(const NormalEquationCompareStats& stats, float abs_tol, float
     return stats.max_abs_error <= abs_tol || stats.max_rel_error <= rel_tol;
 }
 
+struct LookupCompareStats {
+    int mismatches = 0;
+    float max_abs_error = 0.0f;
+    std::string max_name;
+};
+
+void UpdateLookupCompareStats(LookupCompareStats* stats, const std::string& name, float actual, float expected) {
+    const float abs_error = std::fabs(actual - expected);
+    if (abs_error > stats->max_abs_error) {
+        stats->max_abs_error = abs_error;
+        stats->max_name = name;
+    }
+}
+
+fpga::FpgaLookupResult ToFpgaLookupResult(const SurfelCorrespondence& corr) {
+    fpga::FpgaLookupResult result;
+    result.valid = corr.valid ? 1u : 0u;
+    result.fallback = corr.fallback ? 1u : 0u;
+    result.hit_neighbor = corr.hit_neighbor ? 1u : 0u;
+    result.neighbor_level = static_cast<uint32_t>(corr.neighbor_level);
+    result.miss_reason = static_cast<uint32_t>(corr.miss_reason);
+    result.count = corr.count;
+    result.quality = corr.quality;
+    result.plane[0] = corr.plane.x();
+    result.plane[1] = corr.plane.y();
+    result.plane[2] = corr.plane.z();
+    result.plane[3] = corr.plane.w();
+    result.centroid[0] = corr.centroid.x();
+    result.centroid[1] = corr.centroid.y();
+    result.centroid[2] = corr.centroid.z();
+    return result;
+}
+
+SurfelCorrespondence ToSurfelCorrespondence(const fpga::FpgaLookupResult& result) {
+    SurfelCorrespondence corr;
+    corr.valid = result.valid != 0;
+    corr.fallback = result.fallback != 0;
+    corr.hit_neighbor = result.hit_neighbor != 0;
+    corr.neighbor_level = static_cast<int>(result.neighbor_level);
+    corr.miss_reason = static_cast<SurfelMissReason>(result.miss_reason);
+    corr.plane = Vec4f(result.plane[0], result.plane[1], result.plane[2], result.plane[3]);
+    corr.centroid = Vec3f(result.centroid[0], result.centroid[1], result.centroid[2]);
+    corr.quality = result.quality;
+    corr.count = result.count;
+    return corr;
+}
+
+void AddLookupStats(const SurfelCorrespondence& corr, SurfelLookupStats* stats) {
+    if (corr.valid && !corr.fallback) {
+        if (corr.hit_neighbor) {
+            ++stats->hit_neighbor;
+        } else {
+            ++stats->hit_exact;
+        }
+        return;
+    }
+    switch (corr.miss_reason) {
+        case SurfelMissReason::NO_BLOCK:
+            ++stats->miss_no_block;
+            break;
+        case SurfelMissReason::EMPTY_CELL:
+            ++stats->miss_empty_cell;
+            break;
+        case SurfelMissReason::SUPPORT_LOW:
+            ++stats->miss_support_low;
+            break;
+        case SurfelMissReason::QUALITY_BAD:
+            ++stats->miss_quality_bad;
+            break;
+        case SurfelMissReason::NONE:
+        default:
+            break;
+    }
+}
+
+LookupCompareStats CompareLookupResults(const std::vector<fpga::FpgaLookupResult>& actual,
+                                        const PointCloudType& points_world,
+                                        const BlockSurfelMap& surfel_map) {
+    LookupCompareStats stats;
+    if (actual.size() != points_world.size()) {
+        stats.mismatches += 1;
+        stats.max_name = "result_size";
+        stats.max_abs_error = static_cast<float>(
+            std::abs(static_cast<int64_t>(actual.size()) - static_cast<int64_t>(points_world.size())));
+        return stats;
+    }
+
+    for (size_t i = 0; i < points_world.size(); ++i) {
+        SurfelCorrespondence expected_corr;
+        const bool expected_hit = surfel_map.LookupSurfel(points_world.points[i], expected_corr);
+        if (!expected_hit) {
+            expected_corr.valid = false;
+        }
+        const fpga::FpgaLookupResult expected = ToFpgaLookupResult(expected_corr);
+        const fpga::FpgaLookupResult& got = actual[i];
+
+        if (got.valid != expected.valid || got.hit_neighbor != expected.hit_neighbor ||
+            got.neighbor_level != expected.neighbor_level || got.miss_reason != expected.miss_reason ||
+            got.count != expected.count) {
+            ++stats.mismatches;
+        }
+        for (int k = 0; k < 4; ++k) {
+            UpdateLookupCompareStats(&stats, "plane[" + std::to_string(k) + "]", got.plane[k],
+                                     expected.plane[k]);
+        }
+        for (int k = 0; k < 3; ++k) {
+            UpdateLookupCompareStats(&stats, "centroid[" + std::to_string(k) + "]", got.centroid[k],
+                                     expected.centroid[k]);
+        }
+        UpdateLookupCompareStats(&stats, "quality", got.quality, expected.quality);
+    }
+
+    return stats;
+}
+
 }  // namespace
 
 bool LaserMapping::Init(const std::string &config_yaml) {
@@ -113,6 +229,12 @@ bool LaserMapping::Init(const std::string &config_yaml) {
     } else if (options_.fpga_enable_ && options_.normal_equation_backend_ == "FPGA") {
         normal_equation_backend_ = std::make_shared<fpga::FpgaNormalEquationBackend>(options_.fpga_backend_options_);
         LOG(INFO) << "[fpga] normal equation backend: " << normal_equation_backend_->Name();
+    }
+    if (options_.fpga_lookup_enable_ && options_.fpga_lookup_mode_ == "CPU_SIM") {
+        surfel_lookup_backend_ = std::make_shared<fpga::CpuSurfelLookupBackend>();
+        fpga_lookup_golden_writer_ =
+            std::make_unique<fpga::FpgaLookupGoldenWriter>(options_.fpga_lookup_golden_options_);
+        LOG(INFO) << "[fpga] surfel lookup backend: " << surfel_lookup_backend_->Name();
     }
 
     // esekf init
@@ -226,8 +348,20 @@ bool LaserMapping::LoadParamsFromYAML(const std::string &yaml_file) {
         options_.fpga_compare_abs_tol_ = GetYamlValue(fpga, "compare_abs_tol", 1.0e-3f);
         options_.fpga_compare_rel_tol_ = GetYamlValue(fpga, "compare_rel_tol", 1.0e-5f);
         options_.fpga_fallback_to_cpu_on_error_ = GetYamlValue(fpga, "fallback_to_cpu_on_error", true);
+        options_.fpga_lookup_enable_ = GetYamlValue(fpga, "lookup_enable", false);
+        options_.fpga_lookup_mode_ = NormalizeFpgaMode(GetYamlValue(fpga, "lookup_mode", std::string("cpu")));
+        options_.fpga_lookup_golden_options_.enable = GetYamlValue(fpga, "lookup_golden_dump_enable", false);
+        options_.fpga_lookup_golden_options_.dump_dir =
+            GetYamlValue(fpga, "lookup_golden_dump_dir", std::string("/tmp/lightning_fpga_lookup_golden"));
+        options_.fpga_lookup_golden_options_.every_n_frames =
+            GetYamlValue(fpga, "lookup_golden_dump_every_n_frames", 100);
+        options_.fpga_lookup_golden_options_.max_files = GetYamlValue(fpga, "lookup_golden_dump_max_files", 50);
+        options_.fpga_lookup_compare_with_cpu_ = GetYamlValue(fpga, "lookup_compare_with_cpu", true);
         if (!options_.fpga_enable_) {
             options_.normal_equation_backend_ = "CPU";
+        }
+        if (!options_.fpga_lookup_enable_) {
+            options_.fpga_lookup_mode_ = "CPU";
         }
 
         bool use_imu_filter = yaml["fasterlio"]["imu_filter"].as<bool>();
@@ -836,25 +970,92 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
                     surfel_corr_[i] = SurfelCorrespondence();
                     point_selected_surf_[i] = false;
                     point_selected_icp_[i] = false;
-
-                    if (surfel_map_ && surfel_map_->LookupSurfel(point_world, surfel_corr_[i])) {
-                        plane_coef_[i] = surfel_corr_[i].plane;
-                        PointType centroid;
-                        centroid.x = surfel_corr_[i].centroid.x();
-                        centroid.y = surfel_corr_[i].centroid.y();
-                        centroid.z = surfel_corr_[i].centroid.z();
-                        centroid.intensity = point_body.intensity;
-                        centroid.time = point_body.time;
-                        points_near.emplace_back(centroid);
-                        point_selected_surf_[i] = true;
-                        point_selected_icp_[i] = true;
-                    } else {
-                        surfel_corr_[i].fallback = true;
-                        if (surfel_map_) {
-                            surfel_map_->EnqueueFallback(point_world);
-                        }
-                    }
                 });
+
+                bool used_lookup_backend = false;
+                if (surfel_map_ && surfel_lookup_backend_) {
+                    fpga::LookupBatchInput lookup_input = surfel_map_->ExportLookupBatchInput(*scan_down_world_);
+                    fpga::LookupBatchOutput lookup_output;
+                    used_lookup_backend = surfel_lookup_backend_->Lookup(lookup_input, &lookup_output) &&
+                                          lookup_output.results.size() == index.size();
+                    if (used_lookup_backend) {
+                        if (options_.fpga_lookup_compare_with_cpu_) {
+                            const LookupCompareStats stats =
+                                CompareLookupResults(lookup_output.results, *scan_down_world_, *surfel_map_);
+                            if (stats.mismatches == 0 && stats.max_abs_error <= 1.0e-6f) {
+                                LOG(INFO) << "[fpga lookup] compare_with_cpu PASS points=" << lookup_output.results.size()
+                                          << " max_abs=" << stats.max_abs_error;
+                            } else {
+                                LOG(WARNING) << "[fpga lookup] compare_with_cpu FAIL mismatches="
+                                             << stats.mismatches << " max_abs=" << stats.max_abs_error
+                                             << " at=" << stats.max_name;
+                            }
+                        }
+
+                        SurfelLookupStats lookup_stats;
+                        for (const auto& result : lookup_output.results) {
+                            SurfelCorrespondence corr = ToSurfelCorrespondence(result);
+                            if (!corr.valid) {
+                                corr.fallback = true;
+                            }
+                            AddLookupStats(corr, &lookup_stats);
+                        }
+                        if (fpga_lookup_golden_writer_) {
+                            fpga_lookup_golden_writer_->MaybeWrite(static_cast<uint32_t>(scan_count_), lookup_input,
+                                                                   lookup_output, lookup_stats);
+                        }
+
+                        std::for_each(std::execution::par_unseq, index.begin(), index.end(), [&](const size_t &i) {
+                            PointType &point_body = scan_down_body_->points[i];
+                            auto &points_near = nearest_points_[i];
+                            surfel_corr_[i] = ToSurfelCorrespondence(lookup_output.results[i]);
+                            if (surfel_corr_[i].valid) {
+                                plane_coef_[i] = surfel_corr_[i].plane;
+                                PointType centroid;
+                                centroid.x = surfel_corr_[i].centroid.x();
+                                centroid.y = surfel_corr_[i].centroid.y();
+                                centroid.z = surfel_corr_[i].centroid.z();
+                                centroid.intensity = point_body.intensity;
+                                centroid.time = point_body.time;
+                                points_near.emplace_back(centroid);
+                                point_selected_surf_[i] = true;
+                                point_selected_icp_[i] = true;
+                            } else {
+                                surfel_corr_[i].fallback = true;
+                                surfel_map_->EnqueueFallback(scan_down_world_->points[i]);
+                            }
+                        });
+                    } else {
+                        LOG(ERROR) << "[fpga lookup] backend " << surfel_lookup_backend_->Name()
+                                   << " failed, falling back to direct CPU LookupSurfel";
+                    }
+                }
+
+                if (!used_lookup_backend) {
+                    std::for_each(std::execution::par_unseq, index.begin(), index.end(), [&](const size_t &i) {
+                        PointType &point_body = scan_down_body_->points[i];
+                        PointType &point_world = scan_down_world_->points[i];
+                        auto &points_near = nearest_points_[i];
+
+                        if (surfel_map_ && surfel_map_->LookupSurfel(point_world, surfel_corr_[i])) {
+                            plane_coef_[i] = surfel_corr_[i].plane;
+                            PointType centroid;
+                            centroid.x = surfel_corr_[i].centroid.x();
+                            centroid.y = surfel_corr_[i].centroid.y();
+                            centroid.z = surfel_corr_[i].centroid.z();
+                            centroid.intensity = point_body.intensity;
+                            centroid.time = point_body.time;
+                            points_near.emplace_back(centroid);
+                            point_selected_surf_[i] = true;
+                            point_selected_icp_[i] = true;
+                        } else {
+                            surfel_corr_[i].fallback = true;
+                            if (surfel_map_) {
+                                surfel_map_->EnqueueFallback(point_world);
+                            }
+                        }
+                    });
+                }
             }
 
             if (ivox_fallback_enabled) {
