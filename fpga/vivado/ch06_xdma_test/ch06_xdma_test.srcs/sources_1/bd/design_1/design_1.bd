@@ -15,7 +15,8 @@
       "axi_smc": "",
       "axi_smc1": "",
       "axi_gpio_0": "",
-      "normal_eq_accel_0": ""
+      "normal_eq_accel_0": "",
+      "lookup_batch_accel_0": ""
     },
     "interface_ports": {
       "ref_clk": {
@@ -433,7 +434,7 @@
         "xci_name": "design_1_axi_smc_0",
         "parameters": {
           "NUM_SI": {
-            "value": "2"
+            "value": "3"
           }
         },
         "interface_ports": {
@@ -451,6 +452,13 @@
               "M00_AXI"
             ]
           },
+          "S02_AXI": {
+            "mode": "Slave",
+            "vlnv": "xilinx.com:interface:aximm_rtl:1.0",
+            "bridges": [
+              "M00_AXI"
+            ]
+          },
           "M00_AXI": {
             "mode": "Master",
             "vlnv": "xilinx.com:interface:aximm_rtl:1.0"
@@ -462,7 +470,7 @@
         "xci_name": "design_1_axi_smc_1",
         "parameters": {
           "NUM_MI": {
-            "value": "2"
+            "value": "3"
           },
           "NUM_SI": {
             "value": "1"
@@ -474,7 +482,8 @@
             "vlnv": "xilinx.com:interface:aximm_rtl:1.0",
             "bridges": [
               "M00_AXI",
-              "M01_AXI"
+              "M01_AXI",
+              "M02_AXI"
             ]
           },
           "M00_AXI": {
@@ -482,6 +491,10 @@
             "vlnv": "xilinx.com:interface:aximm_rtl:1.0"
           },
           "M01_AXI": {
+            "mode": "Master",
+            "vlnv": "xilinx.com:interface:aximm_rtl:1.0"
+          },
+          "M02_AXI": {
             "mode": "Master",
             "vlnv": "xilinx.com:interface:aximm_rtl:1.0"
           }
@@ -502,9 +515,49 @@
       "normal_eq_accel_0": {
         "vlnv": "lightning-lm-acc:hls:normal_eq_accel:1.0",
         "xci_name": "design_1_normal_eq_accel_0_2"
+      },
+      "lookup_batch_accel_0": {
+        "vlnv": "lightning-lm-acc:hls:lookup_batch_accel:1.0",
+        "xci_name": "design_1_lookup_batch_accel_0_0"
       }
     },
     "interface_nets": {
+      "axi_smc_M00_AXI": {
+        "interface_ports": [
+          "axi_smc/M00_AXI",
+          "processing_system7_0/S_AXI_HP0"
+        ]
+      },
+      "processing_system7_0_DDR": {
+        "interface_ports": [
+          "DDR",
+          "processing_system7_0/DDR"
+        ]
+      },
+      "axi_smc1_M00_AXI": {
+        "interface_ports": [
+          "axi_smc1/M00_AXI",
+          "axi_gpio_0/S_AXI"
+        ]
+      },
+      "processing_system7_0_FIXED_IO": {
+        "interface_ports": [
+          "FIXED_IO",
+          "processing_system7_0/FIXED_IO"
+        ]
+      },
+      "CLK_IN_D_0_1": {
+        "interface_ports": [
+          "ref_clk",
+          "util_ds_buf_0/CLK_IN_D"
+        ]
+      },
+      "xdma_0_pcie_mgt": {
+        "interface_ports": [
+          "pcie_mgt",
+          "xdma_0/pcie_mgt"
+        ]
+      },
       "normal_eq_accel_0_m_axi_gmem": {
         "interface_ports": [
           "normal_eq_accel_0/m_axi_gmem",
@@ -517,22 +570,16 @@
           "axi_smc1/M01_AXI"
         ]
       },
-      "xdma_0_M_AXI_LITE": {
-        "interface_ports": [
-          "xdma_0/M_AXI_LITE",
-          "axi_smc1/S00_AXI"
-        ]
-      },
       "xdma_0_M_AXI": {
         "interface_ports": [
           "xdma_0/M_AXI",
           "axi_smc/S00_AXI"
         ]
       },
-      "xdma_0_pcie_mgt": {
+      "xdma_0_M_AXI_LITE": {
         "interface_ports": [
-          "pcie_mgt",
-          "xdma_0/pcie_mgt"
+          "xdma_0/M_AXI_LITE",
+          "axi_smc1/S00_AXI"
         ]
       },
       "axi_gpio_0_GPIO": {
@@ -541,34 +588,16 @@
           "axi_gpio_0/GPIO"
         ]
       },
-      "CLK_IN_D_0_1": {
+      "axi_smc1_M02_AXI": {
         "interface_ports": [
-          "ref_clk",
-          "util_ds_buf_0/CLK_IN_D"
+          "lookup_batch_accel_0/s_axi_control",
+          "axi_smc1/M02_AXI"
         ]
       },
-      "axi_smc1_M00_AXI": {
+      "lookup_batch_accel_0_m_axi_gmem": {
         "interface_ports": [
-          "axi_smc1/M00_AXI",
-          "axi_gpio_0/S_AXI"
-        ]
-      },
-      "processing_system7_0_DDR": {
-        "interface_ports": [
-          "DDR",
-          "processing_system7_0/DDR"
-        ]
-      },
-      "processing_system7_0_FIXED_IO": {
-        "interface_ports": [
-          "FIXED_IO",
-          "processing_system7_0/FIXED_IO"
-        ]
-      },
-      "axi_smc_M00_AXI": {
-        "interface_ports": [
-          "axi_smc/M00_AXI",
-          "processing_system7_0/S_AXI_HP0"
+          "lookup_batch_accel_0/m_axi_gmem",
+          "axi_smc/S02_AXI"
         ]
       }
     },
@@ -586,7 +615,8 @@
           "processing_system7_0/S_AXI_HP0_ACLK",
           "axi_smc1/aclk",
           "axi_gpio_0/s_axi_aclk",
-          "normal_eq_accel_0/ap_clk"
+          "normal_eq_accel_0/ap_clk",
+          "lookup_batch_accel_0/ap_clk"
         ]
       },
       "xdma_0_axi_aresetn": {
@@ -595,7 +625,8 @@
           "axi_smc/aresetn",
           "axi_smc1/aresetn",
           "axi_gpio_0/s_axi_aresetn",
-          "normal_eq_accel_0/ap_rst_n"
+          "normal_eq_accel_0/ap_rst_n",
+          "lookup_batch_accel_0/ap_rst_n"
         ]
       },
       "pcie_perst_n_1": {
@@ -628,6 +659,11 @@
                 "offset": "0x00000000",
                 "range": "4K"
               },
+              "SEG_lookup_batch_accel_0_Reg": {
+                "address_block": "/lookup_batch_accel_0/s_axi_control/Reg",
+                "offset": "0x00002000",
+                "range": "4K"
+              },
               "SEG_normal_eq_accel_0_Reg": {
                 "address_block": "/normal_eq_accel_0/s_axi_control/Reg",
                 "offset": "0x00001000",
@@ -646,6 +682,21 @@
               "SEG_processing_system7_0_HP0_DDR_LOWOCM": {
                 "address_block": "/processing_system7_0/S_AXI_HP0/HP0_DDR_LOWOCM",
                 "offset": "0x02000000",
+                "range": "32M"
+              }
+            }
+          }
+        }
+      },
+      "/lookup_batch_accel_0": {
+        "address_spaces": {
+          "Data_m_axi_gmem": {
+            "range": "4G",
+            "width": "32",
+            "segments": {
+              "SEG_processing_system7_0_HP0_DDR_LOWOCM": {
+                "address_block": "/processing_system7_0/S_AXI_HP0/HP0_DDR_LOWOCM",
+                "offset": "0x04000000",
                 "range": "32M"
               }
             }

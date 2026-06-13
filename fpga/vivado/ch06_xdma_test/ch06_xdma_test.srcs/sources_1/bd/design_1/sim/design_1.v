@@ -1,7 +1,7 @@
 //Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.
 //--------------------------------------------------------------------------------
 //Tool Version: Vivado v.2018.3 (win64) Build 2405991 Thu Dec  6 23:38:27 MST 2018
-//Date        : Wed Jun 10 16:54:14 2026
+//Date        : Sat Jun 13 17:14:59 2026
 //Host        : DESKTOP-QEQDV5I running 64-bit major release  (build 9200)
 //Command     : generate_target design_1.bd
 //Design      : design_1
@@ -9,7 +9,7 @@
 //--------------------------------------------------------------------------------
 `timescale 1 ps / 1 ps
 
-(* CORE_GENERATION_INFO = "design_1,IP_Integrator,{x_ipVendor=xilinx.com,x_ipLibrary=BlockDiagram,x_ipName=design_1,x_ipVersion=1.00.a,x_ipLanguage=VERILOG,numBlks=7,numReposBlks=7,numNonXlnxBlks=1,numHierBlks=0,maxHierDepth=0,numSysgenBlks=0,numHlsBlks=1,numHdlrefBlks=0,numPkgbdBlks=0,bdsource=USER,da_axi4_cnt=3,da_board_cnt=1,da_ps7_cnt=1,synth_mode=Global}" *) (* HW_HANDOFF = "design_1.hwdef" *) 
+(* CORE_GENERATION_INFO = "design_1,IP_Integrator,{x_ipVendor=xilinx.com,x_ipLibrary=BlockDiagram,x_ipName=design_1,x_ipVersion=1.00.a,x_ipLanguage=VERILOG,numBlks=8,numReposBlks=8,numNonXlnxBlks=2,numHierBlks=0,maxHierDepth=0,numSysgenBlks=0,numHlsBlks=2,numHdlrefBlks=0,numPkgbdBlks=0,bdsource=USER,da_axi4_cnt=3,da_board_cnt=1,da_ps7_cnt=1,synth_mode=Global}" *) (* HW_HANDOFF = "design_1.hwdef" *) 
 module design_1
    (DDR_addr,
     DDR_ba,
@@ -107,6 +107,23 @@ module design_1
   wire axi_smc1_M01_AXI_WREADY;
   wire [3:0]axi_smc1_M01_AXI_WSTRB;
   wire axi_smc1_M01_AXI_WVALID;
+  wire [5:0]axi_smc1_M02_AXI_ARADDR;
+  wire axi_smc1_M02_AXI_ARREADY;
+  wire axi_smc1_M02_AXI_ARVALID;
+  wire [5:0]axi_smc1_M02_AXI_AWADDR;
+  wire axi_smc1_M02_AXI_AWREADY;
+  wire axi_smc1_M02_AXI_AWVALID;
+  wire axi_smc1_M02_AXI_BREADY;
+  wire [1:0]axi_smc1_M02_AXI_BRESP;
+  wire axi_smc1_M02_AXI_BVALID;
+  wire [31:0]axi_smc1_M02_AXI_RDATA;
+  wire axi_smc1_M02_AXI_RREADY;
+  wire [1:0]axi_smc1_M02_AXI_RRESP;
+  wire axi_smc1_M02_AXI_RVALID;
+  wire [31:0]axi_smc1_M02_AXI_WDATA;
+  wire axi_smc1_M02_AXI_WREADY;
+  wire [3:0]axi_smc1_M02_AXI_WSTRB;
+  wire axi_smc1_M02_AXI_WVALID;
   wire [31:0]axi_smc_M00_AXI_ARADDR;
   wire [1:0]axi_smc_M00_AXI_ARBURST;
   wire [3:0]axi_smc_M00_AXI_ARCACHE;
@@ -140,6 +157,39 @@ module design_1
   wire axi_smc_M00_AXI_WREADY;
   wire [7:0]axi_smc_M00_AXI_WSTRB;
   wire axi_smc_M00_AXI_WVALID;
+  wire [31:0]lookup_batch_accel_0_m_axi_gmem_ARADDR;
+  wire [1:0]lookup_batch_accel_0_m_axi_gmem_ARBURST;
+  wire [3:0]lookup_batch_accel_0_m_axi_gmem_ARCACHE;
+  wire [7:0]lookup_batch_accel_0_m_axi_gmem_ARLEN;
+  wire [1:0]lookup_batch_accel_0_m_axi_gmem_ARLOCK;
+  wire [2:0]lookup_batch_accel_0_m_axi_gmem_ARPROT;
+  wire [3:0]lookup_batch_accel_0_m_axi_gmem_ARQOS;
+  wire lookup_batch_accel_0_m_axi_gmem_ARREADY;
+  wire [2:0]lookup_batch_accel_0_m_axi_gmem_ARSIZE;
+  wire lookup_batch_accel_0_m_axi_gmem_ARVALID;
+  wire [31:0]lookup_batch_accel_0_m_axi_gmem_AWADDR;
+  wire [1:0]lookup_batch_accel_0_m_axi_gmem_AWBURST;
+  wire [3:0]lookup_batch_accel_0_m_axi_gmem_AWCACHE;
+  wire [7:0]lookup_batch_accel_0_m_axi_gmem_AWLEN;
+  wire [1:0]lookup_batch_accel_0_m_axi_gmem_AWLOCK;
+  wire [2:0]lookup_batch_accel_0_m_axi_gmem_AWPROT;
+  wire [3:0]lookup_batch_accel_0_m_axi_gmem_AWQOS;
+  wire lookup_batch_accel_0_m_axi_gmem_AWREADY;
+  wire [2:0]lookup_batch_accel_0_m_axi_gmem_AWSIZE;
+  wire lookup_batch_accel_0_m_axi_gmem_AWVALID;
+  wire lookup_batch_accel_0_m_axi_gmem_BREADY;
+  wire [1:0]lookup_batch_accel_0_m_axi_gmem_BRESP;
+  wire lookup_batch_accel_0_m_axi_gmem_BVALID;
+  wire [31:0]lookup_batch_accel_0_m_axi_gmem_RDATA;
+  wire lookup_batch_accel_0_m_axi_gmem_RLAST;
+  wire lookup_batch_accel_0_m_axi_gmem_RREADY;
+  wire [1:0]lookup_batch_accel_0_m_axi_gmem_RRESP;
+  wire lookup_batch_accel_0_m_axi_gmem_RVALID;
+  wire [31:0]lookup_batch_accel_0_m_axi_gmem_WDATA;
+  wire lookup_batch_accel_0_m_axi_gmem_WLAST;
+  wire lookup_batch_accel_0_m_axi_gmem_WREADY;
+  wire [3:0]lookup_batch_accel_0_m_axi_gmem_WSTRB;
+  wire lookup_batch_accel_0_m_axi_gmem_WVALID;
   wire [31:0]normal_eq_accel_0_m_axi_gmem_ARADDR;
   wire [1:0]normal_eq_accel_0_m_axi_gmem_ARBURST;
   wire [3:0]normal_eq_accel_0_m_axi_gmem_ARCACHE;
@@ -390,6 +440,39 @@ module design_1
         .S01_AXI_wready(normal_eq_accel_0_m_axi_gmem_WREADY),
         .S01_AXI_wstrb(normal_eq_accel_0_m_axi_gmem_WSTRB),
         .S01_AXI_wvalid(normal_eq_accel_0_m_axi_gmem_WVALID),
+        .S02_AXI_araddr(lookup_batch_accel_0_m_axi_gmem_ARADDR),
+        .S02_AXI_arburst(lookup_batch_accel_0_m_axi_gmem_ARBURST),
+        .S02_AXI_arcache(lookup_batch_accel_0_m_axi_gmem_ARCACHE),
+        .S02_AXI_arlen(lookup_batch_accel_0_m_axi_gmem_ARLEN),
+        .S02_AXI_arlock(lookup_batch_accel_0_m_axi_gmem_ARLOCK[0]),
+        .S02_AXI_arprot(lookup_batch_accel_0_m_axi_gmem_ARPROT),
+        .S02_AXI_arqos(lookup_batch_accel_0_m_axi_gmem_ARQOS),
+        .S02_AXI_arready(lookup_batch_accel_0_m_axi_gmem_ARREADY),
+        .S02_AXI_arsize(lookup_batch_accel_0_m_axi_gmem_ARSIZE),
+        .S02_AXI_arvalid(lookup_batch_accel_0_m_axi_gmem_ARVALID),
+        .S02_AXI_awaddr(lookup_batch_accel_0_m_axi_gmem_AWADDR),
+        .S02_AXI_awburst(lookup_batch_accel_0_m_axi_gmem_AWBURST),
+        .S02_AXI_awcache(lookup_batch_accel_0_m_axi_gmem_AWCACHE),
+        .S02_AXI_awlen(lookup_batch_accel_0_m_axi_gmem_AWLEN),
+        .S02_AXI_awlock(lookup_batch_accel_0_m_axi_gmem_AWLOCK[0]),
+        .S02_AXI_awprot(lookup_batch_accel_0_m_axi_gmem_AWPROT),
+        .S02_AXI_awqos(lookup_batch_accel_0_m_axi_gmem_AWQOS),
+        .S02_AXI_awready(lookup_batch_accel_0_m_axi_gmem_AWREADY),
+        .S02_AXI_awsize(lookup_batch_accel_0_m_axi_gmem_AWSIZE),
+        .S02_AXI_awvalid(lookup_batch_accel_0_m_axi_gmem_AWVALID),
+        .S02_AXI_bready(lookup_batch_accel_0_m_axi_gmem_BREADY),
+        .S02_AXI_bresp(lookup_batch_accel_0_m_axi_gmem_BRESP),
+        .S02_AXI_bvalid(lookup_batch_accel_0_m_axi_gmem_BVALID),
+        .S02_AXI_rdata(lookup_batch_accel_0_m_axi_gmem_RDATA),
+        .S02_AXI_rlast(lookup_batch_accel_0_m_axi_gmem_RLAST),
+        .S02_AXI_rready(lookup_batch_accel_0_m_axi_gmem_RREADY),
+        .S02_AXI_rresp(lookup_batch_accel_0_m_axi_gmem_RRESP),
+        .S02_AXI_rvalid(lookup_batch_accel_0_m_axi_gmem_RVALID),
+        .S02_AXI_wdata(lookup_batch_accel_0_m_axi_gmem_WDATA),
+        .S02_AXI_wlast(lookup_batch_accel_0_m_axi_gmem_WLAST),
+        .S02_AXI_wready(lookup_batch_accel_0_m_axi_gmem_WREADY),
+        .S02_AXI_wstrb(lookup_batch_accel_0_m_axi_gmem_WSTRB),
+        .S02_AXI_wvalid(lookup_batch_accel_0_m_axi_gmem_WVALID),
         .aclk(xdma_0_axi_aclk),
         .aresetn(xdma_0_axi_aresetn));
   design_1_axi_smc_1 axi_smc1
@@ -427,6 +510,23 @@ module design_1
         .M01_AXI_wready(axi_smc1_M01_AXI_WREADY),
         .M01_AXI_wstrb(axi_smc1_M01_AXI_WSTRB),
         .M01_AXI_wvalid(axi_smc1_M01_AXI_WVALID),
+        .M02_AXI_araddr(axi_smc1_M02_AXI_ARADDR),
+        .M02_AXI_arready(axi_smc1_M02_AXI_ARREADY),
+        .M02_AXI_arvalid(axi_smc1_M02_AXI_ARVALID),
+        .M02_AXI_awaddr(axi_smc1_M02_AXI_AWADDR),
+        .M02_AXI_awready(axi_smc1_M02_AXI_AWREADY),
+        .M02_AXI_awvalid(axi_smc1_M02_AXI_AWVALID),
+        .M02_AXI_bready(axi_smc1_M02_AXI_BREADY),
+        .M02_AXI_bresp(axi_smc1_M02_AXI_BRESP),
+        .M02_AXI_bvalid(axi_smc1_M02_AXI_BVALID),
+        .M02_AXI_rdata(axi_smc1_M02_AXI_RDATA),
+        .M02_AXI_rready(axi_smc1_M02_AXI_RREADY),
+        .M02_AXI_rresp(axi_smc1_M02_AXI_RRESP),
+        .M02_AXI_rvalid(axi_smc1_M02_AXI_RVALID),
+        .M02_AXI_wdata(axi_smc1_M02_AXI_WDATA),
+        .M02_AXI_wready(axi_smc1_M02_AXI_WREADY),
+        .M02_AXI_wstrb(axi_smc1_M02_AXI_WSTRB),
+        .M02_AXI_wvalid(axi_smc1_M02_AXI_WVALID),
         .S00_AXI_araddr(xdma_0_M_AXI_LITE_ARADDR),
         .S00_AXI_arprot(xdma_0_M_AXI_LITE_ARPROT),
         .S00_AXI_arready(xdma_0_M_AXI_LITE_ARREADY),
@@ -448,6 +548,59 @@ module design_1
         .S00_AXI_wvalid(xdma_0_M_AXI_LITE_WVALID),
         .aclk(xdma_0_axi_aclk),
         .aresetn(xdma_0_axi_aresetn));
+  design_1_lookup_batch_accel_0_0 lookup_batch_accel_0
+       (.ap_clk(xdma_0_axi_aclk),
+        .ap_rst_n(xdma_0_axi_aresetn),
+        .m_axi_gmem_ARADDR(lookup_batch_accel_0_m_axi_gmem_ARADDR),
+        .m_axi_gmem_ARBURST(lookup_batch_accel_0_m_axi_gmem_ARBURST),
+        .m_axi_gmem_ARCACHE(lookup_batch_accel_0_m_axi_gmem_ARCACHE),
+        .m_axi_gmem_ARLEN(lookup_batch_accel_0_m_axi_gmem_ARLEN),
+        .m_axi_gmem_ARLOCK(lookup_batch_accel_0_m_axi_gmem_ARLOCK),
+        .m_axi_gmem_ARPROT(lookup_batch_accel_0_m_axi_gmem_ARPROT),
+        .m_axi_gmem_ARQOS(lookup_batch_accel_0_m_axi_gmem_ARQOS),
+        .m_axi_gmem_ARREADY(lookup_batch_accel_0_m_axi_gmem_ARREADY),
+        .m_axi_gmem_ARSIZE(lookup_batch_accel_0_m_axi_gmem_ARSIZE),
+        .m_axi_gmem_ARVALID(lookup_batch_accel_0_m_axi_gmem_ARVALID),
+        .m_axi_gmem_AWADDR(lookup_batch_accel_0_m_axi_gmem_AWADDR),
+        .m_axi_gmem_AWBURST(lookup_batch_accel_0_m_axi_gmem_AWBURST),
+        .m_axi_gmem_AWCACHE(lookup_batch_accel_0_m_axi_gmem_AWCACHE),
+        .m_axi_gmem_AWLEN(lookup_batch_accel_0_m_axi_gmem_AWLEN),
+        .m_axi_gmem_AWLOCK(lookup_batch_accel_0_m_axi_gmem_AWLOCK),
+        .m_axi_gmem_AWPROT(lookup_batch_accel_0_m_axi_gmem_AWPROT),
+        .m_axi_gmem_AWQOS(lookup_batch_accel_0_m_axi_gmem_AWQOS),
+        .m_axi_gmem_AWREADY(lookup_batch_accel_0_m_axi_gmem_AWREADY),
+        .m_axi_gmem_AWSIZE(lookup_batch_accel_0_m_axi_gmem_AWSIZE),
+        .m_axi_gmem_AWVALID(lookup_batch_accel_0_m_axi_gmem_AWVALID),
+        .m_axi_gmem_BREADY(lookup_batch_accel_0_m_axi_gmem_BREADY),
+        .m_axi_gmem_BRESP(lookup_batch_accel_0_m_axi_gmem_BRESP),
+        .m_axi_gmem_BVALID(lookup_batch_accel_0_m_axi_gmem_BVALID),
+        .m_axi_gmem_RDATA(lookup_batch_accel_0_m_axi_gmem_RDATA),
+        .m_axi_gmem_RLAST(lookup_batch_accel_0_m_axi_gmem_RLAST),
+        .m_axi_gmem_RREADY(lookup_batch_accel_0_m_axi_gmem_RREADY),
+        .m_axi_gmem_RRESP(lookup_batch_accel_0_m_axi_gmem_RRESP),
+        .m_axi_gmem_RVALID(lookup_batch_accel_0_m_axi_gmem_RVALID),
+        .m_axi_gmem_WDATA(lookup_batch_accel_0_m_axi_gmem_WDATA),
+        .m_axi_gmem_WLAST(lookup_batch_accel_0_m_axi_gmem_WLAST),
+        .m_axi_gmem_WREADY(lookup_batch_accel_0_m_axi_gmem_WREADY),
+        .m_axi_gmem_WSTRB(lookup_batch_accel_0_m_axi_gmem_WSTRB),
+        .m_axi_gmem_WVALID(lookup_batch_accel_0_m_axi_gmem_WVALID),
+        .s_axi_control_ARADDR(axi_smc1_M02_AXI_ARADDR),
+        .s_axi_control_ARREADY(axi_smc1_M02_AXI_ARREADY),
+        .s_axi_control_ARVALID(axi_smc1_M02_AXI_ARVALID),
+        .s_axi_control_AWADDR(axi_smc1_M02_AXI_AWADDR),
+        .s_axi_control_AWREADY(axi_smc1_M02_AXI_AWREADY),
+        .s_axi_control_AWVALID(axi_smc1_M02_AXI_AWVALID),
+        .s_axi_control_BREADY(axi_smc1_M02_AXI_BREADY),
+        .s_axi_control_BRESP(axi_smc1_M02_AXI_BRESP),
+        .s_axi_control_BVALID(axi_smc1_M02_AXI_BVALID),
+        .s_axi_control_RDATA(axi_smc1_M02_AXI_RDATA),
+        .s_axi_control_RREADY(axi_smc1_M02_AXI_RREADY),
+        .s_axi_control_RRESP(axi_smc1_M02_AXI_RRESP),
+        .s_axi_control_RVALID(axi_smc1_M02_AXI_RVALID),
+        .s_axi_control_WDATA(axi_smc1_M02_AXI_WDATA),
+        .s_axi_control_WREADY(axi_smc1_M02_AXI_WREADY),
+        .s_axi_control_WSTRB(axi_smc1_M02_AXI_WSTRB),
+        .s_axi_control_WVALID(axi_smc1_M02_AXI_WVALID));
   design_1_normal_eq_accel_0_2 normal_eq_accel_0
        (.ap_clk(xdma_0_axi_aclk),
         .ap_rst_n(xdma_0_axi_aresetn),

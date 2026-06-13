@@ -70,6 +70,49 @@ float centroid[3]
 float reserved1
 ```
 
+## HLS DDR Buffer Interface
+
+The Windows Vivado HLS P1 top function uses raw DDR word buffers:
+
+```cpp
+void lookup_batch_accel(const uint32_t* input, uint32_t* output, int num_points, int num_blocks);
+```
+
+Input DDR layout:
+
+```text
+byte offset 0:
+  FpgaLookupParams                  # 32 bytes
+
+byte offset 32:
+  FpgaLookupPointInput[num_points]  # 16 bytes each
+
+next byte offset:
+  FpgaLookupBlock[num_blocks]       # 12304 bytes each
+```
+
+Output DDR layout:
+
+```text
+byte offset 0:
+  FpgaLookupResult[num_points]      # 64 bytes each
+```
+
+Vivado HLS 2018.3 AXI-Lite register map from IP export:
+
+```text
+0x00  control
+0x04  GIE
+0x08  IER
+0x0c  ISR
+0x10  input_r
+0x18  output_r
+0x20  num_points
+0x28  num_blocks
+```
+
+Vivado HLS renames `input` and `output` to `input_r` and `output_r` in the generated register map because they are HDL keywords.
+
 ## Lookup Rules
 
 The CPU_SIM backend follows the current CPU implementation:

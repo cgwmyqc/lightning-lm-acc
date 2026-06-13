@@ -52,12 +52,20 @@ surfel_quality_max: 0.05
 - [x] C simulation passed on Windows Vivado HLS 2018.3
 - [x] C synthesis passed on Windows Vivado HLS 2018.3
 - [x] IP export passed on Windows Vivado HLS 2018.3
+- [x] `lookup_batch_accel` P1 replay kernel C simulation passed on Windows Vivado HLS 2018.3
+- [x] `lookup_batch_accel` P1 replay kernel C synthesis passed on Windows Vivado HLS 2018.3
+- [x] `lookup_batch_accel` P1 replay kernel IP export passed on Windows Vivado HLS 2018.3
 
 ## Latest Golden Files
 
 - `fpga/golden_small/frame_000100.bin`
 - `fpga/golden_small/frame_000200.bin`
 - `fpga/golden_small/frame_000300.bin`
+- `fpga/golden_small/lookup_frame_000100.bin`
+- `fpga/golden_small/lookup_frame_000200.bin`
+- `fpga/golden_small/lookup_frame_000300.bin`
+- `fpga/golden_small/lookup_frame_000400.bin`
+- `fpga/golden_small/lookup_frame_000500.bin`
 
 ## Orin Hardware Replay
 
@@ -98,10 +106,20 @@ The tested Orin setup used bus id `0005:01:00.0`.
 - Lookup golden files are written as `lookup_frame_XXXXXX.bin` under `/tmp/lightning_fpga_lookup_golden` when `lookup_golden_dump_enable: true`.
 - The golden layout is `LookupGoldenHeader`, `FpgaLookupPointInput[num_points]`, `FpgaLookupBlock[num_blocks]`, and `FpgaLookupResult[num_points]`.
 
+## P1 Windows HLS LookupBatch
+
+- `lookup_batch_accel` uses DDR word buffers: `input`, `output`, `num_points`, and `num_blocks`.
+- C simulation passed all 5 lookup golden files with zero mismatches.
+- C synthesis target is 10 ns, estimated clock is 9.164 ns.
+- Current conservative implementation uses linear block scan; it is functionally aligned but not performance optimized.
+- Synthesized resources: BRAM_18K 2, DSP48E 35, FF 11420, LUT 16382.
+- Exported IP repository: `fpga/vivado/ip_repo/lookup_batch_accel`.
+
 ## Notes
 
 - Phase 1 did not move surfel lookup, iVox fallback, ESKF solve, or map update to FPGA.
-- P1-A prepares surfel lookup for FPGA by freezing the Orin-side batch interface and golden format; Windows/HLS lookup logic is not implemented in this step.
+- P1-A prepared surfel lookup for FPGA by freezing the Orin-side batch interface and golden format.
+- P1 Windows/HLS now implements the first LookupBatch replay kernel and matches the available golden files.
 - Golden files contain surfel-hit effective points only; fallback CPU contributions are not included.
 - Windows HLS C simulation uses `abs_error <= 1.0e-4 OR rel_error <= 1.0e-3` for each checked field to account for cross-platform float32 accumulation rounding.
 - Current DDR-buffer HLS interface avoids AXI-Lite struct-field expansion. Synthesized AXI-Lite registers are `control`, `input_r`, `output_r`, and `num_points`.
