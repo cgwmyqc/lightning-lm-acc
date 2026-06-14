@@ -1,6 +1,6 @@
 //arch = zynq; split = false; format = BIN
 the_ROM_image:
 {
-	[bootloader]F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\ch06_xdma_test\ch06_xdma_test.sdk\FSBL\Debug\FSBL.elf
+	[bootloader]F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\ch06_xdma_test\ch06_xdma_test.sdk\fsbl\Debug\fsbl.elf
 	F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\ch06_xdma_test\ch06_xdma_test.sdk\design_1_wrapper_hw_platform_0\design_1_wrapper.bit
 }

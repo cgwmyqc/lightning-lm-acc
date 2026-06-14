@@ -83,6 +83,25 @@ sudo setpci -s <bus-id> COMMAND=0006
 
 The tested Orin setup used bus id `0005:01:00.0`.
 
+## Current XDMA Enumeration Issue
+
+- Latest integrated bitstream can be seen by Orin `lspci` as Xilinx device
+  `7021`, but `/dev/xdma*` is not created on the reported setup.
+- Previous P0 firmware still creates `/dev/xdma*` on the same Orin setup, so
+  the first suspect is latest firmware/XDMA integration, not the HLS math.
+- Current local BD handoff keeps:
+  - `xdma_0/M_AXI_LITE`: GPIO at `0x0000_0000`, `normal_eq_accel_0` at
+    `0x0000_1000`, `lookup_batch_accel_0` at `0x0000_2000`.
+  - `normal_eq_accel_0/Data_m_axi_gmem`: `0x0200_0000 / 32M`.
+  - `lookup_batch_accel_0/Data_m_axi_gmem`: `0x0400_0000 / 32M`.
+- Current local `impl_1/runme.log` reports successful bitstream generation and
+  router-estimated timing with positive setup/hold slack, but the routed timing
+  summary report is older than the latest bitstream. Re-run or reopen timing
+  summary before signing off the current image.
+- Use `fpga/docs/XDMA_DEBUG.md` and
+  `fpga/host_tools/xdma_diag/xdma_diagnose.sh` to distinguish driver-not-loaded,
+  driver-not-bound, BAR/MSI probe failure, and stale/wrong BOOT image cases.
+
 ## Orin Online FPGA Backend
 
 - `FpgaNormalEquationBackend` now implements the same XDMA data path verified by `normal_eq_replay`.
