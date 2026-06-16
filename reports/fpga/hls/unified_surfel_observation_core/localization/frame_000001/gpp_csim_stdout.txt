@@ -1,0 +1,2 @@
+[obs_tb] counts_ok=1 values_ok=1 max_abs=0.0078906 max_rel=4.41926e-05 worst_idx=104 actual_counts=6050/911/2 expected_counts=6050/911/2
+[obs_tb] PASS F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\golden\localization\frame_000001

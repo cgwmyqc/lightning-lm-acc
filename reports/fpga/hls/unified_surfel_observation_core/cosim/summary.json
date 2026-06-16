@@ -1,0 +1,16 @@
+{
+  "date": "2026-06-16",
+  "stage": "vivado_hls_cosim",
+  "status": "BLOCKED",
+  "tool": "Vivado HLS 2018.3",
+  "project_dir": "%TEMP%/lightning_hls_unified_obs_cosim",
+  "blocking_error": "g++.exe: error: release: No such file or directory",
+  "cosim_errors": [
+    "ERROR: [COSIM 212-317] C++ compile error.",
+    "ERROR: [COSIM 212-321] EXE file generate failed.",
+    "ERROR: [COSIM 212-331] Aborting co-simulation: C simulation failed, compilation errors."
+  ],
+  "blocked_before_rtl_simulation": true,
+  "next_step": "wrapper_level_rtl_simulation"
+}
+

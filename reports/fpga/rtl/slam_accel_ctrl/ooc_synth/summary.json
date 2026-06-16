@@ -1,0 +1,22 @@
+{
+  "date": "2026-06-16",
+  "tool": "Vivado 2018.3",
+  "part": "xc7z100ffg900-2",
+  "top": "slam_accel_ctrl",
+  "status": "PASS",
+  "errors": 0,
+  "critical_warnings": 0,
+  "warnings": 9,
+  "utilization": {
+    "slice_luts": 375,
+    "slice_lut_percent": 0.14,
+    "slice_registers": 493,
+    "slice_register_percent": 0.09,
+    "bram_tiles": 0,
+    "dsps": 0
+  },
+  "notes": [
+    "Warnings are from word-aligned AXI address LSBs and optimization of equivalent or unused registers.",
+    "This is a skeleton OOC check only; no XDMA, block design, DDR interconnect, or HLS IP integration is included."
+  ]
+}

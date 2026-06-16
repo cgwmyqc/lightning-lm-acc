@@ -1,0 +1,46 @@
+{
+  "date": "2026-06-16",
+  "golden_dir": "fpga/golden/localization/frame_000001",
+  "target": "unified_surfel_observation_core",
+  "toolchain": {
+    "gpp": "MinGW g++",
+    "vivado_hls": "2018.3",
+    "part": "xc7z100ffg900-2"
+  },
+  "gpp_csim": {
+    "status": "PASS",
+    "counts_ok": true,
+    "values_ok": true,
+    "max_abs": 0.0078906,
+    "max_rel": 0.0000441926,
+    "worst_idx": 104,
+    "actual_counts": {
+      "valid": 6050,
+      "reject": 911,
+      "miss": 2
+    },
+    "expected_counts": {
+      "valid": 6050,
+      "reject": 911,
+      "miss": 2
+    }
+  },
+  "vivado_hls_csim": {
+    "status": "PASS",
+    "counts_ok": true,
+    "values_ok": true,
+    "max_abs": 0.0078906,
+    "max_rel": 0.0000441926,
+    "worst_idx": 104,
+    "actual_counts": {
+      "valid": 6050,
+      "reject": 911,
+      "miss": 2
+    },
+    "expected_counts": {
+      "valid": 6050,
+      "reject": 911,
+      "miss": 2
+    }
+  }
+}

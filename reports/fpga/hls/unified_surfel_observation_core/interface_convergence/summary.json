@@ -1,0 +1,68 @@
+{
+  "date": "2026-06-16",
+  "tool": "Vivado HLS 2018.3",
+  "part": "xc7z100ffg900-2",
+  "top": "unified_surfel_observation_core",
+  "status": "PASS",
+  "golden": "fpga/golden/localization/frame_000001",
+  "csim": {
+    "gpp": "PASS",
+    "vivado_hls": "PASS",
+    "counts_ok": true,
+    "values_ok": true,
+    "max_abs": 0.0078906,
+    "max_rel": 0.0000441926,
+    "actual_counts": {
+      "valid": 6050,
+      "reject": 911,
+      "miss": 2
+    }
+  },
+  "csynth": {
+    "status": "PASS",
+    "target_clock_ns": 10.0,
+    "estimated_clock_ns": 9.307,
+    "uncertainty_ns": 1.25,
+    "resources": {
+      "bram_18k": {
+        "used": 36,
+        "available": 1510,
+        "util_percent": 2
+      },
+      "dsp48e": {
+        "used": 256,
+        "available": 2020,
+        "util_percent": 12
+      },
+      "ff": {
+        "used": 27475,
+        "available": 554800,
+        "util_percent": 4
+      },
+      "lut": {
+        "used": 41633,
+        "available": 277400,
+        "util_percent": 15
+      }
+    }
+  },
+  "interface": {
+    "has_hls_axi_lite_slave": false,
+    "control": "ap_ctrl_hs",
+    "axi_master_bundles": ["gmem0", "gmem1", "gmem2", "gmem3", "gmem4"],
+    "packed_input_direct_ports": ["scan_points", "pose", "map_header", "active_blocks", "obs_cells"],
+    "unpacked_output_direct_ports": [
+      "output_h_upper",
+      "output_b",
+      "output_valid_count",
+      "output_reject_count",
+      "output_miss_count",
+      "output_flags",
+      "output_residual_sum",
+      "output_residual_abs_sum",
+      "output_residual_max_abs",
+      "output_reserved"
+    ],
+    "note": "Vivado HLS 2018.3 cannot DATA_PACK SlamNormalEquation because its packed bit width is not a power of two. slam_accel_ctrl derives output field addresses from one OUT_ADDR register."
+  }
+}

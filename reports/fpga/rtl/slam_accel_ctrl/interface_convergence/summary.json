@@ -1,0 +1,38 @@
+{
+  "date": "2026-06-16",
+  "tool": "Vivado 2018.3",
+  "part": "xc7z100ffg900-2",
+  "top": "slam_accel_ctrl",
+  "flow": "out_of_context_synthesis",
+  "status": "PASS",
+  "errors": 0,
+  "critical_warnings": 0,
+  "warnings": 10,
+  "utilization": {
+    "slice_luts": {
+      "used": 542,
+      "available": 277400,
+      "util_percent": 0.20
+    },
+    "slice_registers": {
+      "used": 619,
+      "available": 554800,
+      "util_percent": 0.11
+    },
+    "bram_tiles": {
+      "used": 0,
+      "available": 755,
+      "util_percent": 0.0
+    },
+    "dsps": {
+      "used": 0,
+      "available": 2020,
+      "util_percent": 0.0
+    }
+  },
+  "timing_note": "No XDC clock or IO constraints were applied in this OOC syntax/resource check, so timing summary reports NA/unconstrained paths.",
+  "notes": [
+    "Warnings are from word-aligned AXI address LSBs, equivalent s_axi_awready/s_axi_wready optimization, OOC clock-source timing context, and flat netlist floorplanning guidance.",
+    "The controller still exposes exactly one AXI-Lite slave and now drives ap_ctrl_hs plus direct HLS offset ports."
+  ]
+}

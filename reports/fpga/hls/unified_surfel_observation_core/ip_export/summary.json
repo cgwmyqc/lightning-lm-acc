@@ -1,0 +1,20 @@
+{
+  "date": "2026-06-16",
+  "stage": "vivado_hls_ip_export",
+  "status": "PASS",
+  "tool": "Vivado HLS 2018.3",
+  "project_dir": "%TEMP%/lightning_hls_unified_obs",
+  "component_xml": "%TEMP%/lightning_hls_unified_obs/solution1/impl/ip/component.xml",
+  "ip_zip": "%TEMP%/lightning_hls_unified_obs/solution1/impl/ip/xilinx_com_hls_unified_surfel_observation_core_1_0.zip",
+  "ip_zip_size_bytes": 445024,
+  "core_revision": 1,
+  "workaround": "run_vivado_hls_export_ip.ps1 verifies component.xml/zip, rewrites over-range generated run_ippack.tcl Revision to 1, reruns Vivado packager, and exits nonzero if no usable output or repairable run_ippack.tcl exists",
+  "target_clock_ns": 10.0,
+  "estimated_clock_ns": 9.307,
+  "resources": {
+    "BRAM_18K": 36,
+    "DSP48E": 256,
+    "FF": 27475,
+    "LUT": 41633
+  }
+}

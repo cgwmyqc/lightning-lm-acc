@@ -1,0 +1,27 @@
+unified_surfel_observation_core Vivado HLS 2018.3 cosim summary
+
+Date: 2026-06-16
+Project: %TEMP%\lightning_hls_unified_obs_cosim
+Part: xc7z100ffg900-2
+
+Result: BLOCKED by Vivado HLS 2018.3 generated cosim wrapper compile.
+
+Observed failure:
+
+  g++.exe: error: release: No such file or directory
+  ERROR: [COSIM 212-317] C++ compile error.
+  ERROR: [COSIM 212-321] EXE file generate failed.
+  ERROR: [COSIM 212-331] Aborting co-simulation: C simulation failed, compilation errors.
+
+Additional warnings:
+
+  Vivado HLS emitted many [COSIM 212-369] warnings for AXI_master port depth metadata.
+
+Interpretation:
+
+  CSim and C Synthesis already PASS. The cosim failure occurs before RTL simulation, while compiling the generated C wrapper/test harness. This is treated as a Vivado HLS 2018.3 cosim flow limitation for the current m_axi offset=direct / packed-struct interface shape, not as a numeric mismatch.
+
+Next action:
+
+  Use wrapper-level RTL simulation after the HLS IP and slam_accel_ctrl integration wrapper are introduced.
+

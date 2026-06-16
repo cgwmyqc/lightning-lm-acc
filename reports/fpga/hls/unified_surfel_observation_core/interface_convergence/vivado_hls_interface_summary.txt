@@ -1,0 +1,43 @@
+unified_surfel_observation_core Interface Convergence Summary
+================================================================
+
+Date:
+  2026-06-16
+
+Status:
+  PASS
+
+Behavior verification:
+  g++ CSim: PASS
+  Vivado HLS 2018.3 CSim: PASS
+  counts_ok=1
+  values_ok=1
+  max_abs=0.0078906
+  max_rel=4.41926e-05
+  counts=6050/911/2
+
+C Synthesis:
+  Tool: Vivado HLS 2018.3
+  Part: xc7z100ffg900-2
+  Target clock: 10.00 ns
+  Estimated clock: 9.307 ns
+  BRAM_18K: 36 / 1510 (2%)
+  DSP48E: 256 / 2020 (12%)
+  FF: 27475 / 554800 (4%)
+  LUT: 41633 / 277400 (15%)
+
+Interface result:
+  No s_axi_control or other HLS AXI-Lite slave is generated.
+  Control uses ap_ctrl_hs: ap_start, ap_done, ap_idle, ap_ready.
+  AXI master bundles remain gmem0 through gmem4.
+  Input structs are DATA_PACKed and expose single direct scalar base-address ports:
+    scan_points, pose, map_header, active_blocks, obs_cells.
+  SlamNormalEquation output remains unpacked because Vivado HLS 2018.3 rejects a 2176-bit DATA_PACKed AXI master width.
+  Output direct offset ports are:
+    output_h_upper, output_b, output_valid_count, output_reject_count,
+    output_miss_count, output_flags, output_residual_sum,
+    output_residual_abs_sum, output_residual_max_abs, output_reserved.
+
+Integration note:
+  slam_accel_ctrl keeps one OUT_ADDR register and derives the output field addresses from the ABI offsets.
+  This preserves a single host-visible output base address while matching the actual HLS 2018.3 RTL interface.

@@ -18,7 +18,7 @@ Not implemented in V1:
 - BatchUpdate
 - DirtyRefit
 - solve6x6
-- AXI-Lite controller
+- AXI-Lite controller inside the HLS IP
 - XDMA host runtime
 - online guarded enable
 
@@ -53,20 +53,29 @@ Check the same replay with the Orin CPU implementation:
   --golden_dir ./fpga/golden/localization/frame_000001
 ```
 
-## Run CSim On Windows Vivado HLS
+## Run CSim On Windows
 
-1. Create a new Vivado HLS project.
-2. Add `unified_surfel_observation_core.cpp` as the design source.
-3. Add `obs_tb.cpp` as the testbench source.
-4. Add the repository `fpga/abi` include path, or keep the relative path layout unchanged.
-5. Set top function:
+Quick g++ smoke test:
 
-```text
-lightning::fpga::hls::unified_surfel_observation_core
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\unified_surfel_observation_core\run_gpp_csim.ps1 `
+  -GoldenDir .\fpga\golden\localization\frame_000001
 ```
 
-6. Copy or mount the generated golden directory.
-7. Run C Simulation with the golden directory as argv:
+Vivado HLS 2018.3 CSim:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\unified_surfel_observation_core\run_vivado_hls_csim.ps1 `
+  -GoldenDir .\fpga\golden\localization\frame_000001
+```
+
+The Vivado HLS script creates a fresh project under the ignored `build/` directory and sets top function:
+
+```text
+unified_surfel_observation_core
+```
+
+Manual CSim still uses the golden directory as argv:
 
 ```text
 obs_tb.exe <repo>/fpga/golden/localization/frame_000001
@@ -84,3 +93,119 @@ The first acceptance target is:
 H/b: abs <= 1e-4 or rel <= 1e-3
 stats: valid_count/reject_count/miss_count exact match
 ```
+
+## Run C Synthesis On Windows
+
+Vivado HLS 2018.3 C Synthesis:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\unified_surfel_observation_core\run_vivado_hls_csynth.ps1
+```
+
+By default, the script creates the HLS project under:
+
+```text
+%TEMP%\lightning_hls_unified_obs
+```
+
+This short path avoids Windows path length failures in Vivado HLS generated RTL file names.
+
+Current 7Z100 synthesis checkpoint:
+
+```text
+Part: xc7z100ffg900-2
+Target clock: 10.00 ns
+Estimated clock: 9.307 ns
+Resources: BRAM_18K 36, DSP48E 256, FF 27475, LUT 41633
+```
+
+## Run Cosim / IP Export On Windows
+
+Vivado HLS 2018.3 Cosim:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\unified_surfel_observation_core\run_vivado_hls_cosim.ps1 `
+  -GoldenDir .\fpga\golden\localization\frame_000001
+```
+
+Current status: blocked by the generated Vivado HLS 2018.3 cosim wrapper compile step before RTL simulation:
+
+```text
+g++.exe: error: release: No such file or directory
+ERROR: [COSIM 212-317] C++ compile error.
+```
+
+CSim and C Synthesis still pass. The next simulation target is wrapper-level RTL simulation after `slam_accel_ctrl` and the HLS IP are instantiated together.
+
+Vivado HLS 2018.3 IP export:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\unified_surfel_observation_core\run_vivado_hls_export_ip.ps1
+```
+
+The export script writes the generated project under:
+
+```text
+%TEMP%\lightning_hls_unified_obs
+```
+
+Vivado HLS 2018.3 generates a timestamp-like IP `core_revision` value. On dates such as 2026-06-16 that value exceeds the Vivado 2018.3 IP packager integer range. `run_vivado_hls_export_ip.ps1` checks the generated IP output; if HLS fails to produce `component.xml`/zip and the generated `run_ippack.tcl` revision is over range, it rewrites that local generated revision to `1` and reruns Vivado packager.
+
+Current IP export checkpoint:
+
+```text
+component.xml: %TEMP%\lightning_hls_unified_obs\solution1\impl\ip\component.xml
+ip_zip:        %TEMP%\lightning_hls_unified_obs\solution1\impl\ip\xilinx_com_hls_unified_surfel_observation_core_1_0.zip
+coreRevision: 1
+status:       PASS
+```
+
+## Interface Contract
+
+`unified_surfel_observation_core` is an HLS compute IP, not a system control endpoint.
+
+The generated HLS IP must not expose an independent AXI-Lite slave. The only external AXI-Lite control point in the 7Z100 design is `slam_accel_ctrl`.
+
+Current HLS interface policy:
+
+```text
+control: ap_ctrl_hs
+scan_points:   m_axi offset=direct, DATA_PACK, direct scalar base address
+pose:          m_axi offset=direct, DATA_PACK, direct scalar base address
+map_header:    m_axi offset=direct, DATA_PACK, direct scalar base address
+active_blocks: m_axi offset=direct, DATA_PACK, direct scalar base address
+obs_cells:     m_axi offset=direct, DATA_PACK, direct scalar base address
+output:        m_axi offset=direct, unpacked direct field addresses
+num_points:    direct scalar input
+```
+
+`slam_accel_ctrl` owns the register bank, validates address high words, drives `ap_start`, and supplies the direct base-address inputs and `num_points`. HLS C++ behavior and the ABI structures stay unchanged.
+
+Vivado HLS 2018.3 cannot `DATA_PACK` `SlamNormalEquation` because the packed width is not a power of two. Therefore the output direct ports are field offsets derived from one `OUT_ADDR` register in `slam_accel_ctrl`.
+
+Generated RTL direct mapping:
+
+```text
+ap_start <- unified_obs_ap_start
+ap_done -> unified_obs_ap_done
+ap_idle -> unified_obs_ap_idle
+ap_ready -> unified_obs_ap_ready
+num_points <- unified_obs_num_points
+scan_points <- unified_obs_scan_points_addr
+pose <- unified_obs_pose_addr
+map_header <- unified_obs_map_header_addr
+active_blocks <- unified_obs_active_blocks_addr
+obs_cells <- unified_obs_obs_cells_addr
+output_h_upper <- unified_obs_output_h_upper_addr
+output_b <- unified_obs_output_b_addr
+output_valid_count <- unified_obs_output_valid_count_addr
+output_reject_count <- unified_obs_output_reject_count_addr
+output_miss_count <- unified_obs_output_miss_count_addr
+output_flags <- unified_obs_output_flags_addr
+output_residual_sum <- unified_obs_output_residual_sum_addr
+output_residual_abs_sum <- unified_obs_output_residual_abs_sum_addr
+output_residual_max_abs <- unified_obs_output_residual_max_abs_addr
+output_reserved <- unified_obs_output_reserved_addr
+```
+
+The current HLS core has no error output. Until a real error/status channel is added, wrapper/BD integration must tie `unified_obs_error` to `32'd0`.

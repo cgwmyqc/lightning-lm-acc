@@ -1,0 +1,16 @@
+Vivado(TM) HLS - High-Level Synthesis from C, C++ and SystemC v2018.3 (64-bit)
+SW Build 2405991 on Thu Dec  6 23:38:27 MST 2018
+IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
+
+INFO: golden_dir=F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/golden/localization/frame_000001
+INFO: project_dir=F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/hls/unified_surfel_observation_core/build/vivado_hls_unified_obs
+INFO: target_part=xc7z100ffg900-2
+INFO: [SIM 211-2] *************** CSIM start ***************
+INFO: [SIM 211-4] CSIM will launch GCC as the compiler.
+   Compiling ../../../../../obs_tb.cpp in debug mode
+   Compiling ../../../../../unified_surfel_observation_core.cpp in debug mode
+   Generating csim.exe
+[obs_tb] counts_ok=1 values_ok=1 max_abs=0.0078906 max_rel=4.41926e-005 worst_idx=104 actual_counts=6050/911/2 expected_counts=6050/911/2
+[obs_tb] PASS F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/golden/localization/frame_000001
+INFO: [SIM 211-1] CSim done with 0 errors.
+INFO: [SIM 211-3] *************** CSIM finish ***************

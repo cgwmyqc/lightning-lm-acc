@@ -1,0 +1,30 @@
+{
+  "date": "2026-06-16",
+  "stage": "hls_generated_rtl_port_mapping",
+  "status": "PASS",
+  "generated_rtl": "%TEMP%/lightning_hls_unified_obs/solution1/syn/verilog/unified_surfel_observation_core.v",
+  "no_s_axi_control": true,
+  "control": "ap_ctrl_hs",
+  "address_width_bits": 32,
+  "direct_ports_present": [
+    "scan_points",
+    "num_points",
+    "pose",
+    "map_header",
+    "active_blocks",
+    "obs_cells",
+    "output_h_upper",
+    "output_b",
+    "output_valid_count",
+    "output_reject_count",
+    "output_miss_count",
+    "output_flags",
+    "output_residual_sum",
+    "output_residual_abs_sum",
+    "output_residual_max_abs",
+    "output_reserved"
+  ],
+  "hls_error_output": false,
+  "unified_obs_error_policy": "tie_to_32d0_until_real_hls_error_channel_exists"
+}
+

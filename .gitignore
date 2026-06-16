@@ -48,6 +48,7 @@ vivado_hls.log
 
 # Large golden data
 /tmp/
+fpga/golden/
 *.bag
 *.db3
 

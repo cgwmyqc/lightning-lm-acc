@@ -2,10 +2,11 @@
 
 #include "unified_surfel_observation_core.h"
 
-#include <algorithm>
 #include <cmath>
 
-namespace lightning::fpga::hls {
+namespace lightning {
+namespace fpga {
+namespace hls {
 namespace {
 
 struct Vec3 {
@@ -28,6 +29,10 @@ int PositiveMod(int value, int divisor) {
     return r < 0 ? r + divisor : r;
 }
 
+int AbsInt(int value) { return value < 0 ? -value : value; }
+
+int MaxInt(int lhs, int rhs) { return lhs > rhs ? lhs : rhs; }
+
 bool BlockLess(const ActiveBlockRecord& lhs, int32_t x, int32_t y, int32_t z) {
     if (lhs.x != x) return lhs.x < x;
     if (lhs.y != y) return lhs.y < y;
@@ -38,6 +43,43 @@ bool KeyLess(int32_t x, int32_t y, int32_t z, const ActiveBlockRecord& rhs) {
     if (x != rhs.x) return x < rhs.x;
     if (y != rhs.y) return y < rhs.y;
     return z < rhs.z;
+}
+
+bool CellValid(const ObsCellFloat64& cell) { return (cell.flags & OBS_CELL_VALID) != 0; }
+
+void CopyCell(const ObsCellFloat64& src, ObsCellFloat64& dst) {
+    dst.centroid_x = src.centroid_x;
+    dst.centroid_y = src.centroid_y;
+    dst.centroid_z = src.centroid_z;
+    dst.normal_x = src.normal_x;
+    dst.normal_y = src.normal_y;
+    dst.normal_z = src.normal_z;
+    dst.plane_d = src.plane_d;
+    dst.quality = src.quality;
+    dst.count = src.count;
+    dst.flags = src.flags;
+    for (int i = 0; i < 6; ++i) {
+        dst.reserved[i] = src.reserved[i];
+    }
+}
+
+void ResetOutput(SlamNormalEquation* output) {
+    for (int i = 0; i < 21; ++i) {
+        output->h_upper[i] = 0.0;
+    }
+    for (int i = 0; i < 6; ++i) {
+        output->b[i] = 0.0;
+    }
+    output->valid_count = 0;
+    output->reject_count = 0;
+    output->miss_count = 0;
+    output->flags = 0;
+    output->residual_sum = 0.0;
+    output->residual_abs_sum = 0.0;
+    output->residual_max_abs = 0.0;
+    for (int i = 0; i < 4; ++i) {
+        output->reserved[i] = 0;
+    }
 }
 
 Vec3 RotatePoint(const SlamAccelPose& pose, const SlamAccelScanPoint& point) {
@@ -76,9 +118,9 @@ void Encode(const Vec3& point, const ActiveMapHeader& map_header, int32_t& block
     cell_idx = (lz * static_cast<int>(SLAM_ACCEL_BLOCK_DIM_Y) + ly) * static_cast<int>(SLAM_ACCEL_BLOCK_DIM_X) + lx;
 }
 
-const ObsCellFloat64* LookupCell(const ActiveMapHeader& map_header, const ActiveBlockRecord* active_blocks,
-                                 const ObsCellFloat64* obs_cells, int32_t block_x, int32_t block_y, int32_t block_z,
-                                 int32_t cell_idx) {
+bool LookupCell(const ActiveMapHeader& map_header, const ActiveBlockRecord* active_blocks,
+                const ObsCellFloat64* obs_cells, int32_t block_x, int32_t block_y, int32_t block_z, int32_t cell_idx,
+                ObsCellFloat64& out_cell) {
     int lo = 0;
     int hi = static_cast<int>(map_header.num_blocks);
     while (lo < hi) {
@@ -90,28 +132,33 @@ const ObsCellFloat64* LookupCell(const ActiveMapHeader& map_header, const Active
         }
     }
     if (lo >= static_cast<int>(map_header.num_blocks) || KeyLess(block_x, block_y, block_z, active_blocks[lo])) {
-        return nullptr;
+        return false;
     }
     const uint32_t offset = active_blocks[lo].first_cell + static_cast<uint32_t>(cell_idx);
     if (offset >= map_header.num_cells) {
-        return nullptr;
+        return false;
     }
-    const ObsCellFloat64* cell = &obs_cells[offset];
-    return (cell->flags & OBS_CELL_VALID) != 0 ? cell : nullptr;
+    const ObsCellFloat64& cell = obs_cells[offset];
+    if (!CellValid(cell)) {
+        return false;
+    }
+    CopyCell(cell, out_cell);
+    return true;
 }
 
-const ObsCellFloat64* LookupNearest(const ActiveMapHeader& map_header, const ActiveBlockRecord* active_blocks,
-                                    const ObsCellFloat64* obs_cells, const Vec3& point) {
+bool LookupNearest(const ActiveMapHeader& map_header, const ActiveBlockRecord* active_blocks,
+                   const ObsCellFloat64* obs_cells, const Vec3& point, ObsCellFloat64& out_cell) {
     int32_t center_bx = 0;
     int32_t center_by = 0;
     int32_t center_bz = 0;
     int32_t center_cell = 0;
     Encode(point, map_header, center_bx, center_by, center_bz, center_cell);
 
-    const ObsCellFloat64* center = LookupCell(map_header, active_blocks, obs_cells, center_bx, center_by, center_bz,
-                                              center_cell);
-    if (center != nullptr || map_header.lookup_nearby_type == 0) {
-        return center;
+    if (LookupCell(map_header, active_blocks, obs_cells, center_bx, center_by, center_bz, center_cell, out_cell)) {
+        return true;
+    }
+    if (map_header.lookup_nearby_type == 0) {
+        return false;
     }
 
     const int neighbor_limit =
@@ -126,13 +173,17 @@ const ObsCellFloat64* LookupNearest(const ActiveMapHeader& map_header, const Act
     const int center_ly = local % by_dim;
     const int center_lz = local / by_dim;
 
-    const ObsCellFloat64* best = nullptr;
+    ObsCellFloat64 best;
+    bool found = false;
     double best_dist2 = 1.0e100;
     for (int dz = -1; dz <= 1; ++dz) {
         for (int dy = -1; dy <= 1; ++dy) {
             for (int dx = -1; dx <= 1; ++dx) {
-                const int manhattan = std::abs(dx) + std::abs(dy) + std::abs(dz);
-                const int chessboard = std::max(std::max(std::abs(dx), std::abs(dy)), std::abs(dz));
+                const int abs_dx = AbsInt(dx);
+                const int abs_dy = AbsInt(dy);
+                const int abs_dz = AbsInt(dz);
+                const int manhattan = abs_dx + abs_dy + abs_dz;
+                const int chessboard = MaxInt(MaxInt(abs_dx, abs_dy), abs_dz);
                 if (manhattan == 0) {
                     continue;
                 }
@@ -170,22 +221,26 @@ const ObsCellFloat64* LookupNearest(const ActiveMapHeader& map_header, const Act
                 }
 
                 const int32_t ncell = (lz * by_dim + ly) * bx_dim + lx;
-                const ObsCellFloat64* candidate = LookupCell(map_header, active_blocks, obs_cells, nbx, nby, nbz, ncell);
-                if (candidate == nullptr) {
+                ObsCellFloat64 candidate;
+                if (!LookupCell(map_header, active_blocks, obs_cells, nbx, nby, nbz, ncell, candidate)) {
                     continue;
                 }
-                const double ddx = point.x - candidate->centroid_x;
-                const double ddy = point.y - candidate->centroid_y;
-                const double ddz = point.z - candidate->centroid_z;
+                const double ddx = point.x - candidate.centroid_x;
+                const double ddy = point.y - candidate.centroid_y;
+                const double ddz = point.z - candidate.centroid_z;
                 const double dist2 = ddx * ddx + ddy * ddy + ddz * ddz;
-                if (dist2 < best_dist2) {
+                if (!found || dist2 < best_dist2) {
                     best_dist2 = dist2;
-                    best = candidate;
+                    CopyCell(candidate, best);
+                    found = true;
                 }
             }
         }
     }
-    return best;
+    if (found) {
+        CopyCell(best, out_cell);
+    }
+    return found;
 }
 
 void AccumulateUpper(double h[6][6], double b[6], const double j[6], double residual) {
@@ -213,15 +268,12 @@ void unified_surfel_observation_core(const SlamAccelScanPoint* scan_points, uint
                                      const SlamAccelPose* pose, const ActiveMapHeader* map_header,
                                      const ActiveBlockRecord* active_blocks, const ObsCellFloat64* obs_cells,
                                      SlamNormalEquation* output) {
-    if (scan_points == nullptr || pose == nullptr || map_header == nullptr || active_blocks == nullptr ||
-        obs_cells == nullptr || output == nullptr) {
-        return;
-    }
-    *output = SlamNormalEquation();
+    ResetOutput(output);
 
     double h[6][6] = {{0.0}};
     double b[6] = {0.0};
     for (uint32_t i = 0; i < num_points; ++i) {
+#pragma HLS LOOP_TRIPCOUNT min = 1 max = 8192 avg = 4096
         const SlamAccelScanPoint& scan = scan_points[i];
         if (!std::isfinite(scan.x) || !std::isfinite(scan.y) || !std::isfinite(scan.z)) {
             ++output->reject_count;
@@ -229,16 +281,16 @@ void unified_surfel_observation_core(const SlamAccelScanPoint* scan_points, uint
         }
 
         const Vec3 p = RotatePoint(*pose, scan);
-        const ObsCellFloat64* cell = LookupNearest(*map_header, active_blocks, obs_cells, p);
-        if (cell == nullptr) {
+        ObsCellFloat64 cell;
+        if (!LookupNearest(*map_header, active_blocks, obs_cells, p, cell)) {
             ++output->miss_count;
             continue;
         }
 
-        const double nx = cell->normal_x;
-        const double ny = cell->normal_y;
-        const double nz = cell->normal_z;
-        const double residual = nx * p.x + ny * p.y + nz * p.z + cell->plane_d;
+        const double nx = cell.normal_x;
+        const double ny = cell.normal_y;
+        const double nz = cell.normal_z;
+        const double residual = nx * p.x + ny * p.y + nz * p.z + cell.plane_d;
         const double abs_residual = std::fabs(residual);
         if (!std::isfinite(residual) || abs_residual > 0.3) {
             ++output->reject_count;
@@ -249,9 +301,9 @@ void unified_surfel_observation_core(const SlamAccelScanPoint* scan_points, uint
         j[0] = nx;
         j[1] = ny;
         j[2] = nz;
-        j[3] = ny * p.z - nz * p.y;
-        j[4] = nz * p.x - nx * p.z;
-        j[5] = nx * p.y - ny * p.x;
+        j[3] = nz * p.y - ny * p.z;
+        j[4] = nx * p.z - nz * p.x;
+        j[5] = ny * p.x - nx * p.y;
         AccumulateUpper(h, b, j, residual);
 
         ++output->valid_count;
@@ -264,4 +316,28 @@ void unified_surfel_observation_core(const SlamAccelScanPoint* scan_points, uint
     StoreOutput(h, b, output);
 }
 
-}  // namespace lightning::fpga::hls
+}  // namespace hls
+}  // namespace fpga
+}  // namespace lightning
+
+void unified_surfel_observation_core(const lightning::fpga::SlamAccelScanPoint* scan_points, uint32_t num_points,
+                                     const lightning::fpga::SlamAccelPose* pose,
+                                     const lightning::fpga::ActiveMapHeader* map_header,
+                                     const lightning::fpga::ActiveBlockRecord* active_blocks,
+                                     const lightning::fpga::ObsCellFloat64* obs_cells,
+                                     lightning::fpga::SlamNormalEquation* output) {
+#pragma HLS INTERFACE ap_ctrl_hs port = return
+#pragma HLS INTERFACE m_axi port = scan_points offset = direct bundle = gmem0 depth = 8192
+#pragma HLS INTERFACE m_axi port = pose offset = direct bundle = gmem1 depth = 1
+#pragma HLS INTERFACE m_axi port = map_header offset = direct bundle = gmem1 depth = 1
+#pragma HLS INTERFACE m_axi port = active_blocks offset = direct bundle = gmem2 depth = 8192
+#pragma HLS INTERFACE m_axi port = obs_cells offset = direct bundle = gmem3 depth = 1048576
+#pragma HLS INTERFACE m_axi port = output offset = direct bundle = gmem4 depth = 1
+#pragma HLS DATA_PACK variable = scan_points
+#pragma HLS DATA_PACK variable = pose
+#pragma HLS DATA_PACK variable = map_header
+#pragma HLS DATA_PACK variable = active_blocks
+#pragma HLS DATA_PACK variable = obs_cells
+    lightning::fpga::hls::unified_surfel_observation_core(scan_points, num_points, pose, map_header, active_blocks,
+                                                          obs_cells, output);
+}

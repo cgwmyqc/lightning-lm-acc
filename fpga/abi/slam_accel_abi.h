@@ -3,7 +3,8 @@
 
 #include <cstdint>
 
-namespace lightning::fpga {
+namespace lightning {
+namespace fpga {
 
 constexpr uint32_t SLAM_ACCEL_ABI_MAGIC = 0x53414C4Du;  // "SLAM"
 constexpr uint32_t SLAM_ACCEL_GOLDEN_VERSION = 1u;
@@ -118,4 +119,5 @@ enum GoldenRecordType : uint32_t {
     GOLDEN_NORMAL_EQUATION = 4u,
 };
 
-}  // namespace lightning::fpga
+}  // namespace fpga
+}  // namespace lightning

@@ -1,0 +1,38 @@
+unified_surfel_observation_core Vivado HLS 2018.3 IP export summary
+
+Date: 2026-06-16
+Project: %TEMP%\lightning_hls_unified_obs
+Part: xc7z100ffg900-2
+
+Result: PASS with a Vivado HLS 2018.3 compatibility workaround.
+
+Generated IP outputs:
+
+  %TEMP%\lightning_hls_unified_obs\solution1\impl\ip\component.xml
+  %TEMP%\lightning_hls_unified_obs\solution1\impl\ip\xilinx_com_hls_unified_surfel_observation_core_1_0.zip
+
+IP metadata:
+
+  name: unified_surfel_observation_core
+  version: 1.0
+  coreRevision: 1
+  interfaces: ap_ctrl, m_axi_gmem0, m_axi_gmem1, m_axi_gmem2, m_axi_gmem3, m_axi_gmem4
+
+Vivado HLS 2018.3 workaround:
+
+  On 2026-06-16, HLS generated a timestamp revision such as 2606162214.
+  Vivado 2018.3 IP packager failed with:
+
+    bad lexical cast: source type value could not be interpreted as target
+    rdi::set_property core_revision 2606162214 {component component_1}
+
+  The export script now verifies the generated IP output. If HLS returns success without component.xml/zip and run_ippack.tcl has an over-range Revision value, it rewrites that local generated Revision to 1 and reruns Vivado packager. If HLS returns success but no usable IP output or repairable run_ippack.tcl exists, the script exits with failure instead of reporting a false pass.
+
+Resource/timing checkpoint from the same C Synthesis flow:
+
+  target_clock_ns: 10.00
+  estimated_clock_ns: 9.307
+  BRAM_18K: 36
+  DSP48E: 256
+  FF: 27475
+  LUT: 41633

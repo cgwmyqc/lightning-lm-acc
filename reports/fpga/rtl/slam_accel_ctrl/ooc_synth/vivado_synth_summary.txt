@@ -1,0 +1,17 @@
+Vivado 2018.3 OOC synthesis check for slam_accel_ctrl
+
+Status:
+  synth_design completed successfully
+  0 errors
+  0 critical warnings
+  9 warnings
+
+Key warnings:
+  [Synth 8-3331] s_axi_awaddr[1:0] and s_axi_araddr[1:0] are unconnected because the register map is word-aligned.
+  [Synth 8-6014] s_axi_wready_reg was merged/removed by optimization.
+
+Utilization:
+  Slice LUTs: 375 / 277400 (0.14%)
+  Slice Registers: 493 / 554800 (0.09%)
+  BRAM: 0
+  DSP: 0
