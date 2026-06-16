@@ -1,6 +1,0 @@
-//arch = zynq; split = false; format = BIN
-the_ROM_image:
-{
-	[bootloader]C:\Users\admin\Desktop\ch06_xdma_test\ch06_xdma_test.sdk\FSBL\Debug\FSBL.elf
-	C:\Users\admin\Desktop\ch06_xdma_test\ch06_xdma_test.sdk\design_1_wrapper_hw_platform_0\design_1_wrapper.bit
-}
