@@ -5,6 +5,7 @@
 
 #include "common/imu.h"
 #include "core/lio/laser_mapping.h"
+#include "core/localization/lidar_loc/lidar_loc.h"
 #include "core/localization/localization_result.h"
 #include "core/system/async_message_process.h"
 
@@ -16,7 +17,6 @@ class PangolinWindow;
 
 namespace loc {
 
-class LidarLoc;
 class PGO;
 
 /**
@@ -29,6 +29,7 @@ class Localization {
 
         bool online_mode_ = false;  // 在线模式还是离线模式
         bool with_ui_ = false;      // 是否带ui
+        bool force_disable_ui_ = false;
 
         /// 参数
         SE3 T_body_lidar_;
@@ -70,6 +71,9 @@ class Localization {
 
     /// 结束，保存临时地图
     void Finish();
+
+    void SetLocGoldenFrameCapture(int target_frame_index, LidarLoc::LocGoldenFrameCaptureCallback callback);
+    bool LocGoldenFrameCaptured() const;
 
     /// 异步处理函数
     void LidarOdomProcCloud(CloudPtr);

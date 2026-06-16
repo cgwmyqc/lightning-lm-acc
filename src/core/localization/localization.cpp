@@ -24,7 +24,7 @@ bool Localization::Init(const std::string& yaml_path, const std::string& global_
     }
 
     YAML_IO yaml(yaml_path);
-    options_.with_ui_ = yaml.GetValue<bool>("system", "with_ui");
+    options_.with_ui_ = !options_.force_disable_ui_ && yaml.GetValue<bool>("system", "with_ui");
 
     /// lidar odom前端
     LaserMapping::Options opt_lio;
@@ -336,6 +336,17 @@ void Localization::Finish() {
 
     lidar_loc_proc_cloud_.Quit();
     lidar_odom_proc_cloud_.Quit();
+}
+
+void Localization::SetLocGoldenFrameCapture(int target_frame_index, LidarLoc::LocGoldenFrameCaptureCallback callback) {
+    UL lock(global_mutex_);
+    if (lidar_loc_) {
+        lidar_loc_->SetGoldenFrameCapture(target_frame_index, std::move(callback));
+    }
+}
+
+bool Localization::LocGoldenFrameCaptured() const {
+    return lidar_loc_ != nullptr && lidar_loc_->GoldenFrameCaptured();
 }
 
 void Localization::SetExternalPose(const Eigen::Quaterniond& q, const Eigen::Vector3d& t) {

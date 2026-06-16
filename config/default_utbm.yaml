@@ -58,6 +58,14 @@ profile:
 fpga:
   enable: false
   mode: cpu
+  mapping:
+    enable: false
+    mode: cpu_sim
+    fallback: cpu
+  localization:
+    enable: false
+    mode: cpu_sim
+    fallback: ndt_omp
 
 g2p5:
   esti_floor: false   # 是否动态估计地面
@@ -115,6 +123,13 @@ lidar_loc:
   update_kf_dis: 2.0
   update_lidar_loc_score: 2.5
   loc_on_kf: true
+  surfel_cell_resolution: 0.8
+  surfel_min_support: 3
+  surfel_quality_max: 0.05
+  surfel_lookup_nearby_type: 26
+  surfel_max_iterations: 4
+  surfel_min_valid_count: 300
+  surfel_max_mean_residual: 0.2
   try_self_extrap: false
 maps:
   delete_when_unload: false

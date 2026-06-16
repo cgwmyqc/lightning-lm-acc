@@ -1,5 +1,7 @@
 # Lightning-LM 定位算法 FPGA 友好化与 Orin/FPGA 地图管理实施路线（7Z100 统一复用版）
 
+> 状态：本文档已合并到 `Lightning-LM_Surfel_Unified_Orin_FPGA_Roadmap_7Z100.md`。后续实施以统一文档为准，本文保留为定位展开版和历史参考。
+
 > 适用对象：Codex / Orin 侧开发 / Windows Vivado-HLS/RTL 侧开发。  
 > 更新目的：在实验室具备 7Z100 开发板的前提下，把定位链路从 `TiledMap + NDT_OMP + PCL` 主链路，改造成与建图链路共用的 `SurfelTileMap + active local map window + unified_surfel_observation_core`。  
 > 合同指标：机器人定位精度 ±1.5 cm，建图精度 ≤5 cm。  
@@ -560,6 +562,30 @@ dense table 适合室内有限范围；hash table 适合稀疏大场景。
 ---
 
 ## 7. 定位后端新增代码任务
+
+### 当前代码实现状态（CPU_SIM 第一版）
+
+本次代码已推进到 `LOC-P0 ~ LOC-P3` 的 Orin/CPU 可运行第一版：
+
+```text
+已完成：
+  - 保留 NDT_OMP baseline，默认配置仍走原 CPU 定位链路
+  - 增加 fpga.localization_enable / localization_mode / localization_fallback 开关
+  - 增加 LocBackendType 与 SURFEL_CPU_SIM 后端
+  - 增加 ObsCellFloat64 / ActiveMapBuffer / LocNormalEquation / LocQuality 固定 ABI 类型
+  - 增加 SurfelMapWindow，从当前 TiledMap active cloud 构建只读 surfel active window
+  - 增加 SurfelLocBackend CPU_SIM，只读 ActiveMapBuffer 做 lookup、HTH/HTr、LDLT solve
+  - surfel CPU_SIM 失败时可按配置 fallback 到 NDT_OMP
+
+未完成：
+  - SurfelTileMap .smap 离线转换工具
+  - golden replay 数据生成
+  - HLS CSim unified_surfel_observation_core
+  - XDMA host runtime / slam_accel_ctrl 硬件调用
+  - FPGA solve6x6_core 在线接入
+```
+
+当前 `fpga.localization_mode` 若配置为硬件相关模式，会打印 warning 并落到 `SURFEL_CPU_SIM`。这表示软件侧已经按 FPGA-friendly ABI 打通，但还没有真实上板执行。
 
 ### LOC-P0：冻结当前 NDT_OMP baseline
 

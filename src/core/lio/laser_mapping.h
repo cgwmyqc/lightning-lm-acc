@@ -24,6 +24,14 @@ namespace ui {
 class PangolinWindow;
 }
 
+enum class MappingBackendType {
+    CPU = 0,
+    CPU_SIM,
+    FPGA_OBS,
+    FPGA_OBS_UPDATE,
+    FPGA_FULL,
+};
+
 /**
  * laser mapping
  * 目前有个问题：点云在缓存之后，实际处理的并不是最新的那个点云（通常是buffer里的前一个），这是因为bag里的点云用的开始时间戳，导致
@@ -52,6 +60,8 @@ class LaserMapping {
         bool enable_surfel_map_ = true;
         std::string surfel_fallback_mode_ = "ivox";
         double surfel_fallback_warn_ratio_ = 0.05;
+        MappingBackendType mapping_backend_type_ = MappingBackendType::CPU;
+        bool mapping_fallback_to_cpu_ = true;
     };
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -125,6 +135,8 @@ class LaserMapping {
     bool SyncPackages();
 
     void ObsModel(NavState &s, ESKF::CustomObservationModel &obs);
+    void ObsModelCpu(NavState &s, ESKF::CustomObservationModel &obs);
+    void ObsModelFpgaObservation(NavState &s, ESKF::CustomObservationModel &obs);
 
     inline void PointBodyToWorld(const PointType &pi, PointType &po) {
         Vec3d p_global(state_point_.rot_ *
@@ -138,6 +150,8 @@ class LaserMapping {
     }
 
     void MapIncremental();
+    void MapIncrementalCpu();
+    void MapIncrementalFpgaUpdate();
 
     bool LoadParamsFromYAML(const std::string &yaml);
 
@@ -219,6 +233,7 @@ class LaserMapping {
     int effect_feat_surf_ = 0, frame_num_ = 0, effect_feat_icp_ = 0;
     int surfel_hit_num_ = 0, surfel_fallback_num_ = 0;
     SurfelLookupStats surfel_lookup_stats_;
+    bool mapping_backend_warning_logged_ = false;
 
     double last_lidar_time_ = 0;
 

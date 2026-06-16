@@ -1,5 +1,7 @@
 # Lightning-LM Surfel 版本 SLAM 算法芯片化实施路线（7Z100 统一复用架构版）
 
+> 状态：本文档已合并到 `Lightning-LM_Surfel_Unified_Orin_FPGA_Roadmap_7Z100.md`。后续实施以统一文档为准，本文保留为总路线历史参考。
+
 > 目标：形成“机器人三维建模及定位软件硬件协同加速算法 1 套”，满足合同指标：机器人定位精度 ±1.5 cm，建图精度 ≤5 cm。  
 > 硬件目标：以实验室 7Z100 开发板作为主实施平台；7Z015 仅作为降级/早期验证平台参考。  
 > 架构原则：**资源变多后可以把 BatchUpdate、DirtyRefit、可选 6×6 solve 纳入 FPGA，但不能把建图和定位拆成两套重复硬件。最终应形成一套统一的 `SLAM/Localization Surfel Accelerator`，建图和定位复用同一个 observation pipeline。**  

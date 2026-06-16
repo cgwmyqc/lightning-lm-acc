@@ -62,6 +62,7 @@ include_directories(
 )
 
 include_directories(
+        ${PROJECT_SOURCE_DIR}
         ${PROJECT_SOURCE_DIR}/src
         ${PROJECT_SOURCE_DIR}/thirdparty
 )

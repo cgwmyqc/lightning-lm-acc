@@ -2,6 +2,7 @@
 #include <yaml-cpp/yaml.h>
 #include <fstream>
 
+#include "common/fpga_config.h"
 #include "common/options.h"
 #include "core/lightning_math.hpp"
 #include "laser_mapping.h"
@@ -15,6 +16,25 @@
 #include "wrapper/ros_utils.h"
 
 namespace lightning {
+namespace {
+
+const char* MappingBackendName(MappingBackendType backend) {
+    switch (backend) {
+        case MappingBackendType::CPU:
+            return "CPU";
+        case MappingBackendType::CPU_SIM:
+            return "CPU_SIM";
+        case MappingBackendType::FPGA_OBS:
+            return "FPGA_OBS";
+        case MappingBackendType::FPGA_OBS_UPDATE:
+            return "FPGA_OBS_UPDATE";
+        case MappingBackendType::FPGA_FULL:
+            return "FPGA_FULL";
+    }
+    return "UNKNOWN";
+}
+
+}  // namespace
 
 bool LaserMapping::Init(const std::string &config_yaml) {
     LOG(INFO) << "init laser mapping from " << config_yaml;
@@ -108,6 +128,30 @@ bool LaserMapping::LoadParamsFromYAML(const std::string &yaml_file) {
         if (yaml["fasterlio"]["surfel_fallback_warn_ratio"]) {
             options_.surfel_fallback_warn_ratio_ = yaml["fasterlio"]["surfel_fallback_warn_ratio"].as<double>();
         }
+
+        const FpgaSubsystemConfig fpga_mapping = LoadFpgaSubsystemConfig(yaml, "mapping", "cpu_sim", "cpu");
+        options_.mapping_fallback_to_cpu_ = fpga_mapping.fallback == "cpu";
+        options_.mapping_backend_type_ = MappingBackendType::CPU;
+        if (fpga_mapping.effective_enable) {
+            if (fpga_mapping.mode == "cpu") {
+                options_.mapping_backend_type_ = MappingBackendType::CPU;
+            } else if (fpga_mapping.mode == "cpu_sim") {
+                options_.mapping_backend_type_ = MappingBackendType::CPU_SIM;
+            } else if (fpga_mapping.mode == "fpga_obs" || fpga_mapping.mode == "fpga_observation") {
+                options_.mapping_backend_type_ = MappingBackendType::FPGA_OBS;
+            } else if (fpga_mapping.mode == "fpga_obs_update" || fpga_mapping.mode == "fpga_update") {
+                options_.mapping_backend_type_ = MappingBackendType::FPGA_OBS_UPDATE;
+            } else if (fpga_mapping.mode == "fpga_full" || fpga_mapping.mode == "fpga_full_pipeline") {
+                options_.mapping_backend_type_ = MappingBackendType::FPGA_FULL;
+            } else {
+                LOG(WARNING) << "[LaserMapping] unknown mapping mode '" << fpga_mapping.mode
+                             << "', falling back to CPU";
+            }
+        }
+        LOG(INFO) << "[LaserMapping] mapping_backend=" << MappingBackendName(options_.mapping_backend_type_)
+                  << " fpga_global_enable=" << fpga_mapping.global_enable
+                  << " fpga_mapping_enable=" << fpga_mapping.enable << " fpga_mapping_mode=" << fpga_mapping.mode
+                  << " mapping_fallback_to_cpu=" << options_.mapping_fallback_to_cpu_;
 
         bool use_imu_filter = yaml["fasterlio"]["imu_filter"].as<bool>();
         p_imu_->SetUseIMUFilter(use_imu_filter);
@@ -604,6 +648,24 @@ bool LaserMapping::SyncPackages() {
 }
 
 void LaserMapping::MapIncremental() {
+    if (options_.mapping_backend_type_ == MappingBackendType::FPGA_OBS_UPDATE ||
+        options_.mapping_backend_type_ == MappingBackendType::FPGA_FULL) {
+        MapIncrementalFpgaUpdate();
+        return;
+    }
+    MapIncrementalCpu();
+}
+
+void LaserMapping::MapIncrementalFpgaUpdate() {
+    if (!mapping_backend_warning_logged_) {
+        LOG(WARNING) << "[LaserMapping] FPGA mapping update backend requested but XDMA/HLS is not implemented yet; "
+                     << "fallback to CPU MapIncremental.";
+        mapping_backend_warning_logged_ = true;
+    }
+    MapIncrementalCpu();
+}
+
+void LaserMapping::MapIncrementalCpu() {
     PointVector points_to_add;
     PointVector point_no_need_downsample;
     PointVector surfel_points_to_update;
@@ -680,6 +742,25 @@ void LaserMapping::MapIncremental() {
  * @param ekfom_data H matrix
  */
 void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
+    if (options_.mapping_backend_type_ == MappingBackendType::FPGA_OBS ||
+        options_.mapping_backend_type_ == MappingBackendType::FPGA_OBS_UPDATE ||
+        options_.mapping_backend_type_ == MappingBackendType::FPGA_FULL) {
+        ObsModelFpgaObservation(s, obs);
+        return;
+    }
+    ObsModelCpu(s, obs);
+}
+
+void LaserMapping::ObsModelFpgaObservation(NavState &s, ESKF::CustomObservationModel &obs) {
+    if (!mapping_backend_warning_logged_) {
+        LOG(WARNING) << "[LaserMapping] FPGA mapping observation backend requested but XDMA/HLS is not implemented yet; "
+                     << "fallback to CPU ObsModel.";
+        mapping_backend_warning_logged_ = true;
+    }
+    ObsModelCpu(s, obs);
+}
+
+void LaserMapping::ObsModelCpu(NavState &s, ESKF::CustomObservationModel &obs) {
     int cnt_pts = scan_down_body_->size();
 
     std::vector<size_t> index(cnt_pts);

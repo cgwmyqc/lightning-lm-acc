@@ -1,0 +1,15 @@
+bag: /home/hit/Cheng/FPGA_ACC/mid360_20260313_outdoor_30deg_up_quan_03_0.db3
+config: ./config/default_livox.yaml
+map_path: ./data/new_map/
+frame_index: 20
+timestamp: 1773380993.78701472
+scan_points: 6963
+active_map_points: 1427508
+pose_guess:
+  tx: 4.73688388768225899
+  ty: 1.39379087436528137
+  tz: 6.33753036326788166
+  qx: 0.0628099684803903463
+  qy: 0.0363431132556296249
+  qz: -0.0640026197406848296
+  qw: 0.995307867267565816

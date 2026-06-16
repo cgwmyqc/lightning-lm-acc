@@ -1,6 +1,7 @@
 add_library(${PROJECT_NAME}.libs SHARED
         common/nav_state.cc
         common/constant.h
+        common/fpga_config.cc
         common/options.cc
         common/params.cc
 
@@ -22,6 +23,9 @@ add_library(${PROJECT_NAME}.libs SHARED
 
         core/localization/localization_result.cc
         core/localization/lidar_loc/lidar_loc.cc
+        core/localization/surfel_loc/surfel_map_window.cc
+        core/localization/surfel_loc/surfel_loc_backend.cc
+        core/localization/surfel_loc/surfel_loc_golden.cc
         core/localization/lidar_loc/pclomp/ndt_omp.cpp
         core/localization/lidar_loc/pclomp/voxel_grid_covariance_omp.cpp
 

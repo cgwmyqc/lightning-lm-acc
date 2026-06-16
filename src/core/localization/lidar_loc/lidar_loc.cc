@@ -1,11 +1,13 @@
 #include <algorithm>
 #include <execution>
+#include <string>
 
 #include <pcl/common/transforms.h>
 #include <pcl/filters/passthrough.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/pcl_base.h>
 #include <pcl/registration/ndt.h>
+#include <yaml-cpp/yaml.h>
 
 #include "pclomp/ndt_omp_impl.hpp"
 #include "pclomp/voxel_grid_covariance_omp_impl.hpp"
@@ -14,6 +16,7 @@
 
 #include <opencv2/highgui.hpp>
 
+#include "common/fpga_config.h"
 #include "glog/logging.h"
 #include "io/file_io.h"
 #include "io/yaml_io.h"
@@ -21,6 +24,33 @@
 #include "utils/timer.h"
 
 namespace lightning::loc {
+namespace {
+
+template <typename T>
+T GetYamlValue(const YAML::Node& node, const std::string& key, const T& default_value) {
+    if (node && node[key]) {
+        return node[key].as<T>();
+    }
+    return default_value;
+}
+
+const char* BackendName(LocBackendType backend) {
+    switch (backend) {
+        case LocBackendType::NDT_OMP:
+            return "NDT_OMP";
+        case LocBackendType::SURFEL_CPU_SIM:
+            return "SURFEL_CPU_SIM";
+        case LocBackendType::SURFEL_FPGA_OBS:
+            return "SURFEL_FPGA_OBS";
+        case LocBackendType::SURFEL_FPGA_OBS_SOLVE:
+            return "SURFEL_FPGA_OBS_SOLVE";
+        case LocBackendType::SURFEL_FPGA_WITH_NDT_FALLBACK:
+            return "SURFEL_FPGA_WITH_NDT_FALLBACK";
+    }
+    return "UNKNOWN";
+}
+
+}  // namespace
 
 LidarLoc::LidarLoc(LidarLoc::Options options) : options_(options) {
     pcl_ndt_.reset(new NDTType());
@@ -43,6 +73,9 @@ LidarLoc::LidarLoc(LidarLoc::Options options) : options_(options) {
     pcl_icp_->setMaximumIterations(4);
     pcl_icp_->setTransformationEpsilon(0.01);
 
+    surfel_window_ = std::make_shared<SurfelMapWindow>(options_.surfel_options_);
+    surfel_backend_ = std::make_shared<SurfelLocBackend>(options_.surfel_options_);
+
     LOG(INFO) << "match name is NDT_OMP"
               << ", MaximumIterations is: " << pcl_ndt_->getMaximumIterations();
 }
@@ -54,6 +87,13 @@ LidarLoc::~LidarLoc() {
     }
 
     recover_pose_out_.close();
+}
+
+void LidarLoc::SetGoldenFrameCapture(int target_frame_index, LocGoldenFrameCaptureCallback callback) {
+    golden_frame_target_index_ = std::max(0, target_frame_index);
+    golden_frame_seen_count_ = 0;
+    golden_frame_captured_ = false;
+    golden_frame_callback_ = std::move(callback);
 }
 
 bool LidarLoc::Init(const std::string& config_path) {
@@ -79,10 +119,63 @@ bool LidarLoc::Init(const std::string& config_path) {
     options_.with_height_ = yaml.GetValue<bool>("loop_closing", "with_height");
     options_.try_self_extrap_ = yaml.GetValue<bool>("lidar_loc", "try_self_extrap");
 
+    const YAML::Node yaml_node = YAML::LoadFile(config_path);
+    const YAML::Node lidar_loc_node = yaml_node["lidar_loc"];
+    const FpgaSubsystemConfig fpga_loc =
+        LoadFpgaSubsystemConfig(yaml_node, "localization", "cpu_sim", "ndt_omp", "localization");
+    options_.surfel_fallback_to_ndt_ = fpga_loc.fallback == "ndt_omp";
+    options_.surfel_options_.cell_resolution =
+        GetYamlValue(lidar_loc_node, "surfel_cell_resolution", options_.surfel_options_.cell_resolution);
+    options_.surfel_options_.min_support =
+        GetYamlValue(lidar_loc_node, "surfel_min_support", options_.surfel_options_.min_support);
+    options_.surfel_options_.quality_max =
+        GetYamlValue(lidar_loc_node, "surfel_quality_max", options_.surfel_options_.quality_max);
+    options_.surfel_options_.lookup_nearby_type =
+        GetYamlValue(lidar_loc_node, "surfel_lookup_nearby_type", options_.surfel_options_.lookup_nearby_type);
+    options_.surfel_options_.max_iterations =
+        GetYamlValue(lidar_loc_node, "surfel_max_iterations", options_.surfel_options_.max_iterations);
+    options_.surfel_options_.min_valid_count =
+        GetYamlValue(lidar_loc_node, "surfel_min_valid_count", options_.surfel_options_.min_valid_count);
+    options_.surfel_options_.max_mean_residual =
+        GetYamlValue(lidar_loc_node, "surfel_max_mean_residual", options_.surfel_options_.max_mean_residual);
+
+    options_.backend_type_ = LocBackendType::NDT_OMP;
+    if (fpga_loc.used_legacy_flat) {
+        LOG(WARNING) << "[LidarLoc] legacy fpga.localization_* flat keys are deprecated; use fpga.localization.*";
+    }
+    if (fpga_loc.effective_enable) {
+        if (fpga_loc.mode == "cpu_sim" || fpga_loc.mode == "surfel_cpu_sim") {
+            options_.backend_type_ = LocBackendType::SURFEL_CPU_SIM;
+        } else if (fpga_loc.mode == "fpga_obs" || fpga_loc.mode == "fpga_observation" ||
+                   fpga_loc.mode == "fpga_obs_solve" || fpga_loc.mode == "fpga_solve" ||
+                   fpga_loc.mode == "fpga_with_ndt_fallback") {
+            LOG(WARNING) << "[LidarLoc] FPGA localization mode '" << fpga_loc.mode
+                         << "' requested, but XDMA/HLS backend is not implemented in this CPU_SIM milestone. "
+                         << "Falling back to SURFEL_CPU_SIM.";
+            options_.backend_type_ = LocBackendType::SURFEL_CPU_SIM;
+        } else if (fpga_loc.mode == "cpu" || fpga_loc.mode == "ndt_omp") {
+            options_.backend_type_ = LocBackendType::NDT_OMP;
+        } else {
+            LOG(WARNING) << "[LidarLoc] unknown localization mode '" << fpga_loc.mode
+                         << "', falling back to NDT_OMP";
+        }
+    }
+
+    surfel_window_->SetOptions(options_.surfel_options_);
+    surfel_backend_->SetOptions(options_.surfel_options_);
+    surfel_window_dirty_ = true;
+
     lidar_loc::grid_search_angle_step = yaml.GetValue<double>("lidar_loc", "grid_search_angle_step");
     lidar_loc::grid_search_angle_range = yaml.GetValue<double>("lidar_loc", "grid_search_angle_range");
 
     LOG(INFO) << "min init confidence: " << options_.min_init_confidence_;
+    LOG(INFO) << "[LidarLoc] backend=" << BackendName(options_.backend_type_)
+              << " fpga_global_enable=" << fpga_loc.global_enable << " fpga_localization_enable=" << fpga_loc.enable
+              << " fpga_localization_mode=" << fpga_loc.mode
+              << " surfel_fallback_to_ndt=" << options_.surfel_fallback_to_ndt_
+              << " surfel_cell_resolution=" << options_.surfel_options_.cell_resolution
+              << " surfel_min_support=" << options_.surfel_options_.min_support
+              << " surfel_lookup_nearby_type=" << options_.surfel_options_.lookup_nearby_type;
 
     std::string map_policy = yaml.GetValue<std::string>("maps", "dyn_cloud_policy");
     if (map_policy == "short") {
@@ -407,6 +500,7 @@ bool LidarLoc::UpdateGlobalMap() {
         pcl_icp_ = icp;
     }
 
+    surfel_window_dirty_ = true;
     return true;
 }
 
@@ -604,6 +698,7 @@ void LidarLoc::Align(const CloudPtr& input) {
 
     /// 注意load on pose存在滞后，优先load on DR
     map_->LoadOnPose(guess_from_lo);
+    MaybeCaptureGoldenFrame(input, guess_from_lo);
 
     loc_success_lo = Localize(current_pose_esti, fitness_score, input, output_cloud);  // LO 那个肯定会算
     double score_lo = fitness_score;
@@ -820,6 +915,118 @@ bool LidarLoc::CheckLidarOdomValid(const SE3& current_pose_esti, double& delta_p
 }
 
 bool LidarLoc::Localize(SE3& pose, double& confidence, CloudPtr input, CloudPtr output, bool use_rough_res) {
+    if (options_.backend_type_ == LocBackendType::NDT_OMP || use_rough_res) {
+        return LocalizeNdt(pose, confidence, input, output, use_rough_res);
+    }
+
+    SE3 surfel_pose = pose;
+    double surfel_confidence = 0.0;
+    const bool surfel_success = LocalizeSurfelCpuSim(surfel_pose, surfel_confidence, input, output);
+    if (surfel_success) {
+        pose = surfel_pose;
+        confidence = surfel_confidence;
+        return true;
+    }
+
+    if (options_.surfel_fallback_to_ndt_) {
+        LOG(WARNING) << "[LidarLoc] surfel localization failed, fallback to NDT_OMP";
+        return LocalizeNdt(pose, confidence, input, output, use_rough_res);
+    }
+
+    confidence = surfel_confidence;
+    return false;
+}
+
+bool LidarLoc::RebuildSurfelWindow() {
+    if (!surfel_window_) {
+        return false;
+    }
+
+    CloudPtr active_cloud = map_->GetAllMap();
+    const bool ok = surfel_window_->BuildFromCloud(active_cloud);
+    if (ok) {
+        surfel_window_dirty_ = false;
+        last_surfel_window_version_ = surfel_window_->Buffer().version;
+    }
+    return ok;
+}
+
+void LidarLoc::MaybeCaptureGoldenFrame(const CloudPtr& input, const SE3& pose_guess) {
+    if (!golden_frame_callback_ || golden_frame_captured_ || golden_frame_target_index_ < 0) {
+        return;
+    }
+
+    const int this_frame_index = golden_frame_seen_count_++;
+    if (this_frame_index != golden_frame_target_index_) {
+        return;
+    }
+
+    CloudPtr scan_copy(new PointCloudType);
+    if (input != nullptr) {
+        *scan_copy = *input;
+    }
+
+    CloudPtr active_map_copy(new PointCloudType);
+    CloudPtr active_map = map_ ? map_->GetAllMap() : nullptr;
+    if (active_map != nullptr) {
+        *active_map_copy = *active_map;
+    }
+
+    LocGoldenFrameData data;
+    data.frame_index = this_frame_index;
+    data.timestamp = current_timestamp_;
+    data.scan_body = scan_copy;
+    data.active_map = active_map_copy;
+    data.pose_guess = pose_guess;
+
+    if (golden_frame_callback_(data)) {
+        golden_frame_captured_ = true;
+        LOG(INFO) << "[LidarLoc] captured localization golden source frame index=" << this_frame_index
+                  << " timestamp=" << std::fixed << std::setprecision(12) << current_timestamp_
+                  << " scan_points=" << scan_copy->size() << " active_map_points=" << active_map_copy->size();
+    } else {
+        LOG(WARNING) << "[LidarLoc] localization golden capture callback failed at frame index=" << this_frame_index;
+    }
+}
+
+bool LidarLoc::LocalizeSurfelCpuSim(SE3& pose, double& confidence, CloudPtr input, CloudPtr output) {
+    if (!surfel_backend_ || !surfel_window_) {
+        return false;
+    }
+
+    map_->LoadOnPose(pose);
+    if (map_->MapUpdated() || map_->DynamicMapUpdated()) {
+        surfel_window_dirty_ = true;
+    }
+
+    if (surfel_window_dirty_ || surfel_window_->Buffer().Empty()) {
+        if (!RebuildSurfelWindow()) {
+            LOG(WARNING) << "[LidarLoc] failed to build surfel active window";
+            return false;
+        }
+    }
+
+    LocQuality quality;
+    SE3 pose_out = pose;
+    const bool success = surfel_backend_->Align(input, pose, surfel_window_->Buffer(), pose_out, quality);
+    pose = pose_out;
+    confidence = quality.score;
+
+    if (output != nullptr) {
+        pcl::transformPointCloud(*input, *output, pose.matrix().cast<float>());
+    }
+
+    LOG(INFO) << "[LidarLoc] surfel CPU_SIM success=" << success << " score=" << quality.score
+              << " valid=" << quality.valid_count << " reject=" << quality.reject_count
+              << " miss=" << quality.miss_count << " mean_abs_residual=" << quality.mean_abs_residual
+              << " max_abs_residual=" << quality.max_abs_residual << " iterations=" << quality.iterations
+              << " window=" << quality.active_window_id << ":" << quality.active_window_version
+              << " matrix_ok=" << quality.matrix_ok;
+
+    return success;
+}
+
+bool LidarLoc::LocalizeNdt(SE3& pose, double& confidence, CloudPtr input, CloudPtr output, bool use_rough_res) {
     Eigen::Matrix4f trans;
     bool loc_success = false;
     Eigen::Matrix4f guess_pose = pose.matrix().cast<float>();

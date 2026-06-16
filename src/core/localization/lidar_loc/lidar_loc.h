@@ -3,6 +3,7 @@
 #include <pcl/registration/icp.h>
 #include <chrono>
 #include <deque>
+#include <functional>
 #include <iostream>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <thread>
@@ -10,6 +11,8 @@
 #include "common/nav_state.h"
 #include "common/timed_pose.h"
 #include "core/localization/localization_result.h"
+#include "core/localization/surfel_loc/surfel_loc_backend.h"
+#include "core/localization/surfel_loc/surfel_map_window.h"
 #include "core/maps/tiled_map.h"
 
 #include "pclomp/ndt_omp_impl.hpp"
@@ -37,6 +40,9 @@ class LidarLoc {
         bool display_realtime_cloud_ = false;          // 是否显示实时点云
         bool debug_ = false;                           // 是否使用单测模式
         LocMethod match_method_ = LocMethod::NDT_OMP;  // 匹配方式
+        LocBackendType backend_type_ = LocBackendType::NDT_OMP;
+        bool surfel_fallback_to_ndt_ = true;
+        SurfelLocOptions surfel_options_;
         bool try_self_extrap_ = false;                 // 是否尝试自己的外推pose
         bool with_height_ = true;                      // 建图期间是否带有高度约束？
         bool force_2d_ = true;                         // 强制在2D空间
@@ -67,6 +73,19 @@ class LidarLoc {
 
     explicit LidarLoc(Options options = Options());
     virtual ~LidarLoc();
+
+    struct LocGoldenFrameData {
+        int frame_index = 0;
+        double timestamp = 0.0;
+        CloudPtr scan_body = nullptr;
+        CloudPtr active_map = nullptr;
+        SE3 pose_guess;
+    };
+
+    using LocGoldenFrameCaptureCallback = std::function<bool(const LocGoldenFrameData&)>;
+
+    void SetGoldenFrameCapture(int target_frame_index, LocGoldenFrameCaptureCallback callback);
+    bool GoldenFrameCaptured() const { return golden_frame_captured_; }
 
     /// 初始化
     bool Init(const std::string& config_path);
@@ -180,6 +199,10 @@ class LidarLoc {
     bool YawSearch(SE3& pose, double& confidence, CloudPtr input, CloudPtr output);
 
     bool CheckLidarOdomValid(const SE3& current_pose_esti, double& delta_posi);
+    bool LocalizeNdt(SE3& pose, double& confidence, CloudPtr input, CloudPtr output, bool use_rough_res);
+    bool LocalizeSurfelCpuSim(SE3& pose, double& confidence, CloudPtr input, CloudPtr output);
+    bool RebuildSurfelWindow();
+    void MaybeCaptureGoldenFrame(const CloudPtr& input, const SE3& pose_guess);
 
     // 成员变量  ==========================================================================
     Options options_;
@@ -192,6 +215,15 @@ class LidarLoc {
 
     using ICPType = pcl::IterativeClosestPoint<PointType, PointType>;
     ICPType::Ptr pcl_icp_ = nullptr;
+
+    std::shared_ptr<SurfelMapWindow> surfel_window_ = nullptr;
+    std::shared_ptr<SurfelLocBackend> surfel_backend_ = nullptr;
+    bool surfel_window_dirty_ = true;
+    uint32_t last_surfel_window_version_ = 0;
+    int golden_frame_target_index_ = -1;
+    int golden_frame_seen_count_ = 0;
+    bool golden_frame_captured_ = false;
+    LocGoldenFrameCaptureCallback golden_frame_callback_;
 
     CloudPtr current_scan_ = nullptr;                   // 当前扫描
     std::shared_ptr<ui::PangolinWindow> ui_ = nullptr;  // ui
