@@ -42,3 +42,36 @@ Default generated project directory:
 fpga/vivado/.build/azmig_syn
 ```
 
+## Implementation And Bitstream
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_impl_bitstream.ps1
+```
+
+Result:
+
+```text
+SYNTH_1_STATUS=synth_design Complete!
+IMPL_1_STATUS=write_bitstream Complete!
+IMPLEMENTATION_BITSTREAM_PASS
+```
+
+Default generated project directory:
+
+```text
+fpga/vivado/.build/azmig_impl
+```
+
+Generated bitstream:
+
+```text
+fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit
+```
+
+## Windows JTAG Programming Preparation
+
+This command is prepared but was not run in this report stage.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\program_bitstream_jtag.ps1 -Bitstream .\fpga\vivado\.build\azmig_impl\azmig.runs\impl_1\azmig_wrapper.bit
+```

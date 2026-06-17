@@ -1188,3 +1188,222 @@ reports/fpga/vivado/slam_accel_ax7z100_pcie_mig/
 - 固定 PL DDR3 中 host/HLS 共用 buffer layout：scan、pose、map header、active blocks、obs cells、output 的 base address 和大小。
 - 新增最小 XDMA host smoke：先读写 `slam_accel_ctrl` 寄存器，再做 PL DDR3 memory write/read smoke。
 - host smoke 通过后再进入 implementation + bitstream；暂不直接做完整在线 SLAM 或大帧 golden 上板。
+
+---
+
+## 19. 2026-06-17 PL DDR3 地址映射 + XDMA Host Smoke 准备
+
+### 当前阶段状态
+- 已完成上板前 host bring-up 准备，不做 implementation、bitstream 或上板。
+- `slam_accel_ctrl` 仍是唯一 AXI-Lite 控制入口，后续通过 XDMA user/AXI-Lite BAR 访问。
+- HLS `m_axi_gmem0..4` 继续走 MIG-backed PL DDR3 memory fabric。
+- Host smoke 默认目标为 Orin/Linux root-complex，默认 XDMA 设备节点为：
+  - `/dev/xdma0_user`
+  - `/dev/xdma0_h2c_0`
+  - `/dev/xdma0_c2h_0`
+
+### 本次变更摘要
+- 新增 host smoke 目录：`fpga/host/xdma_smoke/`。
+- 固定 1 GB PL DDR3 buffer layout：
+  - `SCAN_POINTS_BASE = 0x00000000`
+  - `POSE_BASE = 0x01000000`
+  - `MAP_HEADER_BASE = 0x01001000`
+  - `ACTIVE_BLOCKS_BASE = 0x02000000`
+  - `OBS_CELLS_BASE = 0x10000000`
+  - `OUTPUT_BASE = 0x30000000`
+- 所有 `*_ADDR_HI = 0`，继续满足当前 Vivado HLS 2018.3 生成的 32-bit AXI address contract。
+- 新增地址映射常量与校验：
+  - `ax7z100_plddr_layout.h`
+  - `address_map.py`
+  - `validate_address_map.py`
+- 新增 Orin/Linux XDMA host smoke 工具：`xdma_smoke.py`。
+  - 读 `slam_accel_ctrl.VERSION`，期望 `0x00020002`。
+  - 写读 `KERNEL_SEL=4`、`MODE=1`、buffer base/count register。
+  - 通过 H2C/C2H 对每个 buffer base 前 4 KB 做 memory pattern write/read。
+  - 提供可选 `--start-zero`，只作为 bitstream 后人工 smoke，不作为当前 gate。
+- 新增 tiny synthetic host image 生成入口：`make_tiny_synthetic_host_image.py`。
+  - 复用 tiny synthetic fixture ABI 数据。
+  - 输出 host 可写入 PL DDR3 的分段 binary 和 manifest。
+- 更新 AX7Z100 PCIe/MIG README，补充 PL DDR3 layout、XDMA device node 和 host smoke 命令。
+
+### 验证命令
+
+```powershell
+python fpga\host\xdma_smoke\validate_address_map.py --report reports\fpga\host\xdma_smoke\address_map_validation.md
+
+python fpga\host\xdma_smoke\xdma_smoke.py --help
+
+python fpga\host\xdma_smoke\make_tiny_synthetic_host_image.py --out-dir fpga\vivado\.build\host_synthetic_tiny --report-dir reports\fpga\host\xdma_smoke\tiny_synthetic
+
+python -m py_compile fpga\host\xdma_smoke\address_map.py fpga\host\xdma_smoke\validate_address_map.py fpga\host\xdma_smoke\make_tiny_synthetic_host_image.py fpga\host\xdma_smoke\xdma_smoke.py
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_bd_validate.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_project_synth.ps1
+```
+
+### 验证结果
+- 地址映射校验：PASS，marker 为 `ADDRESS_MAP_PASS`。
+- `xdma_smoke.py --help`：PASS。
+- Tiny synthetic host image 生成：PASS，marker 为 `HOST_SYNTHETIC_IMAGE_PASS`。
+- Python compile check：PASS。
+- Board skeleton BD validate：PASS，marker 为 `BD_VALIDATE_PASS`。
+- Board skeleton project synthesis：PASS，marker 为 `PROJECT_SYNTH_PASS`。
+- Synthesis marker：
+  - `SYNTH_1_STATUS=synth_design Complete!`
+  - `0 errors`
+  - `0 critical warnings`
+  - `14 warnings`
+- 资源/时序沿用当前板级 skeleton 结果：
+  - Slice LUTs：61,751 / 277,400（22.26%）
+  - Slice Registers：69,374 / 554,800（12.50%）
+  - Block RAM Tile：64.5 / 755（8.54%）
+  - DSPs：256 / 2,020（12.67%）
+  - Bonded IOB：74 / 362（20.44%）
+  - WNS：-0.366 ns
+  - WHS：-0.643 ns
+
+说明：负 WNS/WHS 仍作为 implementation/timing closure 风险记录。本阶段只做 host bring-up 准备和 board skeleton recheck，不做 timing optimization。
+
+### 归档报告
+
+```text
+reports/fpga/host/xdma_smoke/
+  commands.md
+  summary.md
+  address_map_validation.md
+  tiny_synthetic/
+    tiny_synthetic_host_image.md
+```
+
+### 上板后手动 smoke 预期
+
+```bash
+python3 fpga/host/xdma_smoke/xdma_smoke.py --reg-smoke --ddr-smoke
+
+python3 fpga/host/xdma_smoke/xdma_smoke.py --write-image fpga/vivado/.build/host_synthetic_tiny/manifest.json
+
+python3 fpga/host/xdma_smoke/xdma_smoke.py --reg-smoke --start-zero
+```
+
+### 下一步
+- 进入 implementation/bitstream 准备阶段前，需要接受当前 synth/open timing 风险，并复核最终板级 XDC、PCIe refclk/reset、MIG DDR3 约束。
+- 下一阶段建议先跑 implementation，不立即接完整在线 SLAM。
+- bitstream 后第一批真机 gate：XDMA device nodes、`VERSION` read、AXI-Lite register write/read、PL DDR3 4 KB pattern write/read。
+
+---
+
+## 20. 2026-06-17 AX7Z100 Implementation / Bitstream / Windows JTAG 准备
+
+### 当前阶段状态
+- 已完成 Windows Vivado 2018.3 implementation 和 bitstream generation。
+- 本阶段没有用 Vivado HLS 刷写；Vivado HLS 只用于 `unified_surfel_observation_core` IP export。
+- 刷写路径固定为 Windows Vivado Hardware Manager / JTAG。
+- 未执行 JTAG 下载、未上板、未运行 Orin XDMA smoke。
+- 当前 bitstream 可用于第一轮板级 smoke，但功能验收仍必须等上板后完成 XDMA register/memory 测试。
+
+### 本次变更摘要
+- 新增 implementation/bitstream 脚本：
+  - `run_project_impl_bitstream.tcl`
+  - `run_vivado_impl_bitstream.ps1`
+- 新增 Windows JTAG 下载准备脚本：
+  - `program_bitstream_jtag.tcl`
+  - `program_bitstream_jtag.ps1`
+- Implementation flow 保持脚本化 fresh project：
+  - 重建 AX7Z100 PCIe/XDMA + PL DDR3/MIG BD。
+  - 复用真实 HLS IP 和 `slam_accel_ctrl`。
+  - 执行 synthesis、implementation、post-implementation reports、DRC、route status、write bitstream。
+- 继续保持当前架构：
+  - Orin 100 MHz 为 PCIe refclk。
+  - AX7Z100 板载 200 MHz 为 MIG system clock。
+  - `slam_accel_ctrl` 是唯一 AXI-Lite 控制入口。
+  - HLS `m_axi_gmem0..4` 走 MIG-backed PL DDR3。
+  - PL DDR3 buffer layout 沿用 section 19。
+
+### 验证命令
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\validate_board_profile.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_bd_validate.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_project_synth.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_impl_bitstream.ps1
+```
+
+JTAG 下载脚本已准备，当前未执行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\program_bitstream_jtag.ps1 -Bitstream .\fpga\vivado\.build\azmig_impl\azmig.runs\impl_1\azmig_wrapper.bit
+```
+
+### 验证结果
+- Board profile static validation：PASS，marker 为 `BOARD_PROFILE_PASS`。
+- BD validate：PASS，marker 为 `BD_VALIDATE_PASS`。
+- Project synthesis：PASS，marker 为 `PROJECT_SYNTH_PASS`。
+- Implementation + bitstream：PASS，marker 为 `IMPLEMENTATION_BITSTREAM_PASS`。
+- Run status：
+  - `SYNTH_1_STATUS=synth_design Complete!`
+  - `IMPL_1_STATUS=write_bitstream Complete!`
+- Bitstream：
+  - `fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit`
+  - size：7,738,631 bytes
+- Bitgen log：`0 Errors`、`0 Critical Warnings`。
+- Route status：121,040 / 121,040 routable nets fully routed，routing errors 为 0。
+
+### Post-Implementation 资源与时序
+- Slice LUTs：55,295 / 277,400（19.93%）
+- Slice Registers：61,162 / 554,800（11.02%）
+- Block RAM Tile：52.5 / 755（6.95%）
+- DSPs：256 / 2,020（12.67%）
+- Bonded IOB：74 / 362（20.44%）
+- BUFGCTRL：10 / 32（31.25%）
+- MMCME2_ADV：3 / 8（37.50%）
+- WNS：0.085 ns
+- TNS：0.000 ns
+- setup failing endpoints：0
+- WHS：0.032 ns
+- THS：0.000 ns
+- hold failing endpoints：0
+- Timing summary：All user specified timing constraints are met.
+
+### DRC 摘要
+- Post-bitgen DRC：`0 Errors`、513 Warnings、312 Advisories。
+- 主要 warning/advisory 类别：
+  - HLS DSP pipeline 相关：`DPIP`、`DPOP`、`AVAL`
+  - clock placer / clock output buffering：`PLCK-23`、`REQP-1709`
+  - RAMB async control：`REQP-1839`、`REQP-1840`
+  - no routable loads：`RTSTAT-10`
+  - PS7 required warning：`ZPS7-1`
+- 这些 warning 没有阻塞 bitstream，但上板后必须先做最小 smoke，不能直接声明 SLAM 功能通过。
+
+### 归档报告
+
+```text
+reports/fpga/vivado/slam_accel_ax7z100_pcie_mig/
+  commands.md
+  summary.md
+  vivado_impl_bitstream_log.txt
+  vivado_impl_bitstream_jou.txt
+  vivado_impl_synth_runme_log.txt
+  vivado_impl_runme_log.txt
+  ax7z100_pcie_mig_impl_utilization.txt
+  ax7z100_pcie_mig_impl_timing_summary.txt
+  ax7z100_pcie_mig_impl_drc.txt
+  ax7z100_pcie_mig_impl_route_status.txt
+  ax7z100_pcie_mig_bitstream_path.txt
+```
+
+### 下一步
+- 用户连接 AX7Z100 JTAG 后，用 Windows Vivado/JTAG 下载 bitstream。
+- Orin 侧确认 XDMA device nodes：
+  - `/dev/xdma0_user`
+  - `/dev/xdma0_h2c_0`
+  - `/dev/xdma0_c2h_0`
+- 第一批真机 gate：
+  - `VERSION` read
+  - AXI-Lite register write/read
+  - PL DDR3 4 KB pattern H2C/C2H write/read
+  - tiny synthetic host image write/read
+- `--start-zero` 仍只作为可选 smoke；完整在线 SLAM 和大帧 golden 上板留到后续阶段。

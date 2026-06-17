@@ -15,8 +15,51 @@ state as the source of truth.
   XDMA AXI-Lite
 - Compute: true HLS IP `unified_surfel_observation_core`
 
-This stage does not run implementation, generate a bitstream, write host
-runtime code, or go on board.
+The current scripted flow can also run implementation and generate a bitstream.
+Board programming remains a separate manual Windows JTAG step.
+
+## PL DDR3 Buffer Layout
+
+The first host bring-up layout reserves a fixed 1 GB PL DDR3 address space.
+All high address registers stay zero to match the current 32-bit HLS direct
+address contract.
+
+| Buffer | Base | Notes |
+| --- | ---: | --- |
+| `SCAN_POINTS_BASE` | `0x00000000` | HLS `scan_points` |
+| `POSE_BASE` | `0x01000000` | HLS `pose` |
+| `MAP_HEADER_BASE` | `0x01001000` | HLS `map_header` |
+| `ACTIVE_BLOCKS_BASE` | `0x02000000` | HLS `active_blocks` |
+| `OBS_CELLS_BASE` | `0x10000000` | HLS `obs_cells` |
+| `OUTPUT_BASE` | `0x30000000` | HLS output field base |
+
+The matching host-side constants live in
+`fpga/host/xdma_smoke/ax7z100_plddr_layout.h` and
+`fpga/host/xdma_smoke/address_map.py`.
+
+## XDMA Host Smoke
+
+The minimum host smoke path targets Orin/Linux as the PCIe root complex. The
+default XDMA device nodes are:
+
+- AXI-Lite/user BAR: `/dev/xdma0_user`
+- H2C memory write: `/dev/xdma0_h2c_0`
+- C2H memory read: `/dev/xdma0_c2h_0`
+
+The first on-board smoke should read `slam_accel_ctrl.VERSION`, write/read the
+control register bank, then write/read a 4 KB memory pattern at each PL DDR3
+buffer base. It does not require launching the accelerator as a hard gate.
+
+```bash
+python3 fpga/host/xdma_smoke/xdma_smoke.py --reg-smoke --ddr-smoke
+python3 fpga/host/xdma_smoke/xdma_smoke.py --write-image fpga/vivado/.build/host_synthetic_tiny/manifest.json
+```
+
+Optional start smoke after bitstream bring-up:
+
+```bash
+python3 fpga/host/xdma_smoke/xdma_smoke.py --reg-smoke --start-zero
+```
 
 ## Clocking
 
@@ -46,12 +89,34 @@ powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_m
 powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_bd_validate.ps1
 
 powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_project_synth.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_impl_bitstream.ps1
+
+python fpga\host\xdma_smoke\validate_address_map.py --report reports\fpga\host\xdma_smoke\address_map_validation.md
+
+python fpga\host\xdma_smoke\xdma_smoke.py --help
+
+python fpga\host\xdma_smoke\make_tiny_synthetic_host_image.py --out-dir fpga\vivado\.build\host_synthetic_tiny --report-dir reports\fpga\host\xdma_smoke\tiny_synthetic
 ```
+
+## Windows JTAG Programming
+
+Vivado HLS is not used to program the board. HLS only exports
+`unified_surfel_observation_core` as an IP. Use Vivado Hardware Manager/JTAG for
+the generated bitstream:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\program_bitstream_jtag.ps1 -Bitstream .\fpga\vivado\.build\azmig_impl\azmig.runs\impl_1\azmig_wrapper.bit
+```
+
+After programming, the first Orin-side gate is XDMA register and PL DDR3 memory
+smoke, not full SLAM.
 
 The default generated project directories are:
 
 - `fpga/vivado/.build/azmig_bd`
 - `fpga/vivado/.build/azmig_syn`
+- `fpga/vivado/.build/azmig_impl`
 
 Vivado may temporarily see those paths through a short `subst` drive to avoid
 Windows/Vivado 2018.3 path-length issues. The actual files remain under

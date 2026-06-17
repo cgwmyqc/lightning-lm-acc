@@ -6,7 +6,10 @@
 - Fresh Vivado BD creation/validation: PASS
 - HDL wrapper generation: PASS
 - Project-managed synthesis: PASS
-- Implementation, bitstream, host runtime, and board test: not run in this stage
+- Implementation: PASS
+- Bitstream generation: PASS
+- Windows JTAG programming script: prepared, not run
+- Host runtime and board test: not run in this stage
 
 ## Integrated Blocks
 
@@ -37,33 +40,43 @@
 - `SYNTH_1_STATUS=synth_design Complete!`
 - `PROJECT_SYNTH_PASS`
 - Synthesis log: `0 errors`, `0 critical warnings`, `14 warnings`
+- `IMPL_1_STATUS=write_bitstream Complete!`
+- `IMPLEMENTATION_BITSTREAM_PASS`
+- Bitstream: `fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit`
+- Bitstream size: 7,738,631 bytes
+- Bitgen: `0 Errors`, `0 Critical Warnings`
 - Top-level external HLS `m_axi_gmem0..4`: none
 
 ## Resource Summary
 
-- Slice LUTs: 61,751 / 277,400 (22.26%)
-- Slice Registers: 69,374 / 554,800 (12.50%)
-- Block RAM Tile: 64.5 / 755 (8.54%)
+- Slice LUTs: 55,295 / 277,400 (19.93%)
+- Slice Registers: 61,162 / 554,800 (11.02%)
+- Block RAM Tile: 52.5 / 755 (6.95%)
 - DSPs: 256 / 2,020 (12.67%)
 - Bonded IOB: 74 / 362 (20.44%)
-- BUFGCTRL: 11 / 32 (34.38%)
+- BUFGCTRL: 10 / 32 (31.25%)
 - MMCME2_ADV: 3 / 8 (37.50%)
 
-## Timing Snapshot
+## Post-Implementation Timing
 
-This is a synthesized/open-run timing snapshot only. Timing closure is not a
-goal of this stage.
+- WNS: 0.085 ns
+- TNS: 0.000 ns
+- Setup failing endpoints: 0
+- WHS: 0.032 ns
+- THS: 0.000 ns
+- Hold failing endpoints: 0
 
-- WNS: -0.366 ns
-- TNS: -4.014 ns
-- Setup failing endpoints: 11
-- WHS: -0.643 ns
-- THS: -501.516 ns
-- Hold failing endpoints: 19,045
+All user specified timing constraints are met.
 
-The negative timing is recorded as the next board-level risk. It should be
-handled during the implementation/timing-closure stage after the board-level
-I/O, reset, clocking, and host path are fixed.
+## DRC Summary
+
+- Post-bitgen log: DRC finished with `0 Errors`, `513 Warnings`, `312 Advisories`.
+- Reported warning classes include HLS DSP pipeline advisories/warnings
+  (`DPIP`, `DPOP`, `AVAL`), one clock placer warning, one clock output buffering
+  warning, RAMB async control warnings, one no-routable-load warning, and one
+  PS7-required warning.
+- These warnings did not block bitstream generation; board smoke is still
+  required before functional claims.
 
 ## Notes
 
@@ -79,7 +92,6 @@ I/O, reset, clocking, and host path are fixed.
 
 ## Next Step
 
-Proceed to board-level address-map and host bring-up preparation: define the
-host-visible buffer layout in PL DDR3, add a minimal XDMA host register/memory
-smoke tool, and only then move to implementation/bitstream.
-
+Program the bitstream over Windows JTAG, then run the Orin XDMA smoke sequence:
+device-node detection, `VERSION` read, AXI-Lite register write/read, and PL DDR3
+4 KB pattern write/read. Do not run full online SLAM as the first board test.
