@@ -8,7 +8,8 @@
 - Project-managed synthesis: PASS
 - Implementation: PASS
 - Bitstream generation: PASS
-- Windows JTAG programming script: prepared, not run
+- Windows JTAG programming script: uses `hw_server` + `xsdb`, because this Vivado 2018.3 batch install does not expose FPGA programming commands
+- Windows JTAG temporary programming: PASS
 - Host runtime and board test: not run in this stage
 
 ## Integrated Blocks
@@ -95,3 +96,4 @@ All user specified timing constraints are met.
 Program the bitstream over Windows JTAG, then run the Orin XDMA smoke sequence:
 device-node detection, `VERSION` read, AXI-Lite register write/read, and PL DDR3
 4 KB pattern write/read. Do not run full online SLAM as the first board test.
+JTAG programming is temporary and does not persist after board power-off.

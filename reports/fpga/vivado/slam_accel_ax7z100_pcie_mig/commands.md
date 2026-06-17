@@ -70,8 +70,23 @@ fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit
 
 ## Windows JTAG Programming Preparation
 
-This command is prepared but was not run in this report stage.
+Use `hw_server` + `xsdb` over JTAG for temporary programming. This is not Flash
+programming and it is not persistent after power-off.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\program_bitstream_jtag.ps1 -Bitstream .\fpga\vivado\.build\azmig_impl\azmig.runs\impl_1\azmig_wrapper.bit
+```
+
+Expected result:
+
+```text
+JTAG_PROGRAM_PASS
+```
+
+Observed result on 2026-06-17:
+
+```text
+FPGA_STATE=FPGA is configured
+DONE PIN: 1
+JTAG_PROGRAM_PASS
 ```

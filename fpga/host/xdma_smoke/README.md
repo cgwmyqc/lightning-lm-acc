@@ -52,3 +52,50 @@ Optional start-only check:
 python3 xdma_smoke.py --reg-smoke --start-zero
 ```
 
+## If `lspci` Does Not Show XDMA
+
+JTAG programming only configures the FPGA fabric. It does not force the Orin
+PCIe root complex to rediscover an endpoint that appeared after boot.
+
+First avoid matching only the display name `Xilinx`; the PCIe ID may show only
+as `10ee:7024`:
+
+```bash
+lspci -nn | grep -Ei '10ee|7024|xilinx|memory|serial'
+```
+
+If nothing is found, keep the AX7Z100 powered so the JTAG configuration is not
+lost, then try a PCIe rescan:
+
+```bash
+sudo sh -c 'echo 1 > /sys/bus/pci/rescan'
+lspci -nn | grep -Ei '10ee|7024|xilinx|memory|serial'
+```
+
+If rescan still does not find the device, reboot the Orin without powering off
+the AX7Z100:
+
+```bash
+sudo reboot
+```
+
+After reboot:
+
+```bash
+lspci -nn | grep -Ei '10ee|7024|xilinx|memory|serial'
+dmesg | grep -Ei 'pcie|pci|aer|link|xdma|xilinx|10ee'
+```
+
+Current suspect order if the endpoint is still absent:
+
+1. The FPGA was JTAG-programmed after Orin PCIe enumeration, and Orin did not
+   rescan the endpoint.
+2. AX7Z100 lost JTAG configuration because board power was cycled.
+3. PCIe reference clock from Orin to AX7Z100 is missing or unstable.
+4. PCIe reset/PERST# did not release correctly to AX7Z100 `AB22`.
+5. PCIe cable/adapter/lane orientation or board slot wiring is wrong.
+6. Orin kernel/device-tree/root-port configuration does not enable this PCIe
+   port or link width.
+7. The XDMA endpoint came up but the driver/device-node layer is missing; in
+   that case `lspci -nn` should still show `10ee:7024`, but `/dev/xdma0_*`
+   nodes will be absent.

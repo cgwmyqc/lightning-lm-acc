@@ -42,3 +42,43 @@
 ## Next Step
 
 Proceed to implementation/bitstream preparation only after accepting the current timing risk and confirming board-level XDC/PCIe reset/refclk assumptions. The first on-board gate should be XDMA device-node detection, `VERSION` read, AXI-Lite register write/read, and PL DDR3 4 KB pattern write/read.
+
+## Orin PCIe Enumeration Troubleshooting
+
+If JTAG programming reports `JTAG_PROGRAM_PASS` but Orin `lspci` does not show
+the XDMA endpoint, first search by PCIe ID rather than display name:
+
+```bash
+lspci -nn | grep -Ei '10ee|7024|xilinx|memory|serial'
+```
+
+Then rescan without power-cycling AX7Z100:
+
+```bash
+sudo sh -c 'echo 1 > /sys/bus/pci/rescan'
+lspci -nn | grep -Ei '10ee|7024|xilinx|memory|serial'
+```
+
+If still absent, reboot Orin while keeping AX7Z100 powered and configured:
+
+```bash
+sudo reboot
+```
+
+Collect:
+
+```bash
+lspci -nn
+dmesg | grep -Ei 'pcie|pci|aer|link|xdma|xilinx|10ee'
+```
+
+Most likely causes to check, in order:
+
+- Orin enumerated PCIe before FPGA was JTAG-configured.
+- AX7Z100 lost temporary JTAG configuration after power cycling.
+- Orin 100 MHz PCIe reference clock is not reaching AX7Z100.
+- PERST#/PCIe reset to AX7Z100 `AB22` is not released.
+- PCIe cable/adapter/lane orientation is wrong.
+- Orin PCIe root port is disabled or configured for an incompatible mode.
+- XDMA driver is missing; this affects `/dev/xdma0_*`, but `lspci -nn` should
+  still show `10ee:7024`.

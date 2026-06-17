@@ -1407,3 +1407,106 @@ reports/fpga/vivado/slam_accel_ax7z100_pcie_mig/
   - PL DDR3 4 KB pattern H2C/C2H write/read
   - tiny synthetic host image write/read
 - `--start-zero` 仍只作为可选 smoke；完整在线 SLAM 和大帧 golden 上板留到后续阶段。
+
+---
+
+## 21. 2026-06-17 Vivado 2018.3 JTAG 下载脚本兼容性修正
+
+### 当前阶段状态
+- 用户首次运行 JTAG 下载脚本失败，失败点为 Vivado Tcl 命令 `open_hw_manager` 不存在。
+- 该失败发生在连接 hardware server 前，不代表 bitstream、JTAG cable 或开发板本身失败。
+- 当前仍使用已生成 bitstream：`fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit`。
+- 已改用 `hw_server` + `xsdb` 并完成一次 JTAG 临时下载，marker 为 `JTAG_PROGRAM_PASS`。
+
+### 本次变更摘要
+- 本机 Vivado 2018.3 batch 环境不暴露 `open_hw_manager` / `open_hw` / `program_hw_devices`，但存在 `hw_server` 和 `xsdb`。
+- `program_bitstream_jtag.ps1` 改为启动/复用 `hw_server`，再调用 `xsdb` 执行 JTAG FPGA programming。
+- `program_bitstream_jtag.tcl` 改为 XSDB Tcl：`connect`、`targets`、`fpga -file`。
+- 新增无 JTAG device 时的明确输出：检查 AX7Z100 上电、USB-JTAG 线/驱动、Vivado hw_server 和 target visibility。
+- 不重新跑 synthesis、implementation 或 bitstream。
+- 再次强调：JTAG 下载是临时配置，不会固化到 Flash，断电后会丢失。
+
+### 验证命令
+
+```powershell
+powershell -NoProfile -Command "`$null = [scriptblock]::Create((Get-Content -Raw .\fpga\vivado\slam_accel_ax7z100_pcie_mig\program_bitstream_jtag.ps1)); 'POWERSHELL_PARSE_PASS'"
+
+xsdb -help
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\program_bitstream_jtag.ps1 -Bitstream .\fpga\vivado\.build\azmig_impl\azmig.runs\impl_1\azmig_wrapper.bit
+```
+
+### 预期结果
+- 实测成功，marker 为 `JTAG_PROGRAM_PASS`。
+- `FPGA_STATE=FPGA is configured`。
+- `CONFIG STATUS` 中 CRC/IDCODE/SECURITY/BAD PACKET error 均为 0，`DONE PIN` 为 1。
+- 如果失败在 XSDB `connect`，优先检查 `hw_server`、USB-JTAG 驱动、板卡供电和 JTAG 线。
+- 如果失败在 `targets` / `fpga -file`，用 Vivado Hardware Manager GUI 手动确认是否能看到 AX7Z100 JTAG target。
+
+### 下一步
+- JTAG 下载成功后，重启或重新枚举 Orin PCIe。
+- Orin 侧检查 XDMA nodes 后运行 `xdma_smoke.py --reg-smoke --ddr-smoke`。
+- 固化到 QSPI/SD/BOOT.bin 留到 JTAG smoke 通过后再规划。
+
+---
+
+## 22. 2026-06-17 Orin 侧 PCIe/XDMA 枚举排查记录
+
+### 当前现象
+- Windows 侧 JTAG 临时下载已成功：
+  - `JTAG_PROGRAM_PASS`
+  - `FPGA_STATE=FPGA is configured`
+  - `DONE PIN = 1`
+- Orin 侧用户反馈：`lspci` 未发现 Xilinx 设备。
+- 这说明当前问题已经从 bitstream/JTAG 下载阶段转移到 Orin PCIe enumeration / link bring-up / XDMA driver 阶段。
+- 注意：JTAG 下载不会固化，AX7Z100 断电后配置会丢失；Orin 枚举 PCIe 时 FPGA 必须已经配置好并保持供电。
+
+### Orin 侧优先排查命令
+
+不要只按 `Xilinx` 字符串搜索，当前 XDMA device ID 可能只显示为 `10ee:7024`：
+
+```bash
+lspci -nn | grep -Ei '10ee|7024|xilinx|memory|serial'
+```
+
+如果没有发现 endpoint，保持 AX7Z100 不断电，尝试 PCIe rescan：
+
+```bash
+sudo sh -c 'echo 1 > /sys/bus/pci/rescan'
+lspci -nn | grep -Ei '10ee|7024|xilinx|memory|serial'
+```
+
+如果 rescan 后仍没有，保持 AX7Z100 供电和 JTAG 配置，重启 Orin：
+
+```bash
+sudo reboot
+```
+
+重启后收集：
+
+```bash
+lspci -nn
+dmesg | grep -Ei 'pcie|pci|aer|link|xdma|xilinx|10ee'
+```
+
+如果能看到 `10ee:7024` 但没有 `/dev/xdma0_*`，继续检查 XDMA driver：
+
+```bash
+lsmod | grep -i xdma
+ls -l /dev/xdma*
+dmesg | grep -Ei 'xdma|10ee|7024'
+```
+
+### 当前怀疑原因排序
+- Orin 已经启动并完成 PCIe 枚举后，才通过 JTAG 下载 FPGA；root-complex 没有重新发现 endpoint。
+- AX7Z100 曾断电或复位，导致 JTAG 临时配置丢失。
+- Orin 提供给 AX7Z100 的 PCIe 100 MHz reference clock 未到达或不稳定。
+- PCIe reset / PERST# 未正确释放到 AX7Z100 `AB22`。
+- PCIe 线缆、转接板、lane 方向或供电时序不正确。
+- Orin 对应 PCIe root port 未启用，或 device tree / kernel 配置与该端口不匹配。
+- XDMA driver 未加载；该问题只会导致 `/dev/xdma0_*` 缺失，理论上不应导致 `lspci -nn` 看不到 `10ee:7024`。
+
+### 下一步
+- 用户在 Orin 侧执行上述 `lspci`、rescan、reboot 和 `dmesg` 命令，并回传输出。
+- 若 `lspci` 仍完全没有 `10ee:7024`，下一阶段定位 PCIe refclk、PERST#、lane wiring 和 Orin root-port enable。
+- 若 `lspci` 出现 `10ee:7024` 但无 `/dev/xdma0_*`，下一阶段定位 XDMA Linux driver 编译/加载/device node。

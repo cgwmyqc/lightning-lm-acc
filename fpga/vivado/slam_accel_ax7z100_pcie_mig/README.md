@@ -102,8 +102,8 @@ python fpga\host\xdma_smoke\make_tiny_synthetic_host_image.py --out-dir fpga\viv
 ## Windows JTAG Programming
 
 Vivado HLS is not used to program the board. HLS only exports
-`unified_surfel_observation_core` as an IP. Use Vivado Hardware Manager/JTAG for
-the generated bitstream:
+`unified_surfel_observation_core` as an IP. The Windows script uses
+`hw_server` + `xsdb` over JTAG for temporary FPGA programming:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\program_bitstream_jtag.ps1 -Bitstream .\fpga\vivado\.build\azmig_impl\azmig.runs\impl_1\azmig_wrapper.bit

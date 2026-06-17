@@ -1,12 +1,20 @@
 set bit_path ""
-set hw_target ""
+set hw_host "localhost"
+set hw_port "3121"
+set target_filter ""
 
 set user_args $argv
 if {[llength $user_args] >= 1 && [string length [lindex $user_args 0]] > 0} {
     set bit_path [file normalize [lindex $user_args 0]]
 }
 if {[llength $user_args] >= 2 && [string length [lindex $user_args 1]] > 0} {
-    set hw_target [lindex $user_args 1]
+    set hw_host [lindex $user_args 1]
+}
+if {[llength $user_args] >= 3 && [string length [lindex $user_args 2]] > 0} {
+    set hw_port [lindex $user_args 2]
+}
+if {[llength $user_args] >= 4 && [string length [lindex $user_args 3]] > 0} {
+    set target_filter [lindex $user_args 3]
 }
 
 if {[string length $bit_path] == 0} {
@@ -15,39 +23,32 @@ if {[string length $bit_path] == 0} {
 if {![file exists $bit_path]} {
     error "Bitstream does not exist: $bit_path"
 }
-
-open_hw_manager
-connect_hw_server
-if {[string length $hw_target] > 0} {
-    open_hw_target $hw_target
-} else {
-    open_hw_target
+if {[llength [info commands connect]] == 0 || [llength [info commands fpga]] == 0} {
+    error "XSDB hardware commands are unavailable. Run this script through xsdb, not Vivado batch Tcl."
 }
 
-set devices [get_hw_devices]
-if {[llength $devices] == 0} {
-    error "No hardware devices found"
-}
+puts "XSDB_CONNECT=$hw_host:$hw_port"
+connect -host $hw_host -port $hw_port
 
-set target_device ""
-foreach dev $devices {
-    set part_name [string tolower [get_property PART $dev]]
-    if {[string first "xc7z100" $part_name] >= 0} {
-        set target_device $dev
-        break
+puts "JTAG_TARGETS_BEGIN"
+targets
+puts "JTAG_TARGETS_END"
+
+if {[string length $target_filter] > 0} {
+    if {[catch {targets -set -filter $target_filter} target_err]} {
+        puts "WARN: target filter did not select a device: $target_filter"
+        puts "WARN: $target_err"
     }
 }
-if {[string length $target_device] == 0} {
-    set target_device [lindex $devices 0]
-    puts "WARN: no xc7z100 device was matched; using first device: $target_device"
+
+puts "BITSTREAM_PATH=$bit_path"
+fpga -file $bit_path
+
+if {![catch {fpga -state} fpga_state]} {
+    puts "FPGA_STATE=$fpga_state"
+}
+if {![catch {fpga -config-status} config_status]} {
+    puts "FPGA_CONFIG_STATUS=$config_status"
 }
 
-current_hw_device $target_device
-refresh_hw_device -update_hw_probes false $target_device
-set_property PROGRAM.FILE $bit_path $target_device
-program_hw_devices $target_device
-refresh_hw_device $target_device
-
 puts "JTAG_PROGRAM_PASS"
-puts "PROGRAMMED_DEVICE=$target_device"
-puts "BITSTREAM_PATH=$bit_path"
