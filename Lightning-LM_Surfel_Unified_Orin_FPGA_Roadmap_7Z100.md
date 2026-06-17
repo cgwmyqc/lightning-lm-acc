@@ -701,3 +701,490 @@ reports/fpga/hls/unified_surfel_observation_core/ip_export/
 补充：同日已加严 `run_vivado_hls_export_ip.ps1` 退出码保护。若 Vivado HLS 返回 0 但没有生成 `component.xml`/zip，且不存在可修复的 `run_ippack.tcl` 或 revision 未命中可修复条件，脚本会返回失败，避免 IP export 误报 PASS。
 
 补充：同日检查发现 `fpga/golden/localization/frame_000001/*` 曾被 git 跟踪，已按规则执行 `git rm --cached` 仅取消索引跟踪并保留本地文件，同时在 `.gitignore` 增加 `fpga/golden/`。后续 golden 仍只作为本地验证输入，在路线文档和 reports 中记录路径和用途。
+
+---
+
+## 12. 2026-06-17 Vivado Wrapper-Level Simulation 更新
+
+### 当前阶段状态
+
+- 已新增最小 Vivado wrapper-level simulation/OOC 工程骨架：`fpga/vivado/slam_accel_wrapper_sim/`。
+- 本阶段未创建完整 board-level Vivado project，未创建 block design，未接 XDMA，未接 DDR interconnect，未生成 bitstream，未上板。
+- wrapper-level behavioral simulation：PASS。
+- wrapper OOC synthesis：PASS，0 errors，0 critical warnings。
+
+### 本次变更摘要
+
+- 新增 `slam_accel_wrapper_sim_top`，实例化 `slam_accel_ctrl` 和 HLS control-plane mock。
+- `slam_accel_ctrl` 到 HLS 侧契约已在 wrapper 中固化：
+  - `unified_obs_ap_start -> ap_start`
+  - `ap_done/ap_idle/ap_ready -> unified_obs_ap_done/ap_idle/ap_ready`
+  - `num_points` 和 direct scalar address ports 直连
+  - output field address 由单一 `OUT_ADDR` 派生后直连
+  - 当前 HLS 无 error 输出，`unified_obs_error` 固定接 `32'd0`
+- 新增 RTL testbench，覆盖 AXI-Lite 配置、正常 dispatch、unsupported kernel 和 address high word error 路径。
+- 新增 Vivado TCL 与 PowerShell 入口：
+  - `run_vivado_sim.ps1`
+  - `run_vivado_ooc_synth.ps1`
+  - `run_sim.tcl`
+  - `run_ooc_synth.tcl`
+- PowerShell 入口使用各自 `%TEMP%` 工程目录下的 `vivado.log/.jou`，避免多个 Vivado 进程抢仓库根目录日志文件。
+
+### 验证命令
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_wrapper_sim\run_vivado_sim.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_wrapper_sim\run_vivado_ooc_synth.ps1
+```
+
+### 验证结果
+
+- Behavioral simulation：
+  - status：PASS
+  - testbench 输出：`[tb_slam_accel_wrapper_sim] PASS`
+  - 覆盖：AXI-Lite write/read、`KERNEL_SEL=4`、`ap_start/ap_done/ap_idle/ap_ready`、direct address ports、output field address 派生、`ERROR=0x1`、`ERROR=0x3`
+- OOC synthesis：
+  - status：PASS
+  - errors：0
+  - critical warnings：0
+  - ordinary warnings：9
+  - 资源：Slice LUTs 620，Slice Registers 1079，Block RAM Tile 0，DSPs 0
+- 普通 warning 说明：
+  - `s_axi_awaddr[1:0]` 和 `s_axi_araddr[1:0]` 未使用是因为 `slam_accel_ctrl` 按 32-bit word 对齐寄存器地址。
+  - `HD.CLK_SRC` 未设置是 OOC timing estimation 常见 warning。
+  - `s_axi_wready` 被综合合并到 `s_axi_awready`。
+
+### 归档报告
+
+```text
+reports/fpga/vivado/slam_accel_wrapper_sim/
+  commands.md
+  summary.json
+  vivado_wrapper_summary.txt
+  vivado_sim.log
+  vivado_sim_log.txt
+  vivado_ooc_synth.log
+  vivado_ooc_synth_log.txt
+  utilization.rpt
+  timing_summary.rpt
+```
+
+### 下一步
+
+- 继续不做 XDMA、完整 block design、DDR interconnect、bitstream 或上板。
+- 下一步进入真实 HLS IP wrapper/BD 集成计划：用已导出的 HLS IP 替换或增强当前 control-plane mock，定义真实 `m_axi_gmem0..4` 到后续 interconnect/DDR 的连接策略。
+
+---
+
+## 13. 2026-06-17 Real HLS IP BD Integration Skeleton 更新
+
+### 当前阶段状态
+
+- 新增真实 HLS IP / `slam_accel_ctrl` BD 集成骨架：`fpga/vivado/slam_accel_hls_ip_bd/`。
+- 不需要手工创建 Vivado 工程；所有工程继续由 TCL/PowerShell 从空目录生成到 `%TEMP%`。
+- 本阶段未创建 XDMA、DDR interconnect、PS、implementation、bitstream 或上板工程。
+- BD validate：PASS。
+- HDL wrapper generation：PASS。
+- non-project OOC synthesis：BLOCKED，阻塞点为 Vivado HLS 2018.3 导出的 floating-point subcore XCI 将 `generate_synth_checkpoint` 锁为只读/off。
+- project-managed `synth_1`：PASS，0 errors，0 critical warnings。
+
+### 本次变更摘要
+
+- 新增 `create_bd.tcl`，从 `%TEMP%\lightning_hls_unified_obs\solution1\impl\ip` 导入真实 HLS IP `unified_surfel_observation_core`。
+- `slam_accel_ctrl` 作为 BD module reference 实例化，保持唯一外露控制入口。
+- 固化连接：`ap_start/ap_done/ap_idle/ap_ready`、`num_points`、输入 direct scalar base address、output field direct address。
+- `unified_obs_error` 由 `xlconstant` 固定为 `32'd0`。
+- HLS `m_axi_gmem0..4` 暂时作为 external AXI master interface 暴露。
+- 新增 `slam_accel_hls_ip_bd.xdc`，约束 `aclk` 为 10.000 ns / 100 MHz。
+- 新增 `run_vivado_bd_validate.ps1`、`run_vivado_ooc_synth.ps1`、`run_vivado_project_synth.ps1`。
+- 新增 `README.md` 和 `reports/fpga/vivado/slam_accel_hls_ip_bd/` 归档。
+
+### 验证命令
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_hls_ip_bd\run_vivado_bd_validate.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_hls_ip_bd\run_vivado_ooc_synth.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_hls_ip_bd\run_vivado_project_synth.ps1
+```
+
+### 验证结果
+
+- BD validate：PASS，日志 marker 为 `BD_VALIDATE_PASS`。
+- Wrapper generation：PASS，生成 `slam_accel_hls_ip_bd_wrapper.v`。
+- Non-project OOC synthesis：BLOCKED，关键错误为 `Cannot change read-only property 'generate_synth_checkpoint'`；该路径用于记录 Vivado HLS 2018.3 subcore XCI 限制，不作为当前通过标准。
+- Project-managed synthesis：PASS，日志 marker 为 `PROJECT_SYNTH_PASS`，`SYNTH_1_STATUS=synth_design Complete!`。
+- Project-managed synthesis 日志结论：`Synthesis finished with 0 errors, 0 critical warnings and 0 warnings.`
+
+### 资源与时序摘要
+
+- Part：`xc7z100ffg900-2`
+- Design：`slam_accel_hls_ip_bd_wrapper`
+- Clock：`aclk = 10.000 ns / 100 MHz`
+- Slice LUTs：21292 / 277400，7.68%
+- Slice Registers：25884 / 554800，4.67%
+- Block RAM Tile：24 / 755，3.18%
+- DSPs：256 / 2020，12.67%
+- Bonded IOB：4032 / 362，1113.81%
+- Setup WNS：2.732 ns，TNS：0.000 ns，setup failing endpoints：0
+- Hold WHS：-0.017 ns，THS：-2.925 ns，hold failing endpoints：170
+
+说明：IOB 超额是因为本阶段把 AXI-Lite 与 `m_axi_gmem0..4` 全部暴露为外部端口；下一阶段必须通过 AXI VIP/BRAM/SmartConnect simulation harness 或后续 DDR/interconnect 内部化。Hold violation 是 synth/open-run 的早期估计，后续进入真实 fabric/implementation 后再收敛。
+
+### 归档报告
+
+```text
+reports/fpga/vivado/slam_accel_hls_ip_bd/
+  commands.md
+  summary.md
+  vivado_bd_validate_log.txt
+  vivado_ooc_synth_log.txt
+  vivado_project_synth_log.txt
+  vivado_project_synth_runme_log.txt
+  slam_accel_hls_ip_bd_project_synth_utilization.txt
+  slam_accel_hls_ip_bd_project_synth_timing_summary.txt
+```
+
+### 下一步
+
+- 不做上板、不做 bitstream、不做 XDMA。
+- 下一步进入 AXI VIP/BRAM/SmartConnect simulation harness 计划：保留真实 HLS IP 和 `slam_accel_ctrl`，将当前外露 `m_axi_gmem0..4` 接入可仿真的内存/互连 harness，解决 IOB 超额和 wrapper-level data-plane 验证缺口。
+---
+
+## 14. 2026-06-17 AXI Memory Harness / Data-Plane Integration 更新
+
+### 当前阶段状态
+- 已新增真实 HLS IP memory harness：`fpga/vivado/slam_accel_hls_mem_harness/`。
+- 本阶段仍未创建 XDMA、DDR、PS、implementation、bitstream 或上板工程。
+- `slam_accel_ctrl` 继续保持唯一外露 AXI-Lite 控制入口。
+- `unified_surfel_observation_core` 继续使用真实 HLS IP，`unified_obs_error` 仍由 `xlconstant` 固定接 `32'd0`。
+- HLS `m_axi_gmem0..4` 已从顶层外露端口改为内部 BRAM-backed AXI memory targets。
+- BD validate：PASS。
+- Project-managed synthesis：PASS，0 errors，0 critical warnings。
+- Wrapper behavioral simulation：PASS，`[tb_lmem_bd_smoke] PASS`。
+
+### 本次变更摘要
+- 新增 `create_bd.tcl`，创建短名 Vivado project/BD：`lmem` / `lmem_bd`，默认实际生成目录为 `fpga/vivado/.build/lmem_bd`；运行 Vivado 时临时映射短盘符以避免 Vivado 2018.3 在 Windows 下触发 260 字符路径限制。
+- 新增 5 路独立内部 BRAM-backed AXI targets：
+  - `m_axi_gmem0 -> axi_bram_ctrl_0 + blk_mem_0`，128-bit
+  - `m_axi_gmem1 -> axi_bram_ctrl_1 + blk_mem_1`，512-bit
+  - `m_axi_gmem2 -> axi_bram_ctrl_2 + blk_mem_2`，256-bit
+  - `m_axi_gmem3 -> axi_bram_ctrl_3 + blk_mem_3`，512-bit
+  - `m_axi_gmem4 -> axi_bram_ctrl_4 + blk_mem_4`，64-bit
+- 每路 BRAM target 使用 4K address range，当前用于 data-plane smoke，不用于 golden 数值对齐。
+- 新增 `run_vivado_bd_validate.ps1`、`run_vivado_project_synth.ps1`、`run_vivado_sim.ps1`。
+- 新增 `tb_lmem_bd_smoke.v`，通过真实 BD wrapper 配置 AXI-Lite、触发 start、等待 controller DONE，并检查 `ERROR=0`、`RUN_COUNT=1`。
+- 更新 `fpga/vivado/slam_accel_hls_mem_harness/README.md` 和 `reports/fpga/vivado/slam_accel_hls_mem_harness/`。
+
+### 验证命令
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_hls_mem_harness\run_vivado_bd_validate.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_hls_mem_harness\run_vivado_project_synth.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_hls_mem_harness\run_vivado_sim.ps1
+```
+
+### 验证结果
+- BD validate：PASS，日志 marker 为 `BD_VALIDATE_PASS`。
+- Synthesis：PASS，日志 marker 为 `PROJECT_SYNTH_PASS`，`SYNTH_1_STATUS=synth_design Complete!`。
+- Synthesis 日志结论：`Synthesis finished with 0 errors, 0 critical warnings and 0 warnings.`；Vivado 汇总为 50 Infos、11 Warnings、0 Critical Warnings、0 Errors。
+- Simulation：PASS，日志 marker 为 `[tb_lmem_bd_smoke] PASS`，仿真在 14235 ns 完成。
+- 顶层 `m_axi_gmem0..4` 不再外露；XSim protocol instance 显示 5 路 HLS AXI master 均连接到内部 AXI BRAM Controller。
+- Vivado XSim 中出现 BRAM behavioral model warning 和 DSP48 OPMODE warning，均为当前零初始化 smoke 场景下的普通 warning；testbench PASS。
+
+### 资源与时序摘要
+- Part：`xc7z100ffg900-2`
+- Clock：`aclk = 10.000 ns / 100 MHz`
+- Slice LUTs：23027 / 277400，8.30%
+- Slice Registers：31014 / 554800，5.59%
+- Block RAM Tile：47 / 755，6.23%
+- DSPs：256 / 2020，12.67%
+- Bonded IOB：204 / 362，56.35%
+- Setup WNS：2.732 ns，TNS：0.000 ns，setup failing endpoints：0
+- Hold WHS：-0.095 ns，THS：-142.802 ns，hold failing endpoints：1647
+
+说明：上一阶段真实 HLS IP BD skeleton 因外露 AXI-Lite 和 5 路 `m_axi_gmem0..4` 使用 4032 IOB。本阶段将 HLS memory ports 内部化后，IOB 降到 204，已低于 7Z100 管脚数量。hold violation 是 synth/open-run 的中间阶段估计，先记录，不在本阶段做 timing optimization。
+
+### 归档报告
+
+```text
+reports/fpga/vivado/slam_accel_hls_mem_harness/
+  commands.md
+  summary.md
+  vivado_bd_validate_log.txt
+  vivado_project_synth_log.txt
+  vivado_project_synth_runme_log.txt
+  vivado_sim_log.txt
+  xsim_simulate_log.txt
+  slam_accel_hls_mem_harness_project_synth_utilization.txt
+  slam_accel_hls_mem_harness_project_synth_timing_summary.txt
+```
+
+### 下一步
+- 仍不做 XDMA、DDR、PS、bitstream 或上板。
+- 下一步进入 golden memory image loader / realistic memory preload 计划：把 `fpga/golden/localization/frame_000001` 中的 scan、pose、map header、active blocks、obs cells 按 HLS ABI 写入仿真 memory image 或 testbench preload，使 wrapper-level simulation 从 data-plane smoke 进入 golden numeric comparison。
+- golden loader 通过后，再评估是否把 5 路独立 BRAM target 收敛为 SmartConnect/AXI Interconnect + shared memory model，为后续 DDR/XDMA fabric 做准备。
+---
+
+## 15. 2026-06-17 Vivado Generated Project Directory 修正
+
+### 当前阶段状态
+- 已修正 `slam_accel_hls_mem_harness` 的 Vivado 生成工程目录组织。
+- 生成工程不再默认放到 `C:\lmem_bd`、`C:\lmem_syn`、`C:\lmem_sim`。
+- 当前默认实际目录统一放在仓库内 `fpga/vivado/.build/`：
+  - BD validate：`fpga/vivado/.build/lmem_bd`
+  - project-managed synthesis：`fpga/vivado/.build/lmem_syn`
+  - behavioral simulation：`fpga/vivado/.build/lmem_sim`
+- `fpga/vivado/.build/` 已加入 `.gitignore`，作为本地 Vivado 生成目录，不纳入 git。
+
+### 本次变更摘要
+- 新增 `fpga/vivado/slam_accel_hls_mem_harness/vivado_path.ps1`，封装 Vivado 短路径映射逻辑。
+- PowerShell 入口在运行 Vivado 时临时把 `fpga/vivado/.build` 映射到未占用短盘符，例如 `V:\`。
+- Vivado 进程内部看到 `V:\lmem_bd`、`V:\lmem_syn`、`V:\lmem_sim` 这类短路径，以规避 Vivado 2018.3 / Windows 260 字符路径限制。
+- 实际文件仍落在 `fpga/vivado/.build/lmem_*`，命令结束后自动卸载临时盘符映射。
+- 已清理此前由本流程生成的旧 `C:\lmem_bd`、`C:\lmem_syn`、`C:\lmem_sim` 目录。
+- 更新 `README.md`、`reports/fpga/vivado/slam_accel_hls_mem_harness/commands.md` 和 `summary.md` 中的路径说明。
+
+### 验证命令
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_hls_mem_harness\run_vivado_bd_validate.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_hls_mem_harness\run_vivado_sim.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_hls_mem_harness\run_vivado_project_synth.ps1
+```
+
+### 验证结果
+- BD validate：PASS，日志 marker 为 `BD_VALIDATE_PASS`。
+- Behavioral simulation：PASS，日志 marker 为 `[tb_lmem_bd_smoke] PASS`。
+- Project-managed synthesis：PASS，日志 marker 为 `PROJECT_SYNTH_PASS`，`SYNTH_1_STATUS=synth_design Complete!`。
+- Synthesis 日志结论仍为 0 errors、0 critical warnings。
+- `subst` 检查确认命令结束后没有残留临时盘符映射。
+
+### 下一步
+- 后续 Vivado 侧脚本化工程默认都应放在 `fpga/vivado/.build/<flow_name>` 下，并加入 git ignore；不要再默认放到 C 盘根目录。
+- 如遇 Windows/Vivado 2018.3 路径长度问题，优先采用“repo 内实际目录 + 临时短盘符映射”的方式解决。
+- 继续进入 golden memory image loader / realistic memory preload 计划。
+
+---
+
+## 16. 2026-06-17 Golden Memory Image Loader / Wrapper 数值仿真更新
+
+### 当前阶段状态
+- 已新增 golden memory image loader 和 wrapper-level golden RTL simulation 入口。
+- 当前仍不做 XDMA、DDR、PS、implementation、bitstream 或上板。
+- 现有可综合 `slam_accel_hls_mem_harness` 保持不变：`slam_accel_ctrl` 仍是唯一外露 AXI-Lite 控制入口，真实 HLS IP 的 `m_axi_gmem0..4` 仍接内部 BRAM-backed targets。
+- full golden 的 `obs_cells` image 为 60,932,096 bytes，不能作为 7Z100 片上 BRAM preload；本阶段将其作为 simulation-only behavioral AXI memory image。
+- Golden RTL numeric simulation 当前 BLOCKED：Vivado 2018.3 XSim 可以 elaborate 并加载 memory image，但 generated HLS floating-point RTL runtime 过慢，64 点 bounded run 超过 15 分钟仍未完成。
+
+### 本次变更摘要
+- 新增 `make_golden_mem_images.py`：读取 `fpga/golden/localization/frame_000001`，生成 5 路 HLS AXI bundle 对应的二进制 memory image，并生成 `golden_frame_000001_params.vh`。
+- 新增 `axi_memory_model.sv`：仿真专用 AXI4 memory slave，支持二进制 preload、AXI burst read/write、output memory peek。
+- 新增 `tb_lmem_golden.sv`：直接实例化 `slam_accel_ctrl`、HLS generated RTL top 和 5 路 behavioral AXI memory model，配置 AXI-Lite 后等待 DONE 并比较 `H_upper/b/counts/residual`。
+- 新增 `run_vivado_golden_sim.ps1` 和 `run_golden_sim.tcl`：默认 `-MaxPoints 64`，生成目录为 `fpga/vivado/.build/lmem_golden_sim` 和 `fpga/vivado/.build/golden_frame_000001_n64`；`-FullFrame` 保留完整帧长跑入口。
+- 更新 `fpga/vivado/slam_accel_hls_mem_harness/README.md`、`reports/fpga/vivado/slam_accel_hls_mem_harness/commands.md`、`summary.md` 和 `golden_frame_000001_n64/status.md`。
+
+### 验证命令
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_hls_mem_harness\run_vivado_bd_validate.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_hls_mem_harness\run_vivado_sim.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_hls_mem_harness\run_vivado_project_synth.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_hls_mem_harness\run_vivado_golden_sim.ps1 -MaxPoints 64
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_hls_mem_harness\run_vivado_golden_sim.ps1 -MaxPoints 64 -RunNumeric
+```
+
+### 验证结果
+- BD validate：PASS，日志 marker 为 `BD_VALIDATE_PASS`。
+- Wrapper smoke simulation：PASS，日志 marker 为 `[tb_lmem_bd_smoke] PASS`。
+- Project-managed synthesis：PASS，日志 marker 为 `PROJECT_SYNTH_PASS`，`SYNTH_1_STATUS=synth_design Complete!`。
+- Synthesis 日志结论：0 errors、0 critical warnings。
+- Golden image generation：PASS，日志 marker 为 `GOLDEN_IMAGE_PASS`。
+- Golden RTL elaboration/preload smoke：PASS，默认 `run_vivado_golden_sim.ps1 -MaxPoints 64` 只做 elaborate + memory preload，不跑长时间数值比较。
+- Golden bounded expected：64 points，expected `valid/reject/miss = 14/33/17`。
+- Golden RTL numeric simulation with `-RunNumeric`：BLOCKED。`tb_lmem_golden_behav` 可 elaborate；5 路 memory image 均可加载；但 64 点 run 超过 15 分钟只推进到约 4.4 ms simulation time，仍在 generated HLS floating-point datapath 中反复输出 DSP48 OPMODE warnings。完整 6963 点 run 也超过 20 分钟未完成。
+
+### 归档报告
+
+```text
+reports/fpga/vivado/slam_accel_hls_mem_harness/
+  commands.md
+  summary.md
+  golden_frame_000001_n64/
+    golden_image_summary.md
+    status.md
+    vivado_golden_sim_log.txt
+    xsim_golden_simulate_log.txt
+```
+
+### 下一步
+- 不把 Vivado 2018.3 generated floating-point RTL full/bounded golden simulation 作为常规 per-change gate。
+- 保留当前 BD smoke simulation + project synthesis 作为 RTL integration gate。
+- 下一步建议做更小的 dedicated synthetic vector，确保 XSim 能快速完成；或改走更快的 wrapper/co-sim 策略，在不依赖完整 Vivado floating-point event simulation 的情况下完成 golden numeric check。
+- 后续若进入板级 data plane，应优先设计 DDR/AXI memory model 或 host-driven memory loader，而不是继续扩大内部 BRAM preload。
+---
+
+## 17. 2026-06-17 Tiny Synthetic Vector RTL Numeric Simulation 更新
+
+### 当前阶段状态
+- 已新增 tiny synthetic vector 快速数值仿真入口。
+- 本阶段仍不做 XDMA、DDR、PS、implementation、bitstream 或上板。
+- `slam_accel_ctrl` 继续作为唯一外露 AXI-Lite 控制入口。
+- 仿真路径直接实例化真实 HLS generated RTL top、`slam_accel_ctrl` 和 5 路 behavioral AXI memory model。
+- full/bounded golden RTL numeric simulation 仍记录为 Vivado 2018.3 XSim runtime-blocked 长跑路径，不作为当前 gate。
+
+### 本次变更摘要
+- 新增 `fpga/vivado/slam_accel_hls_mem_harness/make_synthetic_mem_images.py`。
+- 新增 `fpga/vivado/slam_accel_hls_mem_harness/run_vivado_synthetic_sim.ps1`。
+- synthetic fixture 固定为 1 个 scan point、1 个 active block、256 个 obs cells、1 个 valid cell、identity pose。
+- synthetic expected normal equation 由现有 HLS-equivalent Python `compute_expected()` 生成，预期 `valid/reject/miss = 1/0/0`。
+- 生成目录仍在 `fpga/vivado/.build/synthetic_tiny`，不纳入 git。
+- 归档报告新增 `reports/fpga/vivado/slam_accel_hls_mem_harness/synthetic_tiny/`。
+- synthetic 生成器会 import golden image helper，Python `__pycache__/` 已作为本地生成物加入 ignore 规则。
+
+### 验证命令
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_hls_mem_harness\run_vivado_synthetic_sim.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_hls_mem_harness\run_vivado_bd_validate.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_hls_mem_harness\run_vivado_sim.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_hls_mem_harness\run_vivado_project_synth.ps1
+```
+
+### 验证结果
+- Synthetic image generation：PASS，日志 marker 为 `SYNTHETIC_IMAGE_PASS`。
+- Synthetic RTL numeric simulation：PASS，日志 marker 为 `[tb_lmem_golden] PASS`。
+- Synthetic counts：`valid/reject/miss = 1/0/0`。
+- Synthetic numeric comparison：`max_abs=2.980232227667301e-09`，`max_rel=2.980232227667301e-09`，满足 `abs <= 1e-4` 或 `rel <= 1e-3`。
+- Synthetic XSim 完成时间：testbench `$finish` at `29995 ns`。
+- BD validate：PASS，日志 marker 为 `BD_VALIDATE_PASS`。
+- BRAM smoke simulation：PASS，日志 marker 为 `[tb_lmem_bd_smoke] PASS`。
+- Project-managed synthesis：PASS，日志 marker 为 `PROJECT_SYNTH_PASS`，`SYNTH_1_STATUS=synth_design Complete!`。
+- Synthesis 日志结论：`0 errors`、`0 critical warnings`。
+
+### 归档报告
+
+```text
+reports/fpga/vivado/slam_accel_hls_mem_harness/
+  commands.md
+  summary.md
+  synthetic_tiny/
+    synthetic_image_summary.md
+    status.md
+    vivado_synthetic_sim_log.txt
+    xsim_synthetic_simulate_log.txt
+```
+
+### 下一步
+- 进入板级 memory/data-plane 方案阶段：确定 5 路 HLS AXI master 到板级 DDR/AXI fabric 的连接方式，不再依赖内部 BRAM 作为最终方案。
+- 在进入 board-level BD 前，需要固定 7Z100 开发板信息：XDC、时钟、复位、DDR、PCIe/XDMA 或实际 host 通道。
+- 仍不直接进入上板；下一阶段先做 board-level Vivado project/BD 计划和约束/地址映射收敛。
+
+---
+
+## 18. 2026-06-17 AX7Z100 PCIe/XDMA + PL DDR3/MIG 板级骨架更新
+
+### 当前阶段状态
+- 已新增脚本化板级 Vivado 骨架：`fpga/vivado/slam_accel_ax7z100_pcie_mig/`。
+- 当前仍不做 implementation、bitstream、host runtime 或上板。
+- 已确认用户此前 7Z015 方案里的 Orin 100 MHz 继续使用，但本阶段修正为 PCIe endpoint reference clock：接 AX7Z100 `pcie_ref` / XDMA `sys_clk`，不是 PL DDR3/MIG 系统时钟。
+- AX7Z100 PL DDR3/MIG 使用板载 200 MHz 差分时钟 `SYS_CLK_P/N = F9/E8`。
+- 第一版 PCIe 固定为 Gen2 X4，参考 ALINX `33_PCIe_test`，不直接做 X8。
+- `slam_accel_ctrl` 继续作为唯一 AXI-Lite 控制寄存器入口，通过 XDMA `M_AXI_LITE` 访问。
+- 真实 HLS IP `unified_surfel_observation_core` 已接入板级 BD。
+- HLS `m_axi_gmem0..4` 和 XDMA `M_AXI` 已接入 PL DDR3/MIG-backed AXI memory fabric，不再外露到顶层。
+
+### 本次变更摘要
+- 新增 AX7Z100 board profile：记录 docx、`12_ddr3_pl/mig_a.prj`、`33_PCIe_test`、`ch06_xdma_test` 的引用边界。
+- 新增 `validate_board_profile.ps1`，静态校验：
+  - `xc7z100-ffg900/-2`
+  - DDR3 `MT41K256M16XX-125`
+  - MIG `InputClkFreq=200`、`TimePeriod=1250`、`DataWidth=32`
+  - PL DDR3 SYS_CLK `F9/E8`
+  - PCIe refclk `N8/N7`
+  - PCIe reset `AB22`
+  - XDMA Gen2 X4、128-bit AXI、125 MHz AXI target
+- 新增 AXI-Lite BD wrapper：`slam_accel_ctrl_axi_lite_wrapper.v`，用于把 `slam_accel_ctrl` 挂到 XDMA `M_AXI_LITE`。
+- 新增 `create_bd.tcl`：
+  - 创建 fresh Vivado project，Vivado 内部短名为 `azmig`，规避 Vivado 2018.3 Windows MIG 260 字符路径问题。
+  - 导入 HLS IP repo。
+  - 实例化 XDMA、MIG 7-series、真实 HLS IP、`slam_accel_ctrl` wrapper、AXI interconnect、reset helper。
+  - `pcie_ref` 接 XDMA `sys_clk`；`sys` 接 MIG `SYS_CLK`。
+  - `xdma_0/axi_aclk` 驱动控制侧和 HLS `ap_clk`；`mig_7series_0/ui_clk` 驱动 MIG S_AXI；AXI interconnect 做跨时钟/数据宽度转换。
+- MIG 说明：
+  - `12_ddr3_pl/mig_a.prj` 保留为 native PL DDR3 板级参数来源和静态校验源。
+  - 实际 AXI MIG XML 从 ALINX `33_PCIe_test` Tcl 中提取；原因是直接把 native `.prj` 修改成 AXI 口时，Vivado 2018.3 MIG customization 曾出现 failure/crash。
+- 新增 `run_vivado_bd_validate.ps1`、`run_vivado_project_synth.ps1`。
+- 新增报告目录：`reports/fpga/vivado/slam_accel_ax7z100_pcie_mig/`。
+
+### 验证命令
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\validate_board_profile.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_bd_validate.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_project_synth.ps1
+```
+
+### 验证结果
+- Board profile static validation：PASS，marker 为 `BOARD_PROFILE_PASS`。
+- BD validate：PASS，marker 为 `BD_VALIDATE_PASS`。
+- HDL wrapper generation：PASS。
+- Project-managed synthesis：PASS。
+- Synthesis marker：
+  - `SYNTH_1_STATUS=synth_design Complete!`
+  - `PROJECT_SYNTH_PASS`
+- Synthesis 日志结论：`0 errors`、`0 critical warnings`、`14 warnings`。
+- 顶层未外露 HLS `m_axi_gmem0..4`。
+- Vivado 生成目录仍在 `fpga/vivado/.build/azmig_bd` 和 `fpga/vivado/.build/azmig_syn`，不纳入 git。
+
+### 资源与时序摘要
+- Slice LUTs：61,751 / 277,400（22.26%）
+- Slice Registers：69,374 / 554,800（12.50%）
+- Block RAM Tile：64.5 / 755（8.54%）
+- DSPs：256 / 2,020（12.67%）
+- Bonded IOB：74 / 362（20.44%）
+- BUFGCTRL：11 / 32（34.38%）
+- MMCME2_ADV：3 / 8（37.50%）
+- Synth/open-run timing snapshot：
+  - WNS：-0.366 ns
+  - TNS：-4.014 ns
+  - setup failing endpoints：11
+  - WHS：-0.643 ns
+  - THS：-501.516 ns
+  - hold failing endpoints：19,045
+
+说明：本阶段只要求 board-level skeleton 创建、BD validate、wrapper generation 和 synthesis 不报错。上述负时序作为后续 implementation/timing closure 风险记录，本阶段不做 timing optimization。
+
+### 归档报告
+
+```text
+reports/fpga/vivado/slam_accel_ax7z100_pcie_mig/
+  board_profile_static_validation.md
+  commands.md
+  summary.md
+  vivado_bd_validate_log.txt
+  vivado_project_synth_log.txt
+  vivado_project_synth_runme_log.txt
+  ax7z100_pcie_mig_project_synth_utilization.txt
+  ax7z100_pcie_mig_project_synth_timing_summary.txt
+```
+
+### 下一步
+- 进入板级地址映射与 host bring-up 准备阶段。
+- 固定 PL DDR3 中 host/HLS 共用 buffer layout：scan、pose、map header、active blocks、obs cells、output 的 base address 和大小。
+- 新增最小 XDMA host smoke：先读写 `slam_accel_ctrl` 寄存器，再做 PL DDR3 memory write/read smoke。
+- host smoke 通过后再进入 implementation + bitstream；暂不直接做完整在线 SLAM 或大帧 golden 上板。

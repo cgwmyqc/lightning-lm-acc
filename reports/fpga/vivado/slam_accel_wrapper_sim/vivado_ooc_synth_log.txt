@@ -1,0 +1,435 @@
+#-----------------------------------------------------------
+# Vivado v2018.3 (64-bit)
+# SW Build 2405991 on Thu Dec  6 23:38:27 MST 2018
+# IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
+# Start of session at: Wed Jun 17 08:44:17 2026
+# Process ID: 71508
+# Current directory: F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc
+# Command line: vivado.exe -mode batch -source F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\slam_accel_wrapper_sim\run_ooc_synth.tcl -journal C:\Users\admin\AppData\Local\Temp\lightning_slam_accel_wrapper_ooc\vivado.jou -log C:\Users\admin\AppData\Local\Temp\lightning_slam_accel_wrapper_ooc\vivado.log -tclargs C:\Users\admin\AppData\Local\Temp\lightning_slam_accel_wrapper_ooc xc7z100ffg900-2
+# Log file: C:/Users/admin/AppData/Local/Temp/lightning_slam_accel_wrapper_ooc/vivado.log
+# Journal file: C:\Users\admin\AppData\Local\Temp\lightning_slam_accel_wrapper_ooc\vivado.jou
+#-----------------------------------------------------------
+source {F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\slam_accel_wrapper_sim\run_ooc_synth.tcl}
+# set script_dir [file dirname [file normalize [info script]]]
+# set repo_root [file normalize [file join $script_dir ".." ".." ".."]]
+# set project_dir [file normalize [file join $::env(TEMP) "lightning_slam_accel_wrapper_ooc"]]
+# set target_part "xc7z100ffg900-2"
+# set user_args $argv
+# if {[llength $user_args] >= 1 && [string length [lindex $user_args 0]] > 0} {
+#     set project_dir [file normalize [lindex $user_args 0]]
+# }
+# if {[llength $user_args] >= 2 && [string length [lindex $user_args 1]] > 0} {
+#     set target_part [lindex $user_args 1]
+# }
+# file mkdir $project_dir
+# cd $project_dir
+# read_verilog [file join $repo_root "fpga" "rtl" "slam_accel_ctrl" "slam_accel_ctrl.v"]
+# read_verilog [file join $script_dir "slam_accel_wrapper_sim_top.v"]
+# read_verilog [file join $script_dir "unified_surfel_observation_core_ctrl_mock.v"]
+# synth_design -top slam_accel_wrapper_sim_top -part $target_part -mode out_of_context
+Command: synth_design -top slam_accel_wrapper_sim_top -part xc7z100ffg900-2 -mode out_of_context
+Starting synth_design
+Attempting to get a license for feature 'Synthesis' and/or device 'xc7z100'
+INFO: [Common 17-349] Got license for feature 'Synthesis' and/or device 'xc7z100'
+INFO: Launching helper process for spawning children vivado processes
+INFO: Helper process launched with PID 54500 
+---------------------------------------------------------------------------------
+Starting Synthesize : Time (s): cpu = 00:00:01 ; elapsed = 00:00:02 . Memory (MB): peak = 431.926 ; gain = 99.203
+---------------------------------------------------------------------------------
+INFO: [Synth 8-6157] synthesizing module 'slam_accel_wrapper_sim_top' [F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/slam_accel_wrapper_sim/slam_accel_wrapper_sim_top.v:8]
+	Parameter AXI_ADDR_WIDTH bound to: 12 - type: integer 
+	Parameter AXI_DATA_WIDTH bound to: 32 - type: integer 
+INFO: [Synth 8-6157] synthesizing module 'slam_accel_ctrl' [F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/rtl/slam_accel_ctrl/slam_accel_ctrl.v:9]
+	Parameter AXI_ADDR_WIDTH bound to: 12 - type: integer 
+	Parameter AXI_DATA_WIDTH bound to: 32 - type: integer 
+	Parameter VERSION_VALUE bound to: 131074 - type: integer 
+	Parameter REG_VERSION bound to: 12'b000000000000 
+	Parameter REG_CONTROL bound to: 12'b000000000100 
+	Parameter REG_STATUS bound to: 12'b000000001000 
+	Parameter REG_KERNEL_SEL bound to: 12'b000000001100 
+	Parameter REG_MODE bound to: 12'b000000010000 
+	Parameter REG_ERROR bound to: 12'b000000010100 
+	Parameter REG_CYCLE_COUNT bound to: 12'b000000011000 
+	Parameter REG_RUN_COUNT bound to: 12'b000000011100 
+	Parameter REG_SCAN_ADDR_LO bound to: 12'b000000100000 
+	Parameter REG_SCAN_ADDR_HI bound to: 12'b000000100100 
+	Parameter REG_SCAN_COUNT bound to: 12'b000000101000 
+	Parameter REG_POSE_ADDR_LO bound to: 12'b000000101100 
+	Parameter REG_POSE_ADDR_HI bound to: 12'b000000110000 
+	Parameter REG_MAP_HEADER_ADDR_LO bound to: 12'b000000110100 
+	Parameter REG_MAP_HEADER_ADDR_HI bound to: 12'b000000111000 
+	Parameter REG_ACTIVE_BLOCKS_ADDR_LO bound to: 12'b000000111100 
+	Parameter REG_ACTIVE_BLOCKS_ADDR_HI bound to: 12'b000001000000 
+	Parameter REG_OBS_CELLS_ADDR_LO bound to: 12'b000001000100 
+	Parameter REG_OBS_CELLS_ADDR_HI bound to: 12'b000001001000 
+	Parameter REG_OUT_ADDR_LO bound to: 12'b000001001100 
+	Parameter REG_OUT_ADDR_HI bound to: 12'b000001010000 
+	Parameter KERNEL_UNIFIED_OBSERVATION bound to: 4 - type: integer 
+	Parameter ERR_UNSUPPORTED_KERNEL bound to: 1 - type: integer 
+	Parameter ERR_ADDR_HI_NONZERO bound to: 3 - type: integer 
+	Parameter FSM_IDLE bound to: 3'b000 
+	Parameter FSM_DISPATCH bound to: 3'b001 
+	Parameter FSM_WAIT bound to: 3'b010 
+	Parameter FSM_DONE bound to: 3'b011 
+	Parameter FSM_ERROR bound to: 3'b100 
+INFO: [Synth 8-4471] merging register 's_axi_wready_reg' into 's_axi_awready_reg' [F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/rtl/slam_accel_ctrl/slam_accel_ctrl.v:173]
+WARNING: [Synth 8-6014] Unused sequential element s_axi_wready_reg was removed.  [F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/rtl/slam_accel_ctrl/slam_accel_ctrl.v:173]
+INFO: [Synth 8-6155] done synthesizing module 'slam_accel_ctrl' (1#1) [F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/rtl/slam_accel_ctrl/slam_accel_ctrl.v:9]
+INFO: [Synth 8-6157] synthesizing module 'unified_surfel_observation_core_ctrl_mock' [F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/slam_accel_wrapper_sim/unified_surfel_observation_core_ctrl_mock.v:8]
+	Parameter DONE_DELAY_CYCLES bound to: 4 - type: integer 
+INFO: [Synth 8-6155] done synthesizing module 'unified_surfel_observation_core_ctrl_mock' (2#1) [F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/slam_accel_wrapper_sim/unified_surfel_observation_core_ctrl_mock.v:8]
+INFO: [Synth 8-6155] done synthesizing module 'slam_accel_wrapper_sim_top' (3#1) [F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/slam_accel_wrapper_sim/slam_accel_wrapper_sim_top.v:8]
+WARNING: [Synth 8-3331] design slam_accel_ctrl has unconnected port s_axi_awaddr[1]
+WARNING: [Synth 8-3331] design slam_accel_ctrl has unconnected port s_axi_awaddr[0]
+WARNING: [Synth 8-3331] design slam_accel_ctrl has unconnected port s_axi_araddr[1]
+WARNING: [Synth 8-3331] design slam_accel_ctrl has unconnected port s_axi_araddr[0]
+---------------------------------------------------------------------------------
+Finished Synthesize : Time (s): cpu = 00:00:02 ; elapsed = 00:00:03 . Memory (MB): peak = 487.641 ; gain = 154.918
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Constraint Validation : Time (s): cpu = 00:00:02 ; elapsed = 00:00:03 . Memory (MB): peak = 487.641 ; gain = 154.918
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Loading Part and Timing Information
+---------------------------------------------------------------------------------
+Loading part: xc7z100ffg900-2
+---------------------------------------------------------------------------------
+Finished Loading Part and Timing Information : Time (s): cpu = 00:00:02 ; elapsed = 00:00:03 . Memory (MB): peak = 487.641 ; gain = 154.918
+---------------------------------------------------------------------------------
+INFO: [Device 21-403] Loading part xc7z100ffg900-2
+INFO: [Synth 8-802] inferred FSM for state register 'state_reg' in module 'slam_accel_ctrl'
+INFO: [Synth 8-5546] ROM "s_axi_bresp" won't be mapped to RAM because it is too sparse
+INFO: [Synth 8-5546] ROM "s_axi_rresp" won't be mapped to RAM because it is too sparse
+INFO: [Synth 8-5544] ROM "unified_obs_ap_start" won't be mapped to Block RAM because address size (3) smaller than threshold (5)
+INFO: [Synth 8-5544] ROM "state" won't be mapped to Block RAM because address size (1) smaller than threshold (5)
+INFO: [Synth 8-5544] ROM "state" won't be mapped to Block RAM because address size (1) smaller than threshold (5)
+INFO: [Synth 8-5544] ROM "state" won't be mapped to Block RAM because address size (1) smaller than threshold (5)
+INFO: [Synth 8-5544] ROM "state" won't be mapped to Block RAM because address size (1) smaller than threshold (5)
+---------------------------------------------------------------------------------------------------
+                   State |                     New Encoding |                Previous Encoding 
+---------------------------------------------------------------------------------------------------
+                FSM_IDLE |                              001 |                              000
+            FSM_DISPATCH |                              011 |                              001
+                FSM_WAIT |                              100 |                              010
+                FSM_DONE |                              010 |                              011
+               FSM_ERROR |                              000 |                              100
+---------------------------------------------------------------------------------------------------
+INFO: [Synth 8-3354] encoded FSM with state register 'state_reg' using encoding 'sequential' in module 'slam_accel_ctrl'
+---------------------------------------------------------------------------------
+Finished RTL Optimization Phase 2 : Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 554.523 ; gain = 221.801
+---------------------------------------------------------------------------------
+
+Report RTL Partitions: 
++-+--------------+------------+----------+
+| |RTL Partition |Replication |Instances |
++-+--------------+------------+----------+
++-+--------------+------------+----------+
+No constraint files found.
+---------------------------------------------------------------------------------
+Start RTL Component Statistics 
+---------------------------------------------------------------------------------
+Detailed RTL Component Info : 
++---Adders : 
+	   2 Input     32 Bit       Adders := 11    
+	   2 Input      8 Bit       Adders := 1     
++---XORs : 
+	  16 Input     32 Bit         XORs := 1     
++---Registers : 
+	               32 Bit    Registers := 35    
+	                8 Bit    Registers := 1     
+	                2 Bit    Registers := 2     
+	                1 Bit    Registers := 8     
++---Muxes : 
+	  19 Input     32 Bit        Muxes := 17    
+	   2 Input     32 Bit        Muxes := 39    
+	   5 Input     32 Bit        Muxes := 3     
+	   5 Input      8 Bit        Muxes := 1     
+	   2 Input      8 Bit        Muxes := 3     
+	   5 Input      3 Bit        Muxes := 1     
+	   2 Input      3 Bit        Muxes := 9     
+	  19 Input      2 Bit        Muxes := 1     
+	   2 Input      2 Bit        Muxes := 7     
+	  22 Input      2 Bit        Muxes := 1     
+	   2 Input      1 Bit        Muxes := 17    
+	  19 Input      1 Bit        Muxes := 3     
+	   5 Input      1 Bit        Muxes := 5     
+---------------------------------------------------------------------------------
+Finished RTL Component Statistics 
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start RTL Hierarchical Component Statistics 
+---------------------------------------------------------------------------------
+Hierarchical RTL Component report 
+Module slam_accel_ctrl 
+Detailed RTL Component Info : 
++---Adders : 
+	   2 Input     32 Bit       Adders := 11    
++---Registers : 
+	               32 Bit    Registers := 19    
+	                2 Bit    Registers := 2     
+	                1 Bit    Registers := 6     
++---Muxes : 
+	  19 Input     32 Bit        Muxes := 17    
+	   2 Input     32 Bit        Muxes := 39    
+	   5 Input     32 Bit        Muxes := 3     
+	   5 Input      3 Bit        Muxes := 1     
+	   2 Input      3 Bit        Muxes := 9     
+	  19 Input      2 Bit        Muxes := 1     
+	   2 Input      2 Bit        Muxes := 7     
+	  22 Input      2 Bit        Muxes := 1     
+	   2 Input      1 Bit        Muxes := 15    
+	  19 Input      1 Bit        Muxes := 3     
+	   5 Input      1 Bit        Muxes := 5     
+Module unified_surfel_observation_core_ctrl_mock 
+Detailed RTL Component Info : 
++---Adders : 
+	   2 Input      8 Bit       Adders := 1     
++---XORs : 
+	  16 Input     32 Bit         XORs := 1     
++---Registers : 
+	               32 Bit    Registers := 16    
+	                8 Bit    Registers := 1     
+	                1 Bit    Registers := 2     
++---Muxes : 
+	   5 Input      8 Bit        Muxes := 1     
+	   2 Input      8 Bit        Muxes := 3     
+	   2 Input      1 Bit        Muxes := 2     
+---------------------------------------------------------------------------------
+Finished RTL Hierarchical Component Statistics
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Part Resource Summary
+---------------------------------------------------------------------------------
+Part Resources:
+DSPs: 2020 (col length:140)
+BRAMs: 1510 (col length: RAMB18 140 RAMB36 70)
+---------------------------------------------------------------------------------
+Finished Part Resource Summary
+---------------------------------------------------------------------------------
+No constraint files found.
+---------------------------------------------------------------------------------
+Start Cross Boundary and Area Optimization
+---------------------------------------------------------------------------------
+Warning: Parallel synthesis criteria is not met 
+INFO: [Synth 8-5546] ROM "s_axi_bresp" won't be mapped to RAM because it is too sparse
+INFO: [Synth 8-5546] ROM "s_axi_rresp" won't be mapped to RAM because it is too sparse
+WARNING: [Synth 8-3331] design slam_accel_ctrl has unconnected port s_axi_awaddr[1]
+WARNING: [Synth 8-3331] design slam_accel_ctrl has unconnected port s_axi_awaddr[0]
+WARNING: [Synth 8-3331] design slam_accel_ctrl has unconnected port s_axi_araddr[1]
+WARNING: [Synth 8-3331] design slam_accel_ctrl has unconnected port s_axi_araddr[0]
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[2]' (FDRE) to 'ctrl_i/error_reg_reg[3]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[3]' (FDRE) to 'ctrl_i/error_reg_reg[4]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[4]' (FDRE) to 'ctrl_i/error_reg_reg[5]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[5]' (FDRE) to 'ctrl_i/error_reg_reg[6]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[6]' (FDRE) to 'ctrl_i/error_reg_reg[7]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[7]' (FDRE) to 'ctrl_i/error_reg_reg[8]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[8]' (FDRE) to 'ctrl_i/error_reg_reg[9]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[9]' (FDRE) to 'ctrl_i/error_reg_reg[10]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[10]' (FDRE) to 'ctrl_i/error_reg_reg[11]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[11]' (FDRE) to 'ctrl_i/error_reg_reg[12]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[12]' (FDRE) to 'ctrl_i/error_reg_reg[13]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[13]' (FDRE) to 'ctrl_i/error_reg_reg[14]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[14]' (FDRE) to 'ctrl_i/error_reg_reg[15]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[15]' (FDRE) to 'ctrl_i/error_reg_reg[16]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[16]' (FDRE) to 'ctrl_i/error_reg_reg[17]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[17]' (FDRE) to 'ctrl_i/error_reg_reg[18]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[18]' (FDRE) to 'ctrl_i/error_reg_reg[19]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[19]' (FDRE) to 'ctrl_i/error_reg_reg[20]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[20]' (FDRE) to 'ctrl_i/error_reg_reg[21]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[21]' (FDRE) to 'ctrl_i/error_reg_reg[22]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[22]' (FDRE) to 'ctrl_i/error_reg_reg[23]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[23]' (FDRE) to 'ctrl_i/error_reg_reg[24]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[24]' (FDRE) to 'ctrl_i/error_reg_reg[25]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[25]' (FDRE) to 'ctrl_i/error_reg_reg[26]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[26]' (FDRE) to 'ctrl_i/error_reg_reg[27]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[27]' (FDRE) to 'ctrl_i/error_reg_reg[28]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[28]' (FDRE) to 'ctrl_i/error_reg_reg[29]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[29]' (FDRE) to 'ctrl_i/error_reg_reg[30]'
+INFO: [Synth 8-3886] merging instance 'ctrl_i/error_reg_reg[30]' (FDRE) to 'ctrl_i/error_reg_reg[31]'
+INFO: [Synth 8-3333] propagating constant 0 across sequential element (\ctrl_i/error_reg_reg[31] )
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_h_upper_reg[0]' (FDRE) to 'hls_ctrl_mock_i/captured_output_reserved_reg[0]'
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_b_reg[0]' (FDRE) to 'hls_ctrl_mock_i/captured_output_reserved_reg[0]'
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_valid_count_reg[0]' (FDRE) to 'hls_ctrl_mock_i/captured_output_reserved_reg[0]'
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_reject_count_reg[0]' (FDRE) to 'hls_ctrl_mock_i/captured_output_reserved_reg[0]'
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_miss_count_reg[0]' (FDRE) to 'hls_ctrl_mock_i/captured_output_reserved_reg[0]'
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_flags_reg[0]' (FDRE) to 'hls_ctrl_mock_i/captured_output_reserved_reg[0]'
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_residual_sum_reg[0]' (FDRE) to 'hls_ctrl_mock_i/captured_output_reserved_reg[0]'
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_residual_abs_sum_reg[0]' (FDRE) to 'hls_ctrl_mock_i/captured_output_reserved_reg[0]'
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_residual_max_abs_reg[0]' (FDRE) to 'hls_ctrl_mock_i/captured_output_reserved_reg[0]'
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_h_upper_reg[1]' (FDRE) to 'hls_ctrl_mock_i/captured_output_reserved_reg[1]'
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_b_reg[1]' (FDRE) to 'hls_ctrl_mock_i/captured_output_reserved_reg[1]'
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_valid_count_reg[1]' (FDRE) to 'hls_ctrl_mock_i/captured_output_reserved_reg[1]'
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_miss_count_reg[1]' (FDRE) to 'hls_ctrl_mock_i/captured_output_reserved_reg[1]'
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_residual_sum_reg[1]' (FDRE) to 'hls_ctrl_mock_i/captured_output_reserved_reg[1]'
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_residual_abs_sum_reg[1]' (FDRE) to 'hls_ctrl_mock_i/captured_output_reserved_reg[1]'
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_residual_max_abs_reg[1]' (FDRE) to 'hls_ctrl_mock_i/captured_output_reserved_reg[1]'
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_h_upper_reg[2]' (FDRE) to 'hls_ctrl_mock_i/captured_output_reserved_reg[2]'
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_miss_count_reg[2]' (FDRE) to 'hls_ctrl_mock_i/captured_output_reserved_reg[2]'
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_residual_abs_sum_reg[2]' (FDRE) to 'hls_ctrl_mock_i/captured_output_reserved_reg[2]'
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_h_upper_reg[3]' (FDRE) to 'hls_ctrl_mock_i/captured_output_reserved_reg[3]'
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_miss_count_reg[3]' (FDRE) to 'hls_ctrl_mock_i/captured_output_reserved_reg[3]'
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_h_upper_reg[4]' (FDRE) to 'hls_ctrl_mock_i/captured_output_reserved_reg[4]'
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_h_upper_reg[5]' (FDRE) to 'hls_ctrl_mock_i/captured_output_reserved_reg[5]'
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_h_upper_reg[6]' (FDRE) to 'hls_ctrl_mock_i/captured_output_reserved_reg[6]'
+INFO: [Synth 8-3333] propagating constant 0 across sequential element (\ctrl_i/s_axi_rresp_reg[0] )
+INFO: [Synth 8-3333] propagating constant 0 across sequential element (\ctrl_i/s_axi_bresp_reg[0] )
+---------------------------------------------------------------------------------
+Finished Cross Boundary and Area Optimization : Time (s): cpu = 00:00:09 ; elapsed = 00:00:10 . Memory (MB): peak = 780.523 ; gain = 447.801
+---------------------------------------------------------------------------------
+
+Report RTL Partitions: 
++-+--------------+------------+----------+
+| |RTL Partition |Replication |Instances |
++-+--------------+------------+----------+
++-+--------------+------------+----------+
+No constraint files found.
+---------------------------------------------------------------------------------
+Start Timing Optimization
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Timing Optimization : Time (s): cpu = 00:00:09 ; elapsed = 00:00:10 . Memory (MB): peak = 780.523 ; gain = 447.801
+---------------------------------------------------------------------------------
+
+Report RTL Partitions: 
++-+--------------+------------+----------+
+| |RTL Partition |Replication |Instances |
++-+--------------+------------+----------+
++-+--------------+------------+----------+
+---------------------------------------------------------------------------------
+Start Technology Mapping
+---------------------------------------------------------------------------------
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_b_reg[2]' (FDRE) to 'hls_ctrl_mock_i/captured_output_residual_max_abs_reg[2]'
+INFO: [Synth 8-3886] merging instance 'hls_ctrl_mock_i/captured_output_valid_count_reg[2]' (FDRE) to 'hls_ctrl_mock_i/captured_output_residual_max_abs_reg[2]'
+---------------------------------------------------------------------------------
+Finished Technology Mapping : Time (s): cpu = 00:00:10 ; elapsed = 00:00:10 . Memory (MB): peak = 780.523 ; gain = 447.801
+---------------------------------------------------------------------------------
+
+Report RTL Partitions: 
++-+--------------+------------+----------+
+| |RTL Partition |Replication |Instances |
++-+--------------+------------+----------+
++-+--------------+------------+----------+
+---------------------------------------------------------------------------------
+Start IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Flattening Before IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Flattening Before IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished IO Insertion : Time (s): cpu = 00:00:10 ; elapsed = 00:00:11 . Memory (MB): peak = 780.523 ; gain = 447.801
+---------------------------------------------------------------------------------
+
+Report Check Netlist: 
++------+------------------+-------+---------+-------+------------------+
+|      |Item              |Errors |Warnings |Status |Description       |
++------+------------------+-------+---------+-------+------------------+
+|1     |multi_driven_nets |      0|        0|Passed |Multi driven nets |
++------+------------------+-------+---------+-------+------------------+
+---------------------------------------------------------------------------------
+Start Renaming Generated Instances
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Instances : Time (s): cpu = 00:00:10 ; elapsed = 00:00:11 . Memory (MB): peak = 780.523 ; gain = 447.801
+---------------------------------------------------------------------------------
+
+Report RTL Partitions: 
++-+--------------+------------+----------+
+| |RTL Partition |Replication |Instances |
++-+--------------+------------+----------+
++-+--------------+------------+----------+
+---------------------------------------------------------------------------------
+Start Rebuilding User Hierarchy
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Rebuilding User Hierarchy : Time (s): cpu = 00:00:10 ; elapsed = 00:00:11 . Memory (MB): peak = 780.523 ; gain = 447.801
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Ports
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Ports : Time (s): cpu = 00:00:10 ; elapsed = 00:00:11 . Memory (MB): peak = 780.523 ; gain = 447.801
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Handling Custom Attributes
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:11 ; elapsed = 00:00:11 . Memory (MB): peak = 780.523 ; gain = 447.801
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Nets
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Nets : Time (s): cpu = 00:00:11 ; elapsed = 00:00:11 . Memory (MB): peak = 780.523 ; gain = 447.801
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Writing Synthesis Report
+---------------------------------------------------------------------------------
+
+Report BlackBoxes: 
++-+--------------+----------+
+| |BlackBox name |Instances |
++-+--------------+----------+
++-+--------------+----------+
+
+Report Cell Usage: 
++------+-------+------+
+|      |Cell   |Count |
++------+-------+------+
+|1     |CARRY4 |    86|
+|2     |LUT1   |    36|
+|3     |LUT2   |    12|
+|4     |LUT3   |    22|
+|5     |LUT4   |    74|
+|6     |LUT5   |   130|
+|7     |LUT6   |   362|
+|8     |MUXF7  |     4|
+|9     |FDRE   |  1076|
+|10    |FDSE   |     3|
++------+-------+------+
+
+Report Instance Areas: 
++------+------------------+------------------------------------------+------+
+|      |Instance          |Module                                    |Cells |
++------+------------------+------------------------------------------+------+
+|1     |top               |                                          |  1805|
+|2     |  ctrl_i          |slam_accel_ctrl                           |  1208|
+|3     |  hls_ctrl_mock_i |unified_surfel_observation_core_ctrl_mock |   597|
++------+------------------+------------------------------------------+------+
+---------------------------------------------------------------------------------
+Finished Writing Synthesis Report : Time (s): cpu = 00:00:11 ; elapsed = 00:00:11 . Memory (MB): peak = 780.523 ; gain = 447.801
+---------------------------------------------------------------------------------
+Synthesis finished with 0 errors, 0 critical warnings and 9 warnings.
+Synthesis Optimization Runtime : Time (s): cpu = 00:00:11 ; elapsed = 00:00:11 . Memory (MB): peak = 780.523 ; gain = 447.801
+Synthesis Optimization Complete : Time (s): cpu = 00:00:11 ; elapsed = 00:00:11 . Memory (MB): peak = 780.523 ; gain = 447.801
+INFO: [Project 1-571] Translating synthesized netlist
+INFO: [Netlist 29-17] Analyzing 90 Unisim elements for replacement
+INFO: [Netlist 29-28] Unisim Transformation completed in 0 CPU seconds
+INFO: [Project 1-570] Preparing netlist for logic optimization
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.001 . Memory (MB): peak = 858.914 ; gain = 0.000
+INFO: [Project 1-111] Unisim Transformation Summary:
+No Unisim elements were transformed.
+
+INFO: [Common 17-83] Releasing license: Synthesis
+85 Infos, 9 Warnings, 0 Critical Warnings and 0 Errors encountered.
+synth_design completed successfully
+synth_design: Time (s): cpu = 00:00:15 ; elapsed = 00:00:17 . Memory (MB): peak = 858.914 ; gain = 539.254
+# report_utilization -file [file join $project_dir "slam_accel_wrapper_sim_utilization.rpt"]
+# report_timing_summary -file [file join $project_dir "slam_accel_wrapper_sim_timing_summary.rpt"]
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+INFO: [Timing 38-91] UpdateTimingParams: Speed grade: -2, Delay Type: min_max.
+INFO: [Timing 38-191] Multithreading enabled for timing update using a maximum of 2 CPUs
+WARNING: [Timing 38-242] The property HD.CLK_SRC of clock port "aclk" is not set. In out-of-context mode, this prevents timing estimation for clock delay/skew
+Resolution: Set the HD.CLK_SRC property of the out-of-context port to the location of the clock buffer instance in the top-level design
+report_timing_summary: Time (s): cpu = 00:00:12 ; elapsed = 00:00:13 . Memory (MB): peak = 1395.738 ; gain = 536.824
+# exit
+INFO: [Common 17-206] Exiting Vivado at Wed Jun 17 08:44:50 2026...

@@ -1,0 +1,49 @@
+slam_accel_wrapper_sim validation summary
+
+Date: 2026-06-17
+Part: xc7z100ffg900-2
+
+Scope:
+
+  Minimal Vivado wrapper-level simulation/OOC project.
+  No block design, XDMA, DDR interconnect, implementation, bitstream, or board run.
+
+Simulation result:
+
+  PASS
+  Testbench message: [tb_slam_accel_wrapper_sim] PASS
+
+Simulation coverage:
+
+  AXI-Lite register write/read path.
+  KERNEL_SEL=4 successful dispatch.
+  HLS-side ap_start/ap_done/ap_idle/ap_ready handshake through a control-plane mock.
+  direct scalar input address ports.
+  output field address derivation from OUT_ADDR.
+  unsupported kernel error path: ERROR=0x00000001.
+  non-zero high address word error path: ERROR=0x00000003.
+
+OOC synthesis result:
+
+  PASS
+  0 errors
+  0 critical warnings
+  9 ordinary warnings
+
+Ordinary warnings:
+
+  s_axi_awaddr[1:0] and s_axi_araddr[1:0] are unused because slam_accel_ctrl word-aligns AXI-Lite offsets.
+  HD.CLK_SRC is unset for OOC timing estimation.
+  s_axi_wready was merged into s_axi_awready by synthesis.
+
+Resource checkpoint:
+
+  Slice LUTs: 620 / 277400 (0.22%)
+  Slice Registers: 1079 / 554800 (0.19%)
+  Block RAM Tile: 0 / 755 (0.00%)
+  DSPs: 0 / 2020 (0.00%)
+
+Next action:
+
+  Replace or augment the control-plane mock with the real HLS IP wrapper/BD integration plan. Keep full board-level Vivado project creation, XDMA, DDR interconnect, and bitstream out of this stage.
+

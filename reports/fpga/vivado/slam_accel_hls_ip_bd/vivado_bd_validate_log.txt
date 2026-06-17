@@ -1,0 +1,168 @@
+#-----------------------------------------------------------
+# Vivado v2018.3 (64-bit)
+# SW Build 2405991 on Thu Dec  6 23:38:27 MST 2018
+# IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
+# Start of session at: Wed Jun 17 09:40:25 2026
+# Process ID: 16992
+# Current directory: F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc
+# Command line: vivado.exe -mode batch -source F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\slam_accel_hls_ip_bd\create_bd.tcl -journal C:\Users\admin\AppData\Local\Temp\lightning_slam_accel_hls_ip_bd\vivado_bd_validate.jou -log C:\Users\admin\AppData\Local\Temp\lightning_slam_accel_hls_ip_bd\vivado_bd_validate.log -tclargs C:\Users\admin\AppData\Local\Temp\lightning_slam_accel_hls_ip_bd xc7z100ffg900-2 C:\Users\admin\AppData\Local\Temp\lightning_hls_unified_obs\solution1\impl\ip
+# Log file: C:/Users/admin/AppData/Local/Temp/lightning_slam_accel_hls_ip_bd/vivado_bd_validate.log
+# Journal file: C:\Users\admin\AppData\Local\Temp\lightning_slam_accel_hls_ip_bd\vivado_bd_validate.jou
+#-----------------------------------------------------------
+source {F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\slam_accel_hls_ip_bd\create_bd.tcl}
+# set script_dir [file dirname [file normalize [info script]]]
+# set repo_root [file normalize [file join $script_dir ".." ".." ".."]]
+# set project_dir [file normalize [file join $::env(TEMP) "lightning_slam_accel_hls_ip_bd"]]
+# set target_part "xc7z100ffg900-2"
+# set hls_ip_dir [file normalize [file join $::env(TEMP) "lightning_hls_unified_obs" "solution1" "impl" "ip"]]
+# set user_args $argv
+# if {[llength $user_args] >= 1 && [string length [lindex $user_args 0]] > 0} {
+#     set project_dir [file normalize [lindex $user_args 0]]
+# }
+# if {[llength $user_args] >= 2 && [string length [lindex $user_args 1]] > 0} {
+#     set target_part [lindex $user_args 1]
+# }
+# if {[llength $user_args] >= 3 && [string length [lindex $user_args 2]] > 0} {
+#     set hls_ip_dir [file normalize [lindex $user_args 2]]
+# }
+# set component_xml [file join $hls_ip_dir "component.xml"]
+# if {![file exists $component_xml]} {
+#     error "Missing HLS IP component.xml: $component_xml"
+# }
+# file mkdir $project_dir
+# cd $project_dir
+# create_project -force slam_accel_hls_ip_bd $project_dir -part $target_part
+create_project: Time (s): cpu = 00:00:02 ; elapsed = 00:00:05 . Memory (MB): peak = 321.430 ; gain = 58.855
+# set_property ip_repo_paths [list $hls_ip_dir] [current_project]
+# update_ip_catalog
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1700] Loaded user IP repository 'c:/Users/admin/AppData/Local/Temp/lightning_hls_unified_obs/solution1/impl/ip'.
+INFO: [IP_Flow 19-2313] Loaded Vivado IP repository 'E:/Xilinx/Vivado/2018.3/data/ip'.
+# add_files -norecurse [file join $repo_root "fpga" "rtl" "slam_accel_ctrl" "slam_accel_ctrl.v"]
+# add_files -fileset constrs_1 -norecurse [file join $script_dir "slam_accel_hls_ip_bd.xdc"]
+# update_compile_order -fileset sources_1
+# create_bd_design "slam_accel_hls_ip_bd"
+Wrote  : <C:\Users\admin\AppData\Local\Temp\lightning_slam_accel_hls_ip_bd\slam_accel_hls_ip_bd.srcs\sources_1\bd\slam_accel_hls_ip_bd\slam_accel_hls_ip_bd.bd> 
+# create_bd_port -dir I -type clk aclk
+# create_bd_port -dir I -type rst aresetn
+# set_property CONFIG.POLARITY ACTIVE_LOW [get_bd_ports aresetn]
+WARNING: [IP_Flow 19-587] [HDL Parser] HDL port or parameter 'status_idle' has a dependency on the module local parameter or undefined parameter 'FSM_IDLE'.
+WARNING: [IP_Flow 19-587] [HDL Parser] HDL port or parameter 'status_busy' has a dependency on the module local parameter or undefined parameter 'FSM_DISPATCH'.
+WARNING: [IP_Flow 19-587] [HDL Parser] HDL port or parameter 'status_busy' has a dependency on the module local parameter or undefined parameter 'FSM_WAIT'.
+WARNING: [IP_Flow 19-587] [HDL Parser] HDL port or parameter 'status_done' has a dependency on the module local parameter or undefined parameter 'FSM_DONE'.
+WARNING: [IP_Flow 19-587] [HDL Parser] HDL port or parameter 'status_error' has a dependency on the module local parameter or undefined parameter 'FSM_ERROR'.
+INFO: [IP_Flow 19-5107] Inferred bus interface 's_axi' of definition 'xilinx.com:interface:aximm:1.0' (from Xilinx Repository).
+INFO: [IP_Flow 19-5107] Inferred bus interface 'aresetn' of definition 'xilinx.com:signal:reset:1.0' (from Xilinx Repository).
+INFO: [IP_Flow 19-5107] Inferred bus interface 'aclk' of definition 'xilinx.com:signal:clock:1.0' (from Xilinx Repository).
+INFO: [IP_Flow 19-4728] Bus Interface 'aresetn': Added interface parameter 'POLARITY' with value 'ACTIVE_LOW'.
+INFO: [IP_Flow 19-4728] Bus Interface 'aclk': Added interface parameter 'ASSOCIATED_BUSIF' with value 's_axi'.
+INFO: [IP_Flow 19-4728] Bus Interface 'aclk': Added interface parameter 'ASSOCIATED_RESET' with value 'aresetn'.
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1700] Loaded user IP repository 'c:/Users/admin/AppData/Local/Temp/lightning_hls_unified_obs/solution1/impl/ip'.
+# set ctrl [create_bd_cell -type module -reference slam_accel_ctrl ctrl_0]
+# set hls [create_bd_cell -type ip -vlnv xilinx.com:hls:unified_surfel_observation_core:1.0 unified_obs_0]
+# set zero32 [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 const_zero_32]
+# set_property -dict [list CONFIG.CONST_WIDTH {32} CONFIG.CONST_VAL {0}] $zero32
+# connect_bd_net [get_bd_ports aclk] [get_bd_pins ctrl_0/aclk] [get_bd_pins unified_obs_0/ap_clk]
+# connect_bd_net [get_bd_ports aresetn] [get_bd_pins ctrl_0/aresetn] [get_bd_pins unified_obs_0/ap_rst_n]
+# connect_bd_net [get_bd_pins const_zero_32/dout] [get_bd_pins ctrl_0/unified_obs_error]
+# connect_bd_net [get_bd_pins ctrl_0/unified_obs_ap_start] [get_bd_pins unified_obs_0/ap_start]
+WARNING: [BD 41-1306] The connection to interface pin /unified_obs_0/ap_start is being overridden by the user. This pin will not be connected as a part of interface connection ap_ctrl
+# connect_bd_net [get_bd_pins unified_obs_0/ap_done] [get_bd_pins ctrl_0/unified_obs_ap_done]
+WARNING: [BD 41-1306] The connection to interface pin /unified_obs_0/ap_done is being overridden by the user. This pin will not be connected as a part of interface connection ap_ctrl
+# connect_bd_net [get_bd_pins unified_obs_0/ap_idle] [get_bd_pins ctrl_0/unified_obs_ap_idle]
+WARNING: [BD 41-1306] The connection to interface pin /unified_obs_0/ap_idle is being overridden by the user. This pin will not be connected as a part of interface connection ap_ctrl
+# connect_bd_net [get_bd_pins unified_obs_0/ap_ready] [get_bd_pins ctrl_0/unified_obs_ap_ready]
+WARNING: [BD 41-1306] The connection to interface pin /unified_obs_0/ap_ready is being overridden by the user. This pin will not be connected as a part of interface connection ap_ctrl
+# connect_bd_net [get_bd_pins ctrl_0/unified_obs_num_points] [get_bd_pins unified_obs_0/num_points]
+# connect_bd_net [get_bd_pins ctrl_0/unified_obs_scan_points_addr] [get_bd_pins unified_obs_0/scan_points]
+# connect_bd_net [get_bd_pins ctrl_0/unified_obs_pose_addr] [get_bd_pins unified_obs_0/pose]
+# connect_bd_net [get_bd_pins ctrl_0/unified_obs_map_header_addr] [get_bd_pins unified_obs_0/map_header]
+# connect_bd_net [get_bd_pins ctrl_0/unified_obs_active_blocks_addr] [get_bd_pins unified_obs_0/active_blocks]
+# connect_bd_net [get_bd_pins ctrl_0/unified_obs_obs_cells_addr] [get_bd_pins unified_obs_0/obs_cells]
+# connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_h_upper_addr] [get_bd_pins unified_obs_0/output_h_upper]
+# connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_b_addr] [get_bd_pins unified_obs_0/output_b]
+# connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_valid_count_addr] [get_bd_pins unified_obs_0/output_valid_count]
+# connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_reject_count_addr] [get_bd_pins unified_obs_0/output_reject_count]
+# connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_miss_count_addr] [get_bd_pins unified_obs_0/output_miss_count]
+# connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_flags_addr] [get_bd_pins unified_obs_0/output_flags]
+# connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_residual_sum_addr] [get_bd_pins unified_obs_0/output_residual_sum]
+# connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_residual_abs_sum_addr] [get_bd_pins unified_obs_0/output_residual_abs_sum]
+# connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_residual_max_abs_addr] [get_bd_pins unified_obs_0/output_residual_max_abs]
+# connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_reserved_addr] [get_bd_pins unified_obs_0/output_reserved]
+# foreach pin {
+#     s_axi_awaddr s_axi_awvalid s_axi_awready s_axi_wdata s_axi_wstrb s_axi_wvalid
+#     s_axi_wready s_axi_bresp s_axi_bvalid s_axi_bready s_axi_araddr s_axi_arvalid
+#     s_axi_arready s_axi_rdata s_axi_rresp s_axi_rvalid s_axi_rready
+# } {
+#     make_bd_pins_external [get_bd_pins ctrl_0/$pin]
+# }
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_awaddr is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_awvalid is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_awready is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_wdata is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_wstrb is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_wvalid is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_wready is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_bresp is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_bvalid is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_bready is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_araddr is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_arvalid is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_arready is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_rdata is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_rresp is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_rvalid is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_rready is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+# foreach pin {
+#     unified_obs_output_addr kernel_sel mode
+# } {
+#     make_bd_pins_external [get_bd_pins ctrl_0/$pin]
+# }
+# foreach intf {m_axi_gmem0 m_axi_gmem1 m_axi_gmem2 m_axi_gmem3 m_axi_gmem4} {
+#     make_bd_intf_pins_external [get_bd_intf_pins unified_obs_0/$intf]
+# }
+# foreach intf {m_axi_gmem0 m_axi_gmem1 m_axi_gmem2 m_axi_gmem3 m_axi_gmem4} {
+#     assign_bd_address [get_bd_addr_segs ${intf}_0/Reg]
+# }
+</m_axi_gmem0_0/Reg> is being mapped into </unified_obs_0/Data_m_axi_gmem0> at <0x44A00000 [ 64K ]>
+</m_axi_gmem1_0/Reg> is being mapped into </unified_obs_0/Data_m_axi_gmem1> at <0x44A00000 [ 64K ]>
+</m_axi_gmem2_0/Reg> is being mapped into </unified_obs_0/Data_m_axi_gmem2> at <0x44A00000 [ 64K ]>
+</m_axi_gmem3_0/Reg> is being mapped into </unified_obs_0/Data_m_axi_gmem3> at <0x44A00000 [ 64K ]>
+</m_axi_gmem4_0/Reg> is being mapped into </unified_obs_0/Data_m_axi_gmem4> at <0x44A00000 [ 64K ]>
+# validate_bd_design
+WARNING: [BD 41-927] Following properties on pin /ctrl_0/aclk have been updated from connected ip. They may not be synchronized with cell properties. You can set property on pin directly to confirm the value and resolve the warning.
+	CLK_DOMAIN=slam_accel_hls_ip_bd_aclk 
+WARNING: [BD 41-927] Following properties on pin /unified_obs_0/ap_clk have been updated from connected ip. They may not be synchronized with cell properties. You can set property on pin directly to confirm the value and resolve the warning.
+	CLK_DOMAIN=slam_accel_hls_ip_bd_aclk 
+# save_bd_design
+Wrote  : <C:\Users\admin\AppData\Local\Temp\lightning_slam_accel_hls_ip_bd\slam_accel_hls_ip_bd.srcs\sources_1\bd\slam_accel_hls_ip_bd\slam_accel_hls_ip_bd.bd> 
+# set bd_file [get_files -of_objects [get_filesets sources_1] *slam_accel_hls_ip_bd.bd]
+# generate_target all $bd_file
+INFO: [BD 41-1662] The design 'slam_accel_hls_ip_bd.bd' is already validated. Therefore parameter propagation will not be re-run.
+VHDL Output written to : C:/Users/admin/AppData/Local/Temp/lightning_slam_accel_hls_ip_bd/slam_accel_hls_ip_bd.srcs/sources_1/bd/slam_accel_hls_ip_bd/synth/slam_accel_hls_ip_bd.v
+VHDL Output written to : C:/Users/admin/AppData/Local/Temp/lightning_slam_accel_hls_ip_bd/slam_accel_hls_ip_bd.srcs/sources_1/bd/slam_accel_hls_ip_bd/sim/slam_accel_hls_ip_bd.v
+VHDL Output written to : C:/Users/admin/AppData/Local/Temp/lightning_slam_accel_hls_ip_bd/slam_accel_hls_ip_bd.srcs/sources_1/bd/slam_accel_hls_ip_bd/hdl/slam_accel_hls_ip_bd_wrapper.v
+INFO: [BD 41-1029] Generation completed for the IP Integrator block ctrl_0 .
+WARNING: [IP_Flow 19-519] IP 'slam_accel_hls_ip_bd_unified_obs_0_0' detected a language mismatch between 'VHDL Simulation Wrapper' and 'Verilog Simulation' output products. Please check with the IP provider to see if this is expected.
+INFO: [BD 41-1029] Generation completed for the IP Integrator block unified_obs_0 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block const_zero_32 .
+Exporting to file C:/Users/admin/AppData/Local/Temp/lightning_slam_accel_hls_ip_bd/slam_accel_hls_ip_bd.srcs/sources_1/bd/slam_accel_hls_ip_bd/hw_handoff/slam_accel_hls_ip_bd.hwh
+Generated Block Design Tcl file C:/Users/admin/AppData/Local/Temp/lightning_slam_accel_hls_ip_bd/slam_accel_hls_ip_bd.srcs/sources_1/bd/slam_accel_hls_ip_bd/hw_handoff/slam_accel_hls_ip_bd_bd.tcl
+Generated Hardware Definition File C:/Users/admin/AppData/Local/Temp/lightning_slam_accel_hls_ip_bd/slam_accel_hls_ip_bd.srcs/sources_1/bd/slam_accel_hls_ip_bd/synth/slam_accel_hls_ip_bd.hwdef
+# make_wrapper -files $bd_file -top -import
+WARNING: [Vivado 12-3482] The generated wrapper file has already been imported into the project, the imported file is:
+'C:/Users/admin/AppData/Local/Temp/lightning_slam_accel_hls_ip_bd/slam_accel_hls_ip_bd.srcs/sources_1/imports/hdl/slam_accel_hls_ip_bd_wrapper.v'
+# set wrapper_file [get_files *slam_accel_hls_ip_bd_wrapper.v]
+# set_property top slam_accel_hls_ip_bd_wrapper [current_fileset]
+# update_compile_order -fileset sources_1
+# report_ip_status -file [file join $project_dir "slam_accel_hls_ip_bd_ip_status.rpt"]
+# puts "BD_VALIDATE_PASS"
+BD_VALIDATE_PASS
+# puts "Project: $project_dir"
+Project: C:/Users/admin/AppData/Local/Temp/lightning_slam_accel_hls_ip_bd
+# puts "HLS IP: $hls_ip_dir"
+HLS IP: C:/Users/admin/AppData/Local/Temp/lightning_hls_unified_obs/solution1/impl/ip
+# puts "Wrapper: $wrapper_file"
+Wrapper: C:/Users/admin/AppData/Local/Temp/lightning_slam_accel_hls_ip_bd/slam_accel_hls_ip_bd.srcs/sources_1/imports/hdl/slam_accel_hls_ip_bd_wrapper.v
+INFO: [Common 17-206] Exiting Vivado at Wed Jun 17 09:40:44 2026...

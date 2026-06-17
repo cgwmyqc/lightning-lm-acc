@@ -1,0 +1,1202 @@
+#-----------------------------------------------------------
+# Vivado v2018.3 (64-bit)
+# SW Build 2405991 on Thu Dec  6 23:38:27 MST 2018
+# IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
+# Start of session at: Wed Jun 17 18:42:49 2026
+# Process ID: 91456
+# Current directory: F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc
+# Command line: vivado.exe -mode batch -source F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_project_synth.tcl -journal V:\azmig_syn\vivado_project_synth.jou -log V:\azmig_syn\vivado_project_synth.log -tclargs V:\azmig_syn xc7z100ffg900-2 C:\Users\admin\AppData\Local\Temp\lightning_hls_unified_obs\solution1\impl\ip F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc
+# Log file: V:/azmig_syn/vivado_project_synth.log
+# Journal file: V:\azmig_syn\vivado_project_synth.jou
+#-----------------------------------------------------------
+source {F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_project_synth.tcl}
+# set script_dir [file dirname [file normalize [info script]]]
+# set project_dir [file normalize [file join $script_dir ".." ".build" "azmig_syn"]]
+# set target_part "xc7z100ffg900-2"
+# set hls_ip_dir [file normalize [file join $::env(TEMP) "lightning_hls_unified_obs" "solution1" "impl" "ip"]]
+# set reference_root [file normalize [file join $script_dir ".." ".." ".." ".."]]
+# set user_args $argv
+# if {[llength $user_args] >= 1 && [string length [lindex $user_args 0]] > 0} {
+#     set project_dir [file normalize [lindex $user_args 0]]
+# }
+# if {[llength $user_args] >= 2 && [string length [lindex $user_args 1]] > 0} {
+#     set target_part [lindex $user_args 1]
+# }
+# if {[llength $user_args] >= 3 && [string length [lindex $user_args 2]] > 0} {
+#     set hls_ip_dir [file normalize [lindex $user_args 2]]
+# }
+# if {[llength $user_args] >= 4 && [string length [lindex $user_args 3]] > 0} {
+#     set reference_root [file normalize [lindex $user_args 3]]
+# }
+# source [file join $script_dir "create_bd.tcl"]
+## set script_dir [file dirname [file normalize [info script]]]
+## set repo_root [file normalize [file join $script_dir ".." ".." ".."]]
+## set reference_root [file normalize [file join $repo_root ".."]]
+## set project_dir [file normalize [file join $script_dir ".." ".build" "azmig_bd"]]
+## set target_part "xc7z100ffg900-2"
+## set hls_ip_dir [file normalize [file join $::env(TEMP) "lightning_hls_unified_obs" "solution1" "impl" "ip"]]
+## set design_name "azmig"
+## set user_args $argv
+## if {[llength $user_args] >= 1 && [string length [lindex $user_args 0]] > 0} {
+##     set project_dir [file normalize [lindex $user_args 0]]
+## }
+## if {[llength $user_args] >= 2 && [string length [lindex $user_args 1]] > 0} {
+##     set target_part [lindex $user_args 1]
+## }
+## if {[llength $user_args] >= 3 && [string length [lindex $user_args 2]] > 0} {
+##     set hls_ip_dir [file normalize [lindex $user_args 2]]
+## }
+## if {[llength $user_args] >= 4 && [string length [lindex $user_args 3]] > 0} {
+##     set reference_root [file normalize [lindex $user_args 3]]
+## }
+## set component_xml [file join $hls_ip_dir "component.xml"]
+## if {![file exists $component_xml]} {
+##     error "Missing HLS IP component.xml: $component_xml"
+## }
+## set mig_source_prj [file join $reference_root "12_ddr3_pl" "mig_a.prj"]
+## if {![file exists $mig_source_prj]} {
+##     error "Missing AX7Z100 MIG reference project file: $mig_source_prj"
+## }
+## set mig_axi_source_tcl [file join $reference_root "33_PCIe_test" "Vivado" "auto_create_project" "pl_config.tcl"]
+## if {![file exists $mig_axi_source_tcl]} {
+##     error "Missing AX7Z100 AXI MIG reference Tcl: $mig_axi_source_tcl"
+## }
+## proc derive_axi_mig_prj {native_source_path axi_source_tcl dest_path module_name} {
+##     set fh [open $native_source_path r]
+##     set native_text [read $fh]
+##     close $fh
+## 
+##     foreach required {
+##         "<TargetFPGA>xc7z100-ffg900/-2</TargetFPGA>"
+##         "<InputClkFreq>200</InputClkFreq>"
+##         "<DataWidth>32</DataWidth>"
+##         "<TimePeriod>1250</TimePeriod>"
+##     } {
+##         if {[string first $required $native_text] < 0} {
+##             error "MIG native source check failed: $required"
+##         }
+##     }
+## 
+##     # Vivado 2018.3 MIG can crash if a NATIVE .prj is modified into AXI form
+##     # too late. Extract ALINX's known-good AXI MIG XML payload from 33_PCIe_test
+##     # while keeping the 12_ddr3_pl native .prj as the static board-parameter
+##     # reference above.
+##     set fh [open $axi_source_tcl r]
+##     set tcl_text [read $fh]
+##     close $fh
+## 
+##     set text ""
+##     foreach line [split $tcl_text "\n"] {
+##         if {[regexp {puts \$mig_prj_file \{(.*)\}} $line -> payload]} {
+##             append text $payload "\n"
+##         }
+##     }
+##     if {[string length $text] == 0} {
+##         error "Failed to extract AXI MIG XML from $axi_source_tcl"
+##     }
+## 
+##     foreach required {
+##         "<TargetFPGA>xc7z100-ffg900/-2</TargetFPGA>"
+##         "<InputClkFreq>200</InputClkFreq>"
+##         "<DataWidth>32</DataWidth>"
+##         "<TimePeriod>1250</TimePeriod>"
+##         "<PortInterface>AXI</PortInterface>"
+##         "<C0_S_AXI_DATA_WIDTH>256</C0_S_AXI_DATA_WIDTH>"
+##     } {
+##         if {[string first $required $text] < 0} {
+##             error "AXI MIG source check failed: $required"
+##         }
+##     }
+## 
+##     regsub {<ModuleName>[^<]+</ModuleName>} $text "<ModuleName>${module_name}</ModuleName>" text
+## 
+##     file mkdir [file dirname $dest_path]
+##     set out [open $dest_path w]
+##     puts $out $text
+##     close $out
+## }
+## proc first_addr_seg {pattern} {
+##     set segs [get_bd_addr_segs -quiet $pattern]
+##     if {[llength $segs] == 0} {
+##         error "No address segment matches: $pattern"
+##     }
+##     return [lindex $segs 0]
+## }
+## proc first_addr_space {pattern} {
+##     set spaces [get_bd_addr_spaces -quiet $pattern]
+##     if {[llength $spaces] == 0} {
+##         error "No address space matches: $pattern"
+##     }
+##     return [lindex $spaces 0]
+## }
+## file mkdir $project_dir
+## cd $project_dir
+## create_project -force azmig $project_dir -part $target_part
+## set_property ip_repo_paths [list $hls_ip_dir] [current_project]
+## update_ip_catalog
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1700] Loaded user IP repository 'c:/Users/admin/AppData/Local/Temp/lightning_hls_unified_obs/solution1/impl/ip'.
+INFO: [IP_Flow 19-2313] Loaded Vivado IP repository 'E:/Xilinx/Vivado/2018.3/data/ip'.
+## add_files -norecurse [list \
+##     [file join $repo_root "fpga" "rtl" "slam_accel_ctrl" "slam_accel_ctrl.v"] \
+##     [file join $script_dir "slam_accel_ctrl_axi_lite_wrapper.v"] \
+## ]
+## add_files -fileset constrs_1 -norecurse [file join $script_dir "slam_accel_ax7z100_pcie_mig.xdc"]
+## update_compile_order -fileset sources_1
+## create_bd_design $design_name
+Wrote  : <V:\azmig_syn\azmig.srcs\sources_1\bd\azmig\azmig.bd> 
+## set pcie_mgt [create_bd_intf_port -mode Master -vlnv xilinx.com:interface:pcie_7x_mgt_rtl:1.0 pcie_mgt]
+## set pcie_ref [create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:diff_clock_rtl:1.0 pcie_ref]
+## set_property CONFIG.FREQ_HZ {100000000} $pcie_ref
+## set sys_clk [create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:diff_clock_rtl:1.0 sys]
+## set_property CONFIG.FREQ_HZ {200000000} $sys_clk
+## set ddr3 [create_bd_intf_port -mode Master -vlnv xilinx.com:interface:ddrx_rtl:1.0 ddr3]
+## set pcie_rst_n [create_bd_port -dir I -type rst pcie_rst_n]
+## set_property CONFIG.POLARITY {ACTIVE_LOW} $pcie_rst_n
+INFO: [IP_Flow 19-5107] Inferred bus interface 'aclk' of definition 'xilinx.com:signal:clock:1.0' (from X_INTERFACE_INFO parameter from HDL file).
+INFO: [IP_Flow 19-5107] Inferred bus interface 'aclk' of definition 'xilinx.com:signal:clock:1.0' (from 'X_INTERFACE_INFO' attribute).
+INFO: [IP_Flow 19-5107] Inferred bus interface 'aresetn' of definition 'xilinx.com:signal:reset:1.0' (from X_INTERFACE_INFO parameter from HDL file).
+INFO: [IP_Flow 19-5107] Inferred bus interface 'aresetn' of definition 'xilinx.com:signal:reset:1.0' (from 'X_INTERFACE_INFO' attribute).
+INFO: [IP_Flow 19-5107] Inferred bus interface 'S_AXI' of definition 'xilinx.com:interface:aximm:1.0' (from X_INTERFACE_INFO parameter from HDL file).
+INFO: [IP_Flow 19-5107] Inferred bus interface 'S_AXI' of definition 'xilinx.com:interface:aximm:1.0' (from 'X_INTERFACE_INFO' attribute).
+INFO: [IP_Flow 19-4728] Bus Interface 'aclk': Added interface parameter 'ASSOCIATED_BUSIF' with value 'S_AXI'.
+INFO: [IP_Flow 19-4728] Bus Interface 'aclk': Added interface parameter 'ASSOCIATED_RESET' with value 'aresetn'.
+INFO: [IP_Flow 19-4728] Bus Interface 'aclk': Added interface parameter 'FREQ_HZ' with value '125000000'.
+INFO: [IP_Flow 19-4728] Bus Interface 'aresetn': Added interface parameter 'POLARITY' with value 'ACTIVE_LOW'.
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1700] Loaded user IP repository 'c:/Users/admin/AppData/Local/Temp/lightning_hls_unified_obs/solution1/impl/ip'.
+## set ctrl [create_bd_cell -type module -reference slam_accel_ctrl_axi_lite_wrapper ctrl_0]
+## set hls [create_bd_cell -type ip -vlnv xilinx.com:hls:unified_surfel_observation_core:1.0 unified_obs_0]
+## set zero32 [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 const_zero_32]
+## set_property -dict [list CONFIG.CONST_WIDTH {32} CONFIG.CONST_VAL {0}] $zero32
+## set util_ds_buf_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 util_ds_buf_0]
+## set_property CONFIG.C_BUF_TYPE {IBUFDSGTE} $util_ds_buf_0
+## set mig_7series_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:mig_7series:4.2 mig_7series_0]
+## set mig_ip_dir [get_property IP_DIR [get_ips [get_property CONFIG.Component_Name $mig_7series_0]]]
+## set mig_prj_name "mig_ax7z100_pl_ddr3_axi.prj"
+## set mig_prj_path [file join $mig_ip_dir $mig_prj_name]
+## derive_axi_mig_prj $mig_source_prj $mig_axi_source_tcl $mig_prj_path "azmig_mig_0"
+## set_property -dict [list \
+##     CONFIG.BOARD_MIG_PARAM {Custom} \
+##     CONFIG.RESET_BOARD_INTERFACE {Custom} \
+##     CONFIG.XML_INPUT_FILE $mig_prj_name \
+## ] $mig_7series_0
+INFO: [Device 21-403] Loading part xc7z100ffg900-2
+create_bd_cell: Time (s): cpu = 00:00:08 ; elapsed = 00:00:08 . Memory (MB): peak = 904.562 ; gain = 214.977
+## set xdma_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:xdma:4.1 xdma_0]
+## set_property -dict [list \
+##     CONFIG.axi_data_width {128_bit} \
+##     CONFIG.axilite_master_en {true} \
+##     CONFIG.axilite_master_scale {Kilobytes} \
+##     CONFIG.axilite_master_size {64} \
+##     CONFIG.axisten_freq {125} \
+##     CONFIG.mode_selection {Basic} \
+##     CONFIG.pcie_id_if {false} \
+##     CONFIG.pf0_device_id {7024} \
+##     CONFIG.pf0_msix_cap_pba_bir {BAR_1} \
+##     CONFIG.pf0_msix_cap_table_bir {BAR_1} \
+##     CONFIG.pl_link_cap_max_link_speed {5.0_GT/s} \
+##     CONFIG.pl_link_cap_max_link_width {X4} \
+##     CONFIG.plltype {QPLL1} \
+## ] $xdma_0
+## set mem_ic [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 mem_axi_ic]
+## set_property -dict [list CONFIG.NUM_SI {6} CONFIG.NUM_MI {1}] $mem_ic
+## set rst_mig_ui [create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 rst_mig_ui]
+## connect_bd_intf_net [get_bd_intf_ports pcie_ref] [get_bd_intf_pins util_ds_buf_0/CLK_IN_D]
+## connect_bd_net [get_bd_pins util_ds_buf_0/IBUF_OUT] [get_bd_pins xdma_0/sys_clk]
+## connect_bd_net [get_bd_ports pcie_rst_n] [get_bd_pins xdma_0/sys_rst_n] [get_bd_pins mig_7series_0/sys_rst]
+## connect_bd_intf_net [get_bd_intf_ports pcie_mgt] [get_bd_intf_pins xdma_0/pcie_mgt]
+## connect_bd_intf_net [get_bd_intf_ports sys] [get_bd_intf_pins mig_7series_0/SYS_CLK]
+## connect_bd_intf_net [get_bd_intf_ports ddr3] [get_bd_intf_pins mig_7series_0/DDR3]
+## connect_bd_net [get_bd_pins mig_7series_0/ui_clk] [get_bd_pins rst_mig_ui/slowest_sync_clk]
+## connect_bd_net [get_bd_pins mig_7series_0/mmcm_locked] [get_bd_pins rst_mig_ui/dcm_locked]
+## connect_bd_net [get_bd_pins mig_7series_0/ui_clk_sync_rst] [get_bd_pins rst_mig_ui/ext_reset_in]
+## connect_bd_net [get_bd_pins xdma_0/axi_aclk] [get_bd_pins ctrl_0/aclk] [get_bd_pins unified_obs_0/ap_clk]
+## connect_bd_net [get_bd_pins xdma_0/axi_aresetn] [get_bd_pins ctrl_0/aresetn] [get_bd_pins unified_obs_0/ap_rst_n]
+## connect_bd_net [get_bd_pins const_zero_32/dout] [get_bd_pins ctrl_0/unified_obs_error]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_ap_start] [get_bd_pins unified_obs_0/ap_start]
+WARNING: [BD 41-1306] The connection to interface pin /unified_obs_0/ap_start is being overridden by the user. This pin will not be connected as a part of interface connection ap_ctrl
+## connect_bd_net [get_bd_pins unified_obs_0/ap_done] [get_bd_pins ctrl_0/unified_obs_ap_done]
+WARNING: [BD 41-1306] The connection to interface pin /unified_obs_0/ap_done is being overridden by the user. This pin will not be connected as a part of interface connection ap_ctrl
+## connect_bd_net [get_bd_pins unified_obs_0/ap_idle] [get_bd_pins ctrl_0/unified_obs_ap_idle]
+WARNING: [BD 41-1306] The connection to interface pin /unified_obs_0/ap_idle is being overridden by the user. This pin will not be connected as a part of interface connection ap_ctrl
+## connect_bd_net [get_bd_pins unified_obs_0/ap_ready] [get_bd_pins ctrl_0/unified_obs_ap_ready]
+WARNING: [BD 41-1306] The connection to interface pin /unified_obs_0/ap_ready is being overridden by the user. This pin will not be connected as a part of interface connection ap_ctrl
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_num_points] [get_bd_pins unified_obs_0/num_points]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_scan_points_addr] [get_bd_pins unified_obs_0/scan_points]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_pose_addr] [get_bd_pins unified_obs_0/pose]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_map_header_addr] [get_bd_pins unified_obs_0/map_header]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_active_blocks_addr] [get_bd_pins unified_obs_0/active_blocks]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_obs_cells_addr] [get_bd_pins unified_obs_0/obs_cells]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_h_upper_addr] [get_bd_pins unified_obs_0/output_h_upper]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_b_addr] [get_bd_pins unified_obs_0/output_b]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_valid_count_addr] [get_bd_pins unified_obs_0/output_valid_count]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_reject_count_addr] [get_bd_pins unified_obs_0/output_reject_count]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_miss_count_addr] [get_bd_pins unified_obs_0/output_miss_count]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_flags_addr] [get_bd_pins unified_obs_0/output_flags]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_residual_sum_addr] [get_bd_pins unified_obs_0/output_residual_sum]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_residual_abs_sum_addr] [get_bd_pins unified_obs_0/output_residual_abs_sum]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_residual_max_abs_addr] [get_bd_pins unified_obs_0/output_residual_max_abs]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_reserved_addr] [get_bd_pins unified_obs_0/output_reserved]
+## connect_bd_intf_net [get_bd_intf_pins xdma_0/M_AXI_LITE] [get_bd_intf_pins ctrl_0/S_AXI]
+## connect_bd_intf_net [get_bd_intf_pins xdma_0/M_AXI] [get_bd_intf_pins mem_axi_ic/S00_AXI]
+## connect_bd_intf_net [get_bd_intf_pins unified_obs_0/m_axi_gmem0] [get_bd_intf_pins mem_axi_ic/S01_AXI]
+## connect_bd_intf_net [get_bd_intf_pins unified_obs_0/m_axi_gmem1] [get_bd_intf_pins mem_axi_ic/S02_AXI]
+## connect_bd_intf_net [get_bd_intf_pins unified_obs_0/m_axi_gmem2] [get_bd_intf_pins mem_axi_ic/S03_AXI]
+## connect_bd_intf_net [get_bd_intf_pins unified_obs_0/m_axi_gmem3] [get_bd_intf_pins mem_axi_ic/S04_AXI]
+## connect_bd_intf_net [get_bd_intf_pins unified_obs_0/m_axi_gmem4] [get_bd_intf_pins mem_axi_ic/S05_AXI]
+## connect_bd_intf_net [get_bd_intf_pins mem_axi_ic/M00_AXI] [get_bd_intf_pins mig_7series_0/S_AXI]
+## connect_bd_net [get_bd_pins xdma_0/axi_aclk] \
+##     [get_bd_pins mem_axi_ic/ACLK] \
+##     [get_bd_pins mem_axi_ic/S00_ACLK] \
+##     [get_bd_pins mem_axi_ic/S01_ACLK] \
+##     [get_bd_pins mem_axi_ic/S02_ACLK] \
+##     [get_bd_pins mem_axi_ic/S03_ACLK] \
+##     [get_bd_pins mem_axi_ic/S04_ACLK] \
+##     [get_bd_pins mem_axi_ic/S05_ACLK]
+## connect_bd_net [get_bd_pins xdma_0/axi_aresetn] \
+##     [get_bd_pins mem_axi_ic/ARESETN] \
+##     [get_bd_pins mem_axi_ic/S00_ARESETN] \
+##     [get_bd_pins mem_axi_ic/S01_ARESETN] \
+##     [get_bd_pins mem_axi_ic/S02_ARESETN] \
+##     [get_bd_pins mem_axi_ic/S03_ARESETN] \
+##     [get_bd_pins mem_axi_ic/S04_ARESETN] \
+##     [get_bd_pins mem_axi_ic/S05_ARESETN]
+## connect_bd_net [get_bd_pins mig_7series_0/ui_clk] [get_bd_pins mem_axi_ic/M00_ACLK]
+## connect_bd_net [get_bd_pins rst_mig_ui/peripheral_aresetn] [get_bd_pins mem_axi_ic/M00_ARESETN] [get_bd_pins mig_7series_0/aresetn]
+## set mig_mem [first_addr_seg "mig_7series_0/memmap/memaddr"]
+## create_bd_addr_seg -range 0x40000000 -offset 0x00000000 [first_addr_space "xdma_0/M_AXI"] $mig_mem SEG_xdma_0_M_AXI_PL_DDR3
+## foreach idx {0 1 2 3 4} {
+##     set space [first_addr_space "unified_obs_0/Data_m_axi_gmem${idx}"]
+##     create_bd_addr_seg -range 0x40000000 -offset 0x00000000 $space $mig_mem SEG_unified_obs_gmem${idx}_PL_DDR3
+## }
+## set ctrl_seg [first_addr_seg "ctrl_0/S_AXI/*"]
+## create_bd_addr_seg -range 0x00010000 -offset 0x00000000 [first_addr_space "xdma_0/M_AXI_LITE"] $ctrl_seg SEG_ctrl_0_Reg
+## validate_bd_design
+WARNING: [BD 41-927] Following properties on pin /ctrl_0/aclk have been updated from connected ip. They may not be synchronized with cell properties. You can set property on pin directly to confirm the value and resolve the warning.
+	CLK_DOMAIN=azmig_xdma_0_0_axi_aclk 
+WARNING: [BD 41-927] Following properties on pin /unified_obs_0/ap_clk have been updated from connected ip. They may not be synchronized with cell properties. You can set property on pin directly to confirm the value and resolve the warning.
+	CLK_DOMAIN=azmig_xdma_0_0_axi_aclk 
+validate_bd_design: Time (s): cpu = 00:00:07 ; elapsed = 00:00:08 . Memory (MB): peak = 956.820 ; gain = 23.383
+## save_bd_design
+Wrote  : <V:\azmig_syn\azmig.srcs\sources_1\bd\azmig\azmig.bd> 
+## set bd_file [get_files -of_objects [get_filesets sources_1] *${design_name}.bd]
+## generate_target all $bd_file
+INFO: [BD 41-1662] The design 'azmig.bd' is already validated. Therefore parameter propagation will not be re-run.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/mem_axi_ic/s01_couplers/auto_us/s_axi_arlock'(1) to net 's01_couplers_to_auto_us_ARLOCK'(2) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/mem_axi_ic/s01_couplers/auto_us/s_axi_awlock'(1) to net 's01_couplers_to_auto_us_AWLOCK'(2) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/mem_axi_ic/s03_couplers/auto_us/s_axi_arlock'(1) to net 's03_couplers_to_auto_us_ARLOCK'(2) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/mem_axi_ic/s03_couplers/auto_us/s_axi_awlock'(1) to net 's03_couplers_to_auto_us_AWLOCK'(2) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/mem_axi_ic/s05_couplers/auto_us/s_axi_arlock'(1) to net 's05_couplers_to_auto_us_ARLOCK'(2) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/mem_axi_ic/s05_couplers/auto_us/s_axi_awlock'(1) to net 's05_couplers_to_auto_us_AWLOCK'(2) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/mem_axi_ic/xbar/s_axi_arlock'(1) to net 's02_couplers_to_xbar_ARLOCK'(2) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/mem_axi_ic/xbar/s_axi_awlock'(1) to net 's02_couplers_to_xbar_AWLOCK'(2) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/mem_axi_ic/xbar/s_axi_arlock'(1) to net 's04_couplers_to_xbar_ARLOCK'(2) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/mem_axi_ic/xbar/s_axi_awlock'(1) to net 's04_couplers_to_xbar_AWLOCK'(2) - Only lower order bits will be connected.
+VHDL Output written to : V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/mem_axi_ic/s01_couplers/auto_us/s_axi_arlock'(1) to net 's01_couplers_to_auto_us_ARLOCK'(2) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/mem_axi_ic/s01_couplers/auto_us/s_axi_awlock'(1) to net 's01_couplers_to_auto_us_AWLOCK'(2) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/mem_axi_ic/s03_couplers/auto_us/s_axi_arlock'(1) to net 's03_couplers_to_auto_us_ARLOCK'(2) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/mem_axi_ic/s03_couplers/auto_us/s_axi_awlock'(1) to net 's03_couplers_to_auto_us_AWLOCK'(2) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/mem_axi_ic/s05_couplers/auto_us/s_axi_arlock'(1) to net 's05_couplers_to_auto_us_ARLOCK'(2) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/mem_axi_ic/s05_couplers/auto_us/s_axi_awlock'(1) to net 's05_couplers_to_auto_us_AWLOCK'(2) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/mem_axi_ic/xbar/s_axi_arlock'(1) to net 's02_couplers_to_xbar_ARLOCK'(2) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/mem_axi_ic/xbar/s_axi_awlock'(1) to net 's02_couplers_to_xbar_AWLOCK'(2) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/mem_axi_ic/xbar/s_axi_arlock'(1) to net 's04_couplers_to_xbar_ARLOCK'(2) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/mem_axi_ic/xbar/s_axi_awlock'(1) to net 's04_couplers_to_xbar_AWLOCK'(2) - Only lower order bits will be connected.
+VHDL Output written to : V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/sim/azmig.v
+VHDL Output written to : V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/hdl/azmig_wrapper.v
+INFO: [BD 41-1029] Generation completed for the IP Integrator block ctrl_0 .
+WARNING: [IP_Flow 19-519] IP 'azmig_unified_obs_0_0' detected a language mismatch between 'VHDL Simulation Wrapper' and 'Verilog Simulation' output products. Please check with the IP provider to see if this is expected.
+INFO: [BD 41-1029] Generation completed for the IP Integrator block unified_obs_0 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block const_zero_32 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block util_ds_buf_0 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block mig_7series_0 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block xdma_0 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block mem_axi_ic/xbar .
+WARNING: [IP_Flow 19-4994] Overwriting existing constraint file 'v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_0/azmig_auto_us_0_ooc.xdc'
+INFO: [BD 41-1029] Generation completed for the IP Integrator block mem_axi_ic/s00_couplers/auto_us .
+WARNING: [IP_Flow 19-4994] Overwriting existing constraint file 'v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_1/azmig_auto_us_1_ooc.xdc'
+INFO: [BD 41-1029] Generation completed for the IP Integrator block mem_axi_ic/s01_couplers/auto_us .
+WARNING: [IP_Flow 19-4994] Overwriting existing constraint file 'v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_2/azmig_auto_us_2_ooc.xdc'
+INFO: [BD 41-1029] Generation completed for the IP Integrator block mem_axi_ic/s03_couplers/auto_us .
+WARNING: [IP_Flow 19-4994] Overwriting existing constraint file 'v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_3/azmig_auto_us_3_ooc.xdc'
+INFO: [BD 41-1029] Generation completed for the IP Integrator block mem_axi_ic/s05_couplers/auto_us .
+WARNING: [IP_Flow 19-4994] Overwriting existing constraint file 'v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_cc_0/azmig_auto_cc_0_ooc.xdc'
+INFO: [BD 41-1029] Generation completed for the IP Integrator block mem_axi_ic/m00_couplers/auto_cc .
+WARNING: [IP_Flow 19-4994] Overwriting existing constraint file 'v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_ds_0/azmig_auto_ds_0_ooc.xdc'
+INFO: [BD 41-1029] Generation completed for the IP Integrator block mem_axi_ic/m00_couplers/auto_ds .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block rst_mig_ui .
+Exporting to file V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/hw_handoff/azmig.hwh
+Generated Block Design Tcl file V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/hw_handoff/azmig_bd.tcl
+Generated Hardware Definition File V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.hwdef
+generate_target: Time (s): cpu = 00:00:30 ; elapsed = 00:00:38 . Memory (MB): peak = 1326.387 ; gain = 343.180
+## make_wrapper -files $bd_file -top -import
+WARNING: [Vivado 12-3482] The generated wrapper file has already been imported into the project, the imported file is:
+'V:/azmig_syn/azmig.srcs/sources_1/imports/hdl/azmig_wrapper.v'
+## set wrapper_file [get_files *${design_name}_wrapper.v]
+## set_property top ${design_name}_wrapper [current_fileset]
+## update_compile_order -fileset sources_1
+## report_ip_status -file [file join $project_dir "ax7z100_pcie_mig_ip_status.rpt"]
+## set external_hls_axi [get_bd_intf_ports -quiet *m_axi_gmem*]
+## if {[llength $external_hls_axi] != 0} {
+##     error "Unexpected external HLS AXI memory interfaces: $external_hls_axi"
+## }
+## puts "BD_VALIDATE_PASS"
+BD_VALIDATE_PASS
+## puts "Project: $project_dir"
+Project: V:/azmig_syn
+## puts "HLS IP: $hls_ip_dir"
+HLS IP: C:/Users/admin/AppData/Local/Temp/lightning_hls_unified_obs/solution1/impl/ip
+## puts "MIG source: $mig_source_prj"
+MIG source: F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/12_ddr3_pl/mig_a.prj
+## puts "MIG derived AXI prj: $mig_prj_path"
+MIG derived AXI prj: v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/mig_ax7z100_pl_ddr3_axi.prj
+## puts "Wrapper: $wrapper_file"
+Wrapper: V:/azmig_syn/azmig.srcs/sources_1/imports/hdl/azmig_wrapper.v
+# launch_runs synth_1 -jobs 2
+[Wed Jun 17 18:44:19 2026] Launched azmig_mig_7series_0_0_synth_1, azmig_ctrl_0_0_synth_1, azmig_unified_obs_0_0_synth_1, azmig_util_ds_buf_0_0_synth_1, azmig_xdma_0_0_synth_1, azmig_auto_us_1_synth_1, azmig_auto_us_2_synth_1, azmig_auto_us_0_synth_1, azmig_xbar_0_synth_1, azmig_auto_us_3_synth_1, azmig_auto_cc_0_synth_1, azmig_auto_ds_0_synth_1, azmig_rst_mig_ui_0_synth_1...
+Run output will be captured here:
+azmig_mig_7series_0_0_synth_1: V:/azmig_syn/azmig.runs/azmig_mig_7series_0_0_synth_1/runme.log
+azmig_ctrl_0_0_synth_1: V:/azmig_syn/azmig.runs/azmig_ctrl_0_0_synth_1/runme.log
+azmig_unified_obs_0_0_synth_1: V:/azmig_syn/azmig.runs/azmig_unified_obs_0_0_synth_1/runme.log
+azmig_util_ds_buf_0_0_synth_1: V:/azmig_syn/azmig.runs/azmig_util_ds_buf_0_0_synth_1/runme.log
+azmig_xdma_0_0_synth_1: V:/azmig_syn/azmig.runs/azmig_xdma_0_0_synth_1/runme.log
+azmig_auto_us_1_synth_1: V:/azmig_syn/azmig.runs/azmig_auto_us_1_synth_1/runme.log
+azmig_auto_us_2_synth_1: V:/azmig_syn/azmig.runs/azmig_auto_us_2_synth_1/runme.log
+azmig_auto_us_0_synth_1: V:/azmig_syn/azmig.runs/azmig_auto_us_0_synth_1/runme.log
+azmig_xbar_0_synth_1: V:/azmig_syn/azmig.runs/azmig_xbar_0_synth_1/runme.log
+azmig_auto_us_3_synth_1: V:/azmig_syn/azmig.runs/azmig_auto_us_3_synth_1/runme.log
+azmig_auto_cc_0_synth_1: V:/azmig_syn/azmig.runs/azmig_auto_cc_0_synth_1/runme.log
+azmig_auto_ds_0_synth_1: V:/azmig_syn/azmig.runs/azmig_auto_ds_0_synth_1/runme.log
+azmig_rst_mig_ui_0_synth_1: V:/azmig_syn/azmig.runs/azmig_rst_mig_ui_0_synth_1/runme.log
+[Wed Jun 17 18:44:19 2026] Launched synth_1...
+Run output will be captured here: V:/azmig_syn/azmig.runs/synth_1/runme.log
+launch_runs: Time (s): cpu = 00:00:01 ; elapsed = 00:00:05 . Memory (MB): peak = 1358.988 ; gain = 31.594
+# wait_on_run synth_1
+[Wed Jun 17 18:44:19 2026] Waiting for synth_1 to finish...
+
+*** Running vivado
+    with args -log azmig_wrapper.vds -m64 -product Vivado -mode batch -messageDb vivado.pb -notrace -source azmig_wrapper.tcl
+
+
+****** Vivado v2018.3 (64-bit)
+  **** SW Build 2405991 on Thu Dec  6 23:38:27 MST 2018
+  **** IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
+    ** Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.
+
+source azmig_wrapper.tcl -notrace
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1700] Loaded user IP repository 'c:/Users/admin/AppData/Local/Temp/lightning_hls_unified_obs/solution1/impl/ip'.
+INFO: [IP_Flow 19-2313] Loaded Vivado IP repository 'E:/Xilinx/Vivado/2018.3/data/ip'.
+add_files: Time (s): cpu = 00:00:05 ; elapsed = 00:00:13 . Memory (MB): peak = 408.168 ; gain = 56.805
+Command: synth_design -top azmig_wrapper -part xc7z100ffg900-2
+Starting synth_design
+Attempting to get a license for feature 'Synthesis' and/or device 'xc7z100'
+INFO: [Common 17-349] Got license for feature 'Synthesis' and/or device 'xc7z100'
+INFO: Launching helper process for spawning children vivado processes
+INFO: Helper process launched with PID 37548 
+---------------------------------------------------------------------------------
+Starting RTL Elaboration : Time (s): cpu = 00:00:01 ; elapsed = 00:00:02 . Memory (MB): peak = 522.926 ; gain = 107.918
+---------------------------------------------------------------------------------
+INFO: [Synth 8-6157] synthesizing module 'azmig_wrapper' [V:/azmig_syn/azmig.srcs/sources_1/imports/hdl/azmig_wrapper.v:12]
+INFO: [Synth 8-6157] synthesizing module 'azmig' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:13]
+INFO: [Synth 8-6157] synthesizing module 'azmig_const_zero_32_0' [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_const_zero_32_0/synth/azmig_const_zero_32_0.v:57]
+INFO: [Synth 8-6157] synthesizing module 'xlconstant_v1_1_5_xlconstant' [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ipshared/4649/hdl/xlconstant_v1_1_vl_rfs.v:23]
+	Parameter CONST_VAL bound to: 0 - type: integer 
+	Parameter CONST_WIDTH bound to: 32 - type: integer 
+INFO: [Synth 8-6155] done synthesizing module 'xlconstant_v1_1_5_xlconstant' (1#1) [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ipshared/4649/hdl/xlconstant_v1_1_vl_rfs.v:23]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_const_zero_32_0' (2#1) [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_const_zero_32_0/synth/azmig_const_zero_32_0.v:57]
+INFO: [Synth 8-6157] synthesizing module 'azmig_ctrl_0_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_ctrl_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_ctrl_0_0' (3#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_ctrl_0_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'ctrl_0' of module 'azmig_ctrl_0_0' requires 43 connections, but only 40 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:395]
+INFO: [Synth 8-6157] synthesizing module 'azmig_mem_axi_ic_0' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:1025]
+INFO: [Synth 8-6157] synthesizing module 'm00_couplers_imp_2QRP7E' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:2875]
+INFO: [Synth 8-6157] synthesizing module 'azmig_auto_cc_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_auto_cc_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_cc_0' (4#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_auto_cc_0_stub.v:6]
+INFO: [Synth 8-6157] synthesizing module 'azmig_auto_ds_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_auto_ds_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_ds_0' (5#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_auto_ds_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'auto_ds' of module 'azmig_auto_ds_0' requires 76 connections, but only 74 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3304]
+INFO: [Synth 8-6155] done synthesizing module 'm00_couplers_imp_2QRP7E' (6#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:2875]
+INFO: [Synth 8-6157] synthesizing module 's00_couplers_imp_QISGC1' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3381]
+INFO: [Synth 8-6157] synthesizing module 'azmig_auto_us_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_auto_us_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_us_0' (7#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_auto_us_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'auto_us' of module 'azmig_auto_us_0' requires 76 connections, but only 74 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3668]
+INFO: [Synth 8-6155] done synthesizing module 's00_couplers_imp_QISGC1' (8#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3381]
+INFO: [Synth 8-6157] synthesizing module 's01_couplers_imp_1RXOY8P' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3745]
+INFO: [Synth 8-6157] synthesizing module 'azmig_auto_us_1' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_auto_us_1_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_us_1' (9#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_auto_us_1_stub.v:6]
+WARNING: [Synth 8-350] instance 'auto_us' of module 'azmig_auto_us_1' requires 72 connections, but only 70 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4032]
+INFO: [Synth 8-6155] done synthesizing module 's01_couplers_imp_1RXOY8P' (10#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3745]
+INFO: [Synth 8-6157] synthesizing module 's02_couplers_imp_1WJUXWG' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4105]
+INFO: [Synth 8-6155] done synthesizing module 's02_couplers_imp_1WJUXWG' (11#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4105]
+INFO: [Synth 8-6157] synthesizing module 's03_couplers_imp_LWAVGO' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4349]
+INFO: [Synth 8-6157] synthesizing module 'azmig_auto_us_2' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_auto_us_2_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_us_2' (12#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_auto_us_2_stub.v:6]
+WARNING: [Synth 8-350] instance 'auto_us' of module 'azmig_auto_us_2' requires 72 connections, but only 70 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4636]
+INFO: [Synth 8-6155] done synthesizing module 's03_couplers_imp_LWAVGO' (13#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4349]
+INFO: [Synth 8-6157] synthesizing module 's04_couplers_imp_1NCQQ4Y' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4709]
+INFO: [Synth 8-6155] done synthesizing module 's04_couplers_imp_1NCQQ4Y' (14#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4709]
+INFO: [Synth 8-6157] synthesizing module 's05_couplers_imp_TZGRAY' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4953]
+INFO: [Synth 8-6157] synthesizing module 'azmig_auto_us_3' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_auto_us_3_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_us_3' (15#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_auto_us_3_stub.v:6]
+WARNING: [Synth 8-350] instance 'auto_us' of module 'azmig_auto_us_3' requires 72 connections, but only 70 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:5240]
+INFO: [Synth 8-6155] done synthesizing module 's05_couplers_imp_TZGRAY' (16#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4953]
+INFO: [Synth 8-6157] synthesizing module 'azmig_xbar_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_xbar_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_xbar_0' (17#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_xbar_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'xbar' of module 'azmig_xbar_0' requires 78 connections, but only 76 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:2796]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_mem_axi_ic_0' (18#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:1025]
+INFO: [Synth 8-6157] synthesizing module 'azmig_mig_7series_0_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_mig_7series_0_0_stub.v:5]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_mig_7series_0_0' (19#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_mig_7series_0_0_stub.v:5]
+WARNING: [Synth 8-350] instance 'mig_7series_0' of module 'azmig_mig_7series_0_0' requires 64 connections, but only 57 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:692]
+INFO: [Synth 8-6157] synthesizing module 'azmig_rst_mig_ui_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_rst_mig_ui_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_rst_mig_ui_0' (20#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_rst_mig_ui_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'rst_mig_ui' of module 'azmig_rst_mig_ui_0' requires 10 connections, but only 6 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:750]
+INFO: [Synth 8-6157] synthesizing module 'azmig_unified_obs_0_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_unified_obs_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_unified_obs_0_0' (21#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_unified_obs_0_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'unified_obs_0' of module 'azmig_unified_obs_0_0' requires 197 connections, but only 193 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:757]
+INFO: [Synth 8-6157] synthesizing module 'azmig_util_ds_buf_0_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_util_ds_buf_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_util_ds_buf_0_0' (22#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_util_ds_buf_0_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'util_ds_buf_0' of module 'azmig_util_ds_buf_0_0' requires 4 connections, but only 3 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:951]
+INFO: [Synth 8-6157] synthesizing module 'azmig_xdma_0_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_xdma_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_xdma_0_0' (23#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-75848-DESKTOP-QEQDV5I/realtime/azmig_xdma_0_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'xdma_0' of module 'azmig_xdma_0_0' requires 75 connections, but only 67 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:955]
+INFO: [Synth 8-6155] done synthesizing module 'azmig' (24#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:13]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_wrapper' (25#1) [V:/azmig_syn/azmig.srcs/sources_1/imports/hdl/azmig_wrapper.v:12]
+WARNING: [Synth 8-3331] design s05_couplers_imp_TZGRAY has unconnected port M_ACLK
+WARNING: [Synth 8-3331] design s05_couplers_imp_TZGRAY has unconnected port M_ARESETN
+WARNING: [Synth 8-3331] design s05_couplers_imp_TZGRAY has unconnected port S_AXI_arlock[1]
+WARNING: [Synth 8-3331] design s05_couplers_imp_TZGRAY has unconnected port S_AXI_awlock[1]
+WARNING: [Synth 8-3331] design s04_couplers_imp_1NCQQ4Y has unconnected port M_ACLK
+WARNING: [Synth 8-3331] design s04_couplers_imp_1NCQQ4Y has unconnected port M_ARESETN
+WARNING: [Synth 8-3331] design s04_couplers_imp_1NCQQ4Y has unconnected port S_ACLK
+WARNING: [Synth 8-3331] design s04_couplers_imp_1NCQQ4Y has unconnected port S_ARESETN
+WARNING: [Synth 8-3331] design s03_couplers_imp_LWAVGO has unconnected port M_ACLK
+WARNING: [Synth 8-3331] design s03_couplers_imp_LWAVGO has unconnected port M_ARESETN
+WARNING: [Synth 8-3331] design s03_couplers_imp_LWAVGO has unconnected port S_AXI_arlock[1]
+WARNING: [Synth 8-3331] design s03_couplers_imp_LWAVGO has unconnected port S_AXI_awlock[1]
+WARNING: [Synth 8-3331] design s02_couplers_imp_1WJUXWG has unconnected port M_ACLK
+WARNING: [Synth 8-3331] design s02_couplers_imp_1WJUXWG has unconnected port M_ARESETN
+WARNING: [Synth 8-3331] design s02_couplers_imp_1WJUXWG has unconnected port S_ACLK
+WARNING: [Synth 8-3331] design s02_couplers_imp_1WJUXWG has unconnected port S_ARESETN
+WARNING: [Synth 8-3331] design s01_couplers_imp_1RXOY8P has unconnected port M_ACLK
+WARNING: [Synth 8-3331] design s01_couplers_imp_1RXOY8P has unconnected port M_ARESETN
+WARNING: [Synth 8-3331] design s01_couplers_imp_1RXOY8P has unconnected port S_AXI_arlock[1]
+WARNING: [Synth 8-3331] design s01_couplers_imp_1RXOY8P has unconnected port S_AXI_awlock[1]
+WARNING: [Synth 8-3331] design s00_couplers_imp_QISGC1 has unconnected port M_ACLK
+WARNING: [Synth 8-3331] design s00_couplers_imp_QISGC1 has unconnected port M_ARESETN
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[63]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[62]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[61]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[60]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[59]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[58]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[57]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[56]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[55]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[54]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[53]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[52]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[51]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[50]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[49]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[48]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[47]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[46]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[45]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[44]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[43]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[42]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[41]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[40]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[39]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[38]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[37]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[36]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[35]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[34]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[33]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[32]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[31]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_araddr[30]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[63]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[62]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[61]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[60]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[59]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[58]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[57]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[56]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[55]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[54]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[53]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[52]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[51]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[50]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[49]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[48]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[47]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[46]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[45]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[44]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[43]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[42]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[41]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[40]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[39]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[38]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[37]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[36]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[35]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[34]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[33]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[32]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[31]
+WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[30]
+---------------------------------------------------------------------------------
+Finished RTL Elaboration : Time (s): cpu = 00:00:02 ; elapsed = 00:00:03 . Memory (MB): peak = 586.566 ; gain = 171.559
+---------------------------------------------------------------------------------
+
+Report Check Netlist: 
++------+------------------+-------+---------+-------+------------------+
+|      |Item              |Errors |Warnings |Status |Description       |
++------+------------------+-------+---------+-------+------------------+
+|1     |multi_driven_nets |      0|        0|Passed |Multi driven nets |
++------+------------------+-------+---------+-------+------------------+
+---------------------------------------------------------------------------------
+Start Handling Custom Attributes
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 586.566 ; gain = 171.559
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished RTL Optimization Phase 1 : Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 586.566 ; gain = 171.559
+---------------------------------------------------------------------------------
+INFO: [Device 21-403] Loading part xc7z100ffg900-2
+INFO: [Project 1-570] Preparing netlist for logic optimization
+
+Processing XDC Constraints
+Initializing timing engine
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_ctrl_0_0/azmig_ctrl_0_0/azmig_ctrl_0_0_in_context.xdc] for cell 'azmig_i/ctrl_0'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_ctrl_0_0/azmig_ctrl_0_0/azmig_ctrl_0_0_in_context.xdc] for cell 'azmig_i/ctrl_0'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_unified_obs_0_0/azmig_unified_obs_0_0/azmig_unified_obs_0_0_in_context.xdc] for cell 'azmig_i/unified_obs_0'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_unified_obs_0_0/azmig_unified_obs_0_0/azmig_unified_obs_0_0_in_context.xdc] for cell 'azmig_i/unified_obs_0'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_util_ds_buf_0_0/azmig_util_ds_buf_0_0/azmig_util_ds_buf_0_0_in_context.xdc] for cell 'azmig_i/util_ds_buf_0'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_util_ds_buf_0_0/azmig_util_ds_buf_0_0/azmig_util_ds_buf_0_0_in_context.xdc] for cell 'azmig_i/util_ds_buf_0'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc] for cell 'azmig_i/mig_7series_0'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc] for cell 'azmig_i/mig_7series_0'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_xdma_0_0/azmig_xdma_0_0/azmig_xdma_0_0_in_context.xdc] for cell 'azmig_i/xdma_0'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_xdma_0_0/azmig_xdma_0_0/azmig_xdma_0_0_in_context.xdc] for cell 'azmig_i/xdma_0'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_xbar_0/azmig_xbar_0/azmig_xbar_0_in_context.xdc] for cell 'azmig_i/mem_axi_ic/xbar'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_xbar_0/azmig_xbar_0/azmig_xbar_0_in_context.xdc] for cell 'azmig_i/mem_axi_ic/xbar'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_0/azmig_auto_us_0/azmig_auto_us_0_in_context.xdc] for cell 'azmig_i/mem_axi_ic/s00_couplers/auto_us'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_0/azmig_auto_us_0/azmig_auto_us_0_in_context.xdc] for cell 'azmig_i/mem_axi_ic/s00_couplers/auto_us'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_1/azmig_auto_us_1/azmig_auto_us_1_in_context.xdc] for cell 'azmig_i/mem_axi_ic/s01_couplers/auto_us'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_1/azmig_auto_us_1/azmig_auto_us_1_in_context.xdc] for cell 'azmig_i/mem_axi_ic/s01_couplers/auto_us'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_2/azmig_auto_us_2/azmig_auto_us_2_in_context.xdc] for cell 'azmig_i/mem_axi_ic/s03_couplers/auto_us'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_2/azmig_auto_us_2/azmig_auto_us_2_in_context.xdc] for cell 'azmig_i/mem_axi_ic/s03_couplers/auto_us'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_3/azmig_auto_us_3/azmig_auto_us_3_in_context.xdc] for cell 'azmig_i/mem_axi_ic/s05_couplers/auto_us'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_3/azmig_auto_us_3/azmig_auto_us_3_in_context.xdc] for cell 'azmig_i/mem_axi_ic/s05_couplers/auto_us'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_cc_0/azmig_auto_cc_0/azmig_auto_cc_0_in_context.xdc] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_cc_0/azmig_auto_cc_0/azmig_auto_cc_0_in_context.xdc] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_ds_0/azmig_auto_ds_0/azmig_auto_ds_0_in_context.xdc] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_ds'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_ds_0/azmig_auto_ds_0/azmig_auto_ds_0_in_context.xdc] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_ds'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_rst_mig_ui_0/azmig_rst_mig_ui_0/azmig_rst_mig_ui_0_in_context.xdc] for cell 'azmig_i/rst_mig_ui'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_rst_mig_ui_0/azmig_rst_mig_ui_0/azmig_rst_mig_ui_0_in_context.xdc] for cell 'azmig_i/rst_mig_ui'
+Parsing XDC File [F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/slam_accel_ax7z100_pcie_mig/slam_accel_ax7z100_pcie_mig.xdc]
+Finished Parsing XDC File [F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/slam_accel_ax7z100_pcie_mig/slam_accel_ax7z100_pcie_mig.xdc]
+INFO: [Project 1-236] Implementation specific constraints were found while reading constraint file [F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/slam_accel_ax7z100_pcie_mig/slam_accel_ax7z100_pcie_mig.xdc]. These constraints will be ignored for synthesis but will be used in implementation. Impacted constraints are listed in the file [.Xil/azmig_wrapper_propImpl.xdc].
+Resolution: To avoid this warning, move constraints listed in [.Xil/azmig_wrapper_propImpl.xdc] to another XDC file and exclude this new file from synthesis with the used_in_synthesis property (File Properties dialog in GUI) and re-run elaboration/synthesis.
+Parsing XDC File [V:/azmig_syn/azmig.runs/synth_1/dont_touch.xdc]
+Finished Parsing XDC File [V:/azmig_syn/azmig.runs/synth_1/dont_touch.xdc]
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1050.941 ; gain = 0.000
+Completed Processing XDC Constraints
+
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1050.941 ; gain = 0.000
+INFO: [Project 1-111] Unisim Transformation Summary:
+No Unisim elements were transformed.
+
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1050.941 ; gain = 0.000
+Constraint Validation Runtime : Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.006 . Memory (MB): peak = 1050.941 ; gain = 0.000
+WARNING: [Timing 38-316] Clock period '10.000' specified during out-of-context synthesis of instance 'azmig_i/unified_obs_0' at clock pin 'ap_clk' is different from the actual clock period '8.000', this can lead to different synthesis results.
+---------------------------------------------------------------------------------
+Finished Constraint Validation : Time (s): cpu = 00:00:13 ; elapsed = 00:00:15 . Memory (MB): peak = 1050.941 ; gain = 635.934
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Loading Part and Timing Information
+---------------------------------------------------------------------------------
+Loading part: xc7z100ffg900-2
+---------------------------------------------------------------------------------
+Finished Loading Part and Timing Information : Time (s): cpu = 00:00:13 ; elapsed = 00:00:15 . Memory (MB): peak = 1050.941 ; gain = 635.934
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Applying 'set_property' XDC Constraints
+---------------------------------------------------------------------------------
+Applied set_property IO_BUFFER_TYPE = NONE for pcie_ref_clk_n[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_util_ds_buf_0_0/azmig_util_ds_buf_0_0/azmig_util_ds_buf_0_0_in_context.xdc, line 3).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for pcie_ref_clk_n[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_util_ds_buf_0_0/azmig_util_ds_buf_0_0/azmig_util_ds_buf_0_0_in_context.xdc, line 4).
+Applied set_property IO_BUFFER_TYPE = NONE for pcie_ref_clk_p[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_util_ds_buf_0_0/azmig_util_ds_buf_0_0/azmig_util_ds_buf_0_0_in_context.xdc, line 5).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for pcie_ref_clk_p[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_util_ds_buf_0_0/azmig_util_ds_buf_0_0/azmig_util_ds_buf_0_0_in_context.xdc, line 6).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_addr[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 3).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_addr[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 4).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_addr[10]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 5).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_addr[10]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 6).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_addr[11]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 7).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_addr[11]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 8).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_addr[12]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 9).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_addr[12]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 10).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_addr[13]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 11).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_addr[13]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 12).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_addr[14]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 13).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_addr[14]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 14).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_addr[1]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 15).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_addr[1]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 16).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_addr[2]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 17).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_addr[2]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 18).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_addr[3]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 19).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_addr[3]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 20).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_addr[4]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 21).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_addr[4]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 22).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_addr[5]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 23).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_addr[5]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 24).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_addr[6]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 25).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_addr[6]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 26).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_addr[7]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 27).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_addr[7]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 28).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_addr[8]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 29).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_addr[8]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 30).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_addr[9]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 31).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_addr[9]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 32).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_ba[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 33).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_ba[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 34).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_ba[1]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 35).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_ba[1]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 36).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_ba[2]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 37).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_ba[2]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 38).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_cas_n. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 39).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_cas_n. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 40).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_ck_n[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 41).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_ck_n[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 42).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_ck_p[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 43).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_ck_p[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 44).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_cke[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 45).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_cke[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 46).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_cs_n[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 47).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_cs_n[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 48).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dm[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 49).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dm[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 50).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dm[1]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 51).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dm[1]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 52).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dm[2]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 53).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dm[2]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 54).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dm[3]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 55).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dm[3]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 56).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 57).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 58).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[10]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 59).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[10]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 60).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[11]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 61).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[11]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 62).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[12]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 63).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[12]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 64).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[13]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 65).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[13]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 66).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[14]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 67).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[14]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 68).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[15]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 69).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[15]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 70).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[16]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 71).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[16]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 72).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[17]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 73).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[17]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 74).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[18]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 75).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[18]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 76).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[19]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 77).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[19]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 78).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[1]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 79).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[1]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 80).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[20]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 81).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[20]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 82).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[21]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 83).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[21]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 84).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[22]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 85).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[22]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 86).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[23]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 87).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[23]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 88).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[24]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 89).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[24]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 90).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[25]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 91).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[25]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 92).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[26]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 93).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[26]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 94).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[27]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 95).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[27]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 96).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[28]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 97).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[28]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 98).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[29]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 99).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[29]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 100).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[2]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 101).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[2]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 102).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[30]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 103).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[30]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 104).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[31]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 105).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[31]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 106).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[3]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 107).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[3]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 108).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[4]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 109).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[4]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 110).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[5]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 111).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[5]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 112).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[6]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 113).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[6]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 114).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[7]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 115).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[7]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 116).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[8]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 117).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[8]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 118).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dq[9]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 119).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dq[9]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 120).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dqs_n[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 121).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dqs_n[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 122).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dqs_n[1]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 123).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dqs_n[1]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 124).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dqs_n[2]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 125).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dqs_n[2]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 126).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dqs_n[3]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 127).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dqs_n[3]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 128).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dqs_p[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 129).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dqs_p[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 130).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dqs_p[1]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 131).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dqs_p[1]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 132).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dqs_p[2]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 133).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dqs_p[2]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 134).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_dqs_p[3]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 135).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_dqs_p[3]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 136).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_odt[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 137).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_odt[0]. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 138).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_ras_n. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 139).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_ras_n. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 140).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_reset_n. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 141).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_reset_n. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 142).
+Applied set_property IO_BUFFER_TYPE = NONE for ddr3_we_n. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 143).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for ddr3_we_n. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 144).
+Applied set_property IO_BUFFER_TYPE = NONE for sys_clk_n. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 145).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for sys_clk_n. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 146).
+Applied set_property IO_BUFFER_TYPE = NONE for sys_clk_p. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 147).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for sys_clk_p. (constraint file  v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc, line 148).
+Applied set_property DONT_TOUCH = true for azmig_i. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for azmig_i/ctrl_0. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for azmig_i/unified_obs_0. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for azmig_i/const_zero_32. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for azmig_i/util_ds_buf_0. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for azmig_i/mig_7series_0. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for azmig_i/xdma_0. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for azmig_i/mem_axi_ic/xbar. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for azmig_i/mem_axi_ic/s00_couplers/auto_us. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for azmig_i/mem_axi_ic/s01_couplers/auto_us. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for azmig_i/mem_axi_ic/s03_couplers/auto_us. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for azmig_i/mem_axi_ic/s05_couplers/auto_us. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for azmig_i/mem_axi_ic/m00_couplers/auto_cc. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for azmig_i/mem_axi_ic/m00_couplers/auto_ds. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for azmig_i/mem_axi_ic. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for azmig_i/rst_mig_ui. (constraint file  auto generated constraint, line ).
+---------------------------------------------------------------------------------
+Finished applying 'set_property' XDC Constraints : Time (s): cpu = 00:00:13 ; elapsed = 00:00:15 . Memory (MB): peak = 1050.941 ; gain = 635.934
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished RTL Optimization Phase 2 : Time (s): cpu = 00:00:14 ; elapsed = 00:00:16 . Memory (MB): peak = 1050.941 ; gain = 635.934
+---------------------------------------------------------------------------------
+
+Report RTL Partitions: 
++-+--------------+------------+----------+
+| |RTL Partition |Replication |Instances |
++-+--------------+------------+----------+
++-+--------------+------------+----------+
+---------------------------------------------------------------------------------
+Start RTL Component Statistics 
+---------------------------------------------------------------------------------
+Detailed RTL Component Info : 
+---------------------------------------------------------------------------------
+Finished RTL Component Statistics 
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start RTL Hierarchical Component Statistics 
+---------------------------------------------------------------------------------
+Hierarchical RTL Component report 
+---------------------------------------------------------------------------------
+Finished RTL Hierarchical Component Statistics
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Part Resource Summary
+---------------------------------------------------------------------------------
+Part Resources:
+DSPs: 2020 (col length:140)
+BRAMs: 1510 (col length: RAMB18 140 RAMB36 70)
+---------------------------------------------------------------------------------
+Finished Part Resource Summary
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Cross Boundary and Area Optimization
+---------------------------------------------------------------------------------
+Warning: Parallel synthesis criteria is not met 
+WARNING: [Synth 8-3331] design azmig_mem_axi_ic_0 has unconnected port S01_AXI_arlock[1]
+WARNING: [Synth 8-3331] design azmig_mem_axi_ic_0 has unconnected port S01_AXI_awlock[1]
+WARNING: [Synth 8-3331] design azmig_mem_axi_ic_0 has unconnected port S02_ACLK
+WARNING: [Synth 8-3331] design azmig_mem_axi_ic_0 has unconnected port S02_ARESETN
+WARNING: [Synth 8-3331] design azmig_mem_axi_ic_0 has unconnected port S02_AXI_arlock[1]
+WARNING: [Synth 8-3331] design azmig_mem_axi_ic_0 has unconnected port S02_AXI_awlock[1]
+WARNING: [Synth 8-3331] design azmig_mem_axi_ic_0 has unconnected port S03_AXI_arlock[1]
+WARNING: [Synth 8-3331] design azmig_mem_axi_ic_0 has unconnected port S03_AXI_awlock[1]
+WARNING: [Synth 8-3331] design azmig_mem_axi_ic_0 has unconnected port S04_ACLK
+WARNING: [Synth 8-3331] design azmig_mem_axi_ic_0 has unconnected port S04_ARESETN
+INFO: [Common 17-14] Message 'Synth 8-3331' appears 100 times and further instances of the messages will be disabled. Use the Tcl command set_msg_config to change the current settings.
+---------------------------------------------------------------------------------
+Finished Cross Boundary and Area Optimization : Time (s): cpu = 00:00:15 ; elapsed = 00:00:17 . Memory (MB): peak = 1050.941 ; gain = 635.934
+---------------------------------------------------------------------------------
+
+Report RTL Partitions: 
++-+--------------+------------+----------+
+| |RTL Partition |Replication |Instances |
++-+--------------+------------+----------+
++-+--------------+------------+----------+
+---------------------------------------------------------------------------------
+Start Applying XDC Timing Constraints
+---------------------------------------------------------------------------------
+INFO: [Synth 8-5578] Moved timing constraint from pin 'azmig_i/util_ds_buf_0/IBUF_OUT[0]' to pin '{azmig_i/util_ds_buf_0/bbstub_IBUF_OUT[0]/O}'
+INFO: [Synth 8-5578] Moved timing constraint from pin 'azmig_i/util_ds_buf_0/IBUF_DS_ODIV2[0]' to pin '{azmig_i/util_ds_buf_0/bbstub_IBUF_DS_ODIV2[0]/O}'
+INFO: [Synth 8-5578] Moved timing constraint from pin 'azmig_i/mig_7series_0/ui_clk' to pin 'azmig_i/mig_7series_0/bbstub_ui_clk/O'
+INFO: [Synth 8-5578] Moved timing constraint from pin 'azmig_i/xdma_0/axi_aclk' to pin 'azmig_i/xdma_0/bbstub_axi_aclk/O'
+INFO: [Synth 8-5819] Moved 4 constraints on hierarchical pins to their respective driving/loading pins
+---------------------------------------------------------------------------------
+Finished Applying XDC Timing Constraints : Time (s): cpu = 00:00:23 ; elapsed = 00:00:26 . Memory (MB): peak = 1050.941 ; gain = 635.934
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Timing Optimization
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Timing Optimization : Time (s): cpu = 00:00:23 ; elapsed = 00:00:26 . Memory (MB): peak = 1050.941 ; gain = 635.934
+---------------------------------------------------------------------------------
+
+Report RTL Partitions: 
++-+--------------+------------+----------+
+| |RTL Partition |Replication |Instances |
++-+--------------+------------+----------+
++-+--------------+------------+----------+
+---------------------------------------------------------------------------------
+Start Technology Mapping
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Technology Mapping : Time (s): cpu = 00:00:24 ; elapsed = 00:00:26 . Memory (MB): peak = 1050.941 ; gain = 635.934
+---------------------------------------------------------------------------------
+
+Report RTL Partitions: 
++-+--------------+------------+----------+
+| |RTL Partition |Replication |Instances |
++-+--------------+------------+----------+
++-+--------------+------------+----------+
+---------------------------------------------------------------------------------
+Start IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Flattening Before IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Flattening Before IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished IO Insertion : Time (s): cpu = 00:00:25 ; elapsed = 00:00:27 . Memory (MB): peak = 1050.941 ; gain = 635.934
+---------------------------------------------------------------------------------
+
+Report Check Netlist: 
++------+------------------+-------+---------+-------+------------------+
+|      |Item              |Errors |Warnings |Status |Description       |
++------+------------------+-------+---------+-------+------------------+
+|1     |multi_driven_nets |      0|        0|Passed |Multi driven nets |
++------+------------------+-------+---------+-------+------------------+
+---------------------------------------------------------------------------------
+Start Renaming Generated Instances
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Instances : Time (s): cpu = 00:00:25 ; elapsed = 00:00:27 . Memory (MB): peak = 1050.941 ; gain = 635.934
+---------------------------------------------------------------------------------
+
+Report RTL Partitions: 
++-+--------------+------------+----------+
+| |RTL Partition |Replication |Instances |
++-+--------------+------------+----------+
++-+--------------+------------+----------+
+---------------------------------------------------------------------------------
+Start Rebuilding User Hierarchy
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Rebuilding User Hierarchy : Time (s): cpu = 00:00:25 ; elapsed = 00:00:27 . Memory (MB): peak = 1050.941 ; gain = 635.934
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Ports
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Ports : Time (s): cpu = 00:00:25 ; elapsed = 00:00:27 . Memory (MB): peak = 1050.941 ; gain = 635.934
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Handling Custom Attributes
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:25 ; elapsed = 00:00:27 . Memory (MB): peak = 1050.941 ; gain = 635.934
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Nets
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Nets : Time (s): cpu = 00:00:25 ; elapsed = 00:00:27 . Memory (MB): peak = 1050.941 ; gain = 635.934
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Writing Synthesis Report
+---------------------------------------------------------------------------------
+
+Report BlackBoxes: 
++------+----------------------+----------+
+|      |BlackBox name         |Instances |
++------+----------------------+----------+
+|1     |azmig_xbar_0          |         1|
+|2     |azmig_auto_cc_0       |         1|
+|3     |azmig_auto_ds_0       |         1|
+|4     |azmig_auto_us_0       |         1|
+|5     |azmig_auto_us_1       |         1|
+|6     |azmig_auto_us_2       |         1|
+|7     |azmig_auto_us_3       |         1|
+|8     |azmig_ctrl_0_0        |         1|
+|9     |azmig_mig_7series_0_0 |         1|
+|10    |azmig_rst_mig_ui_0    |         1|
+|11    |azmig_unified_obs_0_0 |         1|
+|12    |azmig_util_ds_buf_0_0 |         1|
+|13    |azmig_xdma_0_0        |         1|
++------+----------------------+----------+
+
+Report Cell Usage: 
++------+----------------------+------+
+|      |Cell                  |Count |
++------+----------------------+------+
+|1     |azmig_auto_cc_0       |     1|
+|2     |azmig_auto_ds_0       |     1|
+|3     |azmig_auto_us_0       |     1|
+|4     |azmig_auto_us_1       |     1|
+|5     |azmig_auto_us_2       |     1|
+|6     |azmig_auto_us_3       |     1|
+|7     |azmig_ctrl_0_0        |     1|
+|8     |azmig_mig_7series_0_0 |     1|
+|9     |azmig_rst_mig_ui_0    |     1|
+|10    |azmig_unified_obs_0_0 |     1|
+|11    |azmig_util_ds_buf_0_0 |     1|
+|12    |azmig_xbar_0          |     1|
+|13    |azmig_xdma_0_0        |     1|
+|14    |IBUF                  |     9|
+|15    |OBUF                  |     8|
++------+----------------------+------+
+
+Report Instance Areas: 
++------+-------------------+-------------------------+------+
+|      |Instance           |Module                   |Cells |
++------+-------------------+-------------------------+------+
+|1     |top                |                         | 13421|
+|2     |  azmig_i          |azmig                    | 13404|
+|3     |    const_zero_32  |azmig_const_zero_32_0    |     0|
+|4     |    mem_axi_ic     |azmig_mem_axi_ic_0       |  9620|
+|5     |      m00_couplers |m00_couplers_imp_2QRP7E  |  2174|
+|6     |      s00_couplers |s00_couplers_imp_QISGC1  |   914|
+|7     |      s01_couplers |s01_couplers_imp_1RXOY8P |   842|
+|8     |      s03_couplers |s03_couplers_imp_LWAVGO  |   970|
+|9     |      s05_couplers |s05_couplers_imp_TZGRAY  |   778|
++------+-------------------+-------------------------+------+
+---------------------------------------------------------------------------------
+Finished Writing Synthesis Report : Time (s): cpu = 00:00:25 ; elapsed = 00:00:27 . Memory (MB): peak = 1050.941 ; gain = 635.934
+---------------------------------------------------------------------------------
+Synthesis finished with 0 errors, 0 critical warnings and 14 warnings.
+Synthesis Optimization Runtime : Time (s): cpu = 00:00:14 ; elapsed = 00:00:19 . Memory (MB): peak = 1050.941 ; gain = 171.559
+Synthesis Optimization Complete : Time (s): cpu = 00:00:25 ; elapsed = 00:00:28 . Memory (MB): peak = 1050.941 ; gain = 635.934
+INFO: [Project 1-571] Translating synthesized netlist
+INFO: [Project 1-570] Preparing netlist for logic optimization
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1063.695 ; gain = 0.000
+INFO: [Project 1-111] Unisim Transformation Summary:
+No Unisim elements were transformed.
+
+INFO: [Common 17-83] Releasing license: Synthesis
+69 Infos, 113 Warnings, 0 Critical Warnings and 0 Errors encountered.
+synth_design completed successfully
+synth_design: Time (s): cpu = 00:00:30 ; elapsed = 00:00:33 . Memory (MB): peak = 1063.750 ; gain = 655.582
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1063.750 ; gain = 0.000
+WARNING: [Constraints 18-5210] No constraints selected for write.
+Resolution: This message can indicate that there are no constraints for the design, or it can indicate that the used_in flags are set such that the constraints are ignored. This later case is used when running synth_design to not write synthesis constraints to the resulting checkpoint. Instead, project constraints are read when the synthesized design is opened.
+INFO: [Common 17-1381] The checkpoint 'V:/azmig_syn/azmig.runs/synth_1/azmig_wrapper.dcp' has been generated.
+INFO: [runtcl-4] Executing : report_utilization -file azmig_wrapper_utilization_synth.rpt -pb azmig_wrapper_utilization_synth.pb
+INFO: [Common 17-206] Exiting Vivado at Wed Jun 17 18:59:55 2026...
+[Wed Jun 17 19:00:00 2026] synth_1 finished
+wait_on_run: Time (s): cpu = 00:00:03 ; elapsed = 00:15:41 . Memory (MB): peak = 1361.008 ; gain = 2.020
+# set run_status [get_property STATUS [get_runs synth_1]]
+# puts "SYNTH_1_STATUS=$run_status"
+SYNTH_1_STATUS=synth_design Complete!
+# if {[string first "synth_design Complete" $run_status] < 0} {
+#     error "synth_1 did not complete: $run_status"
+# }
+# open_run synth_1
+Design is defaulting to impl run constrset: constrs_1
+Design is defaulting to synth run part: xc7z100ffg900-2
+INFO: [Project 1-454] Reading design checkpoint 'v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_ctrl_0_0/azmig_ctrl_0_0.dcp' for cell 'azmig_i/ctrl_0'
+INFO: [Project 1-454] Reading design checkpoint 'v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0.dcp' for cell 'azmig_i/mig_7series_0'
+INFO: [Project 1-454] Reading design checkpoint 'v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_rst_mig_ui_0/azmig_rst_mig_ui_0.dcp' for cell 'azmig_i/rst_mig_ui'
+INFO: [Project 1-454] Reading design checkpoint 'v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_unified_obs_0_0/azmig_unified_obs_0_0.dcp' for cell 'azmig_i/unified_obs_0'
+INFO: [Project 1-454] Reading design checkpoint 'v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_util_ds_buf_0_0/azmig_util_ds_buf_0_0.dcp' for cell 'azmig_i/util_ds_buf_0'
+INFO: [Project 1-454] Reading design checkpoint 'v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_xdma_0_0/azmig_xdma_0_0.dcp' for cell 'azmig_i/xdma_0'
+INFO: [Project 1-454] Reading design checkpoint 'v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_xbar_0/azmig_xbar_0.dcp' for cell 'azmig_i/mem_axi_ic/xbar'
+INFO: [Project 1-454] Reading design checkpoint 'v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_cc_0/azmig_auto_cc_0.dcp' for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc'
+INFO: [Project 1-454] Reading design checkpoint 'v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_ds_0/azmig_auto_ds_0.dcp' for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_ds'
+INFO: [Project 1-454] Reading design checkpoint 'v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_0/azmig_auto_us_0.dcp' for cell 'azmig_i/mem_axi_ic/s00_couplers/auto_us'
+INFO: [Project 1-454] Reading design checkpoint 'v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_1/azmig_auto_us_1.dcp' for cell 'azmig_i/mem_axi_ic/s01_couplers/auto_us'
+INFO: [Project 1-454] Reading design checkpoint 'v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_2/azmig_auto_us_2.dcp' for cell 'azmig_i/mem_axi_ic/s03_couplers/auto_us'
+INFO: [Project 1-454] Reading design checkpoint 'v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_3/azmig_auto_us_3.dcp' for cell 'azmig_i/mem_axi_ic/s05_couplers/auto_us'
+INFO: [Netlist 29-17] Analyzing 5249 Unisim elements for replacement
+INFO: [Netlist 29-28] Unisim Transformation completed in 1 CPU seconds
+INFO: [Project 1-479] Netlist was created with Vivado 2018.3
+INFO: [Project 1-570] Preparing netlist for logic optimization
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_util_ds_buf_0_0/azmig_util_ds_buf_0_0_board.xdc] for cell 'azmig_i/util_ds_buf_0/U0'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_util_ds_buf_0_0/azmig_util_ds_buf_0_0_board.xdc] for cell 'azmig_i/util_ds_buf_0/U0'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/user_design/constraints/azmig_mig_7series_0_0.xdc] for cell 'azmig_i/mig_7series_0'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/user_design/constraints/azmig_mig_7series_0_0.xdc] for cell 'azmig_i/mig_7series_0'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_xdma_0_0/ip_0/source/azmig_xdma_0_0_pcie2_ip-PCIE_X0Y0.xdc] for cell 'azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst'
+INFO: [Timing 38-35] Done setting XDC timing constraints. [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_xdma_0_0/ip_0/source/azmig_xdma_0_0_pcie2_ip-PCIE_X0Y0.xdc:136]
+INFO: [Timing 38-2] Deriving generated clocks [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_xdma_0_0/ip_0/source/azmig_xdma_0_0_pcie2_ip-PCIE_X0Y0.xdc:136]
+create_generated_clock: Time (s): cpu = 00:00:25 ; elapsed = 00:00:21 . Memory (MB): peak = 2879.562 ; gain = 783.266
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_xdma_0_0/ip_0/source/azmig_xdma_0_0_pcie2_ip-PCIE_X0Y0.xdc] for cell 'azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_xdma_0_0/ip_3/pcie2_fifo_generator_dma_cpl.xdc] for cell 'azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_xdma_0_0/ip_3/pcie2_fifo_generator_dma_cpl.xdc] for cell 'azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_xdma_0_0/ip_4/pcie2_fifo_generator_tgt_brdg.xdc] for cell 'azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/tgt_brdg_fifo_inst/U0'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_xdma_0_0/ip_4/pcie2_fifo_generator_tgt_brdg.xdc] for cell 'azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/tgt_brdg_fifo_inst/U0'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_xdma_0_0/azmig_xdma_0_0_board.xdc] for cell 'azmig_i/xdma_0/inst'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_xdma_0_0/azmig_xdma_0_0_board.xdc] for cell 'azmig_i/xdma_0/inst'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_xdma_0_0/source/azmig_xdma_0_0_pcie3_7vx_ip.xdc] for cell 'azmig_i/xdma_0/inst'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_xdma_0_0/source/azmig_xdma_0_0_pcie3_7vx_ip.xdc] for cell 'azmig_i/xdma_0/inst'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_rst_mig_ui_0/azmig_rst_mig_ui_0_board.xdc] for cell 'azmig_i/rst_mig_ui/U0'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_rst_mig_ui_0/azmig_rst_mig_ui_0_board.xdc] for cell 'azmig_i/rst_mig_ui/U0'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_rst_mig_ui_0/azmig_rst_mig_ui_0.xdc] for cell 'azmig_i/rst_mig_ui/U0'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_rst_mig_ui_0/azmig_rst_mig_ui_0.xdc] for cell 'azmig_i/rst_mig_ui/U0'
+Parsing XDC File [F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/slam_accel_ax7z100_pcie_mig/slam_accel_ax7z100_pcie_mig.xdc]
+Finished Parsing XDC File [F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/slam_accel_ax7z100_pcie_mig/slam_accel_ax7z100_pcie_mig.xdc]
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_0/azmig_auto_us_0_clocks.xdc] for cell 'azmig_i/mem_axi_ic/s00_couplers/auto_us/inst'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_0/azmig_auto_us_0_clocks.xdc] for cell 'azmig_i/mem_axi_ic/s00_couplers/auto_us/inst'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_1/azmig_auto_us_1_clocks.xdc] for cell 'azmig_i/mem_axi_ic/s01_couplers/auto_us/inst'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_1/azmig_auto_us_1_clocks.xdc] for cell 'azmig_i/mem_axi_ic/s01_couplers/auto_us/inst'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_2/azmig_auto_us_2_clocks.xdc] for cell 'azmig_i/mem_axi_ic/s03_couplers/auto_us/inst'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_2/azmig_auto_us_2_clocks.xdc] for cell 'azmig_i/mem_axi_ic/s03_couplers/auto_us/inst'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_3/azmig_auto_us_3_clocks.xdc] for cell 'azmig_i/mem_axi_ic/s05_couplers/auto_us/inst'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_3/azmig_auto_us_3_clocks.xdc] for cell 'azmig_i/mem_axi_ic/s05_couplers/auto_us/inst'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_cc_0/azmig_auto_cc_0_clocks.xdc] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_cc_0/azmig_auto_cc_0_clocks.xdc] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_ds_0/azmig_auto_ds_0_clocks.xdc] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_ds/inst'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_ds_0/azmig_auto_ds_0_clocks.xdc] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_ds/inst'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grdch2.axi_rdch/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.rst_rd_reg2_inst'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grdch2.axi_rdch/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.rst_rd_reg2_inst'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwrch2.axi_wrch/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.rst_rd_reg2_inst'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwrch2.axi_wrch/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.rst_rd_reg2_inst'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grach2.axi_rach/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.rst_wr_reg2_inst'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grach2.axi_rach/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.rst_wr_reg2_inst'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grach2.axi_rach/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.rst_rd_reg2_inst'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grach2.axi_rach/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.rst_rd_reg2_inst'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grdch2.axi_rdch/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.rst_wr_reg2_inst'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grdch2.axi_rdch/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.rst_wr_reg2_inst'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwach2.axi_wach/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.rst_wr_reg2_inst'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwach2.axi_wach/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.rst_wr_reg2_inst'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwach2.axi_wach/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.rst_rd_reg2_inst'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwach2.axi_wach/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.rst_rd_reg2_inst'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwdch2.axi_wdch/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.rst_wr_reg2_inst'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwdch2.axi_wdch/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.rst_wr_reg2_inst'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwdch2.axi_wdch/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.rst_rd_reg2_inst'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwdch2.axi_wdch/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.rst_rd_reg2_inst'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwrch2.axi_wrch/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.rst_wr_reg2_inst'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwrch2.axi_wrch/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.rst_wr_reg2_inst'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_ds/inst/gen_downsizer.gen_simple_downsizer.axi_downsizer_inst/USE_READ.read_addr_inst/cmd_queue/inst/fifo_gen_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.rst_wr_reg2_inst'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_ds/inst/gen_downsizer.gen_simple_downsizer.axi_downsizer_inst/USE_READ.read_addr_inst/cmd_queue/inst/fifo_gen_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.rst_wr_reg2_inst'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_ds/inst/gen_downsizer.gen_simple_downsizer.axi_downsizer_inst/USE_WRITE.write_addr_inst/USE_B_CHANNEL.cmd_b_queue/inst/fifo_gen_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.rst_wr_reg2_inst'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_ds/inst/gen_downsizer.gen_simple_downsizer.axi_downsizer_inst/USE_WRITE.write_addr_inst/USE_B_CHANNEL.cmd_b_queue/inst/fifo_gen_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.rst_wr_reg2_inst'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_ds/inst/gen_downsizer.gen_simple_downsizer.axi_downsizer_inst/USE_WRITE.write_addr_inst/cmd_queue/inst/fifo_gen_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.rst_wr_reg2_inst'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_async_rst.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_ds/inst/gen_downsizer.gen_simple_downsizer.axi_downsizer_inst/USE_WRITE.write_addr_inst/cmd_queue/inst/fifo_gen_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.rst_wr_reg2_inst'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_gray.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grdch2.axi_rdch/grf.rf/gntv_or_sync_fifo.gcx.clkx/rd_pntr_cdc_inst'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_gray.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grdch2.axi_rdch/grf.rf/gntv_or_sync_fifo.gcx.clkx/rd_pntr_cdc_inst'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_gray.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwach2.axi_wach/grf.rf/gntv_or_sync_fifo.gcx.clkx/wr_pntr_cdc_inst'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_gray.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwach2.axi_wach/grf.rf/gntv_or_sync_fifo.gcx.clkx/wr_pntr_cdc_inst'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_gray.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwach2.axi_wach/grf.rf/gntv_or_sync_fifo.gcx.clkx/rd_pntr_cdc_inst'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_gray.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwach2.axi_wach/grf.rf/gntv_or_sync_fifo.gcx.clkx/rd_pntr_cdc_inst'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_gray.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwdch2.axi_wdch/grf.rf/gntv_or_sync_fifo.gcx.clkx/wr_pntr_cdc_inst'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_gray.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwdch2.axi_wdch/grf.rf/gntv_or_sync_fifo.gcx.clkx/wr_pntr_cdc_inst'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_gray.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwdch2.axi_wdch/grf.rf/gntv_or_sync_fifo.gcx.clkx/rd_pntr_cdc_inst'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_gray.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwdch2.axi_wdch/grf.rf/gntv_or_sync_fifo.gcx.clkx/rd_pntr_cdc_inst'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_gray.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwrch2.axi_wrch/grf.rf/gntv_or_sync_fifo.gcx.clkx/wr_pntr_cdc_inst'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_gray.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwrch2.axi_wrch/grf.rf/gntv_or_sync_fifo.gcx.clkx/wr_pntr_cdc_inst'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_gray.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwrch2.axi_wrch/grf.rf/gntv_or_sync_fifo.gcx.clkx/rd_pntr_cdc_inst'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_gray.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwrch2.axi_wrch/grf.rf/gntv_or_sync_fifo.gcx.clkx/rd_pntr_cdc_inst'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_gray.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grach2.axi_rach/grf.rf/gntv_or_sync_fifo.gcx.clkx/wr_pntr_cdc_inst'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_gray.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grach2.axi_rach/grf.rf/gntv_or_sync_fifo.gcx.clkx/wr_pntr_cdc_inst'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_gray.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grach2.axi_rach/grf.rf/gntv_or_sync_fifo.gcx.clkx/rd_pntr_cdc_inst'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_gray.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grach2.axi_rach/grf.rf/gntv_or_sync_fifo.gcx.clkx/rd_pntr_cdc_inst'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_gray.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grdch2.axi_rdch/grf.rf/gntv_or_sync_fifo.gcx.clkx/wr_pntr_cdc_inst'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_gray.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grdch2.axi_rdch/grf.rf/gntv_or_sync_fifo.gcx.clkx/wr_pntr_cdc_inst'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grach2.xpm_cdc_single_inst3'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grach2.xpm_cdc_single_inst3'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwach2.xpm_cdc_single_inst1'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwach2.xpm_cdc_single_inst1'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwdch2.xpm_cdc_single_inst2'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwdch2.xpm_cdc_single_inst2'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grdch2.axi_rdch/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.xpm_cdc_single_inst_rrst_wr'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grdch2.axi_rdch/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.xpm_cdc_single_inst_rrst_wr'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwach2.axi_wach/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.xpm_cdc_single_inst_wrst_rd'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwach2.axi_wach/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.xpm_cdc_single_inst_wrst_rd'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwach2.axi_wach/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.xpm_cdc_single_inst_rrst_wr'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwach2.axi_wach/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.xpm_cdc_single_inst_rrst_wr'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwdch2.axi_wdch/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.xpm_cdc_single_inst_wrst_rd'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwdch2.axi_wdch/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.xpm_cdc_single_inst_wrst_rd'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwdch2.axi_wdch/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.xpm_cdc_single_inst_rrst_wr'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwdch2.axi_wdch/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.xpm_cdc_single_inst_rrst_wr'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwrch2.axi_wrch/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.xpm_cdc_single_inst_wrst_rd'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwrch2.axi_wrch/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.xpm_cdc_single_inst_wrst_rd'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwrch2.axi_wrch/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.xpm_cdc_single_inst_rrst_wr'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwrch2.axi_wrch/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.xpm_cdc_single_inst_rrst_wr'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grach2.axi_rach/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.xpm_cdc_single_inst_wrst_rd'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grach2.axi_rach/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.xpm_cdc_single_inst_wrst_rd'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grach2.axi_rach/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.xpm_cdc_single_inst_rrst_wr'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grach2.axi_rach/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.xpm_cdc_single_inst_rrst_wr'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grdch2.axi_rdch/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.xpm_cdc_single_inst_wrst_rd'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grdch2.axi_rdch/grf.rf/rstblk/ngwrdrst.grst.g7serrst.gnsckt_wrst.gic_rst.xpm_cdc_single_inst_wrst_rd'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/xdma_0/inst/udma_wrapper/dma_top/base/IRQ_INST/usr_irq_xpm_cdc'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/xdma_0/inst/udma_wrapper/dma_top/base/IRQ_INST/usr_irq_xpm_cdc'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pl_received_hot_rst_cdc'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pl_received_hot_rst_cdc'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/phy_lnk_up_cdc'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/phy_lnk_up_cdc'
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.088 . Memory (MB): peak = 2890.316 ; gain = 0.000
+INFO: [Project 1-111] Unisim Transformation Summary:
+  A total of 1087 instances were transformed.
+  IOBUFDS_DIFF_OUT_DCIEN => IOBUFDS_DIFF_OUT_DCIEN (IBUFDS_IBUFDISABLE_INT, IBUFDS_IBUFDISABLE_INT, INV, OBUFTDS_DCIEN, OBUFTDS_DCIEN): 4 instances
+  IOBUF_DCIEN => IOBUF_DCIEN (IBUF_IBUFDISABLE, OBUFT_DCIEN): 32 instances
+  OBUFDS => OBUFDS_DUAL_BUF (INV, OBUFDS, OBUFDS): 1 instances
+  RAM16X1D => RAM32X1D (RAMD32, RAMD32): 22 instances
+  RAM16X1S => RAM32X1S (RAMS32): 64 instances
+  RAM32M => RAM32M (RAMD32, RAMD32, RAMD32, RAMD32, RAMD32, RAMD32, RAMS32, RAMS32): 945 instances
+  RAM32X1D => RAM32X1D (RAMD32, RAMD32): 10 instances
+  RAM64X1S => RAM64X1S (RAMS64E): 9 instances
+
+open_run: Time (s): cpu = 00:01:19 ; elapsed = 00:01:19 . Memory (MB): peak = 2890.316 ; gain = 1529.309
+# report_utilization -file [file join $project_dir "ax7z100_pcie_mig_util.rpt"]
+# report_timing_summary -file [file join $project_dir "ax7z100_pcie_mig_timing.rpt"]
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+INFO: [Timing 38-91] UpdateTimingParams: Speed grade: -2, Delay Type: min_max.
+INFO: [Timing 38-191] Multithreading enabled for timing update using a maximum of 2 CPUs
+WARNING: [Timing 38-436] There are set_bus_skew constraint(s) in this design. Please run report_bus_skew to ensure that bus skew requirements are met.
+report_timing_summary: Time (s): cpu = 00:00:39 ; elapsed = 00:00:25 . Memory (MB): peak = 3142.750 ; gain = 252.434
+# puts "PROJECT_SYNTH_PASS"
+PROJECT_SYNTH_PASS
+# exit
+INFO: [Common 17-206] Exiting Vivado at Wed Jun 17 19:01:45 2026...

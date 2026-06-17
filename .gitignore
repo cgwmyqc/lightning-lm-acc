@@ -5,6 +5,8 @@
 *libs
 **data
 **/.vscode/
+__pycache__/
+**/__pycache__/
 bin
 *doc
 
@@ -21,6 +23,7 @@ bin
 *.wcfg
 
 # Vivado project generated dirs
+fpga/vivado/.build/
 *.cache/
 *.runs/
 *.sim/

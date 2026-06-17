@@ -1,0 +1,947 @@
+#-----------------------------------------------------------
+# Vivado v2018.3 (64-bit)
+# SW Build 2405991 on Thu Dec  6 23:38:27 MST 2018
+# IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
+# Start of session at: Wed Jun 17 15:52:28 2026
+# Process ID: 32076
+# Current directory: F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc
+# Command line: vivado.exe -mode batch -source F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\slam_accel_hls_mem_harness\run_sim.tcl -journal W:\lmem_sim\vivado_sim.jou -log W:\lmem_sim\vivado_sim.log -tclargs W:\lmem_sim xc7z100ffg900-2 C:\Users\admin\AppData\Local\Temp\lightning_hls_unified_obs\solution1\impl\ip
+# Log file: W:/lmem_sim/vivado_sim.log
+# Journal file: W:\lmem_sim\vivado_sim.jou
+#-----------------------------------------------------------
+source {F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\slam_accel_hls_mem_harness\run_sim.tcl}
+# set script_dir [file dirname [file normalize [info script]]]
+# set project_dir [file normalize [file join $script_dir ".." ".build" "lmem_sim"]]
+# set target_part "xc7z100ffg900-2"
+# set hls_ip_dir [file normalize [file join $::env(TEMP) "lightning_hls_unified_obs" "solution1" "impl" "ip"]]
+# set user_args $argv
+# if {[llength $user_args] >= 1 && [string length [lindex $user_args 0]] > 0} {
+#     set project_dir [file normalize [lindex $user_args 0]]
+# }
+# if {[llength $user_args] >= 2 && [string length [lindex $user_args 1]] > 0} {
+#     set target_part [lindex $user_args 1]
+# }
+# if {[llength $user_args] >= 3 && [string length [lindex $user_args 2]] > 0} {
+#     set hls_ip_dir [file normalize [lindex $user_args 2]]
+# }
+# source [file join $script_dir "create_bd.tcl"]
+## set script_dir [file dirname [file normalize [info script]]]
+## set repo_root [file normalize [file join $script_dir ".." ".." ".."]]
+## set project_dir [file normalize [file join $script_dir ".." ".build" "lmem_bd"]]
+## set target_part "xc7z100ffg900-2"
+## set hls_ip_dir [file normalize [file join $::env(TEMP) "lightning_hls_unified_obs" "solution1" "impl" "ip"]]
+## set design_name "lmem_bd"
+## set user_args $argv
+## if {[llength $user_args] >= 1 && [string length [lindex $user_args 0]] > 0} {
+##     set project_dir [file normalize [lindex $user_args 0]]
+## }
+## if {[llength $user_args] >= 2 && [string length [lindex $user_args 1]] > 0} {
+##     set target_part [lindex $user_args 1]
+## }
+## if {[llength $user_args] >= 3 && [string length [lindex $user_args 2]] > 0} {
+##     set hls_ip_dir [file normalize [lindex $user_args 2]]
+## }
+## set component_xml [file join $hls_ip_dir "component.xml"]
+## if {![file exists $component_xml]} {
+##     error "Missing HLS IP component.xml: $component_xml"
+## }
+## file mkdir $project_dir
+## cd $project_dir
+## create_project -force lmem $project_dir -part $target_part
+## set_property ip_repo_paths [list $hls_ip_dir] [current_project]
+## update_ip_catalog
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1700] Loaded user IP repository 'c:/Users/admin/AppData/Local/Temp/lightning_hls_unified_obs/solution1/impl/ip'.
+INFO: [IP_Flow 19-2313] Loaded Vivado IP repository 'E:/Xilinx/Vivado/2018.3/data/ip'.
+## add_files -norecurse [file join $repo_root "fpga" "rtl" "slam_accel_ctrl" "slam_accel_ctrl.v"]
+## add_files -fileset constrs_1 -norecurse [file join $script_dir "slam_accel_hls_mem_harness.xdc"]
+## update_compile_order -fileset sources_1
+## create_bd_design $design_name
+Wrote  : <W:\lmem_sim\lmem.srcs\sources_1\bd\lmem_bd\lmem_bd.bd> 
+## create_bd_port -dir I -type clk aclk
+## create_bd_port -dir I -type rst aresetn
+## set_property CONFIG.POLARITY ACTIVE_LOW [get_bd_ports aresetn]
+WARNING: [IP_Flow 19-587] [HDL Parser] HDL port or parameter 'status_idle' has a dependency on the module local parameter or undefined parameter 'FSM_IDLE'.
+WARNING: [IP_Flow 19-587] [HDL Parser] HDL port or parameter 'status_busy' has a dependency on the module local parameter or undefined parameter 'FSM_DISPATCH'.
+WARNING: [IP_Flow 19-587] [HDL Parser] HDL port or parameter 'status_busy' has a dependency on the module local parameter or undefined parameter 'FSM_WAIT'.
+WARNING: [IP_Flow 19-587] [HDL Parser] HDL port or parameter 'status_done' has a dependency on the module local parameter or undefined parameter 'FSM_DONE'.
+WARNING: [IP_Flow 19-587] [HDL Parser] HDL port or parameter 'status_error' has a dependency on the module local parameter or undefined parameter 'FSM_ERROR'.
+INFO: [IP_Flow 19-5107] Inferred bus interface 's_axi' of definition 'xilinx.com:interface:aximm:1.0' (from Xilinx Repository).
+INFO: [IP_Flow 19-5107] Inferred bus interface 'aresetn' of definition 'xilinx.com:signal:reset:1.0' (from Xilinx Repository).
+INFO: [IP_Flow 19-5107] Inferred bus interface 'aclk' of definition 'xilinx.com:signal:clock:1.0' (from Xilinx Repository).
+INFO: [IP_Flow 19-4728] Bus Interface 'aresetn': Added interface parameter 'POLARITY' with value 'ACTIVE_LOW'.
+INFO: [IP_Flow 19-4728] Bus Interface 'aclk': Added interface parameter 'ASSOCIATED_BUSIF' with value 's_axi'.
+INFO: [IP_Flow 19-4728] Bus Interface 'aclk': Added interface parameter 'ASSOCIATED_RESET' with value 'aresetn'.
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1700] Loaded user IP repository 'c:/Users/admin/AppData/Local/Temp/lightning_hls_unified_obs/solution1/impl/ip'.
+## set ctrl [create_bd_cell -type module -reference slam_accel_ctrl ctrl_0]
+## set hls [create_bd_cell -type ip -vlnv xilinx.com:hls:unified_surfel_observation_core:1.0 unified_obs_0]
+## set zero32 [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 const_zero_32]
+## set_property -dict [list CONFIG.CONST_WIDTH {32} CONFIG.CONST_VAL {0}] $zero32
+## connect_bd_net [get_bd_ports aclk] [get_bd_pins ctrl_0/aclk] [get_bd_pins unified_obs_0/ap_clk]
+## connect_bd_net [get_bd_ports aresetn] [get_bd_pins ctrl_0/aresetn] [get_bd_pins unified_obs_0/ap_rst_n]
+## connect_bd_net [get_bd_pins const_zero_32/dout] [get_bd_pins ctrl_0/unified_obs_error]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_ap_start] [get_bd_pins unified_obs_0/ap_start]
+WARNING: [BD 41-1306] The connection to interface pin /unified_obs_0/ap_start is being overridden by the user. This pin will not be connected as a part of interface connection ap_ctrl
+## connect_bd_net [get_bd_pins unified_obs_0/ap_done] [get_bd_pins ctrl_0/unified_obs_ap_done]
+WARNING: [BD 41-1306] The connection to interface pin /unified_obs_0/ap_done is being overridden by the user. This pin will not be connected as a part of interface connection ap_ctrl
+## connect_bd_net [get_bd_pins unified_obs_0/ap_idle] [get_bd_pins ctrl_0/unified_obs_ap_idle]
+WARNING: [BD 41-1306] The connection to interface pin /unified_obs_0/ap_idle is being overridden by the user. This pin will not be connected as a part of interface connection ap_ctrl
+## connect_bd_net [get_bd_pins unified_obs_0/ap_ready] [get_bd_pins ctrl_0/unified_obs_ap_ready]
+WARNING: [BD 41-1306] The connection to interface pin /unified_obs_0/ap_ready is being overridden by the user. This pin will not be connected as a part of interface connection ap_ctrl
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_num_points] [get_bd_pins unified_obs_0/num_points]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_scan_points_addr] [get_bd_pins unified_obs_0/scan_points]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_pose_addr] [get_bd_pins unified_obs_0/pose]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_map_header_addr] [get_bd_pins unified_obs_0/map_header]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_active_blocks_addr] [get_bd_pins unified_obs_0/active_blocks]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_obs_cells_addr] [get_bd_pins unified_obs_0/obs_cells]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_h_upper_addr] [get_bd_pins unified_obs_0/output_h_upper]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_b_addr] [get_bd_pins unified_obs_0/output_b]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_valid_count_addr] [get_bd_pins unified_obs_0/output_valid_count]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_reject_count_addr] [get_bd_pins unified_obs_0/output_reject_count]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_miss_count_addr] [get_bd_pins unified_obs_0/output_miss_count]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_flags_addr] [get_bd_pins unified_obs_0/output_flags]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_residual_sum_addr] [get_bd_pins unified_obs_0/output_residual_sum]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_residual_abs_sum_addr] [get_bd_pins unified_obs_0/output_residual_abs_sum]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_residual_max_abs_addr] [get_bd_pins unified_obs_0/output_residual_max_abs]
+## connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_reserved_addr] [get_bd_pins unified_obs_0/output_reserved]
+## foreach pin {
+##     s_axi_awaddr s_axi_awvalid s_axi_awready s_axi_wdata s_axi_wstrb s_axi_wvalid
+##     s_axi_wready s_axi_bresp s_axi_bvalid s_axi_bready s_axi_araddr s_axi_arvalid
+##     s_axi_arready s_axi_rdata s_axi_rresp s_axi_rvalid s_axi_rready
+## } {
+##     make_bd_pins_external [get_bd_pins ctrl_0/$pin]
+## }
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_awaddr is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_awvalid is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_awready is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_wdata is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_wstrb is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_wvalid is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_wready is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_bresp is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_bvalid is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_bready is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_araddr is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_arvalid is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_arready is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_rdata is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_rresp is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_rvalid is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+WARNING: [BD 41-1306] The connection to interface pin /ctrl_0/s_axi_rready is being overridden by the user. This pin will not be connected as a part of interface connection s_axi
+## foreach pin {
+##     unified_obs_output_addr kernel_sel mode
+## } {
+##     make_bd_pins_external [get_bd_pins ctrl_0/$pin]
+## }
+## proc add_bram_target {idx data_width addr_width} {
+##     set ctrl_name "axi_bram_ctrl_$idx"
+##     set mem_name "blk_mem_$idx"
+##     set gmem_name "m_axi_gmem$idx"
+## 
+##     create_bd_cell -type ip -vlnv xilinx.com:ip:axi_bram_ctrl:4.1 $ctrl_name
+##     create_bd_cell -type ip -vlnv xilinx.com:ip:blk_mem_gen:8.4 $mem_name
+## 
+##     set_property -dict [list \
+##         CONFIG.DATA_WIDTH $data_width \
+##         CONFIG.SINGLE_PORT_BRAM {1} \
+##         CONFIG.PROTOCOL {AXI4} \
+##     ] [get_bd_cells $ctrl_name]
+## 
+##     set_property -dict [list \
+##         CONFIG.Memory_Type {Single_Port_RAM} \
+##         CONFIG.Use_Byte_Write_Enable {true} \
+##         CONFIG.Byte_Size {8} \
+##     ] [get_bd_cells $mem_name]
+## 
+##     connect_bd_net [get_bd_ports aclk] [get_bd_pins $ctrl_name/s_axi_aclk]
+##     connect_bd_net [get_bd_ports aresetn] [get_bd_pins $ctrl_name/s_axi_aresetn]
+##     connect_bd_intf_net [get_bd_intf_pins unified_obs_0/$gmem_name] [get_bd_intf_pins $ctrl_name/S_AXI]
+##     connect_bd_intf_net [get_bd_intf_pins $ctrl_name/BRAM_PORTA] [get_bd_intf_pins $mem_name/BRAM_PORTA]
+##     assign_bd_address -offset 0x00000000 -range 4K [get_bd_addr_segs $ctrl_name/S_AXI/Mem0]
+## }
+## add_bram_target 0 128 32
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-2] lmem_bd_axi_bram_ctrl_0_0: In IP Integrator, please note that memory depth value gets calculated based on the Data Width of the IP and Address range selected in the Address Editor.Incase a validation error occured on the range of this parameter, please check if the selected Data width and the Address Range are valid. For valid Data width and memory depth values, please refer to the AXI BRAM Controller Product Guide.
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-1] lmem_bd_axi_bram_ctrl_0_0: In IP Integrator, The Maximum address range supported is 2G. Selecting the address range more than 2G in the address editor may resets the value of Memory depth to default value (1024). please refer to the AXI BRAM Controller Product Guide.
+INFO: [Device 21-403] Loading part xc7z100ffg900-2
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-2] lmem_bd_axi_bram_ctrl_0_0: In IP Integrator, please note that memory depth value gets calculated based on the Data Width of the IP and Address range selected in the Address Editor.Incase a validation error occured on the range of this parameter, please check if the selected Data width and the Address Range are valid. For valid Data width and memory depth values, please refer to the AXI BRAM Controller Product Guide.
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-1] lmem_bd_axi_bram_ctrl_0_0: In IP Integrator, The Maximum address range supported is 2G. Selecting the address range more than 2G in the address editor may resets the value of Memory depth to default value (1024). please refer to the AXI BRAM Controller Product Guide.
+</axi_bram_ctrl_0/S_AXI/Mem0> is being mapped into </unified_obs_0/Data_m_axi_gmem0> at <0x00000000 [ 4K ]>
+## add_bram_target 1 512 32
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-2] lmem_bd_axi_bram_ctrl_1_0: In IP Integrator, please note that memory depth value gets calculated based on the Data Width of the IP and Address range selected in the Address Editor.Incase a validation error occured on the range of this parameter, please check if the selected Data width and the Address Range are valid. For valid Data width and memory depth values, please refer to the AXI BRAM Controller Product Guide.
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-1] lmem_bd_axi_bram_ctrl_1_0: In IP Integrator, The Maximum address range supported is 2G. Selecting the address range more than 2G in the address editor may resets the value of Memory depth to default value (1024). please refer to the AXI BRAM Controller Product Guide.
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-2] lmem_bd_axi_bram_ctrl_1_0: In IP Integrator, please note that memory depth value gets calculated based on the Data Width of the IP and Address range selected in the Address Editor.Incase a validation error occured on the range of this parameter, please check if the selected Data width and the Address Range are valid. For valid Data width and memory depth values, please refer to the AXI BRAM Controller Product Guide.
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-1] lmem_bd_axi_bram_ctrl_1_0: In IP Integrator, The Maximum address range supported is 2G. Selecting the address range more than 2G in the address editor may resets the value of Memory depth to default value (1024). please refer to the AXI BRAM Controller Product Guide.
+</axi_bram_ctrl_1/S_AXI/Mem0> is being mapped into </unified_obs_0/Data_m_axi_gmem1> at <0x00000000 [ 4K ]>
+## add_bram_target 2 256 32
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-2] lmem_bd_axi_bram_ctrl_2_0: In IP Integrator, please note that memory depth value gets calculated based on the Data Width of the IP and Address range selected in the Address Editor.Incase a validation error occured on the range of this parameter, please check if the selected Data width and the Address Range are valid. For valid Data width and memory depth values, please refer to the AXI BRAM Controller Product Guide.
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-1] lmem_bd_axi_bram_ctrl_2_0: In IP Integrator, The Maximum address range supported is 2G. Selecting the address range more than 2G in the address editor may resets the value of Memory depth to default value (1024). please refer to the AXI BRAM Controller Product Guide.
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-2] lmem_bd_axi_bram_ctrl_2_0: In IP Integrator, please note that memory depth value gets calculated based on the Data Width of the IP and Address range selected in the Address Editor.Incase a validation error occured on the range of this parameter, please check if the selected Data width and the Address Range are valid. For valid Data width and memory depth values, please refer to the AXI BRAM Controller Product Guide.
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-1] lmem_bd_axi_bram_ctrl_2_0: In IP Integrator, The Maximum address range supported is 2G. Selecting the address range more than 2G in the address editor may resets the value of Memory depth to default value (1024). please refer to the AXI BRAM Controller Product Guide.
+</axi_bram_ctrl_2/S_AXI/Mem0> is being mapped into </unified_obs_0/Data_m_axi_gmem2> at <0x00000000 [ 4K ]>
+## add_bram_target 3 512 32
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-2] lmem_bd_axi_bram_ctrl_3_0: In IP Integrator, please note that memory depth value gets calculated based on the Data Width of the IP and Address range selected in the Address Editor.Incase a validation error occured on the range of this parameter, please check if the selected Data width and the Address Range are valid. For valid Data width and memory depth values, please refer to the AXI BRAM Controller Product Guide.
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-1] lmem_bd_axi_bram_ctrl_3_0: In IP Integrator, The Maximum address range supported is 2G. Selecting the address range more than 2G in the address editor may resets the value of Memory depth to default value (1024). please refer to the AXI BRAM Controller Product Guide.
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-2] lmem_bd_axi_bram_ctrl_3_0: In IP Integrator, please note that memory depth value gets calculated based on the Data Width of the IP and Address range selected in the Address Editor.Incase a validation error occured on the range of this parameter, please check if the selected Data width and the Address Range are valid. For valid Data width and memory depth values, please refer to the AXI BRAM Controller Product Guide.
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-1] lmem_bd_axi_bram_ctrl_3_0: In IP Integrator, The Maximum address range supported is 2G. Selecting the address range more than 2G in the address editor may resets the value of Memory depth to default value (1024). please refer to the AXI BRAM Controller Product Guide.
+</axi_bram_ctrl_3/S_AXI/Mem0> is being mapped into </unified_obs_0/Data_m_axi_gmem3> at <0x00000000 [ 4K ]>
+## add_bram_target 4 64 32
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-2] lmem_bd_axi_bram_ctrl_4_0: In IP Integrator, please note that memory depth value gets calculated based on the Data Width of the IP and Address range selected in the Address Editor.Incase a validation error occured on the range of this parameter, please check if the selected Data width and the Address Range are valid. For valid Data width and memory depth values, please refer to the AXI BRAM Controller Product Guide.
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-1] lmem_bd_axi_bram_ctrl_4_0: In IP Integrator, The Maximum address range supported is 2G. Selecting the address range more than 2G in the address editor may resets the value of Memory depth to default value (1024). please refer to the AXI BRAM Controller Product Guide.
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-2] lmem_bd_axi_bram_ctrl_4_0: In IP Integrator, please note that memory depth value gets calculated based on the Data Width of the IP and Address range selected in the Address Editor.Incase a validation error occured on the range of this parameter, please check if the selected Data width and the Address Range are valid. For valid Data width and memory depth values, please refer to the AXI BRAM Controller Product Guide.
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-1] lmem_bd_axi_bram_ctrl_4_0: In IP Integrator, The Maximum address range supported is 2G. Selecting the address range more than 2G in the address editor may resets the value of Memory depth to default value (1024). please refer to the AXI BRAM Controller Product Guide.
+</axi_bram_ctrl_4/S_AXI/Mem0> is being mapped into </unified_obs_0/Data_m_axi_gmem4> at <0x00000000 [ 4K ]>
+## validate_bd_design
+WARNING: [BD 41-2180] Resetting the memory initialization file of </blk_mem_0> to default.
+WARNING: [BD 41-2180] Resetting the memory initialization file of </blk_mem_3> to default.
+WARNING: [BD 41-2180] Resetting the memory initialization file of </blk_mem_4> to default.
+WARNING: [BD 41-2180] Resetting the memory initialization file of </blk_mem_2> to default.
+WARNING: [BD 41-2180] Resetting the memory initialization file of </blk_mem_1> to default.
+WARNING: [BD 41-927] Following properties on pin /ctrl_0/aclk have been updated from connected ip. They may not be synchronized with cell properties. You can set property on pin directly to confirm the value and resolve the warning.
+	CLK_DOMAIN=lmem_bd_aclk 
+WARNING: [BD 41-927] Following properties on pin /unified_obs_0/ap_clk have been updated from connected ip. They may not be synchronized with cell properties. You can set property on pin directly to confirm the value and resolve the warning.
+	CLK_DOMAIN=lmem_bd_aclk 
+## save_bd_design
+Wrote  : <W:\lmem_sim\lmem.srcs\sources_1\bd\lmem_bd\lmem_bd.bd> 
+## set bd_file [get_files -of_objects [get_filesets sources_1] *${design_name}.bd]
+## generate_target all $bd_file
+INFO: [BD 41-1662] The design 'lmem_bd.bd' is already validated. Therefore parameter propagation will not be re-run.
+WARNING: [BD 41-2180] Resetting the memory initialization file of </blk_mem_0> to default.
+WARNING: [BD 41-2180] Resetting the memory initialization file of </blk_mem_3> to default.
+WARNING: [BD 41-2180] Resetting the memory initialization file of </blk_mem_4> to default.
+WARNING: [BD 41-2180] Resetting the memory initialization file of </blk_mem_2> to default.
+WARNING: [BD 41-2180] Resetting the memory initialization file of </blk_mem_1> to default.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/blk_mem_0/addra'(32) to net 'axi_bram_ctrl_0_BRAM_PORTA_ADDR'(13) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/blk_mem_1/addra'(32) to net 'axi_bram_ctrl_1_BRAM_PORTA_ADDR'(15) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/blk_mem_2/addra'(32) to net 'axi_bram_ctrl_2_BRAM_PORTA_ADDR'(14) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/blk_mem_3/addra'(32) to net 'axi_bram_ctrl_3_BRAM_PORTA_ADDR'(15) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/blk_mem_4/addra'(32) to net 'axi_bram_ctrl_4_BRAM_PORTA_ADDR'(12) - Only lower order bits will be connected.
+VHDL Output written to : W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/synth/lmem_bd.v
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/blk_mem_0/addra'(32) to net 'axi_bram_ctrl_0_BRAM_PORTA_ADDR'(13) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/blk_mem_1/addra'(32) to net 'axi_bram_ctrl_1_BRAM_PORTA_ADDR'(15) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/blk_mem_2/addra'(32) to net 'axi_bram_ctrl_2_BRAM_PORTA_ADDR'(14) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/blk_mem_3/addra'(32) to net 'axi_bram_ctrl_3_BRAM_PORTA_ADDR'(15) - Only lower order bits will be connected.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/blk_mem_4/addra'(32) to net 'axi_bram_ctrl_4_BRAM_PORTA_ADDR'(12) - Only lower order bits will be connected.
+VHDL Output written to : W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/sim/lmem_bd.v
+VHDL Output written to : W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/hdl/lmem_bd_wrapper.v
+INFO: [BD 41-1029] Generation completed for the IP Integrator block ctrl_0 .
+WARNING: [IP_Flow 19-519] IP 'lmem_bd_unified_obs_0_0' detected a language mismatch between 'VHDL Simulation Wrapper' and 'Verilog Simulation' output products. Please check with the IP provider to see if this is expected.
+INFO: [BD 41-1029] Generation completed for the IP Integrator block unified_obs_0 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block const_zero_32 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block axi_bram_ctrl_0 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block blk_mem_0 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block axi_bram_ctrl_1 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block blk_mem_1 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block axi_bram_ctrl_2 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block blk_mem_2 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block axi_bram_ctrl_3 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block blk_mem_3 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block axi_bram_ctrl_4 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block blk_mem_4 .
+Exporting to file W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/hw_handoff/lmem_bd.hwh
+Generated Block Design Tcl file W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/hw_handoff/lmem_bd_bd.tcl
+Generated Hardware Definition File W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/synth/lmem_bd.hwdef
+## make_wrapper -files $bd_file -top -import
+WARNING: [Vivado 12-3482] The generated wrapper file has already been imported into the project, the imported file is:
+'W:/lmem_sim/lmem.srcs/sources_1/imports/hdl/lmem_bd_wrapper.v'
+## set wrapper_file [get_files *${design_name}_wrapper.v]
+## set_property top ${design_name}_wrapper [current_fileset]
+## update_compile_order -fileset sources_1
+## report_ip_status -file [file join $project_dir "lmem_ip_status.rpt"]
+## set external_m_axi [get_bd_intf_ports -quiet *m_axi_gmem*]
+## if {[llength $external_m_axi] != 0} {
+##     error "Unexpected external HLS AXI memory interfaces: $external_m_axi"
+## }
+## puts "BD_VALIDATE_PASS"
+BD_VALIDATE_PASS
+## puts "Project: $project_dir"
+Project: W:/lmem_sim
+## puts "HLS IP: $hls_ip_dir"
+HLS IP: C:/Users/admin/AppData/Local/Temp/lightning_hls_unified_obs/solution1/impl/ip
+## puts "Wrapper: $wrapper_file"
+Wrapper: W:/lmem_sim/lmem.srcs/sources_1/imports/hdl/lmem_bd_wrapper.v
+# add_files -fileset sim_1 -norecurse [file join $script_dir "tb_lmem_bd_smoke.v"]
+# set_property top tb_lmem_bd_smoke [get_filesets sim_1]
+# update_compile_order -fileset sim_1
+update_compile_order: Time (s): cpu = 00:00:00 ; elapsed = 00:00:06 . Memory (MB): peak = 765.211 ; gain = 0.000
+# launch_simulation
+INFO: [Vivado 12-5682] Launching behavioral simulation in 'W:/lmem_sim/lmem.sim/sim_1/behav/xsim'
+INFO: [Vivado 12-4795] Using compiled simulation libraries for IPs
+INFO: [SIM-utils-51] Simulation object is 'sim_1'
+INFO: [USF-XSim-7] Finding pre-compiled libraries...
+INFO: [USF-XSim-11] File 'E:/Xilinx/Vivado/2018.3/data/xsim/xsim.ini' copied to run dir:'W:/lmem_sim/lmem.sim/sim_1/behav/xsim'
+INFO: [SIM-utils-54] Inspecting design source files for 'tb_lmem_bd_smoke' in fileset 'sim_1'...
+INFO: [SIM-utils-43] Exported 'W:/lmem_sim/lmem.sim/sim_1/behav/xsim/p_anonymous_namesg8j_rom.dat'
+INFO: [USF-XSim-97] Finding global include files...
+INFO: [USF-XSim-98] Fetching design files from 'sim_1'...
+INFO: [USF-XSim-2] XSim::Compile design
+INFO: [USF-XSim-61] Executing 'COMPILE and ANALYZE' step in 'W:/lmem_sim/lmem.sim/sim_1/behav/xsim'
+"xvlog --incr --relax -prj tb_lmem_bd_smoke_vlog.prj"
+INFO: [VRFC 10-2263] Analyzing Verilog file "F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/rtl/slam_accel_ctrl/slam_accel_ctrl.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module slam_accel_ctrl
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.ip_user_files/bd/lmem_bd/ip/lmem_bd_ctrl_0_0/sim/lmem_bd_ctrl_0_0.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module lmem_bd_ctrl_0_0
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/p_anonymous_namesg8j.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module p_anonymous_namesg8j_rom
+INFO: [VRFC 10-311] analyzing module p_anonymous_namesg8j
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/p_anonymous_nameshbi.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module p_anonymous_nameshbi_ram
+INFO: [VRFC 10-311] analyzing module p_anonymous_nameshbi
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/p_anonymous_namesibs.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module p_anonymous_namesibs_ram
+INFO: [VRFC 10-311] analyzing module p_anonymous_namesibs
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/p_anonymous_namespace.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module p_anonymous_namespace
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/p_anonymous_namespace_1.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module p_anonymous_namespace_1
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/p_anonymous_namespace_2.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module p_anonymous_namespace_2
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/p_anonymous_namespace_3.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module p_anonymous_namespace_3
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/p_anonymous_namespace_4.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module p_anonymous_namespace_4
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/p_anonymous_namespace_5.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module p_anonymous_namespace_5
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/p_anonymous_namespace_6.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module p_anonymous_namespace_6
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/p_anonymous_namespace_7.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module p_anonymous_namespace_7
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/p_anonymous_namespace_8.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module p_anonymous_namespace_8
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/p_anonymous_namespace_9.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module p_anonymous_namespace_9
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/unified_surfel_obbkb.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module unified_surfel_obbkb
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/unified_surfel_obcud.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module unified_surfel_obcud
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/unified_surfel_obdEe.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module unified_surfel_obdEe
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/unified_surfel_obeOg.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module unified_surfel_obeOg
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/unified_surfel_obfYi.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module unified_surfel_obfYi
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/unified_surfel_objbC.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module unified_surfel_objbC
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/unified_surfel_obkbM.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module unified_surfel_obkbM_ram
+INFO: [VRFC 10-311] analyzing module unified_surfel_obkbM
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/unified_surfel_oblbW.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module unified_surfel_oblbW_ram
+INFO: [VRFC 10-311] analyzing module unified_surfel_oblbW
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/unified_surfel_obmb6.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module unified_surfel_obmb6_ram
+INFO: [VRFC 10-311] analyzing module unified_surfel_obmb6
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/unified_surfel_obncg.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module unified_surfel_obncg_ram
+INFO: [VRFC 10-311] analyzing module unified_surfel_obncg
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/unified_surfel_obser_1.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module unified_surfel_obser_1
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/unified_surfel_observation_core_gmem0_m_axi.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem0_m_axi
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem0_m_axi_reg_slice
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem0_m_axi_fifo
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem0_m_axi_buffer
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem0_m_axi_decoder
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem0_m_axi_throttl
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem0_m_axi_read
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem0_m_axi_write
+INFO: [VRFC 10-2458] undeclared symbol data_valid, assumed default net type wire [W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/unified_surfel_observation_core_gmem0_m_axi.v:2241]
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/unified_surfel_observation_core_gmem1_m_axi.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem1_m_axi
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem1_m_axi_reg_slice
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem1_m_axi_fifo
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem1_m_axi_buffer
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem1_m_axi_decoder
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem1_m_axi_throttl
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem1_m_axi_read
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem1_m_axi_write
+INFO: [VRFC 10-2458] undeclared symbol data_valid, assumed default net type wire [W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/unified_surfel_observation_core_gmem1_m_axi.v:2241]
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/unified_surfel_observation_core_gmem2_m_axi.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem2_m_axi
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem2_m_axi_reg_slice
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem2_m_axi_fifo
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem2_m_axi_buffer
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem2_m_axi_decoder
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem2_m_axi_throttl
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem2_m_axi_read
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem2_m_axi_write
+INFO: [VRFC 10-2458] undeclared symbol data_valid, assumed default net type wire [W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/unified_surfel_observation_core_gmem2_m_axi.v:2241]
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/unified_surfel_observation_core_gmem3_m_axi.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem3_m_axi
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem3_m_axi_reg_slice
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem3_m_axi_fifo
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem3_m_axi_buffer
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem3_m_axi_decoder
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem3_m_axi_throttl
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem3_m_axi_read
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem3_m_axi_write
+INFO: [VRFC 10-2458] undeclared symbol data_valid, assumed default net type wire [W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/unified_surfel_observation_core_gmem3_m_axi.v:2241]
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/unified_surfel_observation_core_gmem4_m_axi.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem4_m_axi
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem4_m_axi_reg_slice
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem4_m_axi_fifo
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem4_m_axi_buffer
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem4_m_axi_decoder
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem4_m_axi_throttl
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem4_m_axi_read
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_gmem4_m_axi_write
+INFO: [VRFC 10-2458] undeclared symbol data_valid, assumed default net type wire [W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/unified_surfel_observation_core_gmem4_m_axi.v:2241]
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/verilog/unified_surfel_observation_core.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.ip_user_files/bd/lmem_bd/ip/lmem_bd_const_zero_32_0/sim/lmem_bd_const_zero_32_0.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module lmem_bd_const_zero_32_0
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.ip_user_files/bd/lmem_bd/ip/lmem_bd_blk_mem_0_0/sim/lmem_bd_blk_mem_0_0.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module lmem_bd_blk_mem_0_0
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.ip_user_files/bd/lmem_bd/ip/lmem_bd_blk_mem_1_0/sim/lmem_bd_blk_mem_1_0.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module lmem_bd_blk_mem_1_0
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.ip_user_files/bd/lmem_bd/ip/lmem_bd_blk_mem_2_0/sim/lmem_bd_blk_mem_2_0.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module lmem_bd_blk_mem_2_0
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.ip_user_files/bd/lmem_bd/ip/lmem_bd_blk_mem_3_0/sim/lmem_bd_blk_mem_3_0.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module lmem_bd_blk_mem_3_0
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.ip_user_files/bd/lmem_bd/ip/lmem_bd_blk_mem_4_0/sim/lmem_bd_blk_mem_4_0.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module lmem_bd_blk_mem_4_0
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.ip_user_files/bd/lmem_bd/sim/lmem_bd.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module lmem_bd
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.srcs/sources_1/imports/hdl/lmem_bd_wrapper.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module lmem_bd_wrapper
+INFO: [VRFC 10-2263] Analyzing Verilog file "F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/slam_accel_hls_mem_harness/tb_lmem_bd_smoke.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tb_lmem_bd_smoke
+INFO: [VRFC 10-2263] Analyzing Verilog file "W:/lmem_sim/lmem.sim/sim_1/behav/xsim/glbl.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module glbl
+"xvhdl --incr --relax -prj tb_lmem_bd_smoke_vhdl.prj"
+INFO: [VRFC 10-163] Analyzing VHDL file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/ip/unified_surfel_observation_core_ap_dadddsub_3_full_dsp_64.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'unified_surfel_observation_core_ap_dadddsub_3_full_dsp_64'
+INFO: [VRFC 10-163] Analyzing VHDL file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/ip/unified_surfel_observation_core_ap_dadd_3_full_dsp_64.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'unified_surfel_observation_core_ap_dadd_3_full_dsp_64'
+INFO: [VRFC 10-163] Analyzing VHDL file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/ip/unified_surfel_observation_core_ap_dcmp_0_no_dsp_64.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'unified_surfel_observation_core_ap_dcmp_0_no_dsp_64'
+INFO: [VRFC 10-163] Analyzing VHDL file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/ip/unified_surfel_observation_core_ap_dmul_3_max_dsp_64.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'unified_surfel_observation_core_ap_dmul_3_max_dsp_64'
+INFO: [VRFC 10-163] Analyzing VHDL file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/ip/unified_surfel_observation_core_ap_dsub_3_full_dsp_64.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'unified_surfel_observation_core_ap_dsub_3_full_dsp_64'
+INFO: [VRFC 10-163] Analyzing VHDL file "W:/lmem_sim/lmem.srcs/sources_1/bd/lmem_bd/ipshared/62d7/hdl/ip/unified_surfel_observation_core_ap_fpext_0_no_dsp_32.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'unified_surfel_observation_core_ap_fpext_0_no_dsp_32'
+INFO: [VRFC 10-163] Analyzing VHDL file "W:/lmem_sim/lmem.ip_user_files/bd/lmem_bd/ip/lmem_bd_unified_obs_0_0/sim/lmem_bd_unified_obs_0_0.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'lmem_bd_unified_obs_0_0'
+INFO: [VRFC 10-163] Analyzing VHDL file "W:/lmem_sim/lmem.ip_user_files/bd/lmem_bd/ip/lmem_bd_axi_bram_ctrl_0_0/sim/lmem_bd_axi_bram_ctrl_0_0.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'lmem_bd_axi_bram_ctrl_0_0'
+INFO: [VRFC 10-163] Analyzing VHDL file "W:/lmem_sim/lmem.ip_user_files/bd/lmem_bd/ip/lmem_bd_axi_bram_ctrl_1_0/sim/lmem_bd_axi_bram_ctrl_1_0.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'lmem_bd_axi_bram_ctrl_1_0'
+INFO: [VRFC 10-163] Analyzing VHDL file "W:/lmem_sim/lmem.ip_user_files/bd/lmem_bd/ip/lmem_bd_axi_bram_ctrl_2_0/sim/lmem_bd_axi_bram_ctrl_2_0.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'lmem_bd_axi_bram_ctrl_2_0'
+INFO: [VRFC 10-163] Analyzing VHDL file "W:/lmem_sim/lmem.ip_user_files/bd/lmem_bd/ip/lmem_bd_axi_bram_ctrl_3_0/sim/lmem_bd_axi_bram_ctrl_3_0.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'lmem_bd_axi_bram_ctrl_3_0'
+INFO: [VRFC 10-163] Analyzing VHDL file "W:/lmem_sim/lmem.ip_user_files/bd/lmem_bd/ip/lmem_bd_axi_bram_ctrl_4_0/sim/lmem_bd_axi_bram_ctrl_4_0.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'lmem_bd_axi_bram_ctrl_4_0'
+run_program: Time (s): cpu = 00:00:00 ; elapsed = 00:00:09 . Memory (MB): peak = 765.645 ; gain = 0.039
+INFO: [USF-XSim-69] 'compile' step finished in '10' seconds
+INFO: [USF-XSim-3] XSim::Elaborate design
+INFO: [USF-XSim-61] Executing 'ELABORATE' step in 'W:/lmem_sim/lmem.sim/sim_1/behav/xsim'
+Vivado Simulator 2018.3
+Copyright 1986-1999, 2001-2018 Xilinx, Inc. All Rights Reserved.
+Running: E:/Xilinx/Vivado/2018.3/bin/unwrapped/win64.o/xelab.exe -wto 94705c345ee34aed859c3566f4aa8e9c --incr --debug typical --relax --mt 2 -L xil_defaultlib -L xbip_utils_v3_0_9 -L axi_utils_v2_0_5 -L xbip_pipe_v3_0_5 -L xbip_dsp48_wrapper_v3_0_4 -L xbip_dsp48_addsub_v3_0_5 -L xbip_dsp48_multadd_v3_0_5 -L xbip_bram18k_v3_0_5 -L mult_gen_v12_0_14 -L floating_point_v7_1_7 -L xlconstant_v1_1_5 -L blk_mem_gen_v8_3_6 -L axi_bram_ctrl_v4_1_0 -L blk_mem_gen_v8_4_2 -L unisims_ver -L unimacro_ver -L secureip -L xpm --snapshot tb_lmem_bd_smoke_behav xil_defaultlib.tb_lmem_bd_smoke xil_defaultlib.glbl -log elaborate.log 
+Using 2 slave threads.
+Starting static elaboration
+Completed static elaboration
+Starting simulation data flow analysis
+Completed simulation data flow analysis
+Time Resolution for simulation is 1ps
+Compiling package std.standard
+Compiling package std.textio
+Compiling package ieee.std_logic_1164
+Compiling package ieee.numeric_std
+Compiling package ieee.std_logic_arith
+Compiling package xpm.vcomponents
+Compiling package axi_bram_ctrl_v4_1_0.axi_bram_ctrl_funcs
+Compiling package ieee.vital_timing
+Compiling package ieee.vital_primitives
+Compiling package unisim.vpkg
+Compiling package unisim.vcomponents
+Compiling package floating_point_v7_1_7.floating_point_v7_1_7_viv_comp
+Compiling package xbip_utils_v3_0_9.xbip_utils_v3_0_9_pkg
+Compiling package axi_utils_v2_0_5.axi_utils_v2_0_5_pkg
+Compiling package floating_point_v7_1_7.floating_point_v7_1_7_consts
+Compiling package ieee.math_real
+Compiling package floating_point_v7_1_7.floating_point_v7_1_7_exp_table_...
+Compiling package mult_gen_v12_0_14.mult_gen_v12_0_14_pkg
+Compiling package ieee.std_logic_signed
+Compiling package floating_point_v7_1_7.floating_point_v7_1_7_pkg
+Compiling package floating_point_v7_1_7.flt_utils
+Compiling package xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv_comp
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.sng_port_arb [\sng_port_arb(c_s_axi_addr_width...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.wrap_brst [\wrap_brst(c_axi_addr_width=13,c...]
+Compiling architecture muxcy_v of entity unisim.MUXCY [muxcy_default]
+Compiling architecture muxcy_l_v of entity unisim.MUXCY_L [muxcy_l_default]
+Compiling architecture xorcy_v of entity unisim.XORCY [xorcy_default]
+Compiling architecture srl16e_v of entity unisim.SRL16E [\SRL16E(0,15)\]
+Compiling architecture fdre_v of entity unisim.FDRE [fdre_default]
+Compiling architecture fdr_v of entity unisim.FDR [fdr_default]
+Compiling architecture imp of entity axi_bram_ctrl_v4_1_0.SRL_FIFO [\SRL_FIFO(c_data_bits=1,c_depth=...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.wr_chnl [\wr_chnl(c_axi_addr_width=13,c_b...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.rd_chnl [\rd_chnl(c_axi_addr_width=13,c_b...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.full_axi [\full_axi(c_s_axi_addr_width=13,...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.axi_bram_ctrl_top [\axi_bram_ctrl_top(c_bram_addr_w...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.axi_bram_ctrl [\axi_bram_ctrl(c_memory_depth=51...]
+Compiling architecture lmem_bd_axi_bram_ctrl_0_0_arch of entity xil_defaultlib.lmem_bd_axi_bram_ctrl_0_0 [lmem_bd_axi_bram_ctrl_0_0_defaul...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.sng_port_arb [\sng_port_arb(c_s_axi_addr_width...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.wrap_brst [\wrap_brst(c_axi_addr_width=15,c...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.wr_chnl [\wr_chnl(c_axi_addr_width=15,c_b...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.rd_chnl [\rd_chnl(c_axi_addr_width=15,c_b...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.full_axi [\full_axi(c_s_axi_addr_width=15,...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.axi_bram_ctrl_top [\axi_bram_ctrl_top(c_bram_addr_w...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.axi_bram_ctrl [\axi_bram_ctrl(c_memory_depth=51...]
+Compiling architecture lmem_bd_axi_bram_ctrl_1_0_arch of entity xil_defaultlib.lmem_bd_axi_bram_ctrl_1_0 [lmem_bd_axi_bram_ctrl_1_0_defaul...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.sng_port_arb [\sng_port_arb(c_s_axi_addr_width...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.wrap_brst [\wrap_brst(c_axi_addr_width=14,c...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.wr_chnl [\wr_chnl(c_axi_addr_width=14,c_b...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.rd_chnl [\rd_chnl(c_axi_addr_width=14,c_b...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.full_axi [\full_axi(c_s_axi_addr_width=14,...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.axi_bram_ctrl_top [\axi_bram_ctrl_top(c_bram_addr_w...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.axi_bram_ctrl [\axi_bram_ctrl(c_memory_depth=51...]
+Compiling architecture lmem_bd_axi_bram_ctrl_2_0_arch of entity xil_defaultlib.lmem_bd_axi_bram_ctrl_2_0 [lmem_bd_axi_bram_ctrl_2_0_defaul...]
+Compiling architecture lmem_bd_axi_bram_ctrl_3_0_arch of entity xil_defaultlib.lmem_bd_axi_bram_ctrl_3_0 [lmem_bd_axi_bram_ctrl_3_0_defaul...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.sng_port_arb [\sng_port_arb(c_s_axi_addr_width...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.wrap_brst [\wrap_brst(c_axi_addr_width=12,c...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.wr_chnl [\wr_chnl(c_axi_addr_width=12,c_b...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.rd_chnl [\rd_chnl(c_axi_addr_width=12,c_b...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.full_axi [\full_axi(c_s_axi_addr_width=12,...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.axi_bram_ctrl_top [\axi_bram_ctrl_top(c_bram_addr_w...]
+Compiling architecture implementation of entity axi_bram_ctrl_v4_1_0.axi_bram_ctrl [\axi_bram_ctrl(c_memory_depth=51...]
+Compiling architecture lmem_bd_axi_bram_ctrl_4_0_arch of entity xil_defaultlib.lmem_bd_axi_bram_ctrl_4_0 [lmem_bd_axi_bram_ctrl_4_0_defaul...]
+Compiling module blk_mem_gen_v8_4_2.blk_mem_gen_v8_4_2_output_stage(...
+Compiling module blk_mem_gen_v8_4_2.blk_mem_gen_v8_4_2_output_stage(...
+Compiling module blk_mem_gen_v8_4_2.blk_mem_gen_v8_4_2_softecc_outpu...
+Compiling module blk_mem_gen_v8_4_2.blk_mem_gen_v8_4_2_mem_module(C_...
+Compiling module blk_mem_gen_v8_4_2.blk_mem_gen_v8_4_2(C_FAMILY="zyn...
+Compiling module xil_defaultlib.lmem_bd_blk_mem_0_0
+Compiling module blk_mem_gen_v8_4_2.blk_mem_gen_v8_4_2_output_stage(...
+Compiling module blk_mem_gen_v8_4_2.blk_mem_gen_v8_4_2_output_stage(...
+Compiling module blk_mem_gen_v8_4_2.blk_mem_gen_v8_4_2_softecc_outpu...
+Compiling module blk_mem_gen_v8_4_2.blk_mem_gen_v8_4_2_mem_module(C_...
+Compiling module blk_mem_gen_v8_4_2.blk_mem_gen_v8_4_2(C_FAMILY="zyn...
+Compiling module xil_defaultlib.lmem_bd_blk_mem_1_0
+Compiling module blk_mem_gen_v8_4_2.blk_mem_gen_v8_4_2_output_stage(...
+Compiling module blk_mem_gen_v8_4_2.blk_mem_gen_v8_4_2_output_stage(...
+Compiling module blk_mem_gen_v8_4_2.blk_mem_gen_v8_4_2_softecc_outpu...
+Compiling module blk_mem_gen_v8_4_2.blk_mem_gen_v8_4_2_mem_module(C_...
+Compiling module blk_mem_gen_v8_4_2.blk_mem_gen_v8_4_2(C_FAMILY="zyn...
+Compiling module xil_defaultlib.lmem_bd_blk_mem_2_0
+Compiling module xil_defaultlib.lmem_bd_blk_mem_3_0
+Compiling module blk_mem_gen_v8_4_2.blk_mem_gen_v8_4_2_output_stage(...
+Compiling module blk_mem_gen_v8_4_2.blk_mem_gen_v8_4_2_output_stage(...
+Compiling module blk_mem_gen_v8_4_2.blk_mem_gen_v8_4_2_softecc_outpu...
+Compiling module blk_mem_gen_v8_4_2.blk_mem_gen_v8_4_2_mem_module(C_...
+Compiling module blk_mem_gen_v8_4_2.blk_mem_gen_v8_4_2(C_FAMILY="zyn...
+Compiling module xil_defaultlib.lmem_bd_blk_mem_4_0
+Compiling module xlconstant_v1_1_5.xlconstant_v1_1_5_xlconstant(CON...
+Compiling module xil_defaultlib.lmem_bd_const_zero_32_0
+Compiling module xil_defaultlib.slam_accel_ctrl
+Compiling module xil_defaultlib.lmem_bd_ctrl_0_0
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.unified_surfel_obkbM_ram
+Compiling module xil_defaultlib.unified_surfel_obkbM(DataWidth=6...
+Compiling module xil_defaultlib.unified_surfel_oblbW_ram
+Compiling module xil_defaultlib.unified_surfel_oblbW(DataWidth=6...
+Compiling module xil_defaultlib.unified_surfel_obmb6_ram
+Compiling module xil_defaultlib.unified_surfel_obmb6(DataWidth=3...
+Compiling module xil_defaultlib.unified_surfel_obncg_ram
+Compiling module xil_defaultlib.unified_surfel_obncg(DataWidth=6...
+Compiling module xil_defaultlib.p_anonymous_nameshbi_ram
+Compiling module xil_defaultlib.p_anonymous_nameshbi(DataWidth=3...
+Compiling module xil_defaultlib.p_anonymous_namesibs_ram
+Compiling module xil_defaultlib.p_anonymous_namesibs(DataWidth=3...
+Compiling module xil_defaultlib.p_anonymous_namesg8j_rom
+Compiling module xil_defaultlib.p_anonymous_namesg8j(DataWidth=5...
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=23,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=8,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=4,length=0)\]
+Compiling architecture struct of entity floating_point_v7_1_7.carry_chain [\carry_chain(c_xdevicefamily="ki...]
+Compiling architecture synth of entity floating_point_v7_1_7.compare_eq_im [\compare_eq_im(c_xdevicefamily="...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(length=0,fast_input=true)...]
+Compiling architecture rtl of entity floating_point_v7_1_7.special_detect [\special_detect(a_fw=24,op_delay...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=2,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=4,length=0,fast_inp...]
+Compiling architecture rtl of entity floating_point_v7_1_7.flt_to_flt_conv_exp [\flt_to_flt_conv_exp(r_w=64,r_ew...]
+Compiling architecture synth of entity floating_point_v7_1_7.flt_dec_op [\flt_dec_op(c_xdevicefamily="vir...]
+Compiling architecture rtl of entity floating_point_v7_1_7.flt_to_flt_conv [\flt_to_flt_conv(c_xdevicefamily...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=64,length=0)\]
+Compiling architecture xilinx of entity floating_point_v7_1_7.floating_point_v7_1_7_viv [\floating_point_v7_1_7_viv(c_xde...]
+Compiling architecture xilinx of entity floating_point_v7_1_7.floating_point_v7_1_7 [\floating_point_v7_1_7(c_xdevice...]
+Compiling architecture unified_surfel_observation_core_ap_fpext_0_no_dsp_32_arch of entity xil_defaultlib.unified_surfel_observation_core_ap_fpext_0_no_dsp_32 [unified_surfel_observation_core_...]
+Compiling module xil_defaultlib.unified_surfel_obbkb(ID=1)
+Compiling architecture dsp48e1_v of entity unisim.DSP48E1 [\DSP48E1(acascreg=0,adreg=0,alum...]
+Compiling architecture rtl of entity floating_point_v7_1_7.dsp48e1_wrapper [\dsp48e1_wrapper(a_width=19,b_wi...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=7,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=16,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=17,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=25,length=0)\]
+Compiling architecture dsp48e1_v of entity unisim.DSP48E1 [\DSP48E1(acascreg=0,adreg=0,alum...]
+Compiling architecture rtl of entity floating_point_v7_1_7.dsp48e1_wrapper [\dsp48e1_wrapper(a_width=17,b_wi...]
+Compiling architecture dsp48e1_v of entity unisim.DSP48E1 [\DSP48E1(acascreg=0,adreg=0,alum...]
+Compiling architecture rtl of entity floating_point_v7_1_7.dsp48e1_wrapper [\dsp48e1_wrapper(a_width=17,b_wi...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_latency=...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [delay_default]
+Compiling architecture dsp48e1_v of entity unisim.DSP48E1 [\DSP48E1(acascreg=0,adreg=0,alum...]
+Compiling architecture rtl of entity floating_point_v7_1_7.dsp48e1_wrapper [\dsp48e1_wrapper(a_width=17,b_wi...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=19,length=0)\]
+Compiling architecture dsp48e1_v of entity unisim.DSP48E1 [\DSP48E1(acascreg=0,adreg=0,alum...]
+Compiling architecture rtl of entity floating_point_v7_1_7.dsp48e1_wrapper [\dsp48e1_wrapper(a_width=19,b_wi...]
+Compiling architecture dsp48e1_v of entity unisim.DSP48E1 [\DSP48E1(adreg=0,alumodereg=0,ca...]
+Compiling architecture rtl of entity floating_point_v7_1_7.dsp48e1_wrapper [\dsp48e1_wrapper(a_width=19,b_wi...]
+Compiling architecture dsp48e1_v of entity unisim.DSP48E1 [\DSP48E1(acascreg=0,adreg=0,alum...]
+Compiling architecture rtl of entity floating_point_v7_1_7.dsp48e1_wrapper [\dsp48e1_wrapper(a_width=19,b_wi...]
+Compiling architecture dsp48e1_v of entity unisim.DSP48E1 [\DSP48E1(adreg=0,alumodereg=0,ca...]
+Compiling architecture rtl of entity floating_point_v7_1_7.dsp48e1_wrapper [\dsp48e1_wrapper(a_width=19,b_wi...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_latency=...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=17)\]
+Compiling architecture dsp48e1_v of entity unisim.DSP48E1 [\DSP48E1(acascreg=0,adreg=0,alum...]
+Compiling architecture rtl of entity floating_point_v7_1_7.dsp48e1_wrapper [\dsp48e1_wrapper(a_width=19,b_wi...]
+Compiling architecture struct of entity floating_point_v7_1_7.fix_mult_dsp48e1_dbl [\fix_mult_dsp48e1_dbl(mult_usage...]
+Compiling architecture rtl of entity floating_point_v7_1_7.fix_mult [\fix_mult(c_xdevicefamily="virte...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=11,length=0,fast_in...]
+Compiling architecture struct of entity floating_point_v7_1_7.carry_chain [\carry_chain(c_xdevicefamily="vi...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=9,length=0)\]
+Compiling architecture struct of entity floating_point_v7_1_7.carry_chain [\carry_chain(c_xdevicefamily="vi...]
+Compiling architecture synth of entity floating_point_v7_1_7.compare_eq_im [\compare_eq_im(c_xdevicefamily="...]
+Compiling architecture rtl of entity floating_point_v7_1_7.special_detect [\special_detect(c_xdevicefamily=...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_latency=...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(length=2)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_latency=...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=2,length=2,fast_inp...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_latency=...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(length=2,fast_input=true)...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_latency=...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=4,length=2,fast_inp...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_latency=...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=11,length=2)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=3,length=0,fast_inp...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=14,length=0)\]
+Compiling architecture rtl of entity floating_point_v7_1_7.flt_mult_exp [\flt_mult_exp(c_xdevicefamily="v...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=11,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=48,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=18,length=0)\]
+Compiling architecture dsp48e1_v of entity unisim.DSP48E1 [\DSP48E1(acascreg=0,adreg=0,alum...]
+Compiling architecture rtl of entity floating_point_v7_1_7.dsp48e1_wrapper [\dsp48e1_wrapper(b_width=18,c_wi...]
+Compiling architecture struct of entity floating_point_v7_1_7.carry_chain [\carry_chain(c_xdevicefamily="vi...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=28,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=29,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=54,length=0,fast_in...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=3,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=2,length=0,fast_inp...]
+Compiling architecture struct of entity floating_point_v7_1_7.carry_chain [\carry_chain(c_xdevicefamily="vi...]
+Compiling architecture rtl of entity floating_point_v7_1_7.flt_round_bit [\flt_round_bit(c_xdevicefamily="...]
+Compiling architecture rtl of entity floating_point_v7_1_7.renorm_and_round_logic [\renorm_and_round_logic(c_xdevic...]
+Compiling architecture rtl of entity floating_point_v7_1_7.flt_mult_round [\flt_mult_round(c_xdevicefamily=...]
+Compiling architecture synth of entity floating_point_v7_1_7.flt_dec_op_lat [\flt_dec_op_lat(c_xdevicefamily=...]
+Compiling architecture rtl of entity floating_point_v7_1_7.flt_mult [\flt_mult(c_xdevicefamily="virte...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_latency=...]
+Compiling architecture xilinx of entity floating_point_v7_1_7.floating_point_v7_1_7_viv [\floating_point_v7_1_7_viv(c_xde...]
+Compiling architecture xilinx of entity floating_point_v7_1_7.floating_point_v7_1_7 [\floating_point_v7_1_7(c_xdevice...]
+Compiling architecture unified_surfel_observation_core_ap_dmul_3_max_dsp_64_arch of entity xil_defaultlib.unified_surfel_observation_core_ap_dmul_3_max_dsp_64 [unified_surfel_observation_core_...]
+Compiling module xil_defaultlib.unified_surfel_obfYi(ID=1)
+Compiling module xil_defaultlib.p_anonymous_namespace_6
+Compiling module xil_defaultlib.p_anonymous_namespace_7
+Compiling module xil_defaultlib.p_anonymous_namespace_8
+Compiling module xil_defaultlib.p_anonymous_namespace_5
+Compiling module xil_defaultlib.p_anonymous_namespace_9
+Compiling module xil_defaultlib.p_anonymous_namespace_4
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_latency=...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=52)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=54,length=0)\]
+Compiling architecture muxf7_v of entity unisim.MUXF7 [muxf7_default]
+Compiling architecture muxf8_v of entity unisim.MUXF8 [muxf8_default]
+Compiling architecture struct of entity floating_point_v7_1_7.carry_chain [\carry_chain(c_xdevicefamily="vi...]
+Compiling architecture synth of entity floating_point_v7_1_7.compare_eq_im [\compare_eq_im(c_xdevicefamily="...]
+Compiling architecture rtl of entity floating_point_v7_1_7.zero_det_sel [\zero_det_sel(c_xdevicefamily="v...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=55,length=0)\]
+Compiling architecture rtl of entity floating_point_v7_1_7.shift_msb_first [\shift_msb_first(a_width=54,regi...]
+Compiling architecture rtl of entity floating_point_v7_1_7.alignment [\alignment(c_xdevicefamily="virt...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_latency=...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(fast_input=true)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=47,length=0)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=30,length=0)\]
+Compiling architecture rtl of entity floating_point_v7_1_7.dsp48e1_wrapper [\dsp48e1_wrapper(a_width=30,b_wi...]
+Compiling architecture dsp48e1_v of entity unisim.DSP48E1 [\DSP48E1(acascreg=0,adreg=0,alum...]
+Compiling architecture rtl of entity floating_point_v7_1_7.dsp48e1_wrapper [\dsp48e1_wrapper(a_width=30,b_wi...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_latency=...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=9)\]
+Compiling architecture struct of entity floating_point_v7_1_7.carry_chain [\carry_chain(c_xdevicefamily="vi...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=56,length=0)\]
+Compiling architecture synth of entity floating_point_v7_1_7.addsub_dsp [\addsub_dsp(c_xdevicefamily="vir...]
+Compiling architecture rtl of entity floating_point_v7_1_7.addsub [\addsub(c_xdevicefamily="virtex7...]
+Compiling architecture rtl of entity floating_point_v7_1_7.align_add [\align_add(c_xdevicefamily="virt...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=6,length=0,fast_inp...]
+Compiling architecture struct of entity floating_point_v7_1_7.carry_chain [\carry_chain(c_xdevicefamily="vi...]
+Compiling architecture rtl of entity floating_point_v7_1_7.mux4 [\mux4(c_xdevicefamily="virtex7",...]
+Compiling architecture rtl of entity floating_point_v7_1_7.mux4 [\mux4(c_xdevicefamily="virtex7",...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_latency=...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=2)\]
+Compiling architecture rtl of entity floating_point_v7_1_7.mux4 [\mux4(c_xdevicefamily="virtex7",...]
+Compiling architecture rtl of entity floating_point_v7_1_7.mux4 [\mux4(c_xdevicefamily="virtex7",...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=8,length=0,fast_inp...]
+Compiling architecture struct of entity floating_point_v7_1_7.carry_chain [\carry_chain(c_xdevicefamily="vi...]
+Compiling architecture rtl of entity floating_point_v7_1_7.lead_zero_encode [\lead_zero_encode(c_xdevicefamil...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_latency=...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=56)\]
+Compiling architecture rtl of entity floating_point_v7_1_7.shift_msb_first [\shift_msb_first(a_width=56,resu...]
+Compiling architecture struct of entity floating_point_v7_1_7.carry_chain [\carry_chain(c_xdevicefamily="vi...]
+Compiling architecture rtl of entity floating_point_v7_1_7.flt_round_bit [\flt_round_bit(c_xdevicefamily="...]
+Compiling architecture rtl of entity floating_point_v7_1_7.renorm_and_round_logic [\renorm_and_round_logic(c_xdevic...]
+Compiling architecture rtl of entity floating_point_v7_1_7.norm_and_round_logic [\norm_and_round_logic(c_xdevicef...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=12,length=0)\]
+Compiling architecture struct of entity floating_point_v7_1_7.carry_chain [\carry_chain(c_xdevicefamily="vi...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=12,length=0,fast_in...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_latency=...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=12,length=2)\]
+Compiling architecture fde_v of entity unisim.FDE [fde_default]
+Compiling architecture struct of entity floating_point_v7_1_7.carry_chain [\carry_chain(c_xdevicefamily="vi...]
+Compiling architecture synth of entity floating_point_v7_1_7.compare_eq_im [\compare_eq_im(c_xdevicefamily="...]
+Compiling architecture rtl of entity floating_point_v7_1_7.special_detect [\special_detect(c_xdevicefamily=...]
+Compiling architecture struct of entity floating_point_v7_1_7.carry_chain [\carry_chain(c_xdevicefamily="vi...]
+Compiling architecture synth of entity floating_point_v7_1_7.compare_gt [\compare_gt(c_xdevicefamily="vir...]
+Compiling architecture struct of entity floating_point_v7_1_7.carry_chain [\carry_chain(c_xdevicefamily="vi...]
+Compiling architecture synth of entity floating_point_v7_1_7.compare_eq [\compare_eq(c_xdevicefamily="vir...]
+Compiling architecture synth of entity floating_point_v7_1_7.compare [\compare(c_xdevicefamily="virtex...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_latency=...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=11)\]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_latency=...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=12)\]
+Compiling architecture rtl of entity floating_point_v7_1_7.flt_add_exp [\flt_add_exp(c_xdevicefamily="vi...]
+Compiling architecture synth of entity floating_point_v7_1_7.flt_dec_op [\flt_dec_op(c_xdevicefamily="vir...]
+Compiling architecture rtl of entity floating_point_v7_1_7.flt_add_logic [\flt_add_logic(c_xdevicefamily="...]
+Compiling architecture rtl of entity floating_point_v7_1_7.flt_add [\flt_add(c_xdevicefamily="virtex...]
+Compiling architecture xilinx of entity floating_point_v7_1_7.floating_point_v7_1_7_viv [\floating_point_v7_1_7_viv(c_xde...]
+Compiling architecture xilinx of entity floating_point_v7_1_7.floating_point_v7_1_7 [\floating_point_v7_1_7(c_xdevice...]
+Compiling architecture unified_surfel_observation_core_ap_dadddsub_3_full_dsp_64_arch of entity xil_defaultlib.unified_surfel_observation_core_ap_dadddsub_3_full_dsp_64 [unified_surfel_observation_core_...]
+Compiling module xil_defaultlib.unified_surfel_obcud(ID=1)
+Compiling architecture rtl of entity floating_point_v7_1_7.flt_add [\flt_add(c_xdevicefamily="virtex...]
+Compiling architecture xilinx of entity floating_point_v7_1_7.floating_point_v7_1_7_viv [\floating_point_v7_1_7_viv(c_xde...]
+Compiling architecture xilinx of entity floating_point_v7_1_7.floating_point_v7_1_7 [\floating_point_v7_1_7(c_xdevice...]
+Compiling architecture unified_surfel_observation_core_ap_dsub_3_full_dsp_64_arch of entity xil_defaultlib.unified_surfel_observation_core_ap_dsub_3_full_dsp_64 [unified_surfel_observation_core_...]
+Compiling module xil_defaultlib.unified_surfel_obdEe(ID=1)
+Compiling architecture struct of entity floating_point_v7_1_7.carry_chain [\carry_chain(c_xdevicefamily="vi...]
+Compiling architecture synth of entity floating_point_v7_1_7.compare_eq_im [\compare_eq_im(c_xdevicefamily="...]
+Compiling architecture synth of entity floating_point_v7_1_7.compare_ne_im [\compare_ne_im(c_xdevicefamily="...]
+Compiling architecture struct of entity floating_point_v7_1_7.carry_chain [\carry_chain(c_xdevicefamily="vi...]
+Compiling architecture synth of entity floating_point_v7_1_7.compare_eq_im [\compare_eq_im(c_xdevicefamily="...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=22,length=0)\]
+Compiling architecture struct of entity floating_point_v7_1_7.carry_chain [\carry_chain(c_xdevicefamily="vi...]
+Compiling architecture synth of entity floating_point_v7_1_7.compare_eq [\compare_eq(c_xdevicefamily="vir...]
+Compiling architecture synth of entity xbip_pipe_v3_0_5.xbip_pipe_v3_0_5_viv [\xbip_pipe_v3_0_5_viv(c_has_ce=1...]
+Compiling architecture rtl of entity floating_point_v7_1_7.delay [\delay(width=32,length=0)\]
+Compiling architecture struct of entity floating_point_v7_1_7.carry_chain [\carry_chain(c_xdevicefamily="vi...]
+Compiling architecture synth of entity floating_point_v7_1_7.compare_gt [\compare_gt(c_xdevicefamily="vir...]
+Compiling architecture rtl of entity floating_point_v7_1_7.fp_cmp [\fp_cmp(c_xdevicefamily="virtex7...]
+Compiling architecture xilinx of entity floating_point_v7_1_7.floating_point_v7_1_7_viv [\floating_point_v7_1_7_viv(c_xde...]
+Compiling architecture xilinx of entity floating_point_v7_1_7.floating_point_v7_1_7 [\floating_point_v7_1_7(c_xdevice...]
+Compiling architecture unified_surfel_observation_core_ap_dcmp_0_no_dsp_64_arch of entity xil_defaultlib.unified_surfel_observation_core_ap_dcmp_0_no_dsp_64 [unified_surfel_observation_core_...]
+Compiling module xil_defaultlib.unified_surfel_objbC(ID=1)
+Compiling module xil_defaultlib.p_anonymous_namespace_3
+Compiling architecture rtl of entity floating_point_v7_1_7.flt_add [\flt_add(c_xdevicefamily="virtex...]
+Compiling architecture xilinx of entity floating_point_v7_1_7.floating_point_v7_1_7_viv [\floating_point_v7_1_7_viv(c_xde...]
+Compiling architecture xilinx of entity floating_point_v7_1_7.floating_point_v7_1_7 [\floating_point_v7_1_7(c_xdevice...]
+Compiling architecture unified_surfel_observation_core_ap_dadd_3_full_dsp_64_arch of entity xil_defaultlib.unified_surfel_observation_core_ap_dadd_3_full_dsp_64 [unified_surfel_observation_core_...]
+Compiling module xil_defaultlib.unified_surfel_obeOg(ID=1)
+Compiling module xil_defaultlib.p_anonymous_namespace_1
+Compiling module xil_defaultlib.p_anonymous_namespace_2
+Compiling module xil_defaultlib.p_anonymous_namespace
+Compiling module xil_defaultlib.unified_surfel_obser_1
+Compiling module xil_defaultlib.unified_surfel_observation_core(...
+Compiling architecture lmem_bd_unified_obs_0_0_arch of entity xil_defaultlib.lmem_bd_unified_obs_0_0 [lmem_bd_unified_obs_0_0_default]
+Compiling module xil_defaultlib.lmem_bd
+Compiling module xil_defaultlib.lmem_bd_wrapper
+Compiling module xil_defaultlib.tb_lmem_bd_smoke
+Compiling module xil_defaultlib.glbl
+Built simulation snapshot tb_lmem_bd_smoke_behav
+
+****** Webtalk v2018.3 (64-bit)
+  **** SW Build 2405991 on Thu Dec  6 23:38:27 MST 2018
+  **** IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
+    ** Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.
+
+source W:/lmem_sim/lmem.sim/sim_1/behav/xsim/xsim.dir/tb_lmem_bd_smoke_behav/webtalk/xsim_webtalk.tcl -notrace
+INFO: [Common 17-206] Exiting Webtalk at Wed Jun 17 15:54:08 2026...
+run_program: Time (s): cpu = 00:00:00 ; elapsed = 00:01:04 . Memory (MB): peak = 765.680 ; gain = 0.000
+INFO: [USF-XSim-69] 'elaborate' step finished in '63' seconds
+INFO: [USF-XSim-4] XSim::Simulate design
+INFO: [USF-XSim-61] Executing 'SIMULATE' step in 'W:/lmem_sim/lmem.sim/sim_1/behav/xsim'
+INFO: [USF-XSim-98] *** Running xsim
+   with args "tb_lmem_bd_smoke_behav -key {Behavioral:sim_1:Functional:tb_lmem_bd_smoke} -tclbatch {tb_lmem_bd_smoke.tcl} -protoinst "protoinst_files/lmem_bd.protoinst" -log {simulate.log}"
+INFO: [USF-XSim-8] Loading simulator feature
+Vivado Simulator 2018.3
+INFO: [Wavedata 42-565] Reading protoinst file protoinst_files/lmem_bd.protoinst
+INFO: [Wavedata 42-564]   Found protocol instance at /tb_lmem_bd_smoke/dut/lmem_bd_i//axi_bram_ctrl_0/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /tb_lmem_bd_smoke/dut/lmem_bd_i//axi_bram_ctrl_1/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /tb_lmem_bd_smoke/dut/lmem_bd_i//axi_bram_ctrl_2/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /tb_lmem_bd_smoke/dut/lmem_bd_i//axi_bram_ctrl_3/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /tb_lmem_bd_smoke/dut/lmem_bd_i//axi_bram_ctrl_4/S_AXI
+INFO: [Wavedata 42-564]   Found protocol instance at /tb_lmem_bd_smoke/dut/lmem_bd_i//unified_obs_0/m_axi_gmem0
+INFO: [Wavedata 42-564]   Found protocol instance at /tb_lmem_bd_smoke/dut/lmem_bd_i//unified_obs_0/m_axi_gmem1
+INFO: [Wavedata 42-564]   Found protocol instance at /tb_lmem_bd_smoke/dut/lmem_bd_i//unified_obs_0/m_axi_gmem2
+INFO: [Wavedata 42-564]   Found protocol instance at /tb_lmem_bd_smoke/dut/lmem_bd_i//unified_obs_0/m_axi_gmem3
+INFO: [Wavedata 42-564]   Found protocol instance at /tb_lmem_bd_smoke/dut/lmem_bd_i//unified_obs_0/m_axi_gmem4
+Time resolution is 1 ps
+source tb_lmem_bd_smoke.tcl
+## current_wave_config
+Block Memory Generator module tb_lmem_bd_smoke.dut.lmem_bd_i.blk_mem_0.inst.native_mem_mapped_module.blk_mem_gen_v8_4_2_inst is using a behavioral model for simulation which will not precisely model memory collision behavior.
+Block Memory Generator module tb_lmem_bd_smoke.dut.lmem_bd_i.blk_mem_1.inst.native_mem_mapped_module.blk_mem_gen_v8_4_2_inst is using a behavioral model for simulation which will not precisely model memory collision behavior.
+Block Memory Generator module tb_lmem_bd_smoke.dut.lmem_bd_i.blk_mem_2.inst.native_mem_mapped_module.blk_mem_gen_v8_4_2_inst is using a behavioral model for simulation which will not precisely model memory collision behavior.
+Block Memory Generator module tb_lmem_bd_smoke.dut.lmem_bd_i.blk_mem_3.inst.native_mem_mapped_module.blk_mem_gen_v8_4_2_inst is using a behavioral model for simulation which will not precisely model memory collision behavior.
+Block Memory Generator module tb_lmem_bd_smoke.dut.lmem_bd_i.blk_mem_4.inst.native_mem_mapped_module.blk_mem_gen_v8_4_2_inst is using a behavioral model for simulation which will not precisely model memory collision behavior.
+Warning: OPMODE Input Warning : The OPMODE 001XXXX with CARRYINSEL  000 to DSP48E1 instance is invalid.
+Time: 100010 ps  Iteration: 0  Process: /tb_lmem_bd_smoke/dut/lmem_bd_i/unified_obs_0/U0/grp_unified_surfel_obser_1_fu_198/unified_surfel_obdEe_U115/unified_surfel_observation_core_ap_dsub_3_full_dsp_64_u/U0/i_synth/addsub_op/ADDSUB/speed_op/logic/OP/ALIGN_BLK/FRAC_ADDSUB/dsp_add/FRAC_ADDSUB/dsp48e1_add/DSP48E1_ADD/DSP/prcs_opmode_drc  File: E:\Xilinx\Vivado\2018.3\data/vhdl/src/unisims/primitive/DSP48E1.vhd
+Warning: OPMODE Input Warning : The OPMODE 001XXXX with CARRYINSEL  000 to DSP48E1 instance is invalid.
+Time: 100010 ps  Iteration: 0  Process: /tb_lmem_bd_smoke/dut/lmem_bd_i/unified_obs_0/U0/grp_unified_surfel_obser_1_fu_198/unified_surfel_obdEe_U114/unified_surfel_observation_core_ap_dsub_3_full_dsp_64_u/U0/i_synth/addsub_op/ADDSUB/speed_op/logic/OP/ALIGN_BLK/FRAC_ADDSUB/dsp_add/FRAC_ADDSUB/dsp48e1_add/DSP48E1_ADD/DSP/prcs_opmode_drc  File: E:\Xilinx\Vivado\2018.3\data/vhdl/src/unisims/primitive/DSP48E1.vhd
+Warning: OPMODE Input Warning : The OPMODE 011XX11 with CARRYINSEL  000 to DSP48E1 instance is invalid.
+Time: 100010 ps  Iteration: 0  Process: /tb_lmem_bd_smoke/dut/lmem_bd_i/unified_obs_0/U0/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_1_fu_686/unified_surfel_obfYi_U32/unified_surfel_observation_core_ap_dmul_3_max_dsp_64_u/U0/i_synth/mult/OP/R_AND_R/logic/R_AND_R/dsp48_e1/dsp48e1_add/DSP48E1_ADD/DSP/prcs_opmode_drc  File: E:\Xilinx\Vivado\2018.3\data/vhdl/src/unisims/primitive/DSP48E1.vhd
+Warning: OPMODE Input Warning : The OPMODE 011XX11 with CARRYINSEL  000 to DSP48E1 instance is invalid.
+Time: 100010 ps  Iteration: 0  Process: /tb_lmem_bd_smoke/dut/lmem_bd_i/unified_obs_0/U0/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_1_fu_686/unified_surfel_obfYi_U31/unified_surfel_observation_core_ap_dmul_3_max_dsp_64_u/U0/i_synth/mult/OP/R_AND_R/logic/R_AND_R/dsp48_e1/dsp48e1_add/DSP48E1_ADD/DSP/prcs_opmode_drc  File: E:\Xilinx\Vivado\2018.3\data/vhdl/src/unisims/primitive/DSP48E1.vhd
+Warning: OPMODE Input Warning : The OPMODE 011XX11 with CARRYINSEL  000 to DSP48E1 instance is invalid.
+Time: 100010 ps  Iteration: 0  Process: /tb_lmem_bd_smoke/dut/lmem_bd_i/unified_obs_0/U0/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_1_fu_686/unified_surfel_obfYi_U30/unified_surfel_observation_core_ap_dmul_3_max_dsp_64_u/U0/i_synth/mult/OP/R_AND_R/logic/R_AND_R/dsp48_e1/dsp48e1_add/DSP48E1_ADD/DSP/prcs_opmode_drc  File: E:\Xilinx\Vivado\2018.3\data/vhdl/src/unisims/primitive/DSP48E1.vhd
+Warning: OPMODE Input Warning : The OPMODE 011XX11 with CARRYINSEL  000 to DSP48E1 instance is invalid.
+Time: 100010 ps  Iteration: 0  Process: /tb_lmem_bd_smoke/dut/lmem_bd_i/unified_obs_0/U0/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_1_fu_686/unified_surfel_obfYi_U29/unified_surfel_observation_core_ap_dmul_3_max_dsp_64_u/U0/i_synth/mult/OP/R_AND_R/logic/R_AND_R/dsp48_e1/dsp48e1_add/DSP48E1_ADD/DSP/prcs_opmode_drc  File: E:\Xilinx\Vivado\2018.3\data/vhdl/src/unisims/primitive/DSP48E1.vhd
+Warning: OPMODE Input Warning : The OPMODE 011XX11 with CARRYINSEL  000 to DSP48E1 instance is invalid.
+Time: 100010 ps  Iteration: 0  Process: /tb_lmem_bd_smoke/dut/lmem_bd_i/unified_obs_0/U0/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_1_fu_686/unified_surfel_obfYi_U28/unified_surfel_observation_core_ap_dmul_3_max_dsp_64_u/U0/i_synth/mult/OP/R_AND_R/logic/R_AND_R/dsp48_e1/dsp48e1_add/DSP48E1_ADD/DSP/prcs_opmode_drc  File: E:\Xilinx\Vivado\2018.3\data/vhdl/src/unisims/primitive/DSP48E1.vhd
+Warning: OPMODE Input Warning : The OPMODE 011XX11 with CARRYINSEL  000 to DSP48E1 instance is invalid.
+Time: 100010 ps  Iteration: 0  Process: /tb_lmem_bd_smoke/dut/lmem_bd_i/unified_obs_0/U0/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_1_fu_686/unified_surfel_obfYi_U27/unified_surfel_observation_core_ap_dmul_3_max_dsp_64_u/U0/i_synth/mult/OP/R_AND_R/logic/R_AND_R/dsp48_e1/dsp48e1_add/DSP48E1_ADD/DSP/prcs_opmode_drc  File: E:\Xilinx\Vivado\2018.3\data/vhdl/src/unisims/primitive/DSP48E1.vhd
+Warning: OPMODE Input Warning : The OPMODE 011XX11 with CARRYINSEL  000 to DSP48E1 instance is invalid.
+Time: 100010 ps  Iteration: 0  Process: /tb_lmem_bd_smoke/dut/lmem_bd_i/unified_obs_0/U0/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_1_fu_686/unified_surfel_obfYi_U26/unified_surfel_observation_core_ap_dmul_3_max_dsp_64_u/U0/i_synth/mult/OP/R_AND_R/logic/R_AND_R/dsp48_e1/dsp48e1_add/DSP48E1_ADD/DSP/prcs_opmode_drc  File: E:\Xilinx\Vivado\2018.3\data/vhdl/src/unisims/primitive/DSP48E1.vhd
+Warning: OPMODE Input Warning : The OPMODE 011XX11 with CARRYINSEL  000 to DSP48E1 instance is invalid.
+Time: 100010 ps  Iteration: 0  Process: /tb_lmem_bd_smoke/dut/lmem_bd_i/unified_obs_0/U0/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_1_fu_686/unified_surfel_obfYi_U25/unified_surfel_observation_core_ap_dmul_3_max_dsp_64_u/U0/i_synth/mult/OP/R_AND_R/logic/R_AND_R/dsp48_e1/dsp48e1_add/DSP48E1_ADD/DSP/prcs_opmode_drc  File: E:\Xilinx\Vivado\2018.3\data/vhdl/src/unisims/primitive/DSP48E1.vhd
+Warning: OPMODE Input Warning : The OPMODE 011XX11 with CARRYINSEL  000 to DSP48E1 instance is invalid.
+Time: 100010 ps  Iteration: 0  Process: /tb_lmem_bd_smoke/dut/lmem_bd_i/unified_obs_0/U0/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_1_fu_686/unified_surfel_obfYi_U24/unified_surfel_observation_core_ap_dmul_3_max_dsp_64_u/U0/i_synth/mult/OP/R_AND_R/logic/R_AND_R/dsp48_e1/dsp48e1_add/DSP48E1_ADD/DSP/prcs_opmode_drc  File: E:\Xilinx\Vivado\2018.3\data/vhdl/src/unisims/primitive/DSP48E1.vhd
+Warning: OPMODE Input Warning : The OPMODE 001XXXX with CARRYINSEL  000 to DSP48E1 instance is invalid.
+Time: 100010 ps  Iteration: 0  Process: /tb_lmem_bd_smoke/dut/lmem_bd_i/unified_obs_0/U0/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_1_fu_686/unified_surfel_obdEe_U23/unified_surfel_observation_core_ap_dsub_3_full_dsp_64_u/U0/i_synth/addsub_op/ADDSUB/speed_op/logic/OP/ALIGN_BLK/FRAC_ADDSUB/dsp_add/FRAC_ADDSUB/dsp48e1_add/DSP48E1_ADD/DSP/prcs_opmode_drc  File: E:\Xilinx\Vivado\2018.3\data/vhdl/src/unisims/primitive/DSP48E1.vhd
+Warning: OPMODE Input Warning : The OPMODE 001XXXX with CARRYINSEL  000 to DSP48E1 instance is invalid.
+Time: 100010 ps  Iteration: 0  Process: /tb_lmem_bd_smoke/dut/lmem_bd_i/unified_obs_0/U0/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_1_fu_686/unified_surfel_obeOg_U22/unified_surfel_observation_core_ap_dadd_3_full_dsp_64_u/U0/i_synth/addsub_op/ADDSUB/speed_op/logic/OP/ALIGN_BLK/FRAC_ADDSUB/dsp_add/FRAC_ADDSUB/dsp48e1_add/DSP48E1_ADD/DSP/prcs_opmode_drc  File: E:\Xilinx\Vivado\2018.3\data/vhdl/src/unisims/primitive/DSP48E1.vhd
+Warning: OPMODE Input Warning : The OPMODE 001XXXX with CARRYINSEL  000 to DSP48E1 instance is invalid.
+Time: 100010 ps  Iteration: 0  Process: /tb_lmem_bd_smoke/dut/lmem_bd_i/unified_obs_0/U0/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_1_fu_686/unified_surfel_obdEe_U21/unified_surfel_observation_core_ap_dsub_3_full_dsp_64_u/U0/i_synth/addsub_op/ADDSUB/speed_op/logic/OP/ALIGN_BLK/FRAC_ADDSUB/dsp_add/FRAC_ADDSUB/dsp48e1_add/DSP48E1_ADD/DSP/prcs_opmode_drc  File: E:\Xilinx\Vivado\2018.3\data/vhdl/src/unisims/primitive/DSP48E1.vhd
+Warning: OPMODE Input Warning : The OPMODE 001XXXX with CARRYINSEL  000 to DSP48E1 instance is invalid.
+Time: 100010 ps  Iteration: 0  Process: /tb_lmem_bd_smoke/dut/lmem_bd_i/unified_obs_0/U0/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_1_fu_686/unified_surfel_obcud_U20/unified_surfel_observation_core_ap_dadddsub_3_full_dsp_64_u/U0/i_synth/addsub_op/ADDSUB/speed_op/logic/OP/ALIGN_BLK/FRAC_ADDSUB/dsp_add/FRAC_ADDSUB/dsp48e1_add/DSP48E1_ADD/DSP/prcs_opmode_drc  File: E:\Xilinx\Vivado\2018.3\data/vhdl/src/unisims/primitive/DSP48E1.vhd
+Warning: OPMODE Input Warning : The OPMODE 001XXXX with CARRYINSEL  000 to DSP48E1 instance is invalid.
+Time: 100010 ps  Iteration: 0  Process: /tb_lmem_bd_smoke/dut/lmem_bd_i/unified_obs_0/U0/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_1_fu_686/unified_surfel_obcud_U19/unified_surfel_observation_core_ap_dadddsub_3_full_dsp_64_u/U0/i_synth/addsub_op/ADDSUB/speed_op/logic/OP/ALIGN_BLK/FRAC_ADDSUB/dsp_add/FRAC_ADDSUB/dsp48e1_add/DSP48E1_ADD/DSP/prcs_opmode_drc  File: E:\Xilinx\Vivado\2018.3\data/vhdl/src/unisims/primitive/DSP48E1.vhd
+Warning: OPMODE Input Warning : The OPMODE 001XXXX with CARRYINSEL  000 to DSP48E1 instance is invalid.
+Time: 100010 ps  Iteration: 0  Process: /tb_lmem_bd_smoke/dut/lmem_bd_i/unified_obs_0/U0/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_1_fu_686/unified_surfel_obcud_U18/unified_surfel_observation_core_ap_dadddsub_3_full_dsp_64_u/U0/i_synth/addsub_op/ADDSUB/speed_op/logic/OP/ALIGN_BLK/FRAC_ADDSUB/dsp_add/FRAC_ADDSUB/dsp48e1_add/DSP48E1_ADD/DSP/prcs_opmode_drc  File: E:\Xilinx\Vivado\2018.3\data/vhdl/src/unisims/primitive/DSP48E1.vhd
+Warning: OPMODE Input Warning : The OPMODE 011XX11 with CARRYINSEL  000 to DSP48E1 instance is invalid.
+Time: 100010 ps  Iteration: 0  Process: /tb_lmem_bd_smoke/dut/lmem_bd_i/unified_obs_0/U0/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_3_fu_667/unified_surfel_obfYi_U90/unified_surfel_observation_core_ap_dmul_3_max_dsp_64_u/U0/i_synth/mult/OP/R_AND_R/logic/R_AND_R/dsp48_e1/dsp48e1_add/DSP48E1_ADD/DSP/prcs_opmode_drc  File: E:\Xilinx\Vivado\2018.3\data/vhdl/src/unisims/primitive/DSP48E1.vhd
+Warning: OPMODE Input Warning : The OPMODE 011XX11 with CARRYINSEL  000 to DSP48E1 instance is invalid.
+Time: 100010 ps  Iteration: 0  Process: /tb_lmem_bd_smoke/dut/lmem_bd_i/unified_obs_0/U0/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_3_fu_667/unified_surfel_obfYi_U89/unified_surfel_observation_core_ap_dmul_3_max_dsp_64_u/U0/i_synth/mult/OP/R_AND_R/logic/R_AND_R/dsp48_e1/dsp48e1_add/DSP48E1_ADD/DSP/prcs_opmode_drc  File: E:\Xilinx\Vivado\2018.3\data/vhdl/src/unisims/primitive/DSP48E1.vhd
+Warning: OPMODE Input Warning : The OPMODE 001XXXX with CARRYINSEL  000 to DSP48E1 instance is invalid.
+Time: 100010 ps  Iteration: 0  Process: /tb_lmem_bd_smoke/dut/lmem_bd_i/unified_obs_0/U0/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_3_fu_667/unified_surfel_obdEe_U88/unified_surfel_observation_core_ap_dsub_3_full_dsp_64_u/U0/i_synth/addsub_op/ADDSUB/speed_op/logic/OP/ALIGN_BLK/FRAC_ADDSUB/dsp_add/FRAC_ADDSUB/dsp48e1_add/DSP48E1_ADD/DSP/prcs_opmode_drc  File: E:\Xilinx\Vivado\2018.3\data/vhdl/src/unisims/primitive/DSP48E1.vhd
+Warning: OPMODE Input Warning : The OPMODE 001XXXX with CARRYINSEL  000 to DSP48E1 instance is invalid.
+Time: 100010 ps  Iteration: 0  Process: /tb_lmem_bd_smoke/dut/lmem_bd_i/unified_obs_0/U0/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_3_fu_667/unified_surfel_obdEe_U87/unified_surfel_observation_core_ap_dsub_3_full_dsp_64_u/U0/i_synth/addsub_op/ADDSUB/speed_op/logic/OP/ALIGN_BLK/FRAC_ADDSUB/dsp_add/FRAC_ADDSUB/dsp48e1_add/DSP48E1_ADD/DSP/prcs_opmode_drc  File: E:\Xilinx\Vivado\2018.3\data/vhdl/src/unisims/primitive/DSP48E1.vhd
+Warning: OPMODE Input Warning : The OPMODE 001XXXX with CARRYINSEL  000 to DSP48E1 instance is invalid.
+Time: 100010 ps  Iteration: 0  Process: /tb_lmem_bd_smoke/dut/lmem_bd_i/unified_obs_0/U0/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_3_fu_667/unified_surfel_obcud_U86/unified_surfel_observation_core_ap_dadddsub_3_full_dsp_64_u/U0/i_synth/addsub_op/ADDSUB/speed_op/logic/OP/ALIGN_BLK/FRAC_ADDSUB/dsp_add/FRAC_ADDSUB/dsp48e1_add/DSP48E1_ADD/DSP/prcs_opmode_drc  File: E:\Xilinx\Vivado\2018.3\data/vhdl/src/unisims/primitive/DSP48E1.vhd
+Warning: OPMODE Input Warning : The OPMODE 011XX11 with CARRYINSEL  000 to DSP48E1 instance is invalid.
+Time: 100010 ps  Iteration: 0  Process: /tb_lmem_bd_smoke/dut/lmem_bd_i/unified_obs_0/U0/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_3_fu_667/grp_p_anonymous_namespace_6_fu_534/unified_surfel_obfYi_U46/unified_surfel_observation_core_ap_dmul_3_max_dsp_64_u/U0/i_synth/mult/OP/R_AND_R/logic/R_AND_R/dsp48_e1/dsp48e1_add/DSP48E1_ADD/DSP/prcs_opmode_drc  File: E:\Xilinx\Vivado\2018.3\data/vhdl/src/unisims/primitive/DSP48E1.vhd
+Warning: OPMODE Input Warning : The OPMODE 011XX11 with CARRYINSEL  000 to DSP48E1 instance is invalid.
+Time: 100010 ps  Iteration: 0  Process: /tb_lmem_bd_smoke/dut/lmem_bd_i/unified_obs_0/U0/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_3_fu_667/grp_p_anonymous_namespace_6_fu_534/unified_surfel_obfYi_U45/unified_surfel_observation_core_ap_dmul_3_max_dsp_64_u/U0/i_synth/mult/OP/R_AND_R/logic/R_AND_R/dsp48_e1/dsp48e1_add/DSP48E1_ADD/DSP/prcs_opmode_drc  File: E:\Xilinx\Vivado\2018.3\data/vhdl/src/unisims/primitive/DSP48E1.vhd
+Warning: OPMODE Input Warning : The OPMODE 011XX11 with CARRYINSEL  000 to DSP48E1 instance is invalid.
+Time: 100010 ps  Iteration: 0  Process: /tb_lmem_bd_smoke/dut/lmem_bd_i/unified_obs_0/U0/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_3_fu_667/grp_p_anonymous_namespace_6_fu_534/unified_surfel_obfYi_U44/unified_surfel_observation_core_ap_dmul_3_max_dsp_64_u/U0/i_synth/mult/OP/R_AND_R/logic/R_AND_R/dsp48_e1/dsp48e1_add/DSP48E1_ADD/DSP/prcs_opmode_drc  File: E:\Xilinx\Vivado\2018.3\data/vhdl/src/unisims/primitive/DSP48E1.vhd
+INFO: [USF-XSim-96] XSim completed. Design snapshot 'tb_lmem_bd_smoke_behav' loaded.
+INFO: [USF-XSim-97] XSim simulation ran for 1000ns
+launch_simulation: Time (s): cpu = 00:00:01 ; elapsed = 00:01:18 . Memory (MB): peak = 787.855 ; gain = 22.645
+# run all
+[tb_lmem_bd_smoke] PASS
+$finish called at time : 14235 ns : File "F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/slam_accel_hls_mem_harness/tb_lmem_bd_smoke.v" Line 185
+# close_sim
+INFO: [Simtcl 6-16] Simulation closed
+# puts "SIM_DONE"
+SIM_DONE
+# exit
+INFO: [Common 17-206] Exiting Vivado at Wed Jun 17 15:54:20 2026...

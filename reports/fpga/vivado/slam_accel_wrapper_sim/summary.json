@@ -1,0 +1,45 @@
+{
+  "date": "2026-06-17",
+  "stage": "vivado_wrapper_level_simulation",
+  "status": "PASS",
+  "part": "xc7z100ffg900-2",
+  "project_dirs": {
+    "simulation": "%TEMP%/lightning_slam_accel_wrapper_sim",
+    "ooc_synthesis": "%TEMP%/lightning_slam_accel_wrapper_ooc"
+  },
+  "scope": {
+    "block_design": false,
+    "xdma": false,
+    "ddr_interconnect": false,
+    "bitstream": false,
+    "board_run": false
+  },
+  "simulation": {
+    "status": "PASS",
+    "pass_message": "[tb_slam_accel_wrapper_sim] PASS",
+    "hls_model": "control_plane_mock",
+    "covered": [
+      "AXI-Lite writes and reads",
+      "KERNEL_SEL=4 dispatch",
+      "ap_start/ap_done/ap_idle/ap_ready handshake",
+      "direct scalar address ports",
+      "output field address derivation",
+      "unsupported kernel ERROR=0x00000001",
+      "non-zero address high word ERROR=0x00000003"
+    ]
+  },
+  "ooc_synthesis": {
+    "status": "PASS",
+    "errors": 0,
+    "critical_warnings": 0,
+    "warnings": 9
+  },
+  "resources": {
+    "slice_luts": 620,
+    "slice_registers": 1079,
+    "block_ram_tile": 0,
+    "dsps": 0
+  },
+  "next_step": "real HLS IP wrapper/BD integration planning"
+}
+

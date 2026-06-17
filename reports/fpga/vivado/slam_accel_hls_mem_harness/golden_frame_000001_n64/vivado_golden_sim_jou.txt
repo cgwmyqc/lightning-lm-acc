@@ -1,0 +1,13 @@
+#-----------------------------------------------------------
+# Vivado v2018.3 (64-bit)
+# SW Build 2405991 on Thu Dec  6 23:38:27 MST 2018
+# IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
+# Start of session at: Wed Jun 17 15:02:47 2026
+# Process ID: 70896
+# Current directory: F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc
+# Command line: vivado.exe -mode batch -source F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\slam_accel_hls_mem_harness\run_golden_sim.tcl -journal V:\lmem_golden_sim\vivado_golden_sim.jou -log V:\lmem_golden_sim\vivado_golden_sim.log -tclargs V:\lmem_golden_sim xc7z100ffg900-2 C:\Users\admin\AppData\Local\Temp\lightning_hls_unified_obs\solution1\impl F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\.build\golden_frame_000001_n64 0
+# Log file: V:/lmem_golden_sim/vivado_golden_sim.log
+# Journal file: V:\lmem_golden_sim\vivado_golden_sim.jou
+#-----------------------------------------------------------
+source {F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\slam_accel_hls_mem_harness\run_golden_sim.tcl}
+source tb_lmem_golden.tcl

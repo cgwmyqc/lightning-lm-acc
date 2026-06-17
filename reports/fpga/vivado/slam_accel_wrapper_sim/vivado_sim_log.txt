@@ -1,0 +1,98 @@
+#-----------------------------------------------------------
+# Vivado v2018.3 (64-bit)
+# SW Build 2405991 on Thu Dec  6 23:38:27 MST 2018
+# IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
+# Start of session at: Wed Jun 17 08:43:51 2026
+# Process ID: 100208
+# Current directory: F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc
+# Command line: vivado.exe -mode batch -source F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\slam_accel_wrapper_sim\run_sim.tcl -journal C:\Users\admin\AppData\Local\Temp\lightning_slam_accel_wrapper_sim\vivado.jou -log C:\Users\admin\AppData\Local\Temp\lightning_slam_accel_wrapper_sim\vivado.log -tclargs C:\Users\admin\AppData\Local\Temp\lightning_slam_accel_wrapper_sim xc7z100ffg900-2
+# Log file: C:/Users/admin/AppData/Local/Temp/lightning_slam_accel_wrapper_sim/vivado.log
+# Journal file: C:\Users\admin\AppData\Local\Temp\lightning_slam_accel_wrapper_sim\vivado.jou
+#-----------------------------------------------------------
+source {F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\slam_accel_wrapper_sim\run_sim.tcl}
+# set script_dir [file dirname [file normalize [info script]]]
+# set repo_root [file normalize [file join $script_dir ".." ".." ".."]]
+# set project_dir [file normalize [file join $::env(TEMP) "lightning_slam_accel_wrapper_sim"]]
+# set target_part "xc7z100ffg900-2"
+# set user_args $argv
+# if {[llength $user_args] >= 1 && [string length [lindex $user_args 0]] > 0} {
+#     set project_dir [file normalize [lindex $user_args 0]]
+# }
+# if {[llength $user_args] >= 2 && [string length [lindex $user_args 1]] > 0} {
+#     set target_part [lindex $user_args 1]
+# }
+# file mkdir [file dirname $project_dir]
+# create_project -force slam_accel_wrapper_sim $project_dir -part $target_part
+# add_files -fileset sources_1 [file join $repo_root "fpga" "rtl" "slam_accel_ctrl" "slam_accel_ctrl.v"]
+# add_files -fileset sources_1 [file join $script_dir "slam_accel_wrapper_sim_top.v"]
+# add_files -fileset sources_1 [file join $script_dir "unified_surfel_observation_core_ctrl_mock.v"]
+# add_files -fileset sim_1 [file join $script_dir "tb_slam_accel_wrapper_sim.v"]
+# set_property top tb_slam_accel_wrapper_sim [get_filesets sim_1]
+# update_compile_order -fileset sources_1
+# update_compile_order -fileset sim_1
+# launch_simulation -simset sim_1 -mode behavioral
+INFO: [Vivado 12-5682] Launching behavioral simulation in 'C:/Users/admin/AppData/Local/Temp/lightning_slam_accel_wrapper_sim/slam_accel_wrapper_sim.sim/sim_1/behav/xsim'
+INFO: [SIM-utils-51] Simulation object is 'sim_1'
+INFO: [SIM-utils-54] Inspecting design source files for 'tb_slam_accel_wrapper_sim' in fileset 'sim_1'...
+INFO: [USF-XSim-97] Finding global include files...
+INFO: [USF-XSim-98] Fetching design files from 'sim_1'...
+INFO: [USF-XSim-2] XSim::Compile design
+INFO: [USF-XSim-61] Executing 'COMPILE and ANALYZE' step in 'C:/Users/admin/AppData/Local/Temp/lightning_slam_accel_wrapper_sim/slam_accel_wrapper_sim.sim/sim_1/behav/xsim'
+"xvlog --incr --relax -prj tb_slam_accel_wrapper_sim_vlog.prj"
+INFO: [VRFC 10-2263] Analyzing Verilog file "F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/rtl/slam_accel_ctrl/slam_accel_ctrl.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module slam_accel_ctrl
+INFO: [VRFC 10-2263] Analyzing Verilog file "F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/slam_accel_wrapper_sim/slam_accel_wrapper_sim_top.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module slam_accel_wrapper_sim_top
+INFO: [VRFC 10-2263] Analyzing Verilog file "F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/slam_accel_wrapper_sim/unified_surfel_observation_core_ctrl_mock.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module unified_surfel_observation_core_ctrl_mock
+INFO: [VRFC 10-2263] Analyzing Verilog file "F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/slam_accel_wrapper_sim/tb_slam_accel_wrapper_sim.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tb_slam_accel_wrapper_sim
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/admin/AppData/Local/Temp/lightning_slam_accel_wrapper_sim/slam_accel_wrapper_sim.sim/sim_1/behav/xsim/glbl.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module glbl
+INFO: [USF-XSim-69] 'compile' step finished in '2' seconds
+INFO: [USF-XSim-3] XSim::Elaborate design
+INFO: [USF-XSim-61] Executing 'ELABORATE' step in 'C:/Users/admin/AppData/Local/Temp/lightning_slam_accel_wrapper_sim/slam_accel_wrapper_sim.sim/sim_1/behav/xsim'
+Vivado Simulator 2018.3
+Copyright 1986-1999, 2001-2018 Xilinx, Inc. All Rights Reserved.
+Running: E:/Xilinx/Vivado/2018.3/bin/unwrapped/win64.o/xelab.exe -wto f347917ce26d4c5981c9dcb0c475ff98 --incr --debug typical --relax --mt 2 -L xil_defaultlib -L unisims_ver -L unimacro_ver -L secureip --snapshot tb_slam_accel_wrapper_sim_behav xil_defaultlib.tb_slam_accel_wrapper_sim xil_defaultlib.glbl -log elaborate.log 
+Using 2 slave threads.
+Starting static elaboration
+Completed static elaboration
+Starting simulation data flow analysis
+Completed simulation data flow analysis
+Time Resolution for simulation is 1ps
+Compiling module xil_defaultlib.slam_accel_ctrl
+Compiling module xil_defaultlib.unified_surfel_observation_core_...
+Compiling module xil_defaultlib.slam_accel_wrapper_sim_top
+Compiling module xil_defaultlib.tb_slam_accel_wrapper_sim
+Compiling module xil_defaultlib.glbl
+Built simulation snapshot tb_slam_accel_wrapper_sim_behav
+
+****** Webtalk v2018.3 (64-bit)
+  **** SW Build 2405991 on Thu Dec  6 23:38:27 MST 2018
+  **** IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
+    ** Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.
+
+source C:/Users/admin/AppData/Local/Temp/lightning_slam_accel_wrapper_sim/slam_accel_wrapper_sim.sim/sim_1/behav/xsim/xsim.dir/tb_slam_accel_wrapper_sim_behav/webtalk/xsim_webtalk.tcl -notrace
+INFO: [Common 17-206] Exiting Webtalk at Wed Jun 17 08:44:08 2026...
+run_program: Time (s): cpu = 00:00:00 ; elapsed = 00:00:05 . Memory (MB): peak = 329.871 ; gain = 0.000
+INFO: [USF-XSim-69] 'elaborate' step finished in '5' seconds
+INFO: [USF-XSim-4] XSim::Simulate design
+INFO: [USF-XSim-61] Executing 'SIMULATE' step in 'C:/Users/admin/AppData/Local/Temp/lightning_slam_accel_wrapper_sim/slam_accel_wrapper_sim.sim/sim_1/behav/xsim'
+INFO: [USF-XSim-98] *** Running xsim
+   with args "tb_slam_accel_wrapper_sim_behav -key {Behavioral:sim_1:Functional:tb_slam_accel_wrapper_sim} -tclbatch {tb_slam_accel_wrapper_sim.tcl} -log {simulate.log}"
+INFO: [USF-XSim-8] Loading simulator feature
+Vivado Simulator 2018.3
+Time resolution is 1 ps
+source tb_slam_accel_wrapper_sim.tcl
+## current_wave_config
+INFO: [USF-XSim-96] XSim completed. Design snapshot 'tb_slam_accel_wrapper_sim_behav' loaded.
+INFO: [USF-XSim-97] XSim simulation ran for 1000ns
+launch_simulation: Time (s): cpu = 00:00:00 ; elapsed = 00:00:08 . Memory (MB): peak = 336.160 ; gain = 15.082
+# run all
+[tb_slam_accel_wrapper_sim] PASS
+$finish called at time : 1215 ns : File "F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/slam_accel_wrapper_sim/tb_slam_accel_wrapper_sim.v" Line 212
+# close_sim
+INFO: [Simtcl 6-16] Simulation closed
+# exit
+INFO: [Common 17-206] Exiting Vivado at Wed Jun 17 08:44:13 2026...
