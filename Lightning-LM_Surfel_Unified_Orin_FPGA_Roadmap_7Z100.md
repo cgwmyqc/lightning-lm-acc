@@ -2601,3 +2601,35 @@ HLS_TINY_NUMERIC_PASS
 - 当前最终目标固定为 PCIe 2.0 Gen2 x4，不是 x8。x8 只有在确认 AX7Z100 板卡、转接链路和 Orin root port 实际 8-lane 支持后才另立新阶段。
 - 如果 HLS tiny timeout：优先查 HLS AXI master 到 MIG 的 arbitration/address path。
 - 如果 HLS tiny done 但数值失败：优先查 output field direct address、manifest ABI、DDR 写读顺序。
+
+### Orin 验证结果
+- XDMA 基础 gate：PASS，`0005:01:00.0 [10ee:7024]` 已枚举，`Kernel driver in use: xdma`。
+- device nodes：PASS，`/dev/xdma0_user`、`/dev/xdma0_h2c_0`、`/dev/xdma0_c2h_0` 均存在。
+- kernel log：PASS，`config bar 1, user 0`，未观察到新的 `Failed to detect XDMA config BAR`、`CmpltTO` 或 AER recovery failure。
+- tiny synthetic host image：PASS，`HOST_SYNTHETIC_IMAGE_PASS`。
+- shim/register smoke：PASS。
+
+```text
+SHIM_SMOKE_PASS
+XDMA_SHIM_MAGIC=0x58444d41 XDMA_SHIM_VERSION=0x00010000
+REG_SMOKE_PASS
+VERSION=0x00020002
+CTRL_BASE=0x00001000
+KERNEL_SEL=4 MODE=1 SCAN_COUNT=1
+```
+
+- DDR smoke：PASS，`scan_points`、`pose`、`map_header`、`active_blocks`、`obs_cells`、`output` 六个 PL DDR3 buffer base 的 4KB pattern write/read 全部通过。
+- HLS tiny transaction：PASS。
+
+```text
+HOST_IMAGE_WRITE_PASS
+HLS_TINY_START_PASS
+CTRL_BASE=0x00001000 SCAN_COUNT=1 RUN_COUNT_BEFORE=0
+HLS_TINY_DONE_PASS
+STATUS=0x00000204 ERROR=0x00000000 RUN_COUNT_AFTER=1
+HLS_TINY_NUMERIC_PASS
+COUNTS=1/0/0 FLAGS=0x00000000
+WORST_FIELD=b[2] MAX_ABS=2.98023e-09 MAX_REL=5.96046e-08
+```
+
+结论：正式 `azmig_wrapper.bit` 已完成第一笔真实 HLS IP host transaction。XDMA、BAR shim、`slam_accel_ctrl@0x1000`、PL DDR3 buffer layout、HLS `ap_start/ap_done`、HLS AXI master 到 MIG 路径，以及 tiny synthetic normal-equation 数值对齐均已通过。

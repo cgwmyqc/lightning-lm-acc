@@ -1,7 +1,7 @@
 # Tiny Synthetic Host Image
 
 - marker: `HOST_SYNTHETIC_IMAGE_PASS`
-- generated_dir: `fpga\vivado\.build\host_synthetic_tiny`
+- generated_dir: `fpga/vivado/.build/host_synthetic_tiny`
 
 | Segment | Base | Size |
 | --- | ---: | ---: |
@@ -25,3 +25,18 @@ sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-tiny fpga/vivado/.build/ho
 ```
 
 Expected markers: `HLS_TINY_START_PASS`, `HLS_TINY_DONE_PASS`, `HLS_TINY_NUMERIC_PASS`.
+
+## Orin result
+
+- `HOST_IMAGE_WRITE_PASS`
+- `HLS_TINY_START_PASS`
+- `HLS_TINY_DONE_PASS`
+- `HLS_TINY_NUMERIC_PASS`
+- `STATUS=0x00000204`
+- `ERROR=0x00000000`
+- `RUN_COUNT_AFTER=1`
+- `COUNTS=1/0/0`
+- `FLAGS=0x00000000`
+- `WORST_FIELD=b[2]`
+- `MAX_ABS=2.98023e-09`
+- `MAX_REL=5.96046e-08`
