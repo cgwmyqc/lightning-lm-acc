@@ -1,0 +1,1588 @@
+Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.
+-----------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2018.3 (win64) Build 2405991 Thu Dec  6 23:38:27 MST 2018
+| Date         : Sat Jun 20 16:50:54 2026
+| Host         : DESKTOP-QEQDV5I running 64-bit major release  (build 9200)
+| Command      : report_timing_summary -file V:/xdma_restore_stage_a2_impl/xdma_restore_stage_a2_impl_timing.rpt
+| Design       : xdma_restore_stage_a2_wrapper
+| Device       : 7z100-ffg900
+| Speed File   : -2  PRODUCTION 1.11 2014-09-11
+-----------------------------------------------------------------------------------------------------------------
+
+Timing Summary Report
+
+------------------------------------------------------------------------------------------------
+| Timer Settings
+| --------------
+------------------------------------------------------------------------------------------------
+
+  Enable Multi Corner Analysis               :  Yes
+  Enable Pessimism Removal                   :  Yes
+  Pessimism Removal Resolution               :  Nearest Common Node
+  Enable Input Delay Default Clock           :  No
+  Enable Preset / Clear Arcs                 :  No
+  Disable Flight Delays                      :  No
+  Ignore I/O Paths                           :  No
+  Timing Early Launch at Borrowing Latches   :  false
+
+  Corner  Analyze    Analyze    
+  Name    Max Paths  Min Paths  
+  ------  ---------  ---------  
+  Slow    Yes        Yes        
+  Fast    Yes        Yes        
+
+
+
+check_timing report
+
+Table of Contents
+-----------------
+1. checking no_clock
+2. checking constant_clock
+3. checking pulse_width_clock
+4. checking unconstrained_internal_endpoints
+5. checking no_input_delay
+6. checking no_output_delay
+7. checking multiple_clock
+8. checking generated_clocks
+9. checking loops
+10. checking partial_input_delay
+11. checking partial_output_delay
+12. checking latch_loops
+
+1. checking no_clock
+--------------------
+ There are 36 register/latch pins with no clock driven by root clock pin: pcie_ref_clk_p[0] (HIGH)
+
+
+2. checking constant_clock
+--------------------------
+ There are 0 register/latch pins with constant_clock.
+
+
+3. checking pulse_width_clock
+-----------------------------
+ There are 4 register/latch pins which need pulse_width check. (LOW)
+
+
+4. checking unconstrained_internal_endpoints
+--------------------------------------------
+ There are 28 pins that are not constrained for maximum delay. (HIGH)
+
+ There are 0 pins that are not constrained for maximum delay due to constant clock.
+
+
+5. checking no_input_delay
+--------------------------
+ There is 1 input port with no input delay specified. (HIGH)
+
+ There are 0 input ports with no input delay but user has a false path constraint.
+
+
+6. checking no_output_delay
+---------------------------
+ There are 0 ports with no output delay specified.
+
+ There are 0 ports with no output delay but user has a false path constraint
+
+ There are 0 ports with no output delay but with a timing clock defined on it or propagating through it
+
+
+7. checking multiple_clock
+--------------------------
+ There are 0 register/latch pins with multiple clocks.
+
+
+8. checking generated_clocks
+----------------------------
+ There are 0 generated clocks that are not connected to a clock source.
+
+
+9. checking loops
+-----------------
+ There are 0 combinational loops in the design.
+
+
+10. checking partial_input_delay
+--------------------------------
+ There are 0 input ports with partial input delay specified.
+
+
+11. checking partial_output_delay
+---------------------------------
+ There are 0 ports with partial output delay specified.
+
+
+12. checking latch_loops
+------------------------
+ There are 0 combinational latch loops in the design through latch input
+
+
+
+------------------------------------------------------------------------------------------------
+| Design Timing Summary
+| ---------------------
+------------------------------------------------------------------------------------------------
+
+    WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints     WPWS(ns)     TPWS(ns)  TPWS Failing Endpoints  TPWS Total Endpoints  
+    -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------     --------     --------  ----------------------  --------------------  
+      0.269        0.000                      0                50205        0.045        0.000                      0                50205        0.000        0.000                       0                 18517  
+
+
+All user specified timing constraints are met.
+
+
+------------------------------------------------------------------------------------------------
+| Clock Summary
+| -------------
+------------------------------------------------------------------------------------------------
+
+Clock                    Waveform(ns)         Period(ns)      Frequency(MHz)
+-----                    ------------         ----------      --------------
+txoutclk_x0y0            {0.000 5.000}        10.000          100.000         
+  clk_125mhz_x0y0        {0.000 4.000}        8.000           125.000         
+    clk_125mhz_mux_x0y0  {0.000 4.000}        8.000           125.000         
+  clk_250mhz_x0y0        {0.000 2.000}        4.000           250.000         
+    clk_250mhz_mux_x0y0  {0.000 2.000}        4.000           250.000         
+  mmcm_fb                {0.000 5.000}        10.000          100.000         
+  userclk1               {0.000 2.000}        4.000           250.000         
+
+
+------------------------------------------------------------------------------------------------
+| Intra Clock Table
+| -----------------
+------------------------------------------------------------------------------------------------
+
+Clock                        WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints     WPWS(ns)     TPWS(ns)  TPWS Failing Endpoints  TPWS Total Endpoints  
+-----                        -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------     --------     --------  ----------------------  --------------------  
+txoutclk_x0y0                                                                                                                                                              3.000        0.000                       0                     3  
+  clk_125mhz_x0y0              4.899        0.000                      0                  914        0.088        0.000                      0                  914        2.286        0.000                       0                   400  
+    clk_125mhz_mux_x0y0        4.314        0.000                      0                 3304        0.058        0.000                      0                 3304        3.358        0.000                       0                  1528  
+  clk_250mhz_x0y0                                                                                                                                                          2.592        0.000                       0                     2  
+    clk_250mhz_mux_x0y0        0.320        0.000                      0                 3304        0.058        0.000                      0                 3304        0.000        0.000                       0                  1528  
+  mmcm_fb                                                                                                                                                                  8.929        0.000                       0                     2  
+  userclk1                     0.269        0.000                      0                45849        0.045        0.000                      0                45849        0.000        0.000                       0                 16582  
+
+
+------------------------------------------------------------------------------------------------
+| Inter Clock Table
+| -----------------
+------------------------------------------------------------------------------------------------
+
+From Clock           To Clock                 WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints  
+----------           --------                 -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------  
+clk_125mhz_mux_x0y0  clk_125mhz_x0y0            5.558        0.000                      0                   18        0.280        0.000                      0                   18  
+clk_250mhz_mux_x0y0  clk_125mhz_x0y0            1.438        0.000                      0                   18        0.089        0.000                      0                   18  
+clk_125mhz_x0y0      clk_125mhz_mux_x0y0        6.332        0.000                      0                    5        0.290        0.000                      0                    5  
+clk_125mhz_x0y0      clk_250mhz_mux_x0y0        2.212        0.000                      0                    5        0.098        0.000                      0                    5  
+
+
+------------------------------------------------------------------------------------------------
+| Other Path Groups Table
+| -----------------------
+------------------------------------------------------------------------------------------------
+
+Path Group         From Clock         To Clock               WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints  
+----------         ----------         --------               -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------  
+**async_default**  userclk1           userclk1                 1.116        0.000                      0                  115        0.252        0.000                      0                  115  
+
+
+------------------------------------------------------------------------------------------------
+| Timing Details
+| --------------
+------------------------------------------------------------------------------------------------
+
+
+---------------------------------------------------------------------------------------------------
+From Clock:  txoutclk_x0y0
+  To Clock:  txoutclk_x0y0
+
+Setup :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+Hold  :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+PW    :            0  Failing Endpoints,  Worst Slack        3.000ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+Pulse Width Checks
+--------------------------------------------------------------------------------------
+Clock Name:         txoutclk_x0y0
+Waveform(ns):       { 0.000 5.000 }
+Period(ns):         10.000
+Sources:            { xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK }
+
+Check Type        Corner  Lib Pin                 Reference Pin  Required(ns)  Actual(ns)  Slack(ns)  Location             Pin
+Min Period        n/a     GTXE2_CHANNEL/TXOUTCLK  n/a            2.424         10.000      7.576      GTXE2_CHANNEL_X0Y15  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+Max Period        n/a     MMCME2_ADV/CLKIN1       n/a            100.000       10.000      90.000     MMCME2_ADV_X0Y2      xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKIN1
+Low Pulse Width   Fast    MMCME2_ADV/CLKIN1       n/a            2.000         5.000       3.000      MMCME2_ADV_X0Y2      xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKIN1
+High Pulse Width  Slow    MMCME2_ADV/CLKIN1       n/a            2.000         5.000       3.000      MMCME2_ADV_X0Y2      xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKIN1
+
+
+
+---------------------------------------------------------------------------------------------------
+From Clock:  clk_125mhz_x0y0
+  To Clock:  clk_125mhz_x0y0
+
+Setup :            0  Failing Endpoints,  Worst Slack        4.899ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.088ns,  Total Violation        0.000ns
+PW    :            0  Failing Endpoints,  Worst Slack        2.286ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+Max Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             4.899ns  (required time - arrival time)
+  Source:                 xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_reset.pipe_reset_i/dclk_rst_reg2_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk_125mhz_x0y0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/done_reg/R
+                            (rising edge-triggered cell FDRE clocked by clk_125mhz_x0y0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_125mhz_x0y0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_125mhz_x0y0 rise@8.000ns - clk_125mhz_x0y0 rise@0.000ns)
+  Data Path Delay:        2.609ns  (logic 0.204ns (7.819%)  route 2.405ns (92.181%))
+  Logic Levels:           0  
+  Clock Path Skew:        -0.034ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    5.146ns = ( 13.146 - 8.000 ) 
+    Source Clock Delay      (SCD):    5.629ns
+    Clock Pessimism Removal (CPR):    0.449ns
+  Clock Uncertainty:      0.071ns  ((TSJ^2 + DJ^2)^1/2) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Discrete Jitter          (DJ):    0.124ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_125mhz_x0y0 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.959     0.959    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.093     1.052 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           1.507     2.559    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT0)
+                                                      0.077     2.636 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0
+                         net (fo=2, routed)           1.549     4.185    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_125mhz
+    BUFGCTRL_X0Y2        BUFG (Prop_bufg_I_O)         0.093     4.278 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/dclk_i_bufg.dclk_i/O
+                         net (fo=397, routed)         1.351     5.629    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_reset.pipe_reset_i/CLK
+    SLICE_X201Y174       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_reset.pipe_reset_i/dclk_rst_reg2_reg/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X201Y174       FDRE (Prop_fdre_C_Q)         0.204     5.833 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_reset.pipe_reset_i/dclk_rst_reg2_reg/Q
+                         net (fo=390, routed)         2.405     8.238    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/RST_DCLK_RESET
+    SLICE_X199Y189       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/done_reg/R
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_125mhz_x0y0 rise edge)
+                                                      8.000     8.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     8.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.903     8.903    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.083     8.986 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           1.349    10.335    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT0)
+                                                      0.073    10.408 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0
+                         net (fo=2, routed)           1.431    11.839    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_125mhz
+    BUFGCTRL_X0Y2        BUFG (Prop_bufg_I_O)         0.083    11.922 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/dclk_i_bufg.dclk_i/O
+                         net (fo=397, routed)         1.224    13.146    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/CLK
+    SLICE_X199Y189       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/done_reg/C
+                         clock pessimism              0.449    13.595    
+                         clock uncertainty           -0.071    13.524    
+    SLICE_X199Y189       FDRE (Setup_fdre_C_R)       -0.387    13.137    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/done_reg
+  -------------------------------------------------------------------
+                         required time                         13.137    
+                         arrival time                          -8.238    
+  -------------------------------------------------------------------
+                         slack                                  4.899    
+
+
+
+
+
+Min Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             0.088ns  (arrival time - required time)
+  Source:                 xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].pipe_drp.pipe_drp_i/x16x20_mode_reg2_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk_125mhz_x0y0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].pipe_drp.pipe_drp_i/addr_reg_reg[4]/D
+                            (rising edge-triggered cell FDRE clocked by clk_125mhz_x0y0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_125mhz_x0y0
+  Path Type:              Hold (Min at Fast Process Corner)
+  Requirement:            0.000ns  (clk_125mhz_x0y0 rise@0.000ns - clk_125mhz_x0y0 rise@0.000ns)
+  Data Path Delay:        0.342ns  (logic 0.157ns (45.858%)  route 0.185ns (54.142%))
+  Logic Levels:           1  (LUT6=1)
+  Clock Path Skew:        0.194ns (DCD - SCD - CPR)
+    Destination Clock Delay (DCD):    2.930ns
+    Source Clock Delay      (SCD):    2.404ns
+    Clock Pessimism Removal (CPR):    0.332ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_125mhz_x0y0 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.387     0.387    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.026     0.413 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           0.657     1.070    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT0)
+                                                      0.050     1.120 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0
+                         net (fo=2, routed)           0.619     1.739    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_125mhz
+    BUFGCTRL_X0Y2        BUFG (Prop_bufg_I_O)         0.026     1.765 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/dclk_i_bufg.dclk_i/O
+                         net (fo=397, routed)         0.639     2.404    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].pipe_drp.pipe_drp_i/CLK
+    SLICE_X201Y149       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].pipe_drp.pipe_drp_i/x16x20_mode_reg2_reg/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X201Y149       FDRE (Prop_fdre_C_Q)         0.091     2.495 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].pipe_drp.pipe_drp_i/x16x20_mode_reg2_reg/Q
+                         net (fo=9, routed)           0.185     2.680    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].pipe_drp.pipe_drp_i/x16x20_mode_reg2
+    SLICE_X203Y150       LUT6 (Prop_lut6_I1_O)        0.066     2.746 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].pipe_drp.pipe_drp_i/addr_reg[4]_i_1__2/O
+                         net (fo=1, routed)           0.000     2.746    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].pipe_drp.pipe_drp_i/addr_reg[4]_i_1__2_n_0
+    SLICE_X203Y150       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].pipe_drp.pipe_drp_i/addr_reg_reg[4]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_125mhz_x0y0 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.426     0.426    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.030     0.456 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           0.869     1.325    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT0)
+                                                      0.053     1.378 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0
+                         net (fo=2, routed)           0.689     2.067    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_125mhz
+    BUFGCTRL_X0Y2        BUFG (Prop_bufg_I_O)         0.030     2.097 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/dclk_i_bufg.dclk_i/O
+                         net (fo=397, routed)         0.833     2.930    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].pipe_drp.pipe_drp_i/CLK
+    SLICE_X203Y150       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].pipe_drp.pipe_drp_i/addr_reg_reg[4]/C
+                         clock pessimism             -0.332     2.598    
+    SLICE_X203Y150       FDRE (Hold_fdre_C_D)         0.060     2.658    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].pipe_drp.pipe_drp_i/addr_reg_reg[4]
+  -------------------------------------------------------------------
+                         required time                         -2.658    
+                         arrival time                           2.746    
+  -------------------------------------------------------------------
+                         slack                                  0.088    
+
+
+
+
+
+Pulse Width Checks
+--------------------------------------------------------------------------------------
+Clock Name:         clk_125mhz_x0y0
+Waveform(ns):       { 0.000 4.000 }
+Period(ns):         8.000
+Sources:            { xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0 }
+
+Check Type        Corner  Lib Pin               Reference Pin  Required(ns)  Actual(ns)  Slack(ns)  Location             Pin
+Min Period        n/a     GTXE2_CHANNEL/DRPCLK  n/a            5.714         8.000       2.286      GTXE2_CHANNEL_X0Y13  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[2].gt_wrapper_i/gtx_channel.gtxe2_channel_i/DRPCLK
+Max Period        n/a     MMCME2_ADV/CLKOUT0    n/a            213.360       8.000       205.360    MMCME2_ADV_X0Y2      xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0
+Low Pulse Width   Slow    FDRE/C                n/a            0.400         4.000       3.600      SLICE_X204Y181       xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[1].pipe_drp.pipe_drp_i/addr_reg_reg[5]/C
+High Pulse Width  Fast    FDRE/C                n/a            0.350         4.000       3.650      SLICE_X203Y180       xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[1].pipe_drp.pipe_drp_i/di_reg_reg[13]/C
+
+
+
+---------------------------------------------------------------------------------------------------
+From Clock:  clk_125mhz_mux_x0y0
+  To Clock:  clk_125mhz_mux_x0y0
+
+Setup :            0  Failing Endpoints,  Worst Slack        4.314ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.058ns,  Total Violation        0.000ns
+PW    :            0  Failing Endpoints,  Worst Slack        3.358ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+Max Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             4.314ns  (required time - arrival time)
+  Source:                 xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_reset.pipe_reset_i/cpllreset_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk_125mhz_mux_x0y0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].pipe_eq.pipe_eq_i/txeq_txcoeff_reg[17]/R
+                            (rising edge-triggered cell FDRE clocked by clk_125mhz_mux_x0y0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_125mhz_mux_x0y0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_125mhz_mux_x0y0 rise@8.000ns - clk_125mhz_mux_x0y0 rise@0.000ns)
+  Data Path Delay:        3.116ns  (logic 0.236ns (7.573%)  route 2.880ns (92.427%))
+  Logic Levels:           0  
+  Clock Path Skew:        -0.115ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    5.161ns = ( 13.161 - 8.000 ) 
+    Source Clock Delay      (SCD):    5.632ns
+    Clock Pessimism Removal (CPR):    0.356ns
+  Clock Uncertainty:      0.071ns  ((TSJ^2 + DJ^2)^1/2) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Discrete Jitter          (DJ):    0.124ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_125mhz_mux_x0y0 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.959     0.959    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.093     1.052 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           1.507     2.559    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT0)
+                                                      0.077     2.636 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0
+                         net (fo=2, routed)           1.549     4.185    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_125mhz
+    BUFGCTRL_X0Y1        BUFGCTRL (Prop_bufgctrl_I0_O)
+                                                      0.093     4.278 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/O
+                         net (fo=1528, routed)        1.354     5.632    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_reset.pipe_reset_i/rxusrclk_rst_reg2_reg_0
+    SLICE_X198Y172       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_reset.pipe_reset_i/cpllreset_reg/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X198Y172       FDRE (Prop_fdre_C_Q)         0.236     5.868 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_reset.pipe_reset_i/cpllreset_reg/Q
+                         net (fo=907, routed)         2.880     8.748    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].pipe_eq.pipe_eq_i/RST_CPLLRESET
+    SLICE_X204Y111       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].pipe_eq.pipe_eq_i/txeq_txcoeff_reg[17]/R
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_125mhz_mux_x0y0 rise edge)
+                                                      8.000     8.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     8.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.903     8.903    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.083     8.986 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           1.349    10.335    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT0)
+                                                      0.073    10.408 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0
+                         net (fo=2, routed)           1.431    11.839    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_125mhz
+    BUFGCTRL_X0Y1        BUFGCTRL (Prop_bufgctrl_I0_O)
+                                                      0.083    11.922 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/O
+                         net (fo=1528, routed)        1.239    13.161    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].pipe_eq.pipe_eq_i/fs_reg2_reg[5]
+    SLICE_X204Y111       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].pipe_eq.pipe_eq_i/txeq_txcoeff_reg[17]/C
+                         clock pessimism              0.356    13.517    
+                         clock uncertainty           -0.071    13.446    
+    SLICE_X204Y111       FDRE (Setup_fdre_C_R)       -0.384    13.062    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].pipe_eq.pipe_eq_i/txeq_txcoeff_reg[17]
+  -------------------------------------------------------------------
+                         required time                         13.062    
+                         arrival time                          -8.748    
+  -------------------------------------------------------------------
+                         slack                                  4.314    
+
+
+
+
+
+Min Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             0.058ns  (arrival time - required time)
+  Source:                 xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_pipe_pipeline_i/pipe_4_lane.pipe_lane_2_i/pipe_stages_1.pipe_rx_data_q_reg[14]/C
+                            (rising edge-triggered cell FDRE clocked by clk_125mhz_mux_x0y0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_block_i/PIPERX2DATA[14]
+                            (rising edge-triggered cell PCIE_2_1 clocked by clk_125mhz_mux_x0y0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_125mhz_mux_x0y0
+  Path Type:              Hold (Min at Fast Process Corner)
+  Requirement:            0.000ns  (clk_125mhz_mux_x0y0 rise@0.000ns - clk_125mhz_mux_x0y0 rise@0.000ns)
+  Data Path Delay:        0.569ns  (logic 0.100ns (17.588%)  route 0.469ns (82.412%))
+  Logic Levels:           0  
+  Clock Path Skew:        0.019ns (DCD - SCD - CPR)
+    Destination Clock Delay (DCD):    2.927ns
+    Source Clock Delay      (SCD):    2.382ns
+    Clock Pessimism Removal (CPR):    0.526ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_125mhz_mux_x0y0 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.387     0.387    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.026     0.413 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           0.657     1.070    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT0)
+                                                      0.050     1.120 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0
+                         net (fo=2, routed)           0.619     1.739    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_125mhz
+    BUFGCTRL_X0Y1        BUFGCTRL (Prop_bufgctrl_I0_O)
+                                                      0.026     1.765 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/O
+                         net (fo=1528, routed)        0.617     2.382    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_pipe_pipeline_i/pipe_4_lane.pipe_lane_2_i/CLK
+    SLICE_X188Y164       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_pipe_pipeline_i/pipe_4_lane.pipe_lane_2_i/pipe_stages_1.pipe_rx_data_q_reg[14]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X188Y164       FDRE (Prop_fdre_C_Q)         0.100     2.482 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_pipe_pipeline_i/pipe_4_lane.pipe_lane_2_i/pipe_stages_1.pipe_rx_data_q_reg[14]/Q
+                         net (fo=1, routed)           0.469     2.951    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/clk_msien_reg_1[14]
+    PCIE_X0Y0            PCIE_2_1                                     r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_block_i/PIPERX2DATA[14]
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_125mhz_mux_x0y0 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.426     0.426    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.030     0.456 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           0.869     1.325    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT0)
+                                                      0.053     1.378 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0
+                         net (fo=2, routed)           0.689     2.067    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_125mhz
+    BUFGCTRL_X0Y1        BUFGCTRL (Prop_bufgctrl_I0_O)
+                                                      0.030     2.097 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/O
+                         net (fo=1528, routed)        0.830     2.927    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/CLK
+    PCIE_X0Y0            PCIE_2_1                                     r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_block_i/PIPECLK
+                         clock pessimism             -0.526     2.401    
+    PCIE_X0Y0            PCIE_2_1 (Hold_pcie_2_1_PIPECLK_PIPERX2DATA[14])
+                                                      0.492     2.893    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_block_i
+  -------------------------------------------------------------------
+                         required time                         -2.893    
+                         arrival time                           2.951    
+  -------------------------------------------------------------------
+                         slack                                  0.058    
+
+
+
+
+
+Pulse Width Checks
+--------------------------------------------------------------------------------------
+Clock Name:         clk_125mhz_mux_x0y0
+Waveform(ns):       { 0.000 4.000 }
+Period(ns):         8.000
+Sources:            { xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/O }
+
+Check Type        Corner  Lib Pin           Reference Pin  Required(ns)  Actual(ns)  Slack(ns)  Location        Pin
+Min Period        n/a     PCIE_2_1/PIPECLK  n/a            4.000         8.000       4.000      PCIE_X0Y0       xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_block_i/PIPECLK
+Low Pulse Width   Fast    SRL16E/CLK        n/a            0.642         4.000       3.358      SLICE_X198Y149  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/ltssm_reg1_reg[0]_srl2/CLK
+High Pulse Width  Fast    SRL16E/CLK        n/a            0.642         4.000       3.358      SLICE_X198Y149  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/ltssm_reg1_reg[0]_srl2/CLK
+
+
+
+---------------------------------------------------------------------------------------------------
+From Clock:  clk_250mhz_x0y0
+  To Clock:  clk_250mhz_x0y0
+
+Setup :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+Hold  :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+PW    :            0  Failing Endpoints,  Worst Slack        2.592ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+Pulse Width Checks
+--------------------------------------------------------------------------------------
+Clock Name:         clk_250mhz_x0y0
+Waveform(ns):       { 0.000 2.000 }
+Period(ns):         4.000
+Sources:            { xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT1 }
+
+Check Type  Corner  Lib Pin             Reference Pin  Required(ns)  Actual(ns)  Slack(ns)  Location         Pin
+Min Period  n/a     BUFGCTRL/I1         n/a            1.409         4.000       2.592      BUFGCTRL_X0Y1    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/I1
+Max Period  n/a     MMCME2_ADV/CLKOUT1  n/a            213.360       4.000       209.360    MMCME2_ADV_X0Y2  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT1
+
+
+
+---------------------------------------------------------------------------------------------------
+From Clock:  clk_250mhz_mux_x0y0
+  To Clock:  clk_250mhz_mux_x0y0
+
+Setup :            0  Failing Endpoints,  Worst Slack        0.320ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.058ns,  Total Violation        0.000ns
+PW    :            0  Failing Endpoints,  Worst Slack        0.000ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+Max Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             0.320ns  (required time - arrival time)
+  Source:                 xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_reset.pipe_reset_i/cpllreset_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk_250mhz_mux_x0y0  {rise@0.000ns fall@2.000ns period=4.000ns})
+  Destination:            xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].pipe_eq.pipe_eq_i/txeq_txcoeff_reg[17]/R
+                            (rising edge-triggered cell FDRE clocked by clk_250mhz_mux_x0y0  {rise@0.000ns fall@2.000ns period=4.000ns})
+  Path Group:             clk_250mhz_mux_x0y0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            4.000ns  (clk_250mhz_mux_x0y0 rise@4.000ns - clk_250mhz_mux_x0y0 rise@0.000ns)
+  Data Path Delay:        3.116ns  (logic 0.236ns (7.573%)  route 2.880ns (92.427%))
+  Logic Levels:           0  
+  Clock Path Skew:        -0.115ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    5.161ns = ( 9.161 - 4.000 ) 
+    Source Clock Delay      (SCD):    5.632ns
+    Clock Pessimism Removal (CPR):    0.356ns
+  Clock Uncertainty:      0.065ns  ((TSJ^2 + DJ^2)^1/2) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Discrete Jitter          (DJ):    0.108ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_250mhz_mux_x0y0 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.959     0.959    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.093     1.052 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           1.507     2.559    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT1)
+                                                      0.077     2.636 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT1
+                         net (fo=1, routed)           1.549     4.185    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_250mhz
+    BUFGCTRL_X0Y1        BUFGCTRL (Prop_bufgctrl_I1_O)
+                                                      0.093     4.278 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/O
+                         net (fo=1528, routed)        1.354     5.632    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_reset.pipe_reset_i/rxusrclk_rst_reg2_reg_0
+    SLICE_X198Y172       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_reset.pipe_reset_i/cpllreset_reg/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X198Y172       FDRE (Prop_fdre_C_Q)         0.236     5.868 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_reset.pipe_reset_i/cpllreset_reg/Q
+                         net (fo=907, routed)         2.880     8.748    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].pipe_eq.pipe_eq_i/RST_CPLLRESET
+    SLICE_X204Y111       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].pipe_eq.pipe_eq_i/txeq_txcoeff_reg[17]/R
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_250mhz_mux_x0y0 rise edge)
+                                                      4.000     4.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     4.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.903     4.903    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.083     4.986 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           1.349     6.335    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT1)
+                                                      0.073     6.408 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT1
+                         net (fo=1, routed)           1.431     7.839    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_250mhz
+    BUFGCTRL_X0Y1        BUFGCTRL (Prop_bufgctrl_I1_O)
+                                                      0.083     7.922 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/O
+                         net (fo=1528, routed)        1.239     9.161    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].pipe_eq.pipe_eq_i/fs_reg2_reg[5]
+    SLICE_X204Y111       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].pipe_eq.pipe_eq_i/txeq_txcoeff_reg[17]/C
+                         clock pessimism              0.356     9.517    
+                         clock uncertainty           -0.065     9.452    
+    SLICE_X204Y111       FDRE (Setup_fdre_C_R)       -0.384     9.068    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].pipe_eq.pipe_eq_i/txeq_txcoeff_reg[17]
+  -------------------------------------------------------------------
+                         required time                          9.068    
+                         arrival time                          -8.748    
+  -------------------------------------------------------------------
+                         slack                                  0.320    
+
+
+
+
+
+Min Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             0.058ns  (arrival time - required time)
+  Source:                 xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_pipe_pipeline_i/pipe_4_lane.pipe_lane_2_i/pipe_stages_1.pipe_rx_data_q_reg[14]/C
+                            (rising edge-triggered cell FDRE clocked by clk_250mhz_mux_x0y0  {rise@0.000ns fall@2.000ns period=4.000ns})
+  Destination:            xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_block_i/PIPERX2DATA[14]
+                            (rising edge-triggered cell PCIE_2_1 clocked by clk_250mhz_mux_x0y0  {rise@0.000ns fall@2.000ns period=4.000ns})
+  Path Group:             clk_250mhz_mux_x0y0
+  Path Type:              Hold (Min at Fast Process Corner)
+  Requirement:            0.000ns  (clk_250mhz_mux_x0y0 rise@0.000ns - clk_250mhz_mux_x0y0 rise@0.000ns)
+  Data Path Delay:        0.569ns  (logic 0.100ns (17.588%)  route 0.469ns (82.412%))
+  Logic Levels:           0  
+  Clock Path Skew:        0.019ns (DCD - SCD - CPR)
+    Destination Clock Delay (DCD):    2.927ns
+    Source Clock Delay      (SCD):    2.382ns
+    Clock Pessimism Removal (CPR):    0.526ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_250mhz_mux_x0y0 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.387     0.387    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.026     0.413 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           0.657     1.070    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT1)
+                                                      0.050     1.120 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT1
+                         net (fo=1, routed)           0.619     1.739    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_250mhz
+    BUFGCTRL_X0Y1        BUFGCTRL (Prop_bufgctrl_I1_O)
+                                                      0.026     1.765 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/O
+                         net (fo=1528, routed)        0.617     2.382    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_pipe_pipeline_i/pipe_4_lane.pipe_lane_2_i/CLK
+    SLICE_X188Y164       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_pipe_pipeline_i/pipe_4_lane.pipe_lane_2_i/pipe_stages_1.pipe_rx_data_q_reg[14]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X188Y164       FDRE (Prop_fdre_C_Q)         0.100     2.482 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_pipe_pipeline_i/pipe_4_lane.pipe_lane_2_i/pipe_stages_1.pipe_rx_data_q_reg[14]/Q
+                         net (fo=1, routed)           0.469     2.951    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/clk_msien_reg_1[14]
+    PCIE_X0Y0            PCIE_2_1                                     r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_block_i/PIPERX2DATA[14]
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_250mhz_mux_x0y0 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.426     0.426    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.030     0.456 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           0.869     1.325    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT1)
+                                                      0.053     1.378 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT1
+                         net (fo=1, routed)           0.689     2.067    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_250mhz
+    BUFGCTRL_X0Y1        BUFGCTRL (Prop_bufgctrl_I1_O)
+                                                      0.030     2.097 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/O
+                         net (fo=1528, routed)        0.830     2.927    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/CLK
+    PCIE_X0Y0            PCIE_2_1                                     r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_block_i/PIPECLK
+                         clock pessimism             -0.526     2.401    
+    PCIE_X0Y0            PCIE_2_1 (Hold_pcie_2_1_PIPECLK_PIPERX2DATA[14])
+                                                      0.492     2.893    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_block_i
+  -------------------------------------------------------------------
+                         required time                         -2.893    
+                         arrival time                           2.951    
+  -------------------------------------------------------------------
+                         slack                                  0.058    
+
+
+
+
+
+Pulse Width Checks
+--------------------------------------------------------------------------------------
+Clock Name:         clk_250mhz_mux_x0y0
+Waveform(ns):       { 0.000 2.000 }
+Period(ns):         4.000
+Sources:            { xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/O }
+
+Check Type        Corner  Lib Pin           Reference Pin  Required(ns)  Actual(ns)  Slack(ns)  Location        Pin
+Min Period        n/a     PCIE_2_1/PIPECLK  n/a            4.000         4.000       0.000      PCIE_X0Y0       xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_block_i/PIPECLK
+Low Pulse Width   Fast    SRL16E/CLK        n/a            0.642         2.000       1.358      SLICE_X198Y149  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/ltssm_reg1_reg[0]_srl2/CLK
+High Pulse Width  Slow    SRL16E/CLK        n/a            0.642         2.000       1.358      SLICE_X198Y149  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/ltssm_reg1_reg[0]_srl2/CLK
+
+
+
+---------------------------------------------------------------------------------------------------
+From Clock:  mmcm_fb
+  To Clock:  mmcm_fb
+
+Setup :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+Hold  :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+PW    :            0  Failing Endpoints,  Worst Slack        8.929ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+Pulse Width Checks
+--------------------------------------------------------------------------------------
+Clock Name:         mmcm_fb
+Waveform(ns):       { 0.000 5.000 }
+Period(ns):         10.000
+Sources:            { xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKFBOUT }
+
+Check Type  Corner  Lib Pin              Reference Pin  Required(ns)  Actual(ns)  Slack(ns)  Location         Pin
+Min Period  n/a     MMCME2_ADV/CLKFBOUT  n/a            1.071         10.000      8.929      MMCME2_ADV_X0Y2  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKFBOUT
+Max Period  n/a     MMCME2_ADV/CLKFBIN   n/a            100.000       10.000      90.000     MMCME2_ADV_X0Y2  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKFBIN
+
+
+
+---------------------------------------------------------------------------------------------------
+From Clock:  userclk1
+  To Clock:  userclk1
+
+Setup :            0  Failing Endpoints,  Worst Slack        0.269ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.045ns,  Total Violation        0.000ns
+PW    :            0  Failing Endpoints,  Worst Slack        0.000ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+Max Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             0.269ns  (required time - arrival time)
+  Source:                 xdma_restore_stage_a2_i/xdma_0/inst/udma_wrapper/dma_top/dma_enable.vul_dma/pcie_dsc_rst_3ff_reg_rep/C
+                            (rising edge-triggered cell FDPE clocked by userclk1  {rise@0.000ns fall@2.000ns period=4.000ns})
+  Destination:            xdma_restore_stage_a2_i/xdma_0/inst/udma_wrapper/dma_top/dma_enable.vul_dma/dsc_eng.DSC/dsc_acc_dat_nn1_reg[radr][60]/R
+                            (rising edge-triggered cell FDRE clocked by userclk1  {rise@0.000ns fall@2.000ns period=4.000ns})
+  Path Group:             userclk1
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            4.000ns  (userclk1 rise@4.000ns - userclk1 rise@0.000ns)
+  Data Path Delay:        3.243ns  (logic 0.259ns (7.987%)  route 2.984ns (92.013%))
+  Logic Levels:           0  
+  Clock Path Skew:        -0.120ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    5.034ns = ( 9.034 - 4.000 ) 
+    Source Clock Delay      (SCD):    5.596ns
+    Clock Pessimism Removal (CPR):    0.442ns
+  Clock Uncertainty:      0.065ns  ((TSJ^2 + DJ^2)^1/2) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Discrete Jitter          (DJ):    0.108ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock userclk1 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.959     0.959    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.093     1.052 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           1.507     2.559    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT2)
+                                                      0.077     2.636 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT2
+                         net (fo=1, routed)           1.549     4.185    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk1
+    BUFGCTRL_X0Y0        BUFG (Prop_bufg_I_O)         0.093     4.278 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk1_i1.usrclk1_i1/O
+                         net (fo=16580, routed)       1.318     5.596    xdma_restore_stage_a2_i/xdma_0/inst/udma_wrapper/dma_top/dma_enable.vul_dma/user_clk
+    SLICE_X184Y119       FDPE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/udma_wrapper/dma_top/dma_enable.vul_dma/pcie_dsc_rst_3ff_reg_rep/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X184Y119       FDPE (Prop_fdpe_C_Q)         0.259     5.855 r  xdma_restore_stage_a2_i/xdma_0/inst/udma_wrapper/dma_top/dma_enable.vul_dma/pcie_dsc_rst_3ff_reg_rep/Q
+                         net (fo=211, routed)         2.984     8.839    xdma_restore_stage_a2_i/xdma_0/inst/udma_wrapper/dma_top/dma_enable.vul_dma/dsc_eng.DSC/SR[1]
+    SLICE_X144Y119       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/udma_wrapper/dma_top/dma_enable.vul_dma/dsc_eng.DSC/dsc_acc_dat_nn1_reg[radr][60]/R
+  -------------------------------------------------------------------    -------------------
+
+                         (clock userclk1 rise edge)
+                                                      4.000     4.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     4.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.903     4.903    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.083     4.986 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           1.349     6.335    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT2)
+                                                      0.073     6.408 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT2
+                         net (fo=1, routed)           1.431     7.839    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk1
+    BUFGCTRL_X0Y0        BUFG (Prop_bufg_I_O)         0.083     7.922 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk1_i1.usrclk1_i1/O
+                         net (fo=16580, routed)       1.112     9.034    xdma_restore_stage_a2_i/xdma_0/inst/udma_wrapper/dma_top/dma_enable.vul_dma/dsc_eng.DSC/user_clk
+    SLICE_X144Y119       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/udma_wrapper/dma_top/dma_enable.vul_dma/dsc_eng.DSC/dsc_acc_dat_nn1_reg[radr][60]/C
+                         clock pessimism              0.442     9.476    
+                         clock uncertainty           -0.065     9.411    
+    SLICE_X144Y119       FDRE (Setup_fdre_C_R)       -0.304     9.107    xdma_restore_stage_a2_i/xdma_0/inst/udma_wrapper/dma_top/dma_enable.vul_dma/dsc_eng.DSC/dsc_acc_dat_nn1_reg[radr][60]
+  -------------------------------------------------------------------
+                         required time                          9.107    
+                         arrival time                          -8.839    
+  -------------------------------------------------------------------
+                         slack                                  0.269    
+
+
+
+
+
+Min Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             0.045ns  (arrival time - required time)
+  Source:                 xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_block_i/USERCLK
+                            (rising edge-triggered cell PCIE_2_1 clocked by userclk1  {rise@0.000ns fall@2.000ns period=4.000ns})
+  Destination:            xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_tx/brams[3].ram/use_tdp.ramb36/genblk5_0.bram36_tdp_bl.bram36_tdp_bl/ADDRARDADDR[9]
+                            (rising edge-triggered cell RAMB36E1 clocked by userclk1  {rise@0.000ns fall@2.000ns period=4.000ns})
+  Path Group:             userclk1
+  Path Type:              Hold (Min at Fast Process Corner)
+  Requirement:            0.000ns  (userclk1 rise@0.000ns - userclk1 rise@0.000ns)
+  Data Path Delay:        0.292ns  (logic 0.036ns (12.342%)  route 0.256ns (87.658%))
+  Logic Levels:           0  
+  Clock Path Skew:        0.064ns (DCD - SCD - CPR)
+    Destination Clock Delay (DCD):    2.955ns
+    Source Clock Delay      (SCD):    2.386ns
+    Clock Pessimism Removal (CPR):    0.505ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock userclk1 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.387     0.387    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.026     0.413 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           0.657     1.070    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT2)
+                                                      0.050     1.120 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT2
+                         net (fo=1, routed)           0.619     1.739    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk1
+    BUFGCTRL_X0Y0        BUFG (Prop_bufg_I_O)         0.026     1.765 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk1_i1.usrclk1_i1/O
+                         net (fo=16580, routed)       0.621     2.386    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/user_clk
+    PCIE_X0Y0            PCIE_2_1                                     r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_block_i/USERCLK
+  -------------------------------------------------------------------    -------------------
+    PCIE_X0Y0            PCIE_2_1 (Prop_pcie_2_1_USERCLK_MIMTXWADDR[5])
+                                                      0.036     2.422 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_block_i/MIMTXWADDR[5]
+                         net (fo=4, routed)           0.256     2.677    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_tx/brams[3].ram/use_tdp.ramb36/MIMTXWADDR[5]
+    RAMB36_X9Y30         RAMB36E1                                     r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_tx/brams[3].ram/use_tdp.ramb36/genblk5_0.bram36_tdp_bl.bram36_tdp_bl/ADDRARDADDR[9]
+  -------------------------------------------------------------------    -------------------
+
+                         (clock userclk1 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.426     0.426    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.030     0.456 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           0.869     1.325    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT2)
+                                                      0.053     1.378 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT2
+                         net (fo=1, routed)           0.689     2.067    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk1
+    BUFGCTRL_X0Y0        BUFG (Prop_bufg_I_O)         0.030     2.097 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk1_i1.usrclk1_i1/O
+                         net (fo=16580, routed)       0.858     2.955    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_tx/brams[3].ram/use_tdp.ramb36/user_clk
+    RAMB36_X9Y30         RAMB36E1                                     r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_tx/brams[3].ram/use_tdp.ramb36/genblk5_0.bram36_tdp_bl.bram36_tdp_bl/CLKARDCLK
+                         clock pessimism             -0.505     2.450    
+    RAMB36_X9Y30         RAMB36E1 (Hold_ramb36e1_CLKARDCLK_ADDRARDADDR[9])
+                                                      0.183     2.633    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_tx/brams[3].ram/use_tdp.ramb36/genblk5_0.bram36_tdp_bl.bram36_tdp_bl
+  -------------------------------------------------------------------
+                         required time                         -2.633    
+                         arrival time                           2.677    
+  -------------------------------------------------------------------
+                         slack                                  0.045    
+
+
+
+
+
+Pulse Width Checks
+--------------------------------------------------------------------------------------
+Clock Name:         userclk1
+Waveform(ns):       { 0.000 2.000 }
+Period(ns):         4.000
+Sources:            { xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT2 }
+
+Check Type        Corner  Lib Pin             Reference Pin     Required(ns)  Actual(ns)  Slack(ns)  Location         Pin
+Min Period        n/a     PCIE_2_1/USERCLK2   n/a               4.000         4.000       0.000      PCIE_X0Y0        xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_block_i/USERCLK2
+Max Period        n/a     MMCME2_ADV/CLKOUT2  n/a               213.360       4.000       209.360    MMCME2_ADV_X0Y2  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT2
+Low Pulse Width   Slow    RAMD32/CLK          n/a               0.768         2.000       1.232      SLICE_X120Y112   xdma_restore_stage_a2_i/xdma_0/inst/udma_wrapper/dma_top/WPL_FIFO/MemArray_reg_0_15_12_17/RAMA/CLK
+High Pulse Width  Slow    RAMD32/CLK          n/a               0.768         2.000       1.232      SLICE_X142Y113   xdma_restore_stage_a2_i/xdma_0/inst/udma_wrapper/dma_top/dma_enable.vul_dma/WR/gen_rdwr_loop[0].gen_rdwr_eng.RDWR_INST/DSC_FIFO/MemArray_reg_0_7_96_101/RAMA_D1/CLK
+Max Skew          Fast    PCIE_2_1/USERCLK    PCIE_2_1/PIPECLK  0.560         0.471       0.089      PCIE_X0Y0        xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_block_i/USERCLK
+
+
+
+---------------------------------------------------------------------------------------------------
+From Clock:  clk_125mhz_mux_x0y0
+  To Clock:  clk_125mhz_x0y0
+
+Setup :            0  Failing Endpoints,  Worst Slack        5.558ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.280ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+Max Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             5.558ns  (required time - arrival time)
+  Source:                 xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_pipe_pipeline_i/pipe_misc_i/pipe_stages_1.pipe_tx_rate_q_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk_125mhz_mux_x0y0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/rate_reg1_reg[0]/D
+                            (rising edge-triggered cell FDRE clocked by clk_125mhz_x0y0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_125mhz_x0y0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_125mhz_x0y0 rise@8.000ns - clk_125mhz_mux_x0y0 rise@0.000ns)
+  Data Path Delay:        2.122ns  (logic 0.259ns (12.207%)  route 1.863ns (87.793%))
+  Logic Levels:           0  
+  Clock Path Skew:        -0.271ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    5.145ns = ( 13.145 - 8.000 ) 
+    Source Clock Delay      (SCD):    5.644ns
+    Clock Pessimism Removal (CPR):    0.228ns
+  Clock Uncertainty:      0.071ns  ((TSJ^2 + DJ^2)^1/2) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Discrete Jitter          (DJ):    0.124ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_125mhz_mux_x0y0 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.959     0.959    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.093     1.052 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           1.507     2.559    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT0)
+                                                      0.077     2.636 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0
+                         net (fo=2, routed)           1.549     4.185    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_125mhz
+    BUFGCTRL_X0Y1        BUFGCTRL (Prop_bufgctrl_I0_O)
+                                                      0.093     4.278 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/O
+                         net (fo=1528, routed)        1.366     5.644    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_pipe_pipeline_i/pipe_misc_i/CLK
+    SLICE_X196Y161       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_pipe_pipeline_i/pipe_misc_i/pipe_stages_1.pipe_tx_rate_q_reg/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X196Y161       FDRE (Prop_fdre_C_Q)         0.259     5.903 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_pipe_pipeline_i/pipe_misc_i/pipe_stages_1.pipe_tx_rate_q_reg/Q
+                         net (fo=9, routed)           1.863     7.766    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/rate_reg1_reg[0]_0[0]
+    SLICE_X202Y188       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/rate_reg1_reg[0]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_125mhz_x0y0 rise edge)
+                                                      8.000     8.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     8.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.903     8.903    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.083     8.986 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           1.349    10.335    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT0)
+                                                      0.073    10.408 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0
+                         net (fo=2, routed)           1.431    11.839    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_125mhz
+    BUFGCTRL_X0Y2        BUFG (Prop_bufg_I_O)         0.083    11.922 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/dclk_i_bufg.dclk_i/O
+                         net (fo=397, routed)         1.223    13.145    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/CLK
+    SLICE_X202Y188       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/rate_reg1_reg[0]/C
+                         clock pessimism              0.228    13.373    
+                         clock uncertainty           -0.071    13.302    
+    SLICE_X202Y188       FDRE (Setup_fdre_C_D)        0.022    13.324    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/rate_reg1_reg[0]
+  -------------------------------------------------------------------
+                         required time                         13.324    
+                         arrival time                          -7.766    
+  -------------------------------------------------------------------
+                         slack                                  5.558    
+
+
+
+
+
+Min Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             0.280ns  (arrival time - required time)
+  Source:                 xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_pipe_pipeline_i/pipe_misc_i/pipe_stages_1.pipe_tx_rate_q_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk_125mhz_mux_x0y0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[2].pipe_drp.pipe_drp_i/rate_reg1_reg[0]/D
+                            (rising edge-triggered cell FDRE clocked by clk_125mhz_x0y0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_125mhz_x0y0
+  Path Type:              Hold (Min at Fast Process Corner)
+  Requirement:            0.000ns  (clk_125mhz_x0y0 rise@0.000ns - clk_125mhz_mux_x0y0 rise@0.000ns)
+  Data Path Delay:        0.629ns  (logic 0.118ns (18.763%)  route 0.511ns (81.237%))
+  Logic Levels:           0  
+  Clock Path Skew:        0.282ns (DCD - SCD - CPR)
+    Destination Clock Delay (DCD):    2.927ns
+    Source Clock Delay      (SCD):    2.387ns
+    Clock Pessimism Removal (CPR):    0.258ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_125mhz_mux_x0y0 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.387     0.387    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.026     0.413 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           0.657     1.070    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT0)
+                                                      0.050     1.120 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0
+                         net (fo=2, routed)           0.619     1.739    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_125mhz
+    BUFGCTRL_X0Y1        BUFGCTRL (Prop_bufgctrl_I0_O)
+                                                      0.026     1.765 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/O
+                         net (fo=1528, routed)        0.622     2.387    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_pipe_pipeline_i/pipe_misc_i/CLK
+    SLICE_X196Y161       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_pipe_pipeline_i/pipe_misc_i/pipe_stages_1.pipe_tx_rate_q_reg/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X196Y161       FDRE (Prop_fdre_C_Q)         0.118     2.505 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_pipe_pipeline_i/pipe_misc_i/pipe_stages_1.pipe_tx_rate_q_reg/Q
+                         net (fo=9, routed)           0.511     3.016    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[2].pipe_drp.pipe_drp_i/rate_reg1_reg[0]_0[0]
+    SLICE_X202Y160       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[2].pipe_drp.pipe_drp_i/rate_reg1_reg[0]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_125mhz_x0y0 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.426     0.426    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.030     0.456 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           0.869     1.325    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT0)
+                                                      0.053     1.378 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0
+                         net (fo=2, routed)           0.689     2.067    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_125mhz
+    BUFGCTRL_X0Y2        BUFG (Prop_bufg_I_O)         0.030     2.097 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/dclk_i_bufg.dclk_i/O
+                         net (fo=397, routed)         0.830     2.927    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[2].pipe_drp.pipe_drp_i/CLK
+    SLICE_X202Y160       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[2].pipe_drp.pipe_drp_i/rate_reg1_reg[0]/C
+                         clock pessimism             -0.258     2.669    
+    SLICE_X202Y160       FDRE (Hold_fdre_C_D)         0.067     2.736    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[2].pipe_drp.pipe_drp_i/rate_reg1_reg[0]
+  -------------------------------------------------------------------
+                         required time                         -2.736    
+                         arrival time                           3.016    
+  -------------------------------------------------------------------
+                         slack                                  0.280    
+
+
+
+
+
+---------------------------------------------------------------------------------------------------
+From Clock:  clk_250mhz_mux_x0y0
+  To Clock:  clk_125mhz_x0y0
+
+Setup :            0  Failing Endpoints,  Worst Slack        1.438ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.089ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+Max Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             1.438ns  (required time - arrival time)
+  Source:                 xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_pipe_pipeline_i/pipe_misc_i/pipe_stages_1.pipe_tx_rate_q_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk_250mhz_mux_x0y0  {rise@0.000ns fall@2.000ns period=4.000ns})
+  Destination:            xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/rate_reg1_reg[0]/D
+                            (rising edge-triggered cell FDRE clocked by clk_125mhz_x0y0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_125mhz_x0y0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            4.000ns  (clk_125mhz_x0y0 rise@8.000ns - clk_250mhz_mux_x0y0 rise@4.000ns)
+  Data Path Delay:        2.122ns  (logic 0.259ns (12.207%)  route 1.863ns (87.793%))
+  Logic Levels:           0  
+  Clock Path Skew:        -0.271ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    5.145ns = ( 13.145 - 8.000 ) 
+    Source Clock Delay      (SCD):    5.644ns = ( 9.644 - 4.000 ) 
+    Clock Pessimism Removal (CPR):    0.228ns
+  Clock Uncertainty:      0.191ns  ((TSJ^2 + DJ^2)^1/2) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Discrete Jitter          (DJ):    0.124ns
+    Phase Error              (PE):    0.120ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_250mhz_mux_x0y0 rise edge)
+                                                      4.000     4.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     4.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.959     4.959    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.093     5.052 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           1.507     6.559    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT1)
+                                                      0.077     6.636 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT1
+                         net (fo=1, routed)           1.549     8.185    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_250mhz
+    BUFGCTRL_X0Y1        BUFGCTRL (Prop_bufgctrl_I1_O)
+                                                      0.093     8.278 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/O
+                         net (fo=1528, routed)        1.366     9.644    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_pipe_pipeline_i/pipe_misc_i/CLK
+    SLICE_X196Y161       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_pipe_pipeline_i/pipe_misc_i/pipe_stages_1.pipe_tx_rate_q_reg/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X196Y161       FDRE (Prop_fdre_C_Q)         0.259     9.903 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_pipe_pipeline_i/pipe_misc_i/pipe_stages_1.pipe_tx_rate_q_reg/Q
+                         net (fo=9, routed)           1.863    11.766    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/rate_reg1_reg[0]_0[0]
+    SLICE_X202Y188       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/rate_reg1_reg[0]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_125mhz_x0y0 rise edge)
+                                                      8.000     8.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     8.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.903     8.903    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.083     8.986 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           1.349    10.335    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT0)
+                                                      0.073    10.408 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0
+                         net (fo=2, routed)           1.431    11.839    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_125mhz
+    BUFGCTRL_X0Y2        BUFG (Prop_bufg_I_O)         0.083    11.922 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/dclk_i_bufg.dclk_i/O
+                         net (fo=397, routed)         1.223    13.145    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/CLK
+    SLICE_X202Y188       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/rate_reg1_reg[0]/C
+                         clock pessimism              0.228    13.373    
+                         clock uncertainty           -0.191    13.182    
+    SLICE_X202Y188       FDRE (Setup_fdre_C_D)        0.022    13.204    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/rate_reg1_reg[0]
+  -------------------------------------------------------------------
+                         required time                         13.204    
+                         arrival time                         -11.766    
+  -------------------------------------------------------------------
+                         slack                                  1.438    
+
+
+
+
+
+Min Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             0.089ns  (arrival time - required time)
+  Source:                 xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_pipe_pipeline_i/pipe_misc_i/pipe_stages_1.pipe_tx_rate_q_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk_250mhz_mux_x0y0  {rise@0.000ns fall@2.000ns period=4.000ns})
+  Destination:            xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[2].pipe_drp.pipe_drp_i/rate_reg1_reg[0]/D
+                            (rising edge-triggered cell FDRE clocked by clk_125mhz_x0y0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_125mhz_x0y0
+  Path Type:              Hold (Min at Fast Process Corner)
+  Requirement:            0.000ns  (clk_125mhz_x0y0 rise@0.000ns - clk_250mhz_mux_x0y0 rise@0.000ns)
+  Data Path Delay:        0.629ns  (logic 0.118ns (18.763%)  route 0.511ns (81.237%))
+  Logic Levels:           0  
+  Clock Path Skew:        0.282ns (DCD - SCD - CPR)
+    Destination Clock Delay (DCD):    2.927ns
+    Source Clock Delay      (SCD):    2.387ns
+    Clock Pessimism Removal (CPR):    0.258ns
+  Clock Uncertainty:      0.191ns  ((TSJ^2 + DJ^2)^1/2) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Discrete Jitter          (DJ):    0.124ns
+    Phase Error              (PE):    0.120ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_250mhz_mux_x0y0 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.387     0.387    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.026     0.413 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           0.657     1.070    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT1)
+                                                      0.050     1.120 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT1
+                         net (fo=1, routed)           0.619     1.739    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_250mhz
+    BUFGCTRL_X0Y1        BUFGCTRL (Prop_bufgctrl_I1_O)
+                                                      0.026     1.765 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/O
+                         net (fo=1528, routed)        0.622     2.387    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_pipe_pipeline_i/pipe_misc_i/CLK
+    SLICE_X196Y161       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_pipe_pipeline_i/pipe_misc_i/pipe_stages_1.pipe_tx_rate_q_reg/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X196Y161       FDRE (Prop_fdre_C_Q)         0.118     2.505 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_pipe_pipeline_i/pipe_misc_i/pipe_stages_1.pipe_tx_rate_q_reg/Q
+                         net (fo=9, routed)           0.511     3.016    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[2].pipe_drp.pipe_drp_i/rate_reg1_reg[0]_0[0]
+    SLICE_X202Y160       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[2].pipe_drp.pipe_drp_i/rate_reg1_reg[0]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_125mhz_x0y0 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.426     0.426    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.030     0.456 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           0.869     1.325    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT0)
+                                                      0.053     1.378 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0
+                         net (fo=2, routed)           0.689     2.067    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_125mhz
+    BUFGCTRL_X0Y2        BUFG (Prop_bufg_I_O)         0.030     2.097 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/dclk_i_bufg.dclk_i/O
+                         net (fo=397, routed)         0.830     2.927    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[2].pipe_drp.pipe_drp_i/CLK
+    SLICE_X202Y160       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[2].pipe_drp.pipe_drp_i/rate_reg1_reg[0]/C
+                         clock pessimism             -0.258     2.669    
+                         clock uncertainty            0.191     2.860    
+    SLICE_X202Y160       FDRE (Hold_fdre_C_D)         0.067     2.927    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[2].pipe_drp.pipe_drp_i/rate_reg1_reg[0]
+  -------------------------------------------------------------------
+                         required time                         -2.927    
+                         arrival time                           3.016    
+  -------------------------------------------------------------------
+                         slack                                  0.089    
+
+
+
+
+
+---------------------------------------------------------------------------------------------------
+From Clock:  clk_125mhz_x0y0
+  To Clock:  clk_125mhz_mux_x0y0
+
+Setup :            0  Failing Endpoints,  Worst Slack        6.332ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.290ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+Max Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             6.332ns  (required time - arrival time)
+  Source:                 xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_quad.gt_common_enabled.gt_common_int.gt_common_i/qpll_drp_i/done_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk_125mhz_x0y0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/qpll_reset.qpll_reset_i/drp_done_reg1_reg[0]/D
+                            (rising edge-triggered cell FDRE clocked by clk_125mhz_mux_x0y0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_125mhz_mux_x0y0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            8.000ns  (clk_125mhz_mux_x0y0 rise@8.000ns - clk_125mhz_x0y0 rise@0.000ns)
+  Data Path Delay:        1.310ns  (logic 0.259ns (19.777%)  route 1.051ns (80.223%))
+  Logic Levels:           0  
+  Clock Path Skew:        -0.268ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    5.137ns = ( 13.137 - 8.000 ) 
+    Source Clock Delay      (SCD):    5.633ns
+    Clock Pessimism Removal (CPR):    0.228ns
+  Clock Uncertainty:      0.071ns  ((TSJ^2 + DJ^2)^1/2) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Discrete Jitter          (DJ):    0.124ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_125mhz_x0y0 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.959     0.959    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.093     1.052 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           1.507     2.559    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT0)
+                                                      0.077     2.636 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0
+                         net (fo=2, routed)           1.549     4.185    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_125mhz
+    BUFGCTRL_X0Y2        BUFG (Prop_bufg_I_O)         0.093     4.278 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/dclk_i_bufg.dclk_i/O
+                         net (fo=397, routed)         1.355     5.633    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_quad.gt_common_enabled.gt_common_int.gt_common_i/qpll_drp_i/CLK
+    SLICE_X202Y171       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_quad.gt_common_enabled.gt_common_int.gt_common_i/qpll_drp_i/done_reg/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X202Y171       FDRE (Prop_fdre_C_Q)         0.259     5.892 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_quad.gt_common_enabled.gt_common_int.gt_common_i/qpll_drp_i/done_reg/Q
+                         net (fo=1, routed)           1.051     6.943    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/qpll_reset.qpll_reset_i/QRST_DRP_DONE[0]
+    SLICE_X201Y171       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/qpll_reset.qpll_reset_i/drp_done_reg1_reg[0]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_125mhz_mux_x0y0 rise edge)
+                                                      8.000     8.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     8.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.903     8.903    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.083     8.986 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           1.349    10.335    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT0)
+                                                      0.073    10.408 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0
+                         net (fo=2, routed)           1.431    11.839    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_125mhz
+    BUFGCTRL_X0Y1        BUFGCTRL (Prop_bufgctrl_I0_O)
+                                                      0.083    11.922 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/O
+                         net (fo=1528, routed)        1.215    13.137    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/qpll_reset.qpll_reset_i/qpllpd_reg_0
+    SLICE_X201Y171       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/qpll_reset.qpll_reset_i/drp_done_reg1_reg[0]/C
+                         clock pessimism              0.228    13.365    
+                         clock uncertainty           -0.071    13.294    
+    SLICE_X201Y171       FDRE (Setup_fdre_C_D)       -0.019    13.275    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/qpll_reset.qpll_reset_i/drp_done_reg1_reg[0]
+  -------------------------------------------------------------------
+                         required time                         13.275    
+                         arrival time                          -6.943    
+  -------------------------------------------------------------------
+                         slack                                  6.332    
+
+
+
+
+
+Min Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             0.290ns  (arrival time - required time)
+  Source:                 xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/done_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk_125mhz_x0y0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_rate.pipe_rate_i/drp_done_reg1_reg/D
+                            (rising edge-triggered cell FDRE clocked by clk_125mhz_mux_x0y0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Path Group:             clk_125mhz_mux_x0y0
+  Path Type:              Hold (Min at Fast Process Corner)
+  Requirement:            0.000ns  (clk_125mhz_mux_x0y0 rise@0.000ns - clk_125mhz_x0y0 rise@0.000ns)
+  Data Path Delay:        0.604ns  (logic 0.100ns (16.568%)  route 0.504ns (83.432%))
+  Logic Levels:           0  
+  Clock Path Skew:        0.282ns (DCD - SCD - CPR)
+    Destination Clock Delay (DCD):    2.927ns
+    Source Clock Delay      (SCD):    2.387ns
+    Clock Pessimism Removal (CPR):    0.258ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_125mhz_x0y0 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.387     0.387    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.026     0.413 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           0.657     1.070    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT0)
+                                                      0.050     1.120 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0
+                         net (fo=2, routed)           0.619     1.739    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_125mhz
+    BUFGCTRL_X0Y2        BUFG (Prop_bufg_I_O)         0.026     1.765 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/dclk_i_bufg.dclk_i/O
+                         net (fo=397, routed)         0.622     2.387    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/CLK
+    SLICE_X199Y189       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/done_reg/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X199Y189       FDRE (Prop_fdre_C_Q)         0.100     2.487 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/done_reg/Q
+                         net (fo=1, routed)           0.504     2.991    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_rate.pipe_rate_i/RATE_DRP_DONE
+    SLICE_X199Y188       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_rate.pipe_rate_i/drp_done_reg1_reg/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_125mhz_mux_x0y0 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.426     0.426    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.030     0.456 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           0.869     1.325    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT0)
+                                                      0.053     1.378 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0
+                         net (fo=2, routed)           0.689     2.067    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_125mhz
+    BUFGCTRL_X0Y1        BUFGCTRL (Prop_bufgctrl_I0_O)
+                                                      0.030     2.097 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/O
+                         net (fo=1528, routed)        0.830     2.927    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_rate.pipe_rate_i/txdata_wait_cnt_reg[3]_0
+    SLICE_X199Y188       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_rate.pipe_rate_i/drp_done_reg1_reg/C
+                         clock pessimism             -0.258     2.669    
+    SLICE_X199Y188       FDRE (Hold_fdre_C_D)         0.032     2.701    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_rate.pipe_rate_i/drp_done_reg1_reg
+  -------------------------------------------------------------------
+                         required time                         -2.701    
+                         arrival time                           2.991    
+  -------------------------------------------------------------------
+                         slack                                  0.290    
+
+
+
+
+
+---------------------------------------------------------------------------------------------------
+From Clock:  clk_125mhz_x0y0
+  To Clock:  clk_250mhz_mux_x0y0
+
+Setup :            0  Failing Endpoints,  Worst Slack        2.212ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.098ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+Max Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             2.212ns  (required time - arrival time)
+  Source:                 xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_quad.gt_common_enabled.gt_common_int.gt_common_i/qpll_drp_i/done_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk_125mhz_x0y0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/qpll_reset.qpll_reset_i/drp_done_reg1_reg[0]/D
+                            (rising edge-triggered cell FDRE clocked by clk_250mhz_mux_x0y0  {rise@0.000ns fall@2.000ns period=4.000ns})
+  Path Group:             clk_250mhz_mux_x0y0
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            4.000ns  (clk_250mhz_mux_x0y0 rise@4.000ns - clk_125mhz_x0y0 rise@0.000ns)
+  Data Path Delay:        1.310ns  (logic 0.259ns (19.777%)  route 1.051ns (80.223%))
+  Logic Levels:           0  
+  Clock Path Skew:        -0.268ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    5.137ns = ( 9.137 - 4.000 ) 
+    Source Clock Delay      (SCD):    5.633ns
+    Clock Pessimism Removal (CPR):    0.228ns
+  Clock Uncertainty:      0.191ns  ((TSJ^2 + DJ^2)^1/2) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Discrete Jitter          (DJ):    0.124ns
+    Phase Error              (PE):    0.120ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_125mhz_x0y0 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.959     0.959    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.093     1.052 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           1.507     2.559    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT0)
+                                                      0.077     2.636 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0
+                         net (fo=2, routed)           1.549     4.185    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_125mhz
+    BUFGCTRL_X0Y2        BUFG (Prop_bufg_I_O)         0.093     4.278 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/dclk_i_bufg.dclk_i/O
+                         net (fo=397, routed)         1.355     5.633    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_quad.gt_common_enabled.gt_common_int.gt_common_i/qpll_drp_i/CLK
+    SLICE_X202Y171       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_quad.gt_common_enabled.gt_common_int.gt_common_i/qpll_drp_i/done_reg/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X202Y171       FDRE (Prop_fdre_C_Q)         0.259     5.892 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_quad.gt_common_enabled.gt_common_int.gt_common_i/qpll_drp_i/done_reg/Q
+                         net (fo=1, routed)           1.051     6.943    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/qpll_reset.qpll_reset_i/QRST_DRP_DONE[0]
+    SLICE_X201Y171       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/qpll_reset.qpll_reset_i/drp_done_reg1_reg[0]/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_250mhz_mux_x0y0 rise edge)
+                                                      4.000     4.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     4.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.903     4.903    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.083     4.986 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           1.349     6.335    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT1)
+                                                      0.073     6.408 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT1
+                         net (fo=1, routed)           1.431     7.839    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_250mhz
+    BUFGCTRL_X0Y1        BUFGCTRL (Prop_bufgctrl_I1_O)
+                                                      0.083     7.922 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/O
+                         net (fo=1528, routed)        1.215     9.137    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/qpll_reset.qpll_reset_i/qpllpd_reg_0
+    SLICE_X201Y171       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/qpll_reset.qpll_reset_i/drp_done_reg1_reg[0]/C
+                         clock pessimism              0.228     9.365    
+                         clock uncertainty           -0.191     9.174    
+    SLICE_X201Y171       FDRE (Setup_fdre_C_D)       -0.019     9.155    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/qpll_reset.qpll_reset_i/drp_done_reg1_reg[0]
+  -------------------------------------------------------------------
+                         required time                          9.155    
+                         arrival time                          -6.943    
+  -------------------------------------------------------------------
+                         slack                                  2.212    
+
+
+
+
+
+Min Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             0.098ns  (arrival time - required time)
+  Source:                 xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/done_reg/C
+                            (rising edge-triggered cell FDRE clocked by clk_125mhz_x0y0  {rise@0.000ns fall@4.000ns period=8.000ns})
+  Destination:            xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_rate.pipe_rate_i/drp_done_reg1_reg/D
+                            (rising edge-triggered cell FDRE clocked by clk_250mhz_mux_x0y0  {rise@0.000ns fall@2.000ns period=4.000ns})
+  Path Group:             clk_250mhz_mux_x0y0
+  Path Type:              Hold (Min at Fast Process Corner)
+  Requirement:            0.000ns  (clk_250mhz_mux_x0y0 rise@0.000ns - clk_125mhz_x0y0 rise@0.000ns)
+  Data Path Delay:        0.604ns  (logic 0.100ns (16.568%)  route 0.504ns (83.432%))
+  Logic Levels:           0  
+  Clock Path Skew:        0.282ns (DCD - SCD - CPR)
+    Destination Clock Delay (DCD):    2.927ns
+    Source Clock Delay      (SCD):    2.387ns
+    Clock Pessimism Removal (CPR):    0.258ns
+  Clock Uncertainty:      0.191ns  ((TSJ^2 + DJ^2)^1/2) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Discrete Jitter          (DJ):    0.124ns
+    Phase Error              (PE):    0.120ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_125mhz_x0y0 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.387     0.387    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.026     0.413 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           0.657     1.070    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT0)
+                                                      0.050     1.120 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0
+                         net (fo=2, routed)           0.619     1.739    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_125mhz
+    BUFGCTRL_X0Y2        BUFG (Prop_bufg_I_O)         0.026     1.765 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/dclk_i_bufg.dclk_i/O
+                         net (fo=397, routed)         0.622     2.387    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/CLK
+    SLICE_X199Y189       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/done_reg/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X199Y189       FDRE (Prop_fdre_C_Q)         0.100     2.487 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_drp.pipe_drp_i/done_reg/Q
+                         net (fo=1, routed)           0.504     2.991    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_rate.pipe_rate_i/RATE_DRP_DONE
+    SLICE_X199Y188       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_rate.pipe_rate_i/drp_done_reg1_reg/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_250mhz_mux_x0y0 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.426     0.426    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.030     0.456 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           0.869     1.325    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT1)
+                                                      0.053     1.378 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT1
+                         net (fo=1, routed)           0.689     2.067    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_250mhz
+    BUFGCTRL_X0Y1        BUFGCTRL (Prop_bufgctrl_I1_O)
+                                                      0.030     2.097 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/O
+                         net (fo=1528, routed)        0.830     2.927    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_rate.pipe_rate_i/txdata_wait_cnt_reg[3]_0
+    SLICE_X199Y188       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_rate.pipe_rate_i/drp_done_reg1_reg/C
+                         clock pessimism             -0.258     2.669    
+                         clock uncertainty            0.191     2.860    
+    SLICE_X199Y188       FDRE (Hold_fdre_C_D)         0.032     2.892    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].pipe_rate.pipe_rate_i/drp_done_reg1_reg
+  -------------------------------------------------------------------
+                         required time                         -2.892    
+                         arrival time                           2.991    
+  -------------------------------------------------------------------
+                         slack                                  0.098    
+
+
+
+
+
+---------------------------------------------------------------------------------------------------
+Path Group:  **async_default**
+From Clock:  userclk1
+  To Clock:  userclk1
+
+Setup :            0  Failing Endpoints,  Worst Slack        1.116ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.252ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+Max Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             1.116ns  (required time - arrival time)
+  Source:                 xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pl_received_hot_rst_q_reg/C
+                            (rising edge-triggered cell FDRE clocked by userclk1  {rise@0.000ns fall@2.000ns period=4.000ns})
+  Destination:            xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/user_reset_out_reg_replica/PRE
+                            (recovery check against rising-edge clock userclk1  {rise@0.000ns fall@2.000ns period=4.000ns})
+  Path Group:             **async_default**
+  Path Type:              Recovery (Max at Slow Process Corner)
+  Requirement:            4.000ns  (userclk1 rise@4.000ns - userclk1 rise@0.000ns)
+  Data Path Delay:        2.633ns  (logic 0.266ns (10.101%)  route 2.367ns (89.899%))
+  Logic Levels:           1  (LUT2=1)
+  Clock Path Skew:        0.001ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    5.093ns = ( 9.093 - 4.000 ) 
+    Source Clock Delay      (SCD):    5.534ns
+    Clock Pessimism Removal (CPR):    0.442ns
+  Clock Uncertainty:      0.065ns  ((TSJ^2 + DJ^2)^1/2) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Discrete Jitter          (DJ):    0.108ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock userclk1 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.959     0.959    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.093     1.052 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           1.507     2.559    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT2)
+                                                      0.077     2.636 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT2
+                         net (fo=1, routed)           1.549     4.185    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk1
+    BUFGCTRL_X0Y0        BUFG (Prop_bufg_I_O)         0.093     4.278 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk1_i1.usrclk1_i1/O
+                         net (fo=16580, routed)       1.256     5.534    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/int_userclk1_out
+    SLICE_X153Y148       FDRE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pl_received_hot_rst_q_reg/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X153Y148       FDRE (Prop_fdre_C_Q)         0.223     5.757 f  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pl_received_hot_rst_q_reg/Q
+                         net (fo=1, routed)           0.522     6.279    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pl_received_hot_rst
+    SLICE_X153Y145       LUT2 (Prop_lut2_I0_O)        0.043     6.322 f  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/user_reset_out_i_1/O
+                         net (fo=14, routed)          1.845     8.167    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/sys_or_hot_rst
+    SLICE_X156Y118       FDPE                                         f  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/user_reset_out_reg_replica/PRE
+  -------------------------------------------------------------------    -------------------
+
+                         (clock userclk1 rise edge)
+                                                      4.000     4.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     4.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.903     4.903    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.083     4.986 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           1.349     6.335    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT2)
+                                                      0.073     6.408 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT2
+                         net (fo=1, routed)           1.431     7.839    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk1
+    BUFGCTRL_X0Y0        BUFG (Prop_bufg_I_O)         0.083     7.922 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk1_i1.usrclk1_i1/O
+                         net (fo=16580, routed)       1.171     9.093    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/int_userclk1_out
+    SLICE_X156Y118       FDPE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/user_reset_out_reg_replica/C
+                         clock pessimism              0.442     9.535    
+                         clock uncertainty           -0.065     9.470    
+    SLICE_X156Y118       FDPE (Recov_fdpe_C_PRE)     -0.187     9.283    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/user_reset_out_reg_replica
+  -------------------------------------------------------------------
+                         required time                          9.283    
+                         arrival time                          -8.167    
+  -------------------------------------------------------------------
+                         slack                                  1.116    
+
+
+
+
+
+Min Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             0.252ns  (arrival time - required time)
+  Source:                 xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/xdma_restore_stage_a2_xdma_0_0_axi_stream_intf_i/xdma_restore_stage_a2_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.rd_rst_reg_reg[2]/C
+                            (rising edge-triggered cell FDPE clocked by userclk1  {rise@0.000ns fall@2.000ns period=4.000ns})
+  Destination:            xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/xdma_restore_stage_a2_xdma_0_0_axi_stream_intf_i/xdma_restore_stage_a2_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/gfwft_rst_done.fwft_rst_done_reg/CLR
+                            (removal check against rising-edge clock userclk1  {rise@0.000ns fall@2.000ns period=4.000ns})
+  Path Group:             **async_default**
+  Path Type:              Removal (Min at Fast Process Corner)
+  Requirement:            0.000ns  (userclk1 rise@0.000ns - userclk1 rise@0.000ns)
+  Data Path Delay:        0.215ns  (logic 0.118ns (54.910%)  route 0.097ns (45.090%))
+  Logic Levels:           0  
+  Clock Path Skew:        0.013ns (DCD - SCD - CPR)
+    Destination Clock Delay (DCD):    2.933ns
+    Source Clock Delay      (SCD):    2.399ns
+    Clock Pessimism Removal (CPR):    0.521ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock userclk1 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.387     0.387    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.026     0.413 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           0.657     1.070    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT2)
+                                                      0.050     1.120 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT2
+                         net (fo=1, routed)           0.619     1.739    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk1
+    BUFGCTRL_X0Y0        BUFG (Prop_bufg_I_O)         0.026     1.765 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk1_i1.usrclk1_i1/O
+                         net (fo=16580, routed)       0.634     2.399    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/xdma_restore_stage_a2_xdma_0_0_axi_stream_intf_i/xdma_restore_stage_a2_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/rstblk/s_aclk
+    SLICE_X198Y113       FDPE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/xdma_restore_stage_a2_xdma_0_0_axi_stream_intf_i/xdma_restore_stage_a2_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.rd_rst_reg_reg[2]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X198Y113       FDPE (Prop_fdpe_C_Q)         0.118     2.517 f  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/xdma_restore_stage_a2_xdma_0_0_axi_stream_intf_i/xdma_restore_stage_a2_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.rd_rst_reg_reg[2]/Q
+                         net (fo=6, routed)           0.097     2.614    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/xdma_restore_stage_a2_xdma_0_0_axi_stream_intf_i/xdma_restore_stage_a2_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/out[1]
+    SLICE_X198Y114       FDCE                                         f  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/xdma_restore_stage_a2_xdma_0_0_axi_stream_intf_i/xdma_restore_stage_a2_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/gfwft_rst_done.fwft_rst_done_reg/CLR
+  -------------------------------------------------------------------    -------------------
+
+                         (clock userclk1 rise edge)
+                                                      0.000     0.000 r  
+    GTXE2_CHANNEL_X0Y15  GTXE2_CHANNEL                0.000     0.000 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK
+                         net (fo=1, routed)           0.426     0.426    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pipe_txoutclk_out
+    BUFGCTRL_X0Y17       BUFG (Prop_bufg_I_O)         0.030     0.456 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/txoutclk_i.txoutclk_i/O
+                         net (fo=1, routed)           0.869     1.325    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/refclk
+    MMCME2_ADV_X0Y2      MMCME2_ADV (Prop_mmcme2_adv_CLKIN1_CLKOUT2)
+                                                      0.053     1.378 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT2
+                         net (fo=1, routed)           0.689     2.067    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk1
+    BUFGCTRL_X0Y0        BUFG (Prop_bufg_I_O)         0.030     2.097 r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk1_i1.usrclk1_i1/O
+                         net (fo=16580, routed)       0.836     2.933    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/xdma_restore_stage_a2_xdma_0_0_axi_stream_intf_i/xdma_restore_stage_a2_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/s_aclk
+    SLICE_X198Y114       FDCE                                         r  xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/xdma_restore_stage_a2_xdma_0_0_axi_stream_intf_i/xdma_restore_stage_a2_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/gfwft_rst_done.fwft_rst_done_reg/C
+                         clock pessimism             -0.521     2.412    
+    SLICE_X198Y114       FDCE (Remov_fdce_C_CLR)     -0.050     2.362    xdma_restore_stage_a2_i/xdma_0/inst/xdma_restore_stage_a2_xdma_0_0_pcie2_to_pcie3_wrapper_i/xdma_restore_stage_a2_xdma_0_0_axi_stream_intf_i/xdma_restore_stage_a2_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/gfwft_rst_done.fwft_rst_done_reg
+  -------------------------------------------------------------------
+                         required time                         -2.362    
+                         arrival time                           2.614    
+  -------------------------------------------------------------------
+                         slack                                  0.252    
+
+
+
+
+

@@ -46,6 +46,14 @@ After a bitstream is loaded and XDMA device nodes exist:
 python3 xdma_smoke.py --reg-smoke --ddr-smoke
 ```
 
+For Stage A2 and later BAR-shim images, BAR0 offset `0x0000` is reserved for
+the XDMA-compatible shim identity/scratch page. `slam_accel_ctrl` starts at
+offset `0x1000`:
+
+```bash
+python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000
+```
+
 For the XDMA-only diagnostic bitstream, use the smaller diagnostic smoke instead
 of the full `slam_accel_ctrl` smoke:
 

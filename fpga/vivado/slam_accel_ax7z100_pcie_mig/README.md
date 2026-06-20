@@ -13,8 +13,9 @@ state as the source of truth.
 - PCIe lane reversal: enabled in XDMA, because the AX7Z100 carrier/core-board
   schematic indicates the x4 slot lane order is reversed into Bank112
 - DDR fabric: PL DDR3 through MIG 7-series AXI interface
-- Control: `slam_accel_ctrl` remains the only register bank, reached through
-  XDMA AXI-Lite
+- Control: XDMA BAR0 starts with a driver-compatible shim identity/scratch page
+  at `0x0000`; `slam_accel_ctrl` remains the only accelerator register bank and
+  is reached through XDMA AXI-Lite at offset `0x1000`
 - Compute: true HLS IP `unified_surfel_observation_core`
 
 The current scripted flow can also run implementation and generate a bitstream.
@@ -48,19 +49,20 @@ default XDMA device nodes are:
 - H2C memory write: `/dev/xdma0_h2c_0`
 - C2H memory read: `/dev/xdma0_c2h_0`
 
-The first on-board smoke should read `slam_accel_ctrl.VERSION`, write/read the
+The first on-board smoke should read the XDMA BAR shim identity, then read
+`slam_accel_ctrl.VERSION` at `0x1000`, write/read the
 control register bank, then write/read a 4 KB memory pattern at each PL DDR3
 buffer base. It does not require launching the accelerator as a hard gate.
 
 ```bash
-python3 fpga/host/xdma_smoke/xdma_smoke.py --reg-smoke --ddr-smoke
+python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000 --ddr-smoke
 python3 fpga/host/xdma_smoke/xdma_smoke.py --write-image fpga/vivado/.build/host_synthetic_tiny/manifest.json
 ```
 
 Optional start smoke after bitstream bring-up:
 
 ```bash
-python3 fpga/host/xdma_smoke/xdma_smoke.py --reg-smoke --start-zero
+python3 fpga/host/xdma_smoke/xdma_smoke.py --reg-smoke --ctrl-base 0x1000 --start-zero
 ```
 
 ## Clocking

@@ -115,6 +115,7 @@ update_ip_catalog
 add_files -norecurse [list \
     [file join $repo_root "fpga" "rtl" "slam_accel_ctrl" "slam_accel_ctrl.v"] \
     [file join $script_dir "slam_accel_ctrl_axi_lite_wrapper.v"] \
+    [file join $repo_root "fpga" "vivado" "xdma_restore_chain" "xdma_restore_bar_shim_ctrl_wrapper.v"] \
 ]
 add_files -fileset constrs_1 -norecurse [file join $script_dir "slam_accel_ax7z100_pcie_mig.xdc"]
 update_compile_order -fileset sources_1
@@ -131,7 +132,7 @@ set ddr3 [create_bd_intf_port -mode Master -vlnv xilinx.com:interface:ddrx_rtl:1
 set pcie_rst_n [create_bd_port -dir I -type rst pcie_rst_n]
 set_property CONFIG.POLARITY {ACTIVE_LOW} $pcie_rst_n
 
-set ctrl [create_bd_cell -type module -reference slam_accel_ctrl_axi_lite_wrapper ctrl_0]
+set ctrl [create_bd_cell -type module -reference xdma_restore_bar_shim_ctrl_wrapper ctrl_0]
 set hls [create_bd_cell -type ip -vlnv xilinx.com:hls:unified_surfel_observation_core:1.0 unified_obs_0]
 set zero32 [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 const_zero_32]
 set_property -dict [list CONFIG.CONST_WIDTH {32} CONFIG.CONST_VAL {0}] $zero32

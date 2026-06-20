@@ -1,0 +1,743 @@
+#-----------------------------------------------------------
+# Vivado v2018.3 (64-bit)
+# SW Build 2405991 on Thu Dec  6 23:38:27 MST 2018
+# IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
+# Start of session at: Sat Jun 20 14:43:50 2026
+# Process ID: 13008
+# Current directory: F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc
+# Command line: vivado.exe -mode batch -source F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\xdma_restore_chain\run_project_synth.tcl -journal V:\xdma_restore_stage_a_syn\vivado_project_synth.jou -log V:\xdma_restore_stage_a_syn\vivado_project_synth.log -tclargs V:\xdma_restore_stage_a_syn xc7z100ffg900-2 A 18 F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc
+# Log file: V:/xdma_restore_stage_a_syn/vivado_project_synth.log
+# Journal file: V:\xdma_restore_stage_a_syn\vivado_project_synth.jou
+#-----------------------------------------------------------
+CRITICAL WARNING: [Common 17-741] No write access right to the local Tcl store at 'C'. XilinxTclStore is reverted to the installation area. If you want to use local Tcl Store, please change the access right and relaunch Vivado.
+source {F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\xdma_restore_chain\run_project_synth.tcl}
+# set script_dir [file dirname [file normalize [info script]]]
+# set project_dir [file normalize [file join $script_dir ".." ".build" "xdma_restore_stage_a_syn"]]
+# set target_part "xc7z100ffg900-2"
+# set stage "A"
+# set jobs 18
+# set reference_root [file normalize [file join $script_dir ".." ".." ".." ".."]]
+# set user_args $argv
+# if {[llength $user_args] >= 1 && [string length [lindex $user_args 0]] > 0} {
+#     set project_dir [file normalize [lindex $user_args 0]]
+# }
+# if {[llength $user_args] >= 2 && [string length [lindex $user_args 1]] > 0} {
+#     set target_part [lindex $user_args 1]
+# }
+# if {[llength $user_args] >= 3 && [string length [lindex $user_args 2]] > 0} {
+#     set stage [string toupper [lindex $user_args 2]]
+# }
+# if {[llength $user_args] >= 4 && [string length [lindex $user_args 3]] > 0} {
+#     set jobs [lindex $user_args 3]
+# }
+# if {[llength $user_args] >= 5 && [string length [lindex $user_args 4]] > 0} {
+#     set reference_root [file normalize [lindex $user_args 4]]
+# }
+# if {![string is integer -strict $jobs] || $jobs < 1} {
+#     error "Invalid jobs value: $jobs"
+# }
+# set saved_argv $argv
+# set argv [list $project_dir $target_part $stage $reference_root]
+# source [file join $script_dir "create_stage_bd.tcl"]
+## set script_dir [file dirname [file normalize [info script]]]
+## set repo_root [file normalize [file join $script_dir ".." ".." ".."]]
+## set reference_root [file normalize [file join $repo_root ".."]]
+## set project_dir [file normalize [file join $script_dir ".." ".build" "xdma_restore_stage_a_bd"]]
+## set target_part "xc7z100ffg900-2"
+## set stage "A"
+## set user_args $argv
+## if {[llength $user_args] >= 1 && [string length [lindex $user_args 0]] > 0} {
+##     set project_dir [file normalize [lindex $user_args 0]]
+## }
+## if {[llength $user_args] >= 2 && [string length [lindex $user_args 1]] > 0} {
+##     set target_part [lindex $user_args 1]
+## }
+## if {[llength $user_args] >= 3 && [string length [lindex $user_args 2]] > 0} {
+##     set stage [string toupper [lindex $user_args 2]]
+## }
+## if {[llength $user_args] >= 4 && [string length [lindex $user_args 3]] > 0} {
+##     set reference_root [file normalize [lindex $user_args 3]]
+## }
+## if {$stage ni {"A" "B" "C"}} {
+##     error "Invalid stage '$stage'. Expected A, B, or C."
+## }
+## set use_mig 0
+## set axi_width_cfg "64_bit"
+## set bram_width 64
+## set axisten_freq 250
+## set stage_desc "Stage A: X4 lane reversal, 64-bit/250 MHz XDMA, slam_accel_ctrl, BRAM, no MIG/HLS"
+## if {$stage eq "B"} {
+##     set axi_width_cfg "128_bit"
+##     set bram_width 128
+##     set axisten_freq 125
+##     set stage_desc "Stage B: X4 lane reversal, 128-bit/125 MHz XDMA, slam_accel_ctrl, BRAM, no MIG/HLS"
+## }
+## if {$stage eq "C"} {
+##     set use_mig 1
+##     set axi_width_cfg "128_bit"
+##     set bram_width 128
+##     set axisten_freq 125
+##     set stage_desc "Stage C: X4 lane reversal, 128-bit/125 MHz XDMA, slam_accel_ctrl, MIG-backed PL DDR3, no HLS"
+## }
+## set stage_lc [string tolower $stage]
+## set design_name "xdma_restore_stage_${stage_lc}"
+## set project_name $design_name
+## proc first_addr_seg {pattern} {
+##     set segs [get_bd_addr_segs -quiet $pattern]
+##     if {[llength $segs] == 0} {
+##         error "No address segment matches: $pattern"
+##     }
+##     return [lindex $segs 0]
+## }
+## proc first_addr_space {pattern} {
+##     set spaces [get_bd_addr_spaces -quiet $pattern]
+##     if {[llength $spaces] == 0} {
+##         error "No address space matches: $pattern"
+##     }
+##     return [lindex $spaces 0]
+## }
+## proc derive_axi_mig_prj {native_source_path axi_source_tcl dest_path module_name} {
+##     set fh [open $native_source_path r]
+##     set native_text [read $fh]
+##     close $fh
+## 
+##     foreach required {
+##         "<TargetFPGA>xc7z100-ffg900/-2</TargetFPGA>"
+##         "<InputClkFreq>200</InputClkFreq>"
+##         "<DataWidth>32</DataWidth>"
+##         "<TimePeriod>1250</TimePeriod>"
+##     } {
+##         if {[string first $required $native_text] < 0} {
+##             error "MIG native source check failed: $required"
+##         }
+##     }
+## 
+##     set fh [open $axi_source_tcl r]
+##     set tcl_text [read $fh]
+##     close $fh
+## 
+##     set text ""
+##     foreach line [split $tcl_text "\n"] {
+##         if {[regexp {puts \$mig_prj_file \{(.*)\}} $line -> payload]} {
+##             append text $payload "\n"
+##         }
+##     }
+##     if {[string length $text] == 0} {
+##         error "Failed to extract AXI MIG XML from $axi_source_tcl"
+##     }
+## 
+##     foreach required {
+##         "<TargetFPGA>xc7z100-ffg900/-2</TargetFPGA>"
+##         "<InputClkFreq>200</InputClkFreq>"
+##         "<DataWidth>32</DataWidth>"
+##         "<TimePeriod>1250</TimePeriod>"
+##         "<PortInterface>AXI</PortInterface>"
+##         "<C0_S_AXI_DATA_WIDTH>256</C0_S_AXI_DATA_WIDTH>"
+##     } {
+##         if {[string first $required $text] < 0} {
+##             error "AXI MIG source check failed: $required"
+##         }
+##     }
+## 
+##     regsub {<ModuleName>[^<]+</ModuleName>} $text "<ModuleName>${module_name}</ModuleName>" text
+## 
+##     file mkdir [file dirname $dest_path]
+##     set out [open $dest_path w]
+##     puts $out $text
+##     close $out
+## }
+## file mkdir $project_dir
+## cd $project_dir
+## create_project -force $project_name $project_dir -part $target_part
+create_project: Time (s): cpu = 00:00:01 ; elapsed = 00:00:06 . Memory (MB): peak = 321.543 ; gain = 70.312
+## add_files -norecurse [list \
+##     [file join $repo_root "fpga" "rtl" "slam_accel_ctrl" "slam_accel_ctrl.v"] \
+##     [file join $script_dir "xdma_restore_slam_accel_ctrl_axi_lite_wrapper.v"] \
+## ]
+## if {$use_mig} {
+##     add_files -fileset constrs_1 -norecurse [file join $script_dir "restore_pcie_mig.xdc"]
+## } else {
+##     add_files -fileset constrs_1 -norecurse [file join $script_dir "restore_pcie.xdc"]
+## }
+## update_compile_order -fileset sources_1
+## create_bd_design $design_name
+Wrote  : <V:\xdma_restore_stage_a_syn\xdma_restore_stage_a.srcs\sources_1\bd\xdma_restore_stage_a\xdma_restore_stage_a.bd> 
+## set pcie_mgt [create_bd_intf_port -mode Master -vlnv xilinx.com:interface:pcie_7x_mgt_rtl:1.0 pcie_mgt]
+## set pcie_ref [create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:diff_clock_rtl:1.0 pcie_ref]
+## set_property CONFIG.FREQ_HZ {100000000} $pcie_ref
+## set pcie_rst_n [create_bd_port -dir I -type rst pcie_rst_n]
+## set_property CONFIG.POLARITY {ACTIVE_LOW} $pcie_rst_n
+## if {$use_mig} {
+##     set sys_clk [create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:diff_clock_rtl:1.0 sys]
+##     set_property CONFIG.FREQ_HZ {200000000} $sys_clk
+##     set ddr3 [create_bd_intf_port -mode Master -vlnv xilinx.com:interface:ddrx_rtl:1.0 ddr3]
+## }
+## set util_ds_buf_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 util_ds_buf_0]
+## set_property CONFIG.C_BUF_TYPE {IBUFDSGTE} $util_ds_buf_0
+INFO: [Device 21-403] Loading part xc7z100ffg900-2
+xit::create_sub_core: Time (s): cpu = 00:00:04 ; elapsed = 00:00:05 . Memory (MB): peak = 785.793 ; gain = 334.770
+create_bd_cell: Time (s): cpu = 00:00:09 ; elapsed = 00:00:12 . Memory (MB): peak = 785.812 ; gain = 409.820
+## set xdma_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:xdma:4.1 xdma_0]
+## set_property -dict [list \
+##     CONFIG.axi_data_width $axi_width_cfg \
+##     CONFIG.axilite_master_en {true} \
+##     CONFIG.axilite_master_scale {Kilobytes} \
+##     CONFIG.axilite_master_size {64} \
+##     CONFIG.axisten_freq $axisten_freq \
+##     CONFIG.enable_lane_reversal {true} \
+##     CONFIG.mode_selection {Basic} \
+##     CONFIG.pcie_id_if {false} \
+##     CONFIG.pf0_device_id {7024} \
+##     CONFIG.pl_link_cap_max_link_speed {5.0_GT/s} \
+##     CONFIG.pl_link_cap_max_link_width {X4} \
+##     CONFIG.plltype {QPLL1} \
+## ] $xdma_0
+INFO: [IP_Flow 19-5107] Inferred bus interface 'aclk' of definition 'xilinx.com:signal:clock:1.0' (from X_INTERFACE_INFO parameter from HDL file).
+INFO: [IP_Flow 19-5107] Inferred bus interface 'aclk' of definition 'xilinx.com:signal:clock:1.0' (from 'X_INTERFACE_INFO' attribute).
+INFO: [IP_Flow 19-5107] Inferred bus interface 'aresetn' of definition 'xilinx.com:signal:reset:1.0' (from X_INTERFACE_INFO parameter from HDL file).
+INFO: [IP_Flow 19-5107] Inferred bus interface 'aresetn' of definition 'xilinx.com:signal:reset:1.0' (from 'X_INTERFACE_INFO' attribute).
+INFO: [IP_Flow 19-5107] Inferred bus interface 'S_AXI' of definition 'xilinx.com:interface:aximm:1.0' (from X_INTERFACE_INFO parameter from HDL file).
+INFO: [IP_Flow 19-5107] Inferred bus interface 'S_AXI' of definition 'xilinx.com:interface:aximm:1.0' (from 'X_INTERFACE_INFO' attribute).
+INFO: [IP_Flow 19-4728] Bus Interface 'aclk': Added interface parameter 'ASSOCIATED_BUSIF' with value 'S_AXI'.
+INFO: [IP_Flow 19-4728] Bus Interface 'aclk': Added interface parameter 'ASSOCIATED_RESET' with value 'aresetn'.
+INFO: [IP_Flow 19-4728] Bus Interface 'aresetn': Added interface parameter 'POLARITY' with value 'ACTIVE_LOW'.
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1704] No user IP repositories specified
+## set ctrl [create_bd_cell -type module -reference xdma_restore_slam_accel_ctrl_axi_lite_wrapper ctrl_0]
+## set const_zero_32 [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 const_zero_32]
+## set_property -dict [list CONFIG.CONST_WIDTH {32} CONFIG.CONST_VAL {0}] $const_zero_32
+## set const_one_1 [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 const_one_1]
+## set_property -dict [list CONFIG.CONST_WIDTH {1} CONFIG.CONST_VAL {1}] $const_one_1
+## connect_bd_intf_net [get_bd_intf_ports pcie_ref] [get_bd_intf_pins util_ds_buf_0/CLK_IN_D]
+## connect_bd_net [get_bd_pins util_ds_buf_0/IBUF_OUT] [get_bd_pins xdma_0/sys_clk]
+## connect_bd_net [get_bd_ports pcie_rst_n] [get_bd_pins xdma_0/sys_rst_n]
+## connect_bd_intf_net [get_bd_intf_ports pcie_mgt] [get_bd_intf_pins xdma_0/pcie_mgt]
+## connect_bd_net [get_bd_pins xdma_0/axi_aclk] [get_bd_pins ctrl_0/aclk]
+## connect_bd_net [get_bd_pins xdma_0/axi_aresetn] [get_bd_pins ctrl_0/aresetn]
+## connect_bd_net [get_bd_pins const_zero_32/dout] [get_bd_pins ctrl_0/unified_obs_error]
+## connect_bd_net [get_bd_pins const_one_1/dout] \
+##     [get_bd_pins ctrl_0/unified_obs_ap_idle] \
+##     [get_bd_pins ctrl_0/unified_obs_ap_ready] \
+##     [get_bd_pins ctrl_0/unified_obs_ap_done]
+## connect_bd_intf_net [get_bd_intf_pins xdma_0/M_AXI_LITE] [get_bd_intf_pins ctrl_0/S_AXI]
+## set ctrl_seg [first_addr_seg "ctrl_0/S_AXI/*"]
+## create_bd_addr_seg -range 0x00010000 -offset 0x00000000 [first_addr_space "xdma_0/M_AXI_LITE"] $ctrl_seg SEG_ctrl_0_Reg
+## if {$use_mig} {
+##     set mig_source_prj [file join $reference_root "12_ddr3_pl" "mig_a.prj"]
+##     set mig_axi_source_tcl [file join $reference_root "33_PCIe_test" "Vivado" "auto_create_project" "pl_config.tcl"]
+##     if {![file exists $mig_source_prj]} {
+##         error "Missing AX7Z100 MIG reference project file: $mig_source_prj"
+##     }
+##     if {![file exists $mig_axi_source_tcl]} {
+##         error "Missing AX7Z100 AXI MIG reference Tcl: $mig_axi_source_tcl"
+##     }
+## 
+##     set mig_rst_hi [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 mig_rst_hi]
+##     set_property -dict [list CONFIG.CONST_WIDTH {1} CONFIG.CONST_VAL {1}] $mig_rst_hi
+##     set mig_7series_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:mig_7series:4.2 mig_7series_0]
+##     set mig_ip_dir [get_property IP_DIR [get_ips [get_property CONFIG.Component_Name $mig_7series_0]]]
+##     set mig_prj_name "mig_ax7z100_pl_ddr3_axi.prj"
+##     set mig_prj_path [file join $mig_ip_dir $mig_prj_name]
+##     derive_axi_mig_prj $mig_source_prj $mig_axi_source_tcl $mig_prj_path "xdma_restore_stage_c_mig_0"
+##     set_property -dict [list \
+##         CONFIG.BOARD_MIG_PARAM {Custom} \
+##         CONFIG.RESET_BOARD_INTERFACE {Custom} \
+##         CONFIG.XML_INPUT_FILE $mig_prj_name \
+##     ] $mig_7series_0
+## 
+##     set mem_ic [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 mem_axi_ic]
+##     set_property -dict [list CONFIG.NUM_SI {1} CONFIG.NUM_MI {1}] $mem_ic
+##     set rst_mig_ui [create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 rst_mig_ui]
+## 
+##     connect_bd_intf_net [get_bd_intf_ports sys] [get_bd_intf_pins mig_7series_0/SYS_CLK]
+##     connect_bd_intf_net [get_bd_intf_ports ddr3] [get_bd_intf_pins mig_7series_0/DDR3]
+##     connect_bd_net [get_bd_pins mig_rst_hi/dout] [get_bd_pins mig_7series_0/sys_rst]
+##     connect_bd_net [get_bd_pins mig_7series_0/ui_clk] [get_bd_pins rst_mig_ui/slowest_sync_clk]
+##     connect_bd_net [get_bd_pins mig_7series_0/mmcm_locked] [get_bd_pins rst_mig_ui/dcm_locked]
+##     connect_bd_net [get_bd_pins mig_7series_0/ui_clk_sync_rst] [get_bd_pins rst_mig_ui/ext_reset_in]
+## 
+##     connect_bd_intf_net [get_bd_intf_pins xdma_0/M_AXI] [get_bd_intf_pins mem_axi_ic/S00_AXI]
+##     connect_bd_intf_net [get_bd_intf_pins mem_axi_ic/M00_AXI] [get_bd_intf_pins mig_7series_0/S_AXI]
+##     connect_bd_net [get_bd_pins xdma_0/axi_aclk] [get_bd_pins mem_axi_ic/ACLK] [get_bd_pins mem_axi_ic/S00_ACLK]
+##     connect_bd_net [get_bd_pins xdma_0/axi_aresetn] [get_bd_pins mem_axi_ic/ARESETN] [get_bd_pins mem_axi_ic/S00_ARESETN]
+##     connect_bd_net [get_bd_pins mig_7series_0/ui_clk] [get_bd_pins mem_axi_ic/M00_ACLK]
+##     connect_bd_net [get_bd_pins rst_mig_ui/peripheral_aresetn] [get_bd_pins mem_axi_ic/M00_ARESETN] [get_bd_pins mig_7series_0/aresetn]
+## 
+##     set mig_mem [first_addr_seg "mig_7series_0/memmap/memaddr"]
+##     create_bd_addr_seg -range 0x40000000 -offset 0x00000000 [first_addr_space "xdma_0/M_AXI"] $mig_mem SEG_xdma_0_M_AXI_PL_DDR3
+## } else {
+##     set axi_bram_ctrl_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_bram_ctrl:4.1 axi_bram_ctrl_0]
+##     set_property -dict [list CONFIG.DATA_WIDTH $bram_width CONFIG.SINGLE_PORT_BRAM {1}] $axi_bram_ctrl_0
+##     set axi_bram_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:blk_mem_gen:8.4 axi_bram_0]
+##     connect_bd_net [get_bd_pins xdma_0/axi_aclk] [get_bd_pins axi_bram_ctrl_0/s_axi_aclk]
+##     connect_bd_net [get_bd_pins xdma_0/axi_aresetn] [get_bd_pins axi_bram_ctrl_0/s_axi_aresetn]
+##     connect_bd_intf_net [get_bd_intf_pins xdma_0/M_AXI] [get_bd_intf_pins axi_bram_ctrl_0/S_AXI]
+##     connect_bd_intf_net [get_bd_intf_pins axi_bram_ctrl_0/BRAM_PORTA] [get_bd_intf_pins axi_bram_0/BRAM_PORTA]
+##     set bram_seg [first_addr_seg "axi_bram_ctrl_0/S_AXI/*"]
+##     create_bd_addr_seg -range 0x00010000 -offset 0x00000000 [first_addr_space "xdma_0/M_AXI"] $bram_seg SEG_axi_bram_ctrl_0_Mem
+## }
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-2] xdma_restore_stage_a_axi_bram_ctrl_0_0: In IP Integrator, please note that memory depth value gets calculated based on the Data Width of the IP and Address range selected in the Address Editor.Incase a validation error occured on the range of this parameter, please check if the selected Data width and the Address Range are valid. For valid Data width and memory depth values, please refer to the AXI BRAM Controller Product Guide.
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-1] xdma_restore_stage_a_axi_bram_ctrl_0_0: In IP Integrator, The Maximum address range supported is 2G. Selecting the address range more than 2G in the address editor may resets the value of Memory depth to default value (1024). please refer to the AXI BRAM Controller Product Guide.
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-2] xdma_restore_stage_a_axi_bram_ctrl_0_0: In IP Integrator, please note that memory depth value gets calculated based on the Data Width of the IP and Address range selected in the Address Editor.Incase a validation error occured on the range of this parameter, please check if the selected Data width and the Address Range are valid. For valid Data width and memory depth values, please refer to the AXI BRAM Controller Product Guide.
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-1] xdma_restore_stage_a_axi_bram_ctrl_0_0: In IP Integrator, The Maximum address range supported is 2G. Selecting the address range more than 2G in the address editor may resets the value of Memory depth to default value (1024). please refer to the AXI BRAM Controller Product Guide.
+## validate_bd_design
+WARNING: [BD 41-2180] Resetting the memory initialization file of </axi_bram_0> to default.
+WARNING: [BD 41-927] Following properties on pin /ctrl_0/aclk have been updated from connected ip. They may not be synchronized with cell properties. You can set property on pin directly to confirm the value and resolve the warning.
+	CLK_DOMAIN=xdma_restore_stage_a_xdma_0_0_axi_aclk 
+## save_bd_design
+Wrote  : <V:\xdma_restore_stage_a_syn\xdma_restore_stage_a.srcs\sources_1\bd\xdma_restore_stage_a\xdma_restore_stage_a.bd> 
+## set bd_file [get_files -of_objects [get_filesets sources_1] *${design_name}.bd]
+## generate_target all $bd_file
+INFO: [BD 41-1662] The design 'xdma_restore_stage_a.bd' is already validated. Therefore parameter propagation will not be re-run.
+WARNING: [BD 41-2180] Resetting the memory initialization file of </axi_bram_0> to default.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/axi_bram_0/addra'(32) to net 'axi_bram_ctrl_0_BRAM_PORTA_ADDR'(16) - Only lower order bits will be connected.
+VHDL Output written to : V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/synth/xdma_restore_stage_a.v
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/axi_bram_0/addra'(32) to net 'axi_bram_ctrl_0_BRAM_PORTA_ADDR'(16) - Only lower order bits will be connected.
+VHDL Output written to : V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/sim/xdma_restore_stage_a.v
+VHDL Output written to : V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/hdl/xdma_restore_stage_a_wrapper.v
+INFO: [BD 41-1029] Generation completed for the IP Integrator block util_ds_buf_0 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block xdma_0 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block ctrl_0 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block const_zero_32 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block const_one_1 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block axi_bram_ctrl_0 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block axi_bram_0 .
+Exporting to file V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/hw_handoff/xdma_restore_stage_a.hwh
+Generated Block Design Tcl file V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/hw_handoff/xdma_restore_stage_a_bd.tcl
+Generated Hardware Definition File V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/synth/xdma_restore_stage_a.hwdef
+generate_target: Time (s): cpu = 00:00:08 ; elapsed = 00:00:11 . Memory (MB): peak = 850.645 ; gain = 37.672
+## make_wrapper -files $bd_file -top -import
+WARNING: [Vivado 12-3482] The generated wrapper file has already been imported into the project, the imported file is:
+'V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/imports/hdl/xdma_restore_stage_a_wrapper.v'
+## set wrapper_file [get_files *${design_name}_wrapper.v]
+## set_property top ${design_name}_wrapper [current_fileset]
+## update_compile_order -fileset sources_1
+## report_ip_status -file [file join $project_dir "xdma_restore_stage_${stage_lc}_ip_status.rpt"]
+## report_property -file [file join $project_dir "xdma_restore_stage_${stage_lc}_xdma_bd_properties.rpt"] $xdma_0
+## set xdma_ips [get_ips -quiet *xdma*]
+## if {[llength $xdma_ips] > 0} {
+##     report_property -file [file join $project_dir "xdma_restore_stage_${stage_lc}_xdma_ip_properties.rpt"] [lindex $xdma_ips 0]
+## }
+WARNING: [Vivado 12-3672] The is_managed property should only be queried on the file object representing this IP. Use the get_files command to access file objects.
+WARNING: [Vivado 12-3670] The generate_synth_checkpoint property should only be queried on the file object representing this IP. Use the get_files command to access file objects.
+## puts "XDMA_RESTORE_STAGE_${stage}_BD_VALIDATE_PASS"
+XDMA_RESTORE_STAGE_A_BD_VALIDATE_PASS
+## puts "Project: $project_dir"
+Project: V:/xdma_restore_stage_a_syn
+## puts "Wrapper: $wrapper_file"
+Wrapper: V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/imports/hdl/xdma_restore_stage_a_wrapper.v
+## puts "Stage: $stage_desc"
+Stage: Stage A: X4 lane reversal, 64-bit/250 MHz XDMA, slam_accel_ctrl, BRAM, no MIG/HLS
+# set argv $saved_argv
+# set stage_lc [string tolower $stage]
+# puts "VIVADO_RUN_JOBS=$jobs"
+VIVADO_RUN_JOBS=18
+# launch_runs synth_1 -jobs $jobs
+[Sat Jun 20 14:44:37 2026] Launched xdma_restore_stage_a_xdma_0_0_synth_1, xdma_restore_stage_a_ctrl_0_0_synth_1, xdma_restore_stage_a_util_ds_buf_0_0_synth_1, xdma_restore_stage_a_axi_bram_ctrl_0_0_synth_1, xdma_restore_stage_a_axi_bram_0_0_synth_1...
+Run output will be captured here:
+xdma_restore_stage_a_xdma_0_0_synth_1: V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.runs/xdma_restore_stage_a_xdma_0_0_synth_1/runme.log
+xdma_restore_stage_a_ctrl_0_0_synth_1: V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.runs/xdma_restore_stage_a_ctrl_0_0_synth_1/runme.log
+xdma_restore_stage_a_util_ds_buf_0_0_synth_1: V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.runs/xdma_restore_stage_a_util_ds_buf_0_0_synth_1/runme.log
+xdma_restore_stage_a_axi_bram_ctrl_0_0_synth_1: V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.runs/xdma_restore_stage_a_axi_bram_ctrl_0_0_synth_1/runme.log
+xdma_restore_stage_a_axi_bram_0_0_synth_1: V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.runs/xdma_restore_stage_a_axi_bram_0_0_synth_1/runme.log
+[Sat Jun 20 14:44:37 2026] Launched synth_1...
+Run output will be captured here: V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.runs/synth_1/runme.log
+# wait_on_run synth_1
+[Sat Jun 20 14:44:37 2026] Waiting for synth_1 to finish...
+
+*** Running vivado
+    with args -log xdma_restore_stage_a_wrapper.vds -m64 -product Vivado -mode batch -messageDb vivado.pb -notrace -source xdma_restore_stage_a_wrapper.tcl
+
+
+****** Vivado v2018.3 (64-bit)
+  **** SW Build 2405991 on Thu Dec  6 23:38:27 MST 2018
+  **** IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
+    ** Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.
+
+CRITICAL WARNING: [Common 17-741] No write access right to the local Tcl store at 'C'. XilinxTclStore is reverted to the installation area. If you want to use local Tcl Store, please change the access right and relaunch Vivado.
+source xdma_restore_stage_a_wrapper.tcl -notrace
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1704] No user IP repositories specified
+INFO: [IP_Flow 19-2313] Loaded Vivado IP repository 'E:/Xilinx/Vivado/2018.3/data/ip'.
+add_files: Time (s): cpu = 00:00:04 ; elapsed = 00:00:06 . Memory (MB): peak = 374.008 ; gain = 54.641
+Command: synth_design -top xdma_restore_stage_a_wrapper -part xc7z100ffg900-2
+Starting synth_design
+Attempting to get a license for feature 'Synthesis' and/or device 'xc7z100'
+INFO: [Common 17-349] Got license for feature 'Synthesis' and/or device 'xc7z100'
+INFO: Launching helper process for spawning children vivado processes
+INFO: Helper process launched with PID 35772 
+---------------------------------------------------------------------------------
+Starting RTL Elaboration : Time (s): cpu = 00:00:02 ; elapsed = 00:00:02 . Memory (MB): peak = 490.277 ; gain = 107.707
+---------------------------------------------------------------------------------
+INFO: [Synth 8-6157] synthesizing module 'xdma_restore_stage_a_wrapper' [V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/imports/hdl/xdma_restore_stage_a_wrapper.v:12]
+INFO: [Synth 8-6157] synthesizing module 'xdma_restore_stage_a' [V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/synth/xdma_restore_stage_a.v:13]
+INFO: [Synth 8-6157] synthesizing module 'xdma_restore_stage_a_axi_bram_0_0' [V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.runs/synth_1/.Xil/Vivado-34480-DESKTOP-QEQDV5I/realtime/xdma_restore_stage_a_axi_bram_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'xdma_restore_stage_a_axi_bram_0_0' (1#1) [V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.runs/synth_1/.Xil/Vivado-34480-DESKTOP-QEQDV5I/realtime/xdma_restore_stage_a_axi_bram_0_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'axi_bram_0' of module 'xdma_restore_stage_a_axi_bram_0_0' requires 8 connections, but only 7 given [V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/synth/xdma_restore_stage_a.v:108]
+INFO: [Synth 8-6157] synthesizing module 'xdma_restore_stage_a_axi_bram_ctrl_0_0' [V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.runs/synth_1/.Xil/Vivado-34480-DESKTOP-QEQDV5I/realtime/xdma_restore_stage_a_axi_bram_ctrl_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'xdma_restore_stage_a_axi_bram_ctrl_0_0' (2#1) [V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.runs/synth_1/.Xil/Vivado-34480-DESKTOP-QEQDV5I/realtime/xdma_restore_stage_a_axi_bram_ctrl_0_0_stub.v:6]
+INFO: [Synth 8-6157] synthesizing module 'xdma_restore_stage_a_const_one_1_0' [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_const_one_1_0/synth/xdma_restore_stage_a_const_one_1_0.v:57]
+INFO: [Synth 8-6157] synthesizing module 'xlconstant_v1_1_5_xlconstant' [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ipshared/4649/hdl/xlconstant_v1_1_vl_rfs.v:23]
+	Parameter CONST_VAL bound to: 1 - type: integer 
+	Parameter CONST_WIDTH bound to: 1 - type: integer 
+INFO: [Synth 8-6155] done synthesizing module 'xlconstant_v1_1_5_xlconstant' (3#1) [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ipshared/4649/hdl/xlconstant_v1_1_vl_rfs.v:23]
+INFO: [Synth 8-6155] done synthesizing module 'xdma_restore_stage_a_const_one_1_0' (4#1) [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_const_one_1_0/synth/xdma_restore_stage_a_const_one_1_0.v:57]
+INFO: [Synth 8-6157] synthesizing module 'xdma_restore_stage_a_const_zero_32_0' [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_const_zero_32_0/synth/xdma_restore_stage_a_const_zero_32_0.v:57]
+INFO: [Synth 8-6157] synthesizing module 'xlconstant_v1_1_5_xlconstant__parameterized0' [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ipshared/4649/hdl/xlconstant_v1_1_vl_rfs.v:23]
+	Parameter CONST_VAL bound to: 0 - type: integer 
+	Parameter CONST_WIDTH bound to: 32 - type: integer 
+INFO: [Synth 8-6155] done synthesizing module 'xlconstant_v1_1_5_xlconstant__parameterized0' (4#1) [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ipshared/4649/hdl/xlconstant_v1_1_vl_rfs.v:23]
+INFO: [Synth 8-6155] done synthesizing module 'xdma_restore_stage_a_const_zero_32_0' (5#1) [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_const_zero_32_0/synth/xdma_restore_stage_a_const_zero_32_0.v:57]
+INFO: [Synth 8-6157] synthesizing module 'xdma_restore_stage_a_ctrl_0_0' [V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.runs/synth_1/.Xil/Vivado-34480-DESKTOP-QEQDV5I/realtime/xdma_restore_stage_a_ctrl_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'xdma_restore_stage_a_ctrl_0_0' (6#1) [V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.runs/synth_1/.Xil/Vivado-34480-DESKTOP-QEQDV5I/realtime/xdma_restore_stage_a_ctrl_0_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'ctrl_0' of module 'xdma_restore_stage_a_ctrl_0_0' requires 43 connections, but only 23 given [V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/synth/xdma_restore_stage_a.v:165]
+INFO: [Synth 8-6157] synthesizing module 'xdma_restore_stage_a_util_ds_buf_0_0' [V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.runs/synth_1/.Xil/Vivado-34480-DESKTOP-QEQDV5I/realtime/xdma_restore_stage_a_util_ds_buf_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'xdma_restore_stage_a_util_ds_buf_0_0' (7#1) [V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.runs/synth_1/.Xil/Vivado-34480-DESKTOP-QEQDV5I/realtime/xdma_restore_stage_a_util_ds_buf_0_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'util_ds_buf_0' of module 'xdma_restore_stage_a_util_ds_buf_0_0' requires 4 connections, but only 3 given [V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/synth/xdma_restore_stage_a.v:189]
+INFO: [Synth 8-6157] synthesizing module 'xdma_restore_stage_a_xdma_0_0' [V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.runs/synth_1/.Xil/Vivado-34480-DESKTOP-QEQDV5I/realtime/xdma_restore_stage_a_xdma_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'xdma_restore_stage_a_xdma_0_0' (8#1) [V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.runs/synth_1/.Xil/Vivado-34480-DESKTOP-QEQDV5I/realtime/xdma_restore_stage_a_xdma_0_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'xdma_0' of module 'xdma_restore_stage_a_xdma_0_0' requires 75 connections, but only 67 given [V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/synth/xdma_restore_stage_a.v:193]
+INFO: [Synth 8-6155] done synthesizing module 'xdma_restore_stage_a' (9#1) [V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/synth/xdma_restore_stage_a.v:13]
+INFO: [Synth 8-6155] done synthesizing module 'xdma_restore_stage_a_wrapper' (10#1) [V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/imports/hdl/xdma_restore_stage_a_wrapper.v:12]
+---------------------------------------------------------------------------------
+Finished RTL Elaboration : Time (s): cpu = 00:00:03 ; elapsed = 00:00:03 . Memory (MB): peak = 545.996 ; gain = 163.426
+---------------------------------------------------------------------------------
+
+Report Check Netlist: 
++------+------------------+-------+---------+-------+------------------+
+|      |Item              |Errors |Warnings |Status |Description       |
++------+------------------+-------+---------+-------+------------------+
+|1     |multi_driven_nets |      0|        0|Passed |Multi driven nets |
++------+------------------+-------+---------+-------+------------------+
+---------------------------------------------------------------------------------
+Start Handling Custom Attributes
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:03 ; elapsed = 00:00:03 . Memory (MB): peak = 545.996 ; gain = 163.426
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished RTL Optimization Phase 1 : Time (s): cpu = 00:00:03 ; elapsed = 00:00:03 . Memory (MB): peak = 545.996 ; gain = 163.426
+---------------------------------------------------------------------------------
+INFO: [Device 21-403] Loading part xc7z100ffg900-2
+INFO: [Project 1-570] Preparing netlist for logic optimization
+
+Processing XDC Constraints
+Initializing timing engine
+Parsing XDC File [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_util_ds_buf_0_0/xdma_restore_stage_a_util_ds_buf_0_0/xdma_restore_stage_a_util_ds_buf_0_0_in_context.xdc] for cell 'xdma_restore_stage_a_i/util_ds_buf_0'
+Finished Parsing XDC File [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_util_ds_buf_0_0/xdma_restore_stage_a_util_ds_buf_0_0/xdma_restore_stage_a_util_ds_buf_0_0_in_context.xdc] for cell 'xdma_restore_stage_a_i/util_ds_buf_0'
+Parsing XDC File [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_xdma_0_0/xdma_restore_stage_a_xdma_0_0/xdma_restore_stage_a_xdma_0_0_in_context.xdc] for cell 'xdma_restore_stage_a_i/xdma_0'
+Finished Parsing XDC File [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_xdma_0_0/xdma_restore_stage_a_xdma_0_0/xdma_restore_stage_a_xdma_0_0_in_context.xdc] for cell 'xdma_restore_stage_a_i/xdma_0'
+Parsing XDC File [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_ctrl_0_0/xdma_restore_stage_a_ctrl_0_0/xdma_restore_stage_a_ctrl_0_0_in_context.xdc] for cell 'xdma_restore_stage_a_i/ctrl_0'
+Finished Parsing XDC File [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_ctrl_0_0/xdma_restore_stage_a_ctrl_0_0/xdma_restore_stage_a_ctrl_0_0_in_context.xdc] for cell 'xdma_restore_stage_a_i/ctrl_0'
+Parsing XDC File [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_axi_bram_ctrl_0_0/xdma_restore_stage_a_axi_bram_ctrl_0_0/xdma_restore_stage_a_axi_bram_ctrl_0_0_in_context.xdc] for cell 'xdma_restore_stage_a_i/axi_bram_ctrl_0'
+Finished Parsing XDC File [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_axi_bram_ctrl_0_0/xdma_restore_stage_a_axi_bram_ctrl_0_0/xdma_restore_stage_a_axi_bram_ctrl_0_0_in_context.xdc] for cell 'xdma_restore_stage_a_i/axi_bram_ctrl_0'
+Parsing XDC File [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_axi_bram_0_0/xdma_restore_stage_a_axi_bram_0_0/xdma_restore_stage_a_axi_bram_0_0_in_context.xdc] for cell 'xdma_restore_stage_a_i/axi_bram_0'
+Finished Parsing XDC File [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_axi_bram_0_0/xdma_restore_stage_a_axi_bram_0_0/xdma_restore_stage_a_axi_bram_0_0_in_context.xdc] for cell 'xdma_restore_stage_a_i/axi_bram_0'
+Parsing XDC File [F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/xdma_restore_chain/restore_pcie.xdc]
+Finished Parsing XDC File [F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/xdma_restore_chain/restore_pcie.xdc]
+INFO: [Project 1-236] Implementation specific constraints were found while reading constraint file [F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/xdma_restore_chain/restore_pcie.xdc]. These constraints will be ignored for synthesis but will be used in implementation. Impacted constraints are listed in the file [.Xil/xdma_restore_stage_a_wrapper_propImpl.xdc].
+Resolution: To avoid this warning, move constraints listed in [.Xil/xdma_restore_stage_a_wrapper_propImpl.xdc] to another XDC file and exclude this new file from synthesis with the used_in_synthesis property (File Properties dialog in GUI) and re-run elaboration/synthesis.
+Parsing XDC File [V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.runs/synth_1/dont_touch.xdc]
+Finished Parsing XDC File [V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.runs/synth_1/dont_touch.xdc]
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 936.535 ; gain = 0.000
+Completed Processing XDC Constraints
+
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 936.535 ; gain = 0.000
+INFO: [Project 1-111] Unisim Transformation Summary:
+No Unisim elements were transformed.
+
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 936.535 ; gain = 0.000
+Constraint Validation Runtime : Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.005 . Memory (MB): peak = 936.535 ; gain = 0.000
+WARNING: [Timing 38-316] Clock period '20.000' specified during out-of-context synthesis of instance 'xdma_restore_stage_a_i/axi_bram_0' at clock pin 'clka' is different from the actual clock period '4.000', this can lead to different synthesis results.
+---------------------------------------------------------------------------------
+Finished Constraint Validation : Time (s): cpu = 00:00:11 ; elapsed = 00:00:13 . Memory (MB): peak = 936.535 ; gain = 553.965
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Loading Part and Timing Information
+---------------------------------------------------------------------------------
+Loading part: xc7z100ffg900-2
+---------------------------------------------------------------------------------
+Finished Loading Part and Timing Information : Time (s): cpu = 00:00:11 ; elapsed = 00:00:13 . Memory (MB): peak = 936.535 ; gain = 553.965
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Applying 'set_property' XDC Constraints
+---------------------------------------------------------------------------------
+Applied set_property IO_BUFFER_TYPE = NONE for pcie_ref_clk_n[0]. (constraint file  v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_util_ds_buf_0_0/xdma_restore_stage_a_util_ds_buf_0_0/xdma_restore_stage_a_util_ds_buf_0_0_in_context.xdc, line 3).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for pcie_ref_clk_n[0]. (constraint file  v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_util_ds_buf_0_0/xdma_restore_stage_a_util_ds_buf_0_0/xdma_restore_stage_a_util_ds_buf_0_0_in_context.xdc, line 4).
+Applied set_property IO_BUFFER_TYPE = NONE for pcie_ref_clk_p[0]. (constraint file  v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_util_ds_buf_0_0/xdma_restore_stage_a_util_ds_buf_0_0/xdma_restore_stage_a_util_ds_buf_0_0_in_context.xdc, line 5).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for pcie_ref_clk_p[0]. (constraint file  v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_util_ds_buf_0_0/xdma_restore_stage_a_util_ds_buf_0_0/xdma_restore_stage_a_util_ds_buf_0_0_in_context.xdc, line 6).
+Applied set_property DONT_TOUCH = true for xdma_restore_stage_a_i. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for xdma_restore_stage_a_i/util_ds_buf_0. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for xdma_restore_stage_a_i/xdma_0. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for xdma_restore_stage_a_i/ctrl_0. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for xdma_restore_stage_a_i/const_zero_32. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for xdma_restore_stage_a_i/const_one_1. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for xdma_restore_stage_a_i/axi_bram_ctrl_0. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for xdma_restore_stage_a_i/axi_bram_0. (constraint file  auto generated constraint, line ).
+---------------------------------------------------------------------------------
+Finished applying 'set_property' XDC Constraints : Time (s): cpu = 00:00:11 ; elapsed = 00:00:13 . Memory (MB): peak = 936.535 ; gain = 553.965
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished RTL Optimization Phase 2 : Time (s): cpu = 00:00:11 ; elapsed = 00:00:13 . Memory (MB): peak = 936.535 ; gain = 553.965
+---------------------------------------------------------------------------------
+
+Report RTL Partitions: 
++-+--------------+------------+----------+
+| |RTL Partition |Replication |Instances |
++-+--------------+------------+----------+
++-+--------------+------------+----------+
+---------------------------------------------------------------------------------
+Start RTL Component Statistics 
+---------------------------------------------------------------------------------
+Detailed RTL Component Info : 
+---------------------------------------------------------------------------------
+Finished RTL Component Statistics 
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start RTL Hierarchical Component Statistics 
+---------------------------------------------------------------------------------
+Hierarchical RTL Component report 
+---------------------------------------------------------------------------------
+Finished RTL Hierarchical Component Statistics
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Part Resource Summary
+---------------------------------------------------------------------------------
+Part Resources:
+DSPs: 2020 (col length:140)
+BRAMs: 1510 (col length: RAMB18 140 RAMB36 70)
+---------------------------------------------------------------------------------
+Finished Part Resource Summary
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Cross Boundary and Area Optimization
+---------------------------------------------------------------------------------
+Warning: Parallel synthesis criteria is not met 
+---------------------------------------------------------------------------------
+Finished Cross Boundary and Area Optimization : Time (s): cpu = 00:00:12 ; elapsed = 00:00:14 . Memory (MB): peak = 936.535 ; gain = 553.965
+---------------------------------------------------------------------------------
+
+Report RTL Partitions: 
++-+--------------+------------+----------+
+| |RTL Partition |Replication |Instances |
++-+--------------+------------+----------+
++-+--------------+------------+----------+
+---------------------------------------------------------------------------------
+Start Applying XDC Timing Constraints
+---------------------------------------------------------------------------------
+INFO: [Synth 8-5578] Moved timing constraint from pin 'xdma_restore_stage_a_i/util_ds_buf_0/IBUF_OUT[0]' to pin '{xdma_restore_stage_a_i/util_ds_buf_0/bbstub_IBUF_OUT[0]/O}'
+INFO: [Synth 8-5578] Moved timing constraint from pin 'xdma_restore_stage_a_i/util_ds_buf_0/IBUF_DS_ODIV2[0]' to pin '{xdma_restore_stage_a_i/util_ds_buf_0/bbstub_IBUF_DS_ODIV2[0]/O}'
+INFO: [Synth 8-5578] Moved timing constraint from pin 'xdma_restore_stage_a_i/xdma_0/axi_aclk' to pin 'xdma_restore_stage_a_i/xdma_0/bbstub_axi_aclk/O'
+INFO: [Synth 8-5578] Moved timing constraint from pin 'xdma_restore_stage_a_i/axi_bram_ctrl_0/bram_clk_a' to pin 'xdma_restore_stage_a_i/axi_bram_ctrl_0/bbstub_bram_clk_a/O'
+INFO: [Synth 8-5819] Moved 4 constraints on hierarchical pins to their respective driving/loading pins
+---------------------------------------------------------------------------------
+Finished Applying XDC Timing Constraints : Time (s): cpu = 00:00:20 ; elapsed = 00:00:23 . Memory (MB): peak = 975.207 ; gain = 592.637
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Timing Optimization
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Timing Optimization : Time (s): cpu = 00:00:20 ; elapsed = 00:00:23 . Memory (MB): peak = 975.355 ; gain = 592.785
+---------------------------------------------------------------------------------
+
+Report RTL Partitions: 
++-+--------------+------------+----------+
+| |RTL Partition |Replication |Instances |
++-+--------------+------------+----------+
++-+--------------+------------+----------+
+---------------------------------------------------------------------------------
+Start Technology Mapping
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Technology Mapping : Time (s): cpu = 00:00:20 ; elapsed = 00:00:23 . Memory (MB): peak = 985.180 ; gain = 602.609
+---------------------------------------------------------------------------------
+
+Report RTL Partitions: 
++-+--------------+------------+----------+
+| |RTL Partition |Replication |Instances |
++-+--------------+------------+----------+
++-+--------------+------------+----------+
+---------------------------------------------------------------------------------
+Start IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Flattening Before IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Flattening Before IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished IO Insertion : Time (s): cpu = 00:00:21 ; elapsed = 00:00:25 . Memory (MB): peak = 985.180 ; gain = 602.609
+---------------------------------------------------------------------------------
+
+Report Check Netlist: 
++------+------------------+-------+---------+-------+------------------+
+|      |Item              |Errors |Warnings |Status |Description       |
++------+------------------+-------+---------+-------+------------------+
+|1     |multi_driven_nets |      0|        0|Passed |Multi driven nets |
++------+------------------+-------+---------+-------+------------------+
+---------------------------------------------------------------------------------
+Start Renaming Generated Instances
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Instances : Time (s): cpu = 00:00:21 ; elapsed = 00:00:25 . Memory (MB): peak = 985.180 ; gain = 602.609
+---------------------------------------------------------------------------------
+
+Report RTL Partitions: 
++-+--------------+------------+----------+
+| |RTL Partition |Replication |Instances |
++-+--------------+------------+----------+
++-+--------------+------------+----------+
+---------------------------------------------------------------------------------
+Start Rebuilding User Hierarchy
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Rebuilding User Hierarchy : Time (s): cpu = 00:00:21 ; elapsed = 00:00:25 . Memory (MB): peak = 985.180 ; gain = 602.609
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Ports
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Ports : Time (s): cpu = 00:00:21 ; elapsed = 00:00:25 . Memory (MB): peak = 985.180 ; gain = 602.609
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Handling Custom Attributes
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:21 ; elapsed = 00:00:25 . Memory (MB): peak = 985.180 ; gain = 602.609
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Nets
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Nets : Time (s): cpu = 00:00:21 ; elapsed = 00:00:25 . Memory (MB): peak = 985.180 ; gain = 602.609
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Writing Synthesis Report
+---------------------------------------------------------------------------------
+
+Report BlackBoxes: 
++------+---------------------------------------+----------+
+|      |BlackBox name                          |Instances |
++------+---------------------------------------+----------+
+|1     |xdma_restore_stage_a_axi_bram_0_0      |         1|
+|2     |xdma_restore_stage_a_axi_bram_ctrl_0_0 |         1|
+|3     |xdma_restore_stage_a_ctrl_0_0          |         1|
+|4     |xdma_restore_stage_a_util_ds_buf_0_0   |         1|
+|5     |xdma_restore_stage_a_xdma_0_0          |         1|
++------+---------------------------------------+----------+
+
+Report Cell Usage: 
++------+---------------------------------------+------+
+|      |Cell                                   |Count |
++------+---------------------------------------+------+
+|1     |xdma_restore_stage_a_axi_bram_0_0      |     1|
+|2     |xdma_restore_stage_a_axi_bram_ctrl_0_0 |     1|
+|3     |xdma_restore_stage_a_ctrl_0_0          |     1|
+|4     |xdma_restore_stage_a_util_ds_buf_0_0   |     1|
+|5     |xdma_restore_stage_a_xdma_0_0          |     1|
+|6     |IBUF                                   |     9|
+|7     |OBUF                                   |     8|
++------+---------------------------------------+------+
+
+Report Instance Areas: 
++------+-------------------------+-------------------------------------+------+
+|      |Instance                 |Module                               |Cells |
++------+-------------------------+-------------------------------------+------+
+|1     |top                      |                                     |  1323|
+|2     |  xdma_restore_stage_a_i |xdma_restore_stage_a                 |  1306|
+|3     |    const_one_1          |xdma_restore_stage_a_const_one_1_0   |     0|
+|4     |    const_zero_32        |xdma_restore_stage_a_const_zero_32_0 |     0|
++------+-------------------------+-------------------------------------+------+
+---------------------------------------------------------------------------------
+Finished Writing Synthesis Report : Time (s): cpu = 00:00:21 ; elapsed = 00:00:25 . Memory (MB): peak = 985.180 ; gain = 602.609
+---------------------------------------------------------------------------------
+Synthesis finished with 0 errors, 0 critical warnings and 0 warnings.
+Synthesis Optimization Runtime : Time (s): cpu = 00:00:13 ; elapsed = 00:00:17 . Memory (MB): peak = 985.180 ; gain = 212.070
+Synthesis Optimization Complete : Time (s): cpu = 00:00:22 ; elapsed = 00:00:25 . Memory (MB): peak = 985.180 ; gain = 602.609
+INFO: [Project 1-571] Translating synthesized netlist
+INFO: [Project 1-570] Preparing netlist for logic optimization
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1004.871 ; gain = 0.000
+INFO: [Project 1-111] Unisim Transformation Summary:
+No Unisim elements were transformed.
+
+INFO: [Common 17-83] Releasing license: Synthesis
+40 Infos, 5 Warnings, 0 Critical Warnings and 0 Errors encountered.
+synth_design completed successfully
+synth_design: Time (s): cpu = 00:00:24 ; elapsed = 00:00:29 . Memory (MB): peak = 1004.871 ; gain = 630.863
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.001 . Memory (MB): peak = 1004.871 ; gain = 0.000
+WARNING: [Constraints 18-5210] No constraints selected for write.
+Resolution: This message can indicate that there are no constraints for the design, or it can indicate that the used_in flags are set such that the constraints are ignored. This later case is used when running synth_design to not write synthesis constraints to the resulting checkpoint. Instead, project constraints are read when the synthesized design is opened.
+INFO: [Common 17-1381] The checkpoint 'V:/xdma_restore_stage_a_syn/xdma_restore_stage_a.runs/synth_1/xdma_restore_stage_a_wrapper.dcp' has been generated.
+INFO: [runtcl-4] Executing : report_utilization -file xdma_restore_stage_a_wrapper_utilization_synth.rpt -pb xdma_restore_stage_a_wrapper_utilization_synth.pb
+INFO: [Common 17-206] Exiting Vivado at Sat Jun 20 14:51:58 2026...
+[Sat Jun 20 14:51:59 2026] synth_1 finished
+wait_on_run: Time (s): cpu = 00:00:00 ; elapsed = 00:07:22 . Memory (MB): peak = 867.547 ; gain = 0.000
+# set run_status [get_property STATUS [get_runs synth_1]]
+# puts "SYNTH_1_STATUS=$run_status"
+SYNTH_1_STATUS=synth_design Complete!
+# if {[string first "synth_design Complete" $run_status] < 0} {
+#     error "synth_1 did not complete: $run_status"
+# }
+# open_run synth_1
+Design is defaulting to impl run constrset: constrs_1
+Design is defaulting to synth run part: xc7z100ffg900-2
+INFO: [Project 1-454] Reading design checkpoint 'v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_axi_bram_0_0/xdma_restore_stage_a_axi_bram_0_0.dcp' for cell 'xdma_restore_stage_a_i/axi_bram_0'
+INFO: [Project 1-454] Reading design checkpoint 'v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_axi_bram_ctrl_0_0/xdma_restore_stage_a_axi_bram_ctrl_0_0.dcp' for cell 'xdma_restore_stage_a_i/axi_bram_ctrl_0'
+INFO: [Project 1-454] Reading design checkpoint 'v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_ctrl_0_0/xdma_restore_stage_a_ctrl_0_0.dcp' for cell 'xdma_restore_stage_a_i/ctrl_0'
+INFO: [Project 1-454] Reading design checkpoint 'v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_util_ds_buf_0_0/xdma_restore_stage_a_util_ds_buf_0_0.dcp' for cell 'xdma_restore_stage_a_i/util_ds_buf_0'
+INFO: [Project 1-454] Reading design checkpoint 'v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_xdma_0_0/xdma_restore_stage_a_xdma_0_0.dcp' for cell 'xdma_restore_stage_a_i/xdma_0'
+INFO: [Netlist 29-17] Analyzing 1378 Unisim elements for replacement
+INFO: [Netlist 29-28] Unisim Transformation completed in 0 CPU seconds
+INFO: [Project 1-479] Netlist was created with Vivado 2018.3
+INFO: [Project 1-570] Preparing netlist for logic optimization
+Parsing XDC File [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_util_ds_buf_0_0/xdma_restore_stage_a_util_ds_buf_0_0_board.xdc] for cell 'xdma_restore_stage_a_i/util_ds_buf_0/U0'
+Finished Parsing XDC File [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_util_ds_buf_0_0/xdma_restore_stage_a_util_ds_buf_0_0_board.xdc] for cell 'xdma_restore_stage_a_i/util_ds_buf_0/U0'
+Parsing XDC File [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_xdma_0_0/ip_0/source/xdma_restore_stage_a_xdma_0_0_pcie2_ip-PCIE_X0Y0.xdc] for cell 'xdma_restore_stage_a_i/xdma_0/inst/xdma_restore_stage_a_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst'
+INFO: [Timing 38-35] Done setting XDC timing constraints. [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_xdma_0_0/ip_0/source/xdma_restore_stage_a_xdma_0_0_pcie2_ip-PCIE_X0Y0.xdc:136]
+INFO: [Timing 38-2] Deriving generated clocks [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_xdma_0_0/ip_0/source/xdma_restore_stage_a_xdma_0_0_pcie2_ip-PCIE_X0Y0.xdc:136]
+create_generated_clock: Time (s): cpu = 00:00:13 ; elapsed = 00:00:14 . Memory (MB): peak = 1779.852 ; gain = 631.688
+Finished Parsing XDC File [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_xdma_0_0/ip_0/source/xdma_restore_stage_a_xdma_0_0_pcie2_ip-PCIE_X0Y0.xdc] for cell 'xdma_restore_stage_a_i/xdma_0/inst/xdma_restore_stage_a_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst'
+Parsing XDC File [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_xdma_0_0/ip_3/pcie2_fifo_generator_dma_cpl.xdc] for cell 'xdma_restore_stage_a_i/xdma_0/inst/xdma_restore_stage_a_xdma_0_0_pcie2_to_pcie3_wrapper_i/xdma_restore_stage_a_xdma_0_0_axi_stream_intf_i/xdma_restore_stage_a_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0'
+Finished Parsing XDC File [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_xdma_0_0/ip_3/pcie2_fifo_generator_dma_cpl.xdc] for cell 'xdma_restore_stage_a_i/xdma_0/inst/xdma_restore_stage_a_xdma_0_0_pcie2_to_pcie3_wrapper_i/xdma_restore_stage_a_xdma_0_0_axi_stream_intf_i/xdma_restore_stage_a_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0'
+Parsing XDC File [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_xdma_0_0/ip_4/pcie2_fifo_generator_tgt_brdg.xdc] for cell 'xdma_restore_stage_a_i/xdma_0/inst/xdma_restore_stage_a_xdma_0_0_pcie2_to_pcie3_wrapper_i/xdma_restore_stage_a_xdma_0_0_axi_stream_intf_i/xdma_restore_stage_a_xdma_0_0_rx_demux_i/tgt_brdg_fifo_inst/U0'
+Finished Parsing XDC File [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_xdma_0_0/ip_4/pcie2_fifo_generator_tgt_brdg.xdc] for cell 'xdma_restore_stage_a_i/xdma_0/inst/xdma_restore_stage_a_xdma_0_0_pcie2_to_pcie3_wrapper_i/xdma_restore_stage_a_xdma_0_0_axi_stream_intf_i/xdma_restore_stage_a_xdma_0_0_rx_demux_i/tgt_brdg_fifo_inst/U0'
+Parsing XDC File [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_xdma_0_0/xdma_restore_stage_a_xdma_0_0_board.xdc] for cell 'xdma_restore_stage_a_i/xdma_0/inst'
+Finished Parsing XDC File [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_xdma_0_0/xdma_restore_stage_a_xdma_0_0_board.xdc] for cell 'xdma_restore_stage_a_i/xdma_0/inst'
+Parsing XDC File [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_xdma_0_0/source/xdma_restore_stage_a_xdma_0_0_pcie3_7vx_ip.xdc] for cell 'xdma_restore_stage_a_i/xdma_0/inst'
+Finished Parsing XDC File [v:/xdma_restore_stage_a_syn/xdma_restore_stage_a.srcs/sources_1/bd/xdma_restore_stage_a/ip/xdma_restore_stage_a_xdma_0_0/source/xdma_restore_stage_a_xdma_0_0_pcie3_7vx_ip.xdc] for cell 'xdma_restore_stage_a_i/xdma_0/inst'
+Parsing XDC File [F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/xdma_restore_chain/restore_pcie.xdc]
+Finished Parsing XDC File [F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/xdma_restore_chain/restore_pcie.xdc]
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'xdma_restore_stage_a_i/xdma_0/inst/udma_wrapper/dma_top/base/IRQ_INST/usr_irq_xpm_cdc'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'xdma_restore_stage_a_i/xdma_0/inst/udma_wrapper/dma_top/base/IRQ_INST/usr_irq_xpm_cdc'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'xdma_restore_stage_a_i/xdma_0/inst/xdma_restore_stage_a_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pl_received_hot_rst_cdc'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'xdma_restore_stage_a_i/xdma_0/inst/xdma_restore_stage_a_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pl_received_hot_rst_cdc'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'xdma_restore_stage_a_i/xdma_0/inst/xdma_restore_stage_a_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/phy_lnk_up_cdc'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'xdma_restore_stage_a_i/xdma_0/inst/xdma_restore_stage_a_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/phy_lnk_up_cdc'
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.019 . Memory (MB): peak = 1780.668 ; gain = 0.000
+INFO: [Project 1-111] Unisim Transformation Summary:
+  A total of 481 instances were transformed.
+  RAM16X1D => RAM32X1D (RAMD32, RAMD32): 22 instances
+  RAM32M => RAM32M (RAMD32, RAMD32, RAMD32, RAMD32, RAMD32, RAMD32, RAMS32, RAMS32): 440 instances
+  RAM32X1D => RAM32X1D (RAMD32, RAMD32): 10 instances
+  RAM64X1S => RAM64X1S (RAMS64E): 9 instances
+
+open_run: Time (s): cpu = 00:00:27 ; elapsed = 00:00:31 . Memory (MB): peak = 1780.668 ; gain = 913.121
+# report_utilization -file [file join $project_dir "xdma_restore_stage_${stage_lc}_synth_util.rpt"]
+# report_timing_summary -file [file join $project_dir "xdma_restore_stage_${stage_lc}_synth_timing.rpt"]
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+INFO: [Timing 38-91] UpdateTimingParams: Speed grade: -2, Delay Type: min_max.
+INFO: [Timing 38-191] Multithreading enabled for timing update using a maximum of 2 CPUs
+report_timing_summary: Time (s): cpu = 00:00:07 ; elapsed = 00:00:05 . Memory (MB): peak = 1854.277 ; gain = 73.609
+# puts "XDMA_RESTORE_STAGE_${stage}_PROJECT_SYNTH_PASS"
+XDMA_RESTORE_STAGE_A_PROJECT_SYNTH_PASS
+# exit
+INFO: [Common 17-206] Exiting Vivado at Sat Jun 20 14:52:36 2026...

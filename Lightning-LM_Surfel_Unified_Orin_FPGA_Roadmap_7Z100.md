@@ -2162,3 +2162,155 @@ sudo sh -c 'echo 1 > /sys/bus/pci/rescan'
 - 在 `/dev/xdma*` 稳定出现前，不进入 HLS 功能验证和在线 SLAM 联调。
 - timing 未收敛的 bitstream 只允许用于 bring-up，不允许作为 accelerator 功能正确性证明。
 - 若某一层失败，不继续加下一层模块；先用 Orin journal 和 Windows timing/property diff 锁定该层新增变量。
+---
+
+## 31. 2026-06-20 XDMA Config BAR 分层恢复工程与教程参数对齐
+
+### 最新结论
+- Orin 侧最新日志表明：完整 `azmig_wrapper.bit` 能枚举 `0005:01:00.0 [10ee:7024]`，但 XDMA driver 没有 bind 成功，直接失败点是 `xdma:map_bars: Failed to detect XDMA config BAR`，并伴随 PCIe `CmpltTO`。
+- 这不是单纯 `/dev/xdma0_*` 节点没创建，也不是 XDMA driver 没加载；driver 已加载且识别 `10ee:7024`，但 probe 访问 XDMA config BAR 超时。
+- X4 XDMA-only 诊断 bitstream 已经让 Orin 出现 `/dev/xdma0_user`、`/dev/xdma0_h2c_0`、`/dev/xdma0_c2h_0`，所以基础 PCIe、lane reversal、PERST#、device id、Orin XDMA driver 和最小 config BAR 路径成立。
+- 当前嫌疑从 pinout/reset 转为完整设计新增变量：`slam_accel_ctrl`、`128_bit + 125 MHz` XDMA AXI、MIG/interconnect、HLS 接入或 timing。
+
+### 术语固定
+- `128-bit AXI` 指 XDMA FPGA 内部 `M_AXI` 数据总线宽度，不是 PCIe lane 数。
+- `125 MHz` 指 XDMA 用户侧 AXI target clock，不是 Orin 提供的 100 MHz PCIe refclk。
+- `MIG` 是 Xilinx PL DDR3 memory controller。
+- `HLS` 是 `unified_surfel_observation_core` 生成的 accelerator IP。
+- `AXI interconnect` 是 XDMA、MIG、HLS、控制器之间的内部 AXI fabric。
+
+### 教程参数复核结论
+- `course/ALINX_ZYNQ(AX7Z100)vivado2023开发平台-pl-ddr教程.pdf` 和 PCIe/Vitis 教程可作为硬件参数参考，但 Vivado 2023 UI 步骤不直接照搬到 Vivado 2018.3。
+- PL DDR3/MIG 参数继续固定为：
+  - 200 MHz differential `SYS_CLK_P/N = F9/E8`
+  - DDR3 `MT41K256M16XX-125`
+  - physical DDR data width 32-bit
+  - MIG AXI data width 256-bit
+  - XDMA memory address offset `0x00000000`
+- PCIe 当前仍固定 `Gen2 X4 + enable_lane_reversal=true`，不回退 X1，也不直接切 X8。
+
+### 本次代码/脚本更新
+- 新增 `fpga/vivado/xdma_restore_chain/` 分层恢复工程。
+- 该工程使用一个参数化 BD 生成脚本，按 `-Stage A|B|C` 生成不同 bitstream：
+  - Stage A：`X4 + lane reversal + 64_bit + 250 MHz + slam_accel_ctrl + BRAM`，不接 MIG/HLS。
+  - Stage B：`X4 + lane reversal + 128_bit + 125 MHz + slam_accel_ctrl + BRAM`，不接 MIG/HLS。
+  - Stage C：`X4 + lane reversal + 128_bit + 125 MHz + slam_accel_ctrl + MIG`，不接 HLS。
+- 新增本地 `xdma_restore_slam_accel_ctrl_axi_lite_wrapper.v`，去掉原 wrapper 中固定的 `FREQ_HZ=125000000`。原因是 Stage A 使用 `64_bit + 250 MHz`，复用正式工程 wrapper 会导致 Vivado BD validate 报 `ctrl_0/S_AXI(125000000)` 与 `xdma_0/M_AXI_LITE(250000000)` 不匹配。
+- 新增 PowerShell 入口：
+  - `run_vivado_bd_validate.ps1 -Stage A|B|C`
+  - `run_vivado_project_synth.ps1 -Stage A|B|C -Jobs 18`
+  - `run_vivado_impl_bitstream.ps1 -Stage A|B|C -Jobs 18`
+  - `program_bitstream_jtag.ps1 -Stage A|B|C`
+- 报告目录固定为 `reports/fpga/vivado/xdma_restore_chain/stage_a|stage_b|stage_c/`。
+
+### Windows 验证结果
+- PowerShell 脚本 AST parse：PASS。
+- `git diff --check`：PASS；当前 sandbox 用户触发 Git `safe.directory` 保护，检查通过一次性 `git -c safe.directory=... diff --check` 完成，未修改全局 Git 配置。
+- Stage A BD validate：PASS，日志包含 `XDMA_RESTORE_STAGE_A_BD_VALIDATE_PASS`。
+- Stage B BD validate：PASS，日志包含 `XDMA_RESTORE_STAGE_B_BD_VALIDATE_PASS`。
+- Stage C BD validate：PASS，日志包含 `XDMA_RESTORE_STAGE_C_BD_VALIDATE_PASS`。
+- Stage A project synthesis：PASS，日志包含 `XDMA_RESTORE_STAGE_A_PROJECT_SYNTH_PASS`。
+- Stage A implementation + bitstream：PASS，日志包含 `XDMA_RESTORE_STAGE_A_IMPLEMENTATION_BITSTREAM_PASS`。
+- Stage A bitstream：
+  - `fpga/vivado/.build/xdma_restore_stage_a_impl/xdma_restore_stage_a.runs/impl_1/xdma_restore_stage_a_wrapper.bit`
+  - size：3,494,870 bytes
+- Stage A post-implementation timing：PASS，WNS 0.281 ns，WHS 0.045 ns。
+- 本轮未自动 JTAG 下载 Stage A；下一步应先下载 Stage A bitstream，再让 Orin 做 `/dev/xdma0_*` gate。
+
+Stage A JTAG 下载命令：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\program_bitstream_jtag.ps1 -Stage A
+```
+
+### Windows 执行顺序
+先只跑 Stage A：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\run_vivado_bd_validate.ps1 -Stage A
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\run_vivado_project_synth.ps1 -Stage A -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\run_vivado_impl_bitstream.ps1 -Stage A -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\program_bitstream_jtag.ps1 -Stage A
+```
+
+Stage A 在 Orin 侧 PASS 后，再把 `-Stage A` 换成 `-Stage B`；Stage B PASS 后再进入 Stage C。不要跳过失败阶段继续往后加 MIG/HLS。
+
+### Orin 每阶段 gate
+每个 bitstream JTAG 下载后，Orin 侧 reboot 后执行：
+
+```bash
+sudo reboot
+lspci -nnk -s 0005:01:00.0
+lspci -vv -s 0005:01:00.0 | grep -Ei 'Region|LnkSta|LnkCap'
+ls -l /dev/xdma0_user /dev/xdma0_h2c_0 /dev/xdma0_c2h_0
+journalctl -k --no-pager | grep -Ei 'xdma|10ee|7024|0005:01:00|CmpltTO|BAR|probe|AER|link' | tail -n 120
+```
+
+通过标准：
+- `Kernel driver in use: xdma`
+- `/dev/xdma0_user` 存在
+- `/dev/xdma0_h2c_0` 存在
+- `/dev/xdma0_c2h_0` 存在
+- 不再出现 `Failed to detect XDMA config BAR`
+- 不再出现新的 `CmpltTO`
+
+### 下一步判断
+- Stage A 失败：优先查 `slam_accel_ctrl` AXI-Lite wrapper、reset、timing 或 AXI-Lite BAR 响应。
+- Stage B 失败：优先查 `128_bit + 125 MHz` XDMA 配置和 generated XDMA property diff；必要时第一版 bring-up 暂保留 `64_bit + 250 MHz`。
+- Stage C 失败：优先查 MIG reset/clock/interconnect/address map，并按 ALINX 教程参数逐项对齐。
+- Stage C PASS 后，才允许进入 Stage D：接回真实 HLS IP，恢复完整 `azmig_wrapper.bit`，再做 `xdma_smoke.py --reg-smoke --ddr-smoke` 和后续 tiny synthetic transaction。
+
+---
+
+## 32. 2026-06-20 XDMA BAR Identity Shim / Stage A2 修正
+
+### 当前结论
+- Orin 侧 Stage A 结果：`lspci` 能看到 `0005:01:00.0 [10ee:7024]`，但没有 `/dev/xdma0_*`。
+- Stage A 已去掉 MIG、HLS、128-bit XDMA 和 125 MHz 变量；失败点仍在 XDMA driver probe/device-node 创建阶段。
+- Windows 侧对比显示，Stage A 与已 PASS 的 `xdma_config_bar_diag` 在 XDMA IP 关键配置上保持一致：`Gen2 X4`、`enable_lane_reversal=true`、`64_bit`、`250 MHz`、`Basic`、`pf0_device_id=7024`。
+- 当前最强嫌疑从 PCIe lane、reset、XDMA 静态参数转为 BAR0 后端内容：`xdma_config_bar_diag` 在 BAR0 offset `0x0000` 返回 `0x58444d41`，Stage A/完整 `azmig` 在 offset `0x0000` 直接返回 `slam_accel_ctrl.VERSION=0x00020002`。
+- 工作假设：Orin 侧 Xilinx XDMA Linux driver 在创建 `/dev/xdma0_*` 前会探测 BAR0 内容；如果 BAR0 起始页不是 driver 可接受的 XDMA identity/config page，则会表现为 `Failed to detect XDMA config BAR`。
+
+### 本次代码/脚本更新
+- 新增 `fpga/vivado/xdma_restore_chain/xdma_restore_bar_shim_ctrl_wrapper.v`。
+- 新增 Stage A2：`X4 + lane reversal + 64_bit + 250 MHz + XDMA BAR shim + slam_accel_ctrl@0x1000 + BRAM`，不接 MIG/HLS。
+- `xdma_restore_chain` PowerShell/Tcl 入口已支持 `-Stage A2`，且默认 Stage 改为 `A2`。
+- BAR0 布局固定为：
+  - `0x0000`: shim magic `0x58444d41`
+  - `0x0004`: shim version `0x00010000`
+  - `0x0008/0x000c`: shim scratch registers
+  - `0x1000`: `slam_accel_ctrl` register bank
+  - `0x1000 + 0x000`: `slam_accel_ctrl.VERSION = 0x00020002`
+- `fpga/host/xdma_smoke/xdma_smoke.py` 新增 `--shim-smoke` 和 `--ctrl-base`；Stage A2/后续 shim 版应使用 `--ctrl-base 0x1000`。
+- 正式 `slam_accel_ax7z100_pcie_mig` BD 已预先切到同一个 BAR shim wrapper；但必须先等 Stage A2 在 Orin 侧 PASS 后，再重新生成正式 `azmig_wrapper.bit`。
+
+### Windows 执行命令
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\run_vivado_bd_validate.ps1 -Stage A2
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\run_vivado_project_synth.ps1 -Stage A2 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\run_vivado_impl_bitstream.ps1 -Stage A2 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\program_bitstream_jtag.ps1 -Stage A2
+```
+
+### Orin 验收命令
+```bash
+sudo reboot
+lspci -nnk -s 0005:01:00.0
+ls -l /dev/xdma0_user /dev/xdma0_h2c_0 /dev/xdma0_c2h_0
+journalctl -k --no-pager | grep -Ei 'xdma|10ee|7024|0005:01:00|CmpltTO|BAR|probe|AER|link' | tail -n 120
+python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000
+```
+
+### 下一步判断
+- Stage A2 PASS：再进入 Stage B2/正式 `azmig` 修正版，继续保持 BAR shim，逐项恢复 `128_bit + 125 MHz`、MIG、HLS。
+- Stage A2 FAIL：不继续加 MIG/HLS；转向 Orin XDMA driver 源码中的 BAR probe 条件，重点核对 `map_bars` / `is_config_bar` 对 BAR identity、BAR index、BAR size 和 AXI-Lite completion 的具体要求。
+
+### Windows 验证结果
+- Stage A2 BD validate：PASS，日志包含 `XDMA_RESTORE_STAGE_A2_BD_VALIDATE_PASS`。
+- Stage A2 project synthesis：PASS，日志包含 `XDMA_RESTORE_STAGE_A2_PROJECT_SYNTH_PASS`。
+- Stage A2 implementation + bitstream：PASS，日志包含 `XDMA_RESTORE_STAGE_A2_IMPLEMENTATION_BITSTREAM_PASS`。
+- Stage A2 bitstream 路径：
+  `fpga/vivado/.build/xdma_restore_stage_a2_impl/xdma_restore_stage_a2.runs/impl_1/xdma_restore_stage_a2_wrapper.bit`
+- bitstream size：3,582,735 bytes。
+- post-implementation timing：PASS，WNS 0.269 ns，TNS 0.000 ns，WHS 0.045 ns，THS 0.000 ns。
+- DRC：0 errors，0 critical warnings，25 warnings；warning 类型与之前 BRAM/XDMA 诊断路径一致，主要是 RAMB async-control、no routable loads 和 PL-only 设计的 PS7-required warning。

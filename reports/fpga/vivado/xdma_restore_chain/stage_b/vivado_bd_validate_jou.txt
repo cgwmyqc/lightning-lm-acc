@@ -1,0 +1,12 @@
+#-----------------------------------------------------------
+# Vivado v2018.3 (64-bit)
+# SW Build 2405991 on Thu Dec  6 23:38:27 MST 2018
+# IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
+# Start of session at: Sat Jun 20 14:40:47 2026
+# Process ID: 31984
+# Current directory: F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc
+# Command line: vivado.exe -mode batch -source F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\xdma_restore_chain\create_stage_bd.tcl -journal V:\xdma_restore_stage_b_bd\vivado_bd_validate.jou -log V:\xdma_restore_stage_b_bd\vivado_bd_validate.log -tclargs V:\xdma_restore_stage_b_bd xc7z100ffg900-2 B F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc
+# Log file: V:/xdma_restore_stage_b_bd/vivado_bd_validate.log
+# Journal file: V:\xdma_restore_stage_b_bd\vivado_bd_validate.jou
+#-----------------------------------------------------------
+source {F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\xdma_restore_chain\create_stage_bd.tcl}

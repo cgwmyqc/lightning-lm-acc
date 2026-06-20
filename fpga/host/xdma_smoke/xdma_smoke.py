@@ -32,6 +32,13 @@ from address_map import (
     MODE_LOCALIZATION,
     REGIONS,
     SCAN_POINTS_BASE,
+    XDMA_CTRL_BASE_DEFAULT,
+    XDMA_SHIM_MAGIC,
+    XDMA_SHIM_MAGIC_OFFSET,
+    XDMA_SHIM_SCRATCH0_OFFSET,
+    XDMA_SHIM_SCRATCH1_OFFSET,
+    XDMA_SHIM_VERSION,
+    XDMA_SHIM_VERSION_OFFSET,
     KERNEL_UNIFIED_OBSERVATION,
     validate_layout,
 )
@@ -60,24 +67,54 @@ def make_pattern(size, seed):
     return bytes(((i * 37 + seed) & 0xFF) for i in range(size))
 
 
-def reg_smoke(user_path, scan_count):
+def shim_smoke(user_path):
     fd = os.open(user_path, os.O_RDWR | os.O_SYNC)
     try:
-        version = read32(fd, CTRL_VERSION)
+        magic = read32(fd, XDMA_SHIM_MAGIC_OFFSET)
+        if magic != XDMA_SHIM_MAGIC:
+            raise RuntimeError(f"bad XDMA shim magic: got 0x{magic:08x}, expected 0x{XDMA_SHIM_MAGIC:08x}")
+        version = read32(fd, XDMA_SHIM_VERSION_OFFSET)
+        if version != XDMA_SHIM_VERSION:
+            raise RuntimeError(
+                f"bad XDMA shim version: got 0x{version:08x}, expected 0x{XDMA_SHIM_VERSION:08x}"
+            )
+        for offset, value in (
+            (XDMA_SHIM_SCRATCH0_OFFSET, 0x13579BDF),
+            (XDMA_SHIM_SCRATCH1_OFFSET, 0x2468ACE0),
+        ):
+            write32(fd, offset, value)
+            got = read32(fd, offset)
+            if got != value:
+                raise RuntimeError(f"shim scratch 0x{offset:03x} mismatch: got 0x{got:08x}, expected 0x{value:08x}")
+        print("SHIM_SMOKE_PASS")
+        print(f"XDMA_SHIM_MAGIC=0x{magic:08x} XDMA_SHIM_VERSION=0x{version:08x}")
+    finally:
+        os.close(fd)
+
+
+def reg_smoke(user_path, scan_count, ctrl_base):
+    fd = os.open(user_path, os.O_RDWR | os.O_SYNC)
+    try:
+        version = read32(fd, ctrl_base + CTRL_VERSION)
         if version != CTRL_VERSION_VALUE:
-            raise RuntimeError(f"bad VERSION: got 0x{version:08x}, expected 0x{CTRL_VERSION_VALUE:08x}")
+            raise RuntimeError(
+                f"bad VERSION at ctrl_base 0x{ctrl_base:x}: got 0x{version:08x}, expected 0x{CTRL_VERSION_VALUE:08x}"
+            )
 
         writes = list(CTRL_WRITES)
         writes.append((CTRL_SCAN_COUNT, scan_count))
         for offset, value in writes:
-            write32(fd, offset, value)
+            write32(fd, ctrl_base + offset, value)
         for offset, value in writes:
-            got = read32(fd, offset)
+            got = read32(fd, ctrl_base + offset)
             if got != value:
-                raise RuntimeError(f"register 0x{offset:03x} mismatch: got 0x{got:08x}, expected 0x{value:08x}")
+                raise RuntimeError(
+                    f"register 0x{ctrl_base + offset:03x} mismatch: got 0x{got:08x}, expected 0x{value:08x}"
+                )
 
         print("REG_SMOKE_PASS")
         print(f"VERSION=0x{version:08x}")
+        print(f"CTRL_BASE=0x{ctrl_base:08x}")
         print(f"KERNEL_SEL={KERNEL_UNIFIED_OBSERVATION} MODE={MODE_LOCALIZATION} SCAN_COUNT={scan_count}")
     finally:
         os.close(fd)
@@ -127,18 +164,19 @@ def write_manifest(h2c_path, manifest_path):
         os.close(h2c)
 
 
-def start_zero(user_path):
+def start_zero(user_path, ctrl_base):
     fd = os.open(user_path, os.O_RDWR | os.O_SYNC)
     try:
-        write32(fd, CTRL_SCAN_ADDR_LO, SCAN_POINTS_BASE)
-        write32(fd, CTRL_SCAN_ADDR_HI, 0)
-        write32(fd, CTRL_SCAN_COUNT, 0)
-        write32(fd, CTRL_CONTROL, 0x2)
-        write32(fd, CTRL_CONTROL, 0x1)
-        status = read32(fd, CTRL_STATUS)
-        error = read32(fd, CTRL_ERROR)
-        run_count = read32(fd, CTRL_RUN_COUNT)
+        write32(fd, ctrl_base + CTRL_SCAN_ADDR_LO, SCAN_POINTS_BASE)
+        write32(fd, ctrl_base + CTRL_SCAN_ADDR_HI, 0)
+        write32(fd, ctrl_base + CTRL_SCAN_COUNT, 0)
+        write32(fd, ctrl_base + CTRL_CONTROL, 0x2)
+        write32(fd, ctrl_base + CTRL_CONTROL, 0x1)
+        status = read32(fd, ctrl_base + CTRL_STATUS)
+        error = read32(fd, ctrl_base + CTRL_ERROR)
+        run_count = read32(fd, ctrl_base + CTRL_RUN_COUNT)
         print("START_ZERO_ISSUED")
+        print(f"CTRL_BASE=0x{ctrl_base:08x}")
         print(f"STATUS=0x{status:08x} ERROR=0x{error:08x} RUN_COUNT={run_count}")
     finally:
         os.close(fd)
@@ -151,6 +189,8 @@ def main():
     parser.add_argument("--c2h", default=DEFAULT_C2H, help="XDMA card-to-host device")
     parser.add_argument("--scan-count", type=int, default=1)
     parser.add_argument("--ddr-size", type=lambda value: int(value, 0), default=4096)
+    parser.add_argument("--ctrl-base", type=lambda value: int(value, 0), default=XDMA_CTRL_BASE_DEFAULT)
+    parser.add_argument("--shim-smoke", action="store_true", help="Run XDMA BAR shim identity/scratch smoke")
     parser.add_argument("--reg-smoke", action="store_true", help="Run AXI-Lite VERSION/config write-read smoke")
     parser.add_argument("--ddr-smoke", action="store_true", help="Run PL DDR pattern write/read smoke")
     parser.add_argument("--write-image", default="", help="Write a generated host image manifest through H2C")
@@ -158,18 +198,19 @@ def main():
     args = parser.parse_args()
 
     validate_layout()
-    if not any([args.reg_smoke, args.ddr_smoke, args.write_image, args.start_zero]):
-        parser.error("select at least one action: --reg-smoke, --ddr-smoke, --write-image, or --start-zero")
+    if not any([args.shim_smoke, args.reg_smoke, args.ddr_smoke, args.write_image, args.start_zero]):
+        parser.error("select at least one action: --shim-smoke, --reg-smoke, --ddr-smoke, --write-image, or --start-zero")
+    if args.shim_smoke:
+        shim_smoke(args.user)
     if args.reg_smoke:
-        reg_smoke(args.user, args.scan_count)
+        reg_smoke(args.user, args.scan_count, args.ctrl_base)
     if args.ddr_smoke:
         ddr_smoke(args.h2c, args.c2h, args.ddr_size)
     if args.write_image:
         write_manifest(args.h2c, args.write_image)
     if args.start_zero:
-        start_zero(args.user)
+        start_zero(args.user, args.ctrl_base)
 
 
 if __name__ == "__main__":
     main()
-
