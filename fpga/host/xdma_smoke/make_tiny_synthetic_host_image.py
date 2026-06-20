@@ -86,9 +86,12 @@ def main():
         "scan_count": scan_count,
         "segments": [],
         "expected": {
+            "h_upper": expected["h_upper"],
+            "b": expected["b"],
             "valid_count": expected["valid_count"],
             "reject_count": expected["reject_count"],
             "miss_count": expected["miss_count"],
+            "flags": expected["flags"],
             "residual_sum": expected["residual_sum"],
             "residual_abs_sum": expected["residual_abs_sum"],
             "residual_max_abs": expected["residual_max_abs"],
@@ -112,6 +115,17 @@ def main():
             "",
             f"- expected_counts: {expected['valid_count']}/{expected['reject_count']}/{expected['miss_count']}",
             f"- expected_residual_sum: {expected['residual_sum']:.17g}",
+            f"- expected_h_upper_entries: {len(expected['h_upper'])}",
+            f"- expected_b_entries: {len(expected['b'])}",
+            "",
+            "## Orin command",
+            "",
+            "```bash",
+            "python3 fpga/host/xdma_smoke/make_tiny_synthetic_host_image.py --out-dir fpga/vivado/.build/host_synthetic_tiny --report-dir reports/fpga/host/xdma_smoke/tiny_synthetic",
+            "sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-tiny fpga/vivado/.build/host_synthetic_tiny/manifest.json --ctrl-base 0x1000",
+            "```",
+            "",
+            "Expected markers: `HLS_TINY_START_PASS`, `HLS_TINY_DONE_PASS`, `HLS_TINY_NUMERIC_PASS`.",
         ]
     )
     (report_dir / "tiny_synthetic_host_image.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -124,4 +138,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

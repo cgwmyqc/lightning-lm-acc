@@ -2,8 +2,10 @@
 # SPDX-License-Identifier: MIT
 
 import argparse
+import json
 import os
 import struct
+import time
 from pathlib import Path
 
 from address_map import (
@@ -30,6 +32,7 @@ from address_map import (
     CTRL_VERSION_VALUE,
     CTRL_WRITES,
     MODE_LOCALIZATION,
+    OUTPUT_BASE,
     REGIONS,
     SCAN_POINTS_BASE,
     XDMA_CTRL_BASE_DEFAULT,
@@ -47,6 +50,11 @@ from address_map import (
 DEFAULT_USER = "/dev/xdma0_user"
 DEFAULT_H2C = "/dev/xdma0_h2c_0"
 DEFAULT_C2H = "/dev/xdma0_c2h_0"
+NORMAL_EQUATION_BYTES = 320
+HLS_TINY_ABS_TOL = 1.0e-4
+HLS_TINY_REL_TOL = 1.0e-3
+STATUS_DONE = 1 << 2
+STATUS_ERROR = 1 << 3
 
 
 def read32(fd, offset):
@@ -61,6 +69,14 @@ def write32(fd, offset, value):
     written = os.pwrite(fd, data, offset)
     if written != 4:
         raise RuntimeError(f"short register write at 0x{offset:x}: {written} bytes")
+
+
+def close_many(fds):
+    for fd in fds:
+        try:
+            os.close(fd)
+        except OSError:
+            pass
 
 
 def make_pattern(size, seed):
@@ -145,8 +161,6 @@ def ddr_smoke(h2c_path, c2h_path, size):
 
 
 def write_manifest(h2c_path, manifest_path):
-    import json
-
     manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
     base_dir = Path(manifest_path).parent
     h2c = os.open(h2c_path, os.O_WRONLY | os.O_SYNC)
@@ -162,6 +176,139 @@ def write_manifest(h2c_path, manifest_path):
         print("HOST_IMAGE_WRITE_PASS")
     finally:
         os.close(h2c)
+
+
+def parse_normal_equation(data):
+    if len(data) != NORMAL_EQUATION_BYTES:
+        raise RuntimeError(f"normal equation readback size mismatch: {len(data)}/{NORMAL_EQUATION_BYTES}")
+    h_upper = list(struct.unpack_from("<21d", data, 0))
+    b = list(struct.unpack_from("<6d", data, 168))
+    valid_count, reject_count, miss_count, flags = struct.unpack_from("<4I", data, 216)
+    residual_sum, residual_abs_sum, residual_max_abs = struct.unpack_from("<3d", data, 232)
+    return {
+        "h_upper": h_upper,
+        "b": b,
+        "valid_count": valid_count,
+        "reject_count": reject_count,
+        "miss_count": miss_count,
+        "flags": flags,
+        "residual_sum": residual_sum,
+        "residual_abs_sum": residual_abs_sum,
+        "residual_max_abs": residual_max_abs,
+    }
+
+
+def compare_float(name, actual, expected):
+    diff = abs(actual - expected)
+    rel = diff / max(abs(expected), 1.0e-30)
+    if diff <= HLS_TINY_ABS_TOL or rel <= HLS_TINY_REL_TOL:
+        return diff, rel
+    raise RuntimeError(
+        f"{name} mismatch: actual={actual:.17g} expected={expected:.17g} abs={diff:.6g} rel={rel:.6g}"
+    )
+
+
+def compare_normal_equation(actual, expected):
+    if len(expected["h_upper"]) != 21:
+        raise RuntimeError(f"expected h_upper length mismatch: {len(expected['h_upper'])}/21")
+    if len(expected["b"]) != 6:
+        raise RuntimeError(f"expected b length mismatch: {len(expected['b'])}/6")
+    for key in ("valid_count", "reject_count", "miss_count", "flags"):
+        if actual[key] != expected[key]:
+            raise RuntimeError(f"{key} mismatch: actual={actual[key]} expected={expected[key]}")
+
+    worst_name = ""
+    worst_abs = -1.0
+    worst_rel = 0.0
+    for idx, (actual_value, expected_value) in enumerate(zip(actual["h_upper"], expected["h_upper"])):
+        diff, rel = compare_float(f"h_upper[{idx}]", actual_value, expected_value)
+        if diff > worst_abs:
+            worst_name, worst_abs, worst_rel = f"h_upper[{idx}]", diff, rel
+    for idx, (actual_value, expected_value) in enumerate(zip(actual["b"], expected["b"])):
+        diff, rel = compare_float(f"b[{idx}]", actual_value, expected_value)
+        if diff > worst_abs:
+            worst_name, worst_abs, worst_rel = f"b[{idx}]", diff, rel
+    for key in ("residual_sum", "residual_abs_sum", "residual_max_abs"):
+        diff, rel = compare_float(key, actual[key], expected[key])
+        if diff > worst_abs:
+            worst_name, worst_abs, worst_rel = key, diff, rel
+    return worst_name, worst_abs, worst_rel
+
+
+def write_manifest_with_fd(h2c, manifest, base_dir):
+    for segment in manifest["segments"]:
+        payload = (base_dir / segment["file"]).read_bytes()
+        if len(payload) != segment["size"]:
+            raise RuntimeError(f"{segment['file']} size mismatch")
+        written = os.pwrite(h2c, payload, segment["base"])
+        if written != len(payload):
+            raise RuntimeError(f"{segment['file']} short H2C write: {written}/{len(payload)}")
+        print(f"IMAGE_WRITE_PASS {segment['file']} base=0x{segment['base']:08x} size={len(payload)}")
+    print("HOST_IMAGE_WRITE_PASS")
+
+
+def configure_hls_tiny_registers(user_fd, ctrl_base, scan_count):
+    write32(user_fd, ctrl_base + CTRL_CONTROL, 0x2)
+    for offset, value in CTRL_WRITES:
+        write32(user_fd, ctrl_base + offset, value)
+    write32(user_fd, ctrl_base + CTRL_SCAN_COUNT, scan_count)
+
+
+def hls_tiny(user_path, h2c_path, c2h_path, manifest_path, ctrl_base, timeout_sec):
+    manifest_file = Path(manifest_path)
+    manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+    expected = manifest["expected"]
+    scan_count = int(manifest["scan_count"])
+
+    user = h2c = c2h = None
+    try:
+        user = os.open(user_path, os.O_RDWR | os.O_SYNC)
+        h2c = os.open(h2c_path, os.O_WRONLY | os.O_SYNC)
+        c2h = os.open(c2h_path, os.O_RDONLY | os.O_SYNC)
+        write_manifest_with_fd(h2c, manifest, manifest_file.parent)
+        configure_hls_tiny_registers(user, ctrl_base, scan_count)
+
+        run_count_before = read32(user, ctrl_base + CTRL_RUN_COUNT)
+        write32(user, ctrl_base + CTRL_CONTROL, 0x1)
+        print("HLS_TINY_START_PASS")
+        print(f"CTRL_BASE=0x{ctrl_base:08x} SCAN_COUNT={scan_count} RUN_COUNT_BEFORE={run_count_before}")
+
+        deadline = time.monotonic() + timeout_sec
+        last_status = 0
+        last_error = 0
+        while time.monotonic() < deadline:
+            last_status = read32(user, ctrl_base + CTRL_STATUS)
+            last_error = read32(user, ctrl_base + CTRL_ERROR)
+            if last_status & STATUS_ERROR or last_error != 0:
+                raise RuntimeError(f"HLS tiny entered error: STATUS=0x{last_status:08x} ERROR=0x{last_error:08x}")
+            if last_status & STATUS_DONE:
+                break
+            time.sleep(0.001)
+        else:
+            run_count_timeout = read32(user, ctrl_base + CTRL_RUN_COUNT)
+            raise RuntimeError(
+                "HLS tiny timeout: "
+                f"STATUS=0x{last_status:08x} ERROR=0x{last_error:08x} RUN_COUNT={run_count_timeout}"
+            )
+
+        run_count_after = read32(user, ctrl_base + CTRL_RUN_COUNT)
+        if run_count_after <= run_count_before:
+            raise RuntimeError(f"RUN_COUNT did not increment: before={run_count_before} after={run_count_after}")
+        print("HLS_TINY_DONE_PASS")
+        print(f"STATUS=0x{last_status:08x} ERROR=0x{last_error:08x} RUN_COUNT_AFTER={run_count_after}")
+
+        output = os.pread(c2h, NORMAL_EQUATION_BYTES, OUTPUT_BASE)
+        actual = parse_normal_equation(output)
+        worst_name, worst_abs, worst_rel = compare_normal_equation(actual, expected)
+        print("HLS_TINY_NUMERIC_PASS")
+        print(
+            "COUNTS="
+            f"{actual['valid_count']}/{actual['reject_count']}/{actual['miss_count']} "
+            f"FLAGS=0x{actual['flags']:08x}"
+        )
+        print(f"WORST_FIELD={worst_name} MAX_ABS={worst_abs:.6g} MAX_REL={worst_rel:.6g}")
+    finally:
+        close_many(fd for fd in (user, h2c, c2h) if fd is not None)
 
 
 def start_zero(user_path, ctrl_base):
@@ -194,12 +341,16 @@ def main():
     parser.add_argument("--reg-smoke", action="store_true", help="Run AXI-Lite VERSION/config write-read smoke")
     parser.add_argument("--ddr-smoke", action="store_true", help="Run PL DDR pattern write/read smoke")
     parser.add_argument("--write-image", default="", help="Write a generated host image manifest through H2C")
+    parser.add_argument("--hls-tiny", default="", help="Write, start, and verify a tiny synthetic HLS transaction")
+    parser.add_argument("--hls-timeout-sec", type=float, default=5.0)
     parser.add_argument("--start-zero", action="store_true", help="Optionally issue a zero-point accelerator start")
     args = parser.parse_args()
 
     validate_layout()
-    if not any([args.shim_smoke, args.reg_smoke, args.ddr_smoke, args.write_image, args.start_zero]):
-        parser.error("select at least one action: --shim-smoke, --reg-smoke, --ddr-smoke, --write-image, or --start-zero")
+    if not any([args.shim_smoke, args.reg_smoke, args.ddr_smoke, args.write_image, args.hls_tiny, args.start_zero]):
+        parser.error(
+            "select at least one action: --shim-smoke, --reg-smoke, --ddr-smoke, --write-image, --hls-tiny, or --start-zero"
+        )
     if args.shim_smoke:
         shim_smoke(args.user)
     if args.reg_smoke:
@@ -208,6 +359,8 @@ def main():
         ddr_smoke(args.h2c, args.c2h, args.ddr_size)
     if args.write_image:
         write_manifest(args.h2c, args.write_image)
+    if args.hls_tiny:
+        hls_tiny(args.user, args.h2c, args.c2h, args.hls_tiny, args.ctrl_base, args.hls_timeout_sec)
     if args.start_zero:
         start_zero(args.user, args.ctrl_base)
 

@@ -54,6 +54,19 @@ offset `0x1000`:
 python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000
 ```
 
+For the HLS-restored `azmig_wrapper.bit`, run the tiny synthetic transaction
+after shim/reg/DDR smoke passes:
+
+```bash
+python3 fpga/host/xdma_smoke/make_tiny_synthetic_host_image.py --out-dir fpga/vivado/.build/host_synthetic_tiny --report-dir reports/fpga/host/xdma_smoke/tiny_synthetic
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --ddr-smoke
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-tiny fpga/vivado/.build/host_synthetic_tiny/manifest.json --ctrl-base 0x1000
+```
+
+The HLS tiny gate must print `HLS_TINY_START_PASS`,
+`HLS_TINY_DONE_PASS`, and `HLS_TINY_NUMERIC_PASS`.
+
 For the XDMA-only diagnostic bitstream, use the smaller diagnostic smoke instead
 of the full `slam_accel_ctrl` smoke:
 

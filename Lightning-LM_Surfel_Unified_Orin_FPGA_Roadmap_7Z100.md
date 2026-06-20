@@ -2552,3 +2552,52 @@ sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --ddr-smoke
 - 目标：复用已通过的 PL DDR3 buffer layout，写入 tiny synthetic host image，配置 `slam_accel_ctrl@0x1000`，触发 `KERNEL_SEL=4`，验证真实 HLS IP 一次 transaction 能完成。
 - gate：先只要求 accelerator start/done、无 controller error、输出区域可读；通过后再做 `H/b/counts` tiny 数值比较。
 - 仍不进入完整 online SLAM、大帧 golden 或性能优化。
+
+---
+
+## 39. 2026-06-20 HLS Tiny Synthetic Host Transaction 工具更新
+
+### 当前变更
+- `make_tiny_synthetic_host_image.py` 已扩展 manifest，新增完整 expected：`h_upper[21]`、`b[6]`、`valid/reject/miss`、`flags`、`residual_sum/residual_abs_sum/residual_max_abs`。
+- `xdma_smoke.py` 新增 `--hls-tiny <manifest.json>`：
+  - 通过 XDMA H2C 写入 tiny synthetic segments 到 PL DDR3。
+  - 配置 `slam_accel_ctrl@0x1000`，清状态，触发 `KERNEL_SEL=4`。
+  - 轮询 `STATUS.done`，检查 `STATUS.error=0`、`ERROR=0`、`RUN_COUNT` 增加。
+  - 通过 C2H 从 `OUTPUT_BASE=0x30000000` 读取 320 bytes normal equation。
+  - 按 ABI 解析并比对 `H_upper/b/counts/residual`，容差仍为 `abs <= 1e-4` 或 `rel <= 1e-3`。
+- 新增报告：`reports/fpga/host/xdma_smoke/tiny_synthetic/commands.md`。
+
+### Windows 静态验证结果
+```powershell
+python fpga\host\xdma_smoke\make_tiny_synthetic_host_image.py --out-dir fpga\vivado\.build\host_synthetic_tiny --report-dir reports\fpga\host\xdma_smoke\tiny_synthetic
+python -m py_compile fpga\host\xdma_smoke\address_map.py fpga\host\xdma_smoke\make_tiny_synthetic_host_image.py fpga\host\xdma_smoke\xdma_smoke.py
+python fpga\host\xdma_smoke\xdma_smoke.py --help
+```
+
+- tiny synthetic host image 生成：PASS，marker 为 `HOST_SYNTHETIC_IMAGE_PASS`。
+- Python compile：PASS。
+- `xdma_smoke.py --help`：PASS，已显示 `--hls-tiny` 和 `--hls-timeout-sec`。
+- 生成 manifest 路径：`fpga/vivado/.build/host_synthetic_tiny/manifest.json`。
+- 生成报告路径：`reports/fpga/host/xdma_smoke/tiny_synthetic/tiny_synthetic_host_image.md`。
+
+### Orin 下一步 gate
+```bash
+python3 fpga/host/xdma_smoke/make_tiny_synthetic_host_image.py --out-dir fpga/vivado/.build/host_synthetic_tiny --report-dir reports/fpga/host/xdma_smoke/tiny_synthetic
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --ddr-smoke
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-tiny fpga/vivado/.build/host_synthetic_tiny/manifest.json --ctrl-base 0x1000
+```
+
+PASS marker：
+```text
+HOST_SYNTHETIC_IMAGE_PASS
+HLS_TINY_START_PASS
+HLS_TINY_DONE_PASS
+HLS_TINY_NUMERIC_PASS
+```
+
+### 风险与后续
+- PCIe Gen2 x1 暂不阻塞本 tiny transaction；修正放在 tiny transaction 和小帧 golden transaction 通过后、进入性能/大帧/在线 SLAM 前。
+- 当前最终目标固定为 PCIe 2.0 Gen2 x4，不是 x8。x8 只有在确认 AX7Z100 板卡、转接链路和 Orin root port 实际 8-lane 支持后才另立新阶段。
+- 如果 HLS tiny timeout：优先查 HLS AXI master 到 MIG 的 arbitration/address path。
+- 如果 HLS tiny done 但数值失败：优先查 output field direct address、manifest ABI、DDR 写读顺序。
