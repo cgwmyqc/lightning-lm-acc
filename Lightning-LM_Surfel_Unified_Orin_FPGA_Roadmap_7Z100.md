@@ -2716,3 +2716,55 @@ actual residual_max_abs:   0.29527878422266252
 - 如果 done 但 counts 不一致：优先查 `MaxPoints=64` scan slicing、active map 拆分、mode/header ABI。
 - 如果 counts 一致但 `H/b` 失败：优先查 double endian、output field direct address、expected recompute 逻辑。
 - 如果 n64 PASS：下一步跑 full `frame_000001` host transaction；full PASS 后再进入 PCIe Gen2 x4 链路修正和性能阶段。
+
+## 41. 2026-06-20 HLS ABI / DDR Layout 数值不一致定位
+
+### 当前结论
+- Stage 40 已证明正式 `azmig_wrapper.bit` 的 PCIe/XDMA/BAR shim/AXI-Lite/MIG/DDR/HLS start-done 链路可用。
+- Stage 40 阻塞点是 real golden n64 numeric：expected counts 为 `14/33/17`，actual counts 为 `64/0/0`。
+- 该现象不优先解释为 PCIe Gen2 x1、XDMA driver、BAR shim、DDR smoke 或 HLS timeout；更像 HLS 对 active map / obs cell 的读取、lookup、stride 或 ABI 解释与 host expected 不一致。
+- 当前 tiny synthetic 只覆盖 1 个 block、cell 0、1 个 valid cell，不足以暴露非零 `first_cell`、非零 cell index、miss/reject 路径问题。
+
+### 本次 Windows 侧变更
+- 新增 `fpga/host/xdma_smoke/make_multicell_synthetic_host_image.py`。
+- 新 fixture 包含 3 个 scan points、2 个 active blocks、非零 `first_cell=256`、非零 cell index，并覆盖 1 个 valid、1 个 residual reject、1 个 miss。
+- 预期 counts 固定为 `1/1/1`。
+- `xdma_smoke.py` 增强失败日志：如果 `--hls-manifest` 数值比较失败，会先打印 `EXPECTED_*` 和 `ACTUAL_*` counts/residual summary，再抛错。
+
+### Windows 静态验证结果
+```powershell
+python fpga\host\xdma_smoke\make_multicell_synthetic_host_image.py --out-dir fpga\vivado\.build\host_synthetic_multicell --report-dir reports\fpga\host\xdma_smoke\multicell_synthetic
+python -m py_compile fpga\host\xdma_smoke\address_map.py fpga\host\xdma_smoke\make_tiny_synthetic_host_image.py fpga\host\xdma_smoke\make_multicell_synthetic_host_image.py fpga\host\xdma_smoke\make_golden_host_image.py fpga\host\xdma_smoke\xdma_smoke.py
+python fpga\host\xdma_smoke\xdma_smoke.py --help
+```
+
+- multi-cell host image：PASS，marker 为 `HOST_MULTICELL_SYNTHETIC_IMAGE_PASS`。
+- Python compile：PASS。
+- `xdma_smoke.py --help`：PASS。
+- 生成路径：`fpga/vivado/.build/host_synthetic_multicell/manifest.json`。
+- 报告路径：`reports/fpga/host/xdma_smoke/multicell_synthetic/`。
+
+### Orin 下一步 gate
+不需要重新生成 bitstream，也不需要重新 JTAG 下载；继续使用当前 Stage 40 的正式 `azmig_wrapper.bit`：
+
+```bash
+python3 fpga/host/xdma_smoke/make_multicell_synthetic_host_image.py --out-dir fpga/vivado/.build/host_synthetic_multicell --report-dir reports/fpga/host/xdma_smoke/multicell_synthetic
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --ddr-smoke
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_synthetic_multicell/manifest.json --ctrl-base 0x1000
+```
+
+PASS marker：
+```text
+SHIM_SMOKE_PASS
+REG_SMOKE_PASS
+DDR_SMOKE_PASS
+HLS_MANIFEST_START_PASS
+HLS_MANIFEST_DONE_PASS
+HLS_MANIFEST_NUMERIC_PASS
+```
+
+### 分支判断
+- 如果 multi-cell PASS：active block/cell 基本 stride 在小规模下成立，下一步回到 Stage 40 n64，重点查 golden n64 的 neighbor lookup、expected recompute 或 HLS/CPU lookup 逻辑差异。
+- 如果 multi-cell 在 `HLS_MANIFEST_DONE_PASS` 后 numeric FAIL：优先修改 HLS active map / obs cell ABI 读取方式，尤其复核 `DATA_PACK`、m_axi struct access width、32B/64B record stride，然后重新 HLS export 和 `azmig_wrapper.bit`。
+- 如果 multi-cell timeout：优先查 HLS master 到 MIG 的 AXI arbitration/address path，但目前 Stage 40 已 done，该分支概率较低。

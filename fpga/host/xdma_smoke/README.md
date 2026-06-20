@@ -77,6 +77,19 @@ sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.buil
 The bounded golden gate must print `HLS_MANIFEST_START_PASS`,
 `HLS_MANIFEST_DONE_PASS`, and `HLS_MANIFEST_NUMERIC_PASS`.
 
+If bounded golden fails after start/done, run the Stage 41 multi-cell synthetic
+fixture before changing PCIe, XDMA, or MIG. It uses two active blocks, a nonzero
+`first_cell`, nonzero cell indices, and expected counts `1/1/1`:
+
+```bash
+python3 fpga/host/xdma_smoke/make_multicell_synthetic_host_image.py --out-dir fpga/vivado/.build/host_synthetic_multicell --report-dir reports/fpga/host/xdma_smoke/multicell_synthetic
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_synthetic_multicell/manifest.json --ctrl-base 0x1000
+```
+
+This gate must print `HLS_MANIFEST_START_PASS`, `HLS_MANIFEST_DONE_PASS`, and
+`HLS_MANIFEST_NUMERIC_PASS`. A failure here points to HLS active-map or obs-cell
+ABI/stride interpretation rather than the real golden dataset.
+
 For the XDMA-only diagnostic bitstream, use the smaller diagnostic smoke instead
 of the full `slam_accel_ctrl` smoke:
 

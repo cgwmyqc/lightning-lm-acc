@@ -235,6 +235,17 @@ def compare_normal_equation(actual, expected):
     return worst_name, worst_abs, worst_rel
 
 
+def print_normal_equation_summary(prefix, value):
+    print(
+        f"{prefix}_COUNTS="
+        f"{value['valid_count']}/{value['reject_count']}/{value['miss_count']} "
+        f"FLAGS=0x{value['flags']:08x}"
+    )
+    print(f"{prefix}_RESIDUAL_SUM={value['residual_sum']:.17g}")
+    print(f"{prefix}_RESIDUAL_ABS_SUM={value['residual_abs_sum']:.17g}")
+    print(f"{prefix}_RESIDUAL_MAX_ABS={value['residual_max_abs']:.17g}")
+
+
 def write_manifest_with_fd(h2c, manifest, base_dir):
     for segment in manifest["segments"]:
         payload = (base_dir / segment["file"]).read_bytes()
@@ -304,7 +315,12 @@ def hls_manifest(user_path, h2c_path, c2h_path, manifest_path, ctrl_base, timeou
 
         output = os.pread(c2h, NORMAL_EQUATION_BYTES, OUTPUT_BASE)
         actual = parse_normal_equation(output)
-        worst_name, worst_abs, worst_rel = compare_normal_equation(actual, expected)
+        try:
+            worst_name, worst_abs, worst_rel = compare_normal_equation(actual, expected)
+        except RuntimeError:
+            print_normal_equation_summary("EXPECTED", expected)
+            print_normal_equation_summary("ACTUAL", actual)
+            raise
         print(f"HLS_{label}_NUMERIC_PASS")
         if is_tiny:
             print("HLS_TINY_NUMERIC_PASS")
