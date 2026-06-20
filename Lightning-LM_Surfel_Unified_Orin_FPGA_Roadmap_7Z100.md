@@ -2314,3 +2314,25 @@ python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 
 - bitstream size：3,582,735 bytes。
 - post-implementation timing：PASS，WNS 0.269 ns，TNS 0.000 ns，WHS 0.045 ns，THS 0.000 ns。
 - DRC：0 errors，0 critical warnings，25 warnings；warning 类型与之前 BRAM/XDMA 诊断路径一致，主要是 RAMB async-control、no routable loads 和 PL-only 设计的 PS7-required warning。
+
+### Orin 验证结果
+- Stage A2 Orin driver bind：PASS。
+- `lspci -nnk -s 0005:01:00.0` 显示 `Kernel driver in use: xdma`。
+- `/dev/xdma0_user`、`/dev/xdma0_h2c_0`、`/dev/xdma0_c2h_0` 均存在。
+- kernel log 显示：
+  - `xdma:map_bars: config bar 1, pos 1.`
+  - `xdma:identify_bars: 2 BARs: config 1, user 0, bypass -1.`
+  - `xdma:probe_one: 0005:01:00.0 xdma0 ... usr 16, ch 1,1.`
+- 未观察到新的 `Failed to detect XDMA config BAR` 或 `CmpltTO`。
+- Stage A2 smoke：PASS。
+
+```text
+SHIM_SMOKE_PASS
+XDMA_SHIM_MAGIC=0x58444d41 XDMA_SHIM_VERSION=0x00010000
+REG_SMOKE_PASS
+VERSION=0x00020002
+CTRL_BASE=0x00001000
+KERNEL_SEL=4 MODE=1 SCAN_COUNT=1
+```
+
+结论：BAR identity/shim 修正已验证有效，`slam_accel_ctrl` 正确迁移到 BAR0 offset `0x1000`，基础 AXI-Lite 控制路径可用。下一步进入 Stage B2/正式 `azmig` 修正版，继续保持 BAR shim，逐项恢复 `128_bit + 125 MHz`、MIG、HLS。

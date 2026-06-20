@@ -74,3 +74,28 @@ python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 
 - DRC: 0 errors, 0 critical warnings, 25 warnings. Warnings are the same class
   as the prior BRAM/XDMA diagnostic path: RAMB async-control checks, no
   routable loads, and PS7-required warning for the PL-only diagnostic design.
+
+## Orin Results
+
+- Driver bind: PASS.
+- `lspci -nnk -s 0005:01:00.0` reports `Kernel driver in use: xdma`.
+- `/dev/xdma0_user`, `/dev/xdma0_h2c_0`, and `/dev/xdma0_c2h_0` exist.
+- Kernel log reports `config bar 1, user 0` and successful `probe_one`.
+- No new `Failed to detect XDMA config BAR` or `CmpltTO` was observed.
+- BAR shim and control-register smoke: PASS.
+
+```text
+SHIM_SMOKE_PASS
+XDMA_SHIM_MAGIC=0x58444d41 XDMA_SHIM_VERSION=0x00010000
+REG_SMOKE_PASS
+VERSION=0x00020002
+CTRL_BASE=0x00001000
+KERNEL_SEL=4 MODE=1 SCAN_COUNT=1
+```
+
+## Conclusion
+
+Stage A2 proves the BAR identity/shim hypothesis. XDMA driver probe succeeds,
+the device nodes are created, BAR0 offset `0x0000` exposes the shim identity,
+and `slam_accel_ctrl` is reachable at BAR0 offset `0x1000`. The next stage can
+keep the shim and restore `128_bit + 125 MHz`, then MIG, then HLS.
