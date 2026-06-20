@@ -39,6 +39,19 @@ powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\run_vi
 powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\program_bitstream_jtag.ps1 -Stage B
 ```
 
+## Stage B2
+
+Stage B2 is the next gate after Stage A2 Orin PASS. It keeps the BAR shim and
+changes only XDMA AXI width/frequency from `64_bit/250MHz` to
+`128_bit/125MHz`.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\run_vivado_bd_validate.ps1 -Stage B2
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\run_vivado_project_synth.ps1 -Stage B2 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\run_vivado_impl_bitstream.ps1 -Stage B2 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\program_bitstream_jtag.ps1 -Stage B2
+```
+
 ## Stage C
 
 ```powershell
@@ -46,6 +59,18 @@ powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\run_vi
 powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\run_vivado_project_synth.ps1 -Stage C -Jobs 18
 powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\run_vivado_impl_bitstream.ps1 -Stage C -Jobs 18
 powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\program_bitstream_jtag.ps1 -Stage C
+```
+
+## Stage C2
+
+Stage C2 is allowed only after Stage B2 Orin PASS. It keeps the BAR shim and
+adds MIG-backed PL DDR3, still without HLS.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\run_vivado_bd_validate.ps1 -Stage C2
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\run_vivado_project_synth.ps1 -Stage C2 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\run_vivado_impl_bitstream.ps1 -Stage C2 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\program_bitstream_jtag.ps1 -Stage C2
 ```
 
 ## Orin Gate

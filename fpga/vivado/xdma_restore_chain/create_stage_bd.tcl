@@ -19,8 +19,8 @@ if {[llength $user_args] >= 4 && [string length [lindex $user_args 3]] > 0} {
     set reference_root [file normalize [lindex $user_args 3]]
 }
 
-if {$stage ni {"A" "A2" "B" "C"}} {
-    error "Invalid stage '$stage'. Expected A, A2, B, or C."
+if {$stage ni {"A" "A2" "B" "B2" "C" "C2"}} {
+    error "Invalid stage '$stage'. Expected A, A2, B, B2, C, or C2."
 }
 
 set use_mig 0
@@ -39,12 +39,27 @@ if {$stage eq "B"} {
     set axisten_freq 125
     set stage_desc "Stage B: X4 lane reversal, 128-bit/125 MHz XDMA, slam_accel_ctrl, BRAM, no MIG/HLS"
 }
+if {$stage eq "B2"} {
+    set axi_width_cfg "128_bit"
+    set bram_width 128
+    set axisten_freq 125
+    set stage_desc "Stage B2: X4 lane reversal, 128-bit/125 MHz XDMA, BAR shim at 0x0000, slam_accel_ctrl at 0x1000, BRAM, no MIG/HLS"
+    set ctrl_module "xdma_restore_bar_shim_ctrl_wrapper"
+}
 if {$stage eq "C"} {
     set use_mig 1
     set axi_width_cfg "128_bit"
     set bram_width 128
     set axisten_freq 125
     set stage_desc "Stage C: X4 lane reversal, 128-bit/125 MHz XDMA, slam_accel_ctrl, MIG-backed PL DDR3, no HLS"
+}
+if {$stage eq "C2"} {
+    set use_mig 1
+    set axi_width_cfg "128_bit"
+    set bram_width 128
+    set axisten_freq 125
+    set stage_desc "Stage C2: X4 lane reversal, 128-bit/125 MHz XDMA, BAR shim at 0x0000, slam_accel_ctrl at 0x1000, MIG-backed PL DDR3, no HLS"
+    set ctrl_module "xdma_restore_bar_shim_ctrl_wrapper"
 }
 
 set stage_lc [string tolower $stage]
@@ -207,7 +222,7 @@ if {$use_mig} {
     set mig_ip_dir [get_property IP_DIR [get_ips [get_property CONFIG.Component_Name $mig_7series_0]]]
     set mig_prj_name "mig_ax7z100_pl_ddr3_axi.prj"
     set mig_prj_path [file join $mig_ip_dir $mig_prj_name]
-    derive_axi_mig_prj $mig_source_prj $mig_axi_source_tcl $mig_prj_path "xdma_restore_stage_c_mig_0"
+    derive_axi_mig_prj $mig_source_prj $mig_axi_source_tcl $mig_prj_path "xdma_restore_stage_${stage_lc}_mig_0"
     set_property -dict [list \
         CONFIG.BOARD_MIG_PARAM {Custom} \
         CONFIG.RESET_BOARD_INTERFACE {Custom} \

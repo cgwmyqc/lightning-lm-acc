@@ -20,12 +20,17 @@ All stages keep:
 - Stage A2: `64_bit` XDMA AXI, `250` MHz AXI target, XDMA BAR shim at `0x0000`,
   `slam_accel_ctrl` remapped to `0x1000`, BRAM data target, no MIG/HLS.
 - Stage B: `128_bit` XDMA AXI, `125` MHz AXI target, `slam_accel_ctrl`, BRAM data target, no MIG/HLS.
+- Stage B2: `128_bit` XDMA AXI, `125` MHz AXI target, XDMA BAR shim at `0x0000`,
+  `slam_accel_ctrl` remapped to `0x1000`, BRAM data target, no MIG/HLS.
 - Stage C: `128_bit` XDMA AXI, `125` MHz AXI target, `slam_accel_ctrl`, MIG-backed PL DDR3, no HLS.
+- Stage C2: `128_bit` XDMA AXI, `125` MHz AXI target, XDMA BAR shim at `0x0000`,
+  `slam_accel_ctrl` remapped to `0x1000`, MIG-backed PL DDR3, no HLS.
 
 Stage A failed on Orin with PCIe enumeration present but no `/dev/xdma0_*`.
 Because the XDMA IP settings match the passing `xdma_config_bar_diag` flow, the
 current working assumption is that the Linux XDMA driver expects a compatible
-identity page at BAR0 offset `0x0000`. Stage A2 is now the first gate.
+identity page at BAR0 offset `0x0000`. Stage A2 has passed on Orin, so Stage
+B2 is the next gate.
 
 Stage C uses the ALINX-confirmed PL DDR3 parameters:
 
@@ -47,7 +52,8 @@ powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\run_vi
 powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\program_bitstream_jtag.ps1 -Stage A2
 ```
 
-Replace `A2` with `B` or `C` only after Stage A2 passes on Orin.
+Replace `A2` with `B2` for the next run. Use `C2` only after B2 passes on
+Orin. Keep old `B`/`C` only as direct-ctrl comparison images.
 
 Generated Vivado projects and bitstreams stay under `fpga/vivado/.build/`.
 Reports are copied to `reports/fpga/vivado/xdma_restore_chain/stage_*`.
@@ -73,8 +79,14 @@ Passing criteria:
 - No `Failed to detect XDMA config BAR`
 - No new `CmpltTO`
 
-After Stage A2 creates `/dev/xdma0_*`, verify both BAR sub-windows:
+After Stage A2/B2/C2 creates `/dev/xdma0_*`, verify both BAR sub-windows:
 
 ```bash
 python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000
+```
+
+After C2 passes the BAR/register smoke, add DDR smoke:
+
+```bash
+python3 fpga/host/xdma_smoke/xdma_smoke.py --ddr-smoke
 ```

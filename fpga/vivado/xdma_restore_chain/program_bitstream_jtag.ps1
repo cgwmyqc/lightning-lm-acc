@@ -1,5 +1,5 @@
 param(
-    [ValidateSet("A", "A2", "B", "C")][string]$Stage = "A2",
+    [ValidateSet("A", "A2", "B", "B2", "C", "C2")][string]$Stage = "A2",
     [string]$Bitstream,
     [string]$Xsdb = "xsdb",
     [string]$HwServer = "hw_server",

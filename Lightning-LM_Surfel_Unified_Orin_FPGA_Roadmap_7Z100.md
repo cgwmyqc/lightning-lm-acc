@@ -2336,3 +2336,89 @@ KERNEL_SEL=4 MODE=1 SCAN_COUNT=1
 ```
 
 结论：BAR identity/shim 修正已验证有效，`slam_accel_ctrl` 正确迁移到 BAR0 offset `0x1000`，基础 AXI-Lite 控制路径可用。下一步进入 Stage B2/正式 `azmig` 修正版，继续保持 BAR shim，逐项恢复 `128_bit + 125 MHz`、MIG、HLS。
+
+---
+
+## 33. 2026-06-20 Stage A2 PASS 后的 BAR Shim 分层恢复计划
+
+### 当前结论
+- Stage A2 Orin 侧已验收 PASS：`/dev/xdma0_user`、`/dev/xdma0_h2c_0`、`/dev/xdma0_c2h_0` 均存在，`SHIM_SMOKE_PASS` 和 `REG_SMOKE_PASS` 通过。
+- 这证明 BAR identity shim 是必要且有效的修正，`slam_accel_ctrl` 固定迁移到 BAR0 offset `0x1000` 后，XDMA driver probe 和基础 AXI-Lite register access 可用。
+- 下一步不把 `azmig_wrapper.bit`、MIG、HLS 一次恢复为首个板上 gate；否则失败时会重新混入 `128_bit/125MHz`、MIG/interconnect、HLS 和 timing 多个变量。
+
+### 本次代码/脚本更新
+- `fpga/vivado/xdma_restore_chain/create_stage_bd.tcl` 新增 shim 版恢复阶段：
+  - Stage B2：`X4 + lane reversal + 128_bit + 125 MHz + BAR shim + slam_accel_ctrl@0x1000 + BRAM`，不接 MIG/HLS。
+  - Stage C2：`X4 + lane reversal + 128_bit + 125 MHz + BAR shim + slam_accel_ctrl@0x1000 + MIG`，不接 HLS。
+- PowerShell 入口已支持 `-Stage B2` 和 `-Stage C2`：
+  - `run_vivado_bd_validate.ps1`
+  - `run_vivado_project_synth.ps1`
+  - `run_vivado_impl_bitstream.ps1`
+  - `program_bitstream_jtag.ps1`
+- 旧 Stage A/B/C 保留为失败对照；A2/B2/C2 是后续主线。
+- 正式 `slam_accel_ax7z100_pcie_mig` 继续保持 BAR shim，`slam_accel_ctrl` 仍在 BAR0 offset `0x1000`。
+
+### Windows 下一步命令：Stage B2
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\run_vivado_bd_validate.ps1 -Stage B2
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\run_vivado_project_synth.ps1 -Stage B2 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\run_vivado_impl_bitstream.ps1 -Stage B2 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\program_bitstream_jtag.ps1 -Stage B2
+```
+
+### Orin Stage B2 验收
+```bash
+sudo reboot
+lspci -nnk -s 0005:01:00.0
+ls -l /dev/xdma0_user /dev/xdma0_h2c_0 /dev/xdma0_c2h_0
+journalctl -k --no-pager | grep -Ei 'xdma|10ee|7024|0005:01:00|CmpltTO|BAR|probe|AER|link' | tail -n 120
+python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000
+```
+
+### 后续判断
+- Stage B2 PASS：进入 Stage C2，加入 MIG-backed PL DDR3，并额外运行 `xdma_smoke.py --ddr-smoke`。
+- Stage B2 FAIL：不继续加 MIG/HLS；优先定位 `128_bit + 125 MHz` XDMA 配置、timing 和 generated XDMA property diff。
+- Stage C2 PASS：再重新生成正式 `azmig_wrapper.bit`，该版本才加入真实 HLS IP。
+- 正式 `azmig_wrapper.bit` PASS `/dev/xdma0_*`、shim smoke、reg smoke、DDR smoke 后，才进入 HLS tiny synthetic transaction。
+
+---
+
+## 34. 2026-06-20 Stage B2 Windows 生成结果
+
+### 当前变更
+- `xdma_restore_chain` 已补齐 Stage B2 / Stage C2 脚手架。
+- Stage B2：`X4 + lane reversal + 128_bit + 125 MHz + BAR shim + slam_accel_ctrl@0x1000 + BRAM`，不接 MIG/HLS。
+- Stage C2：`X4 + lane reversal + 128_bit + 125 MHz + BAR shim + slam_accel_ctrl@0x1000 + MIG`，不接 HLS。
+- 正式 `slam_accel_ax7z100_pcie_mig` 继续保持同一个 BAR shim，`slam_accel_ctrl` 固定在 BAR0 offset `0x1000`。
+
+### Windows 验证结果
+- Stage B2 BD validate：PASS，日志包含 `XDMA_RESTORE_STAGE_B2_BD_VALIDATE_PASS`。
+- Stage B2 project synthesis：PASS，日志包含 `XDMA_RESTORE_STAGE_B2_PROJECT_SYNTH_PASS`。
+- Stage B2 implementation + bitstream：PASS，日志包含 `XDMA_RESTORE_STAGE_B2_IMPLEMENTATION_BITSTREAM_PASS`。
+- bitstream 路径：
+  `fpga/vivado/.build/xdma_restore_stage_b2_impl/xdma_restore_stage_b2.runs/impl_1/xdma_restore_stage_b2_wrapper.bit`
+- bitstream size：3,632,963 bytes。
+- post-implementation timing：PASS，WNS 0.844 ns，TNS 0.000 ns，WHS 0.029 ns，THS 0.000 ns。
+- DRC：0 errors，0 critical warnings，24 warnings。warning 类型主要为 BRAM async-control、no-routable-load 诊断和 PL-only Zynq PS7-required warning。
+- 本轮未自动执行 JTAG 下载；下一步由 Stage B2 板上 gate 验收。
+
+### Stage B2 板上验收命令
+Windows 侧 JTAG 下载：
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\program_bitstream_jtag.ps1 -Stage B2
+```
+
+Orin 侧：
+```bash
+sudo reboot
+lspci -nnk -s 0005:01:00.0
+ls -l /dev/xdma0_user /dev/xdma0_h2c_0 /dev/xdma0_c2h_0
+journalctl -k --no-pager | grep -Ei 'xdma|10ee|7024|0005:01:00|CmpltTO|BAR|probe|AER|link' | tail -n 120
+python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000
+```
+
+### 后续判断
+- Stage B2 PASS：再生成并下载 Stage C2，加入 MIG-backed PL DDR3，并增加 `xdma_smoke.py --ddr-smoke`。
+- Stage B2 FAIL：不继续加 MIG/HLS，优先查 `128_bit + 125 MHz` XDMA 配置、timing、BAR completion 和 generated XDMA property diff。
+- Stage C2 PASS：再重新生成正式 `azmig_wrapper.bit`，该版本才恢复真实 HLS IP。
+- 正式 `azmig_wrapper.bit` 通过 `/dev/xdma0_*`、shim smoke、reg smoke、DDR smoke 后，再进入 HLS tiny synthetic transaction。

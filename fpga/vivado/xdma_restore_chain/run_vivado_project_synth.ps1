@@ -1,5 +1,5 @@
 param(
-    [ValidateSet("A", "A2", "B", "C")][string]$Stage = "A2",
+    [ValidateSet("A", "A2", "B", "B2", "C", "C2")][string]$Stage = "A2",
     [string]$ProjectDir,
     [string]$Part = "xc7z100ffg900-2",
     [string]$Vivado = "vivado",
