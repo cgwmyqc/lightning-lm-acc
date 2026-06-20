@@ -1,6 +1,6 @@
 # Lightning-LM Surfel 统一 Orin/FPGA 实施路线（7Z100）
 
-> 本文档合并 `Lightning-LM_Surfel_SLAM_FPGA_Chipization_Roadmap_7Z100_Unified.md` 与 `Lightning-LM_Surfel_Localization_FPGA_Roadmap_7Z100_Unified.md`，作为后续唯一推进入口。  
+> 本文档合并 `Lightning-LM_Surfel_SLAM_FPGA_Chipization_Roadmap_7Z100_Unified.md` 与 `Lightning-LM_Surfel_Localization_FPGA_Roadmap_7Z100_Unified.md`，作为后续唯一推进入口。
 > 第一批目标：统一 Orin/Windows-HLS 的 ABI、golden replay、CPU_SIM/CSim 对齐。不做 XDMA 上板联调。
 
 ---
@@ -2457,3 +2457,98 @@ python3 fpga/host/xdma_smoke/xdma_smoke.py --ddr-smoke
 - Stage C2 Orin PASS：再回到正式 `slam_accel_ax7z100_pcie_mig` / `azmig_wrapper.bit`，接回真实 HLS IP，并保留 BAR shim 与 `slam_accel_ctrl@0x1000`。
 - Stage C2 无 `/dev/xdma0_*`：停止，不接 HLS，优先查 MIG/interconnect 是否影响 BAR completion 或 AXI-Lite probe。
 - Stage C2 shim/reg PASS 但 DDR smoke FAIL：重点查 MIG init、MIG reset/clock、AXI address map、XDMA memory BAR 到 MIG 的 interconnect。
+
+---
+
+## 36. 2026-06-20 Stage C2 Orin 验收结果与正式 azmig 恢复入口
+
+### Orin 验收结果
+- Stage C2 PCIe enumeration：PASS，`0005:01:00.0 [10ee:7024]`。
+- XDMA driver bind：PASS，`Kernel driver in use: xdma`。
+- device nodes：PASS，`/dev/xdma0_user`、`/dev/xdma0_h2c_0`、`/dev/xdma0_c2h_0` 均存在。
+- XDMA probe：PASS，kernel log 显示 `config bar 1, pos 1`、`2 BARs: config 1, user 0, bypass -1`、`probe_one ... usr 16, ch 1,1`。
+- shim smoke：PASS，`SHIM_SMOKE_PASS`，`XDMA_SHIM_MAGIC=0x58444d41`，`XDMA_SHIM_VERSION=0x00010000`。
+- register smoke：PASS，`REG_SMOKE_PASS`，`VERSION=0x00020002`，`CTRL_BASE=0x00001000`。
+- DDR smoke：PASS，`scan_points`、`pose`、`map_header`、`active_blocks`、`obs_cells`、`output` 六个 PL DDR3 buffer base 的 4KB pattern write/read 全部通过。
+- 未观察到新的 `Failed to detect XDMA config BAR` 或 `CmpltTO`。
+
+### 风险记录
+- 当前 PCIe 实际协商为 Gen2 x1。kernel log 显示 `5.0 GT/s PCIe x1`，同时提示 endpoint/root 组合具备 `5.0 GT/s PCIe x4` 能力。
+- x1 链路不阻塞当前功能 bring-up，但会限制带宽；后续性能阶段需要单独排查 lane mapping、Orin root port 配置和物理转接链路。
+
+### 下一步
+- 从 C2 恢复到正式 `slam_accel_ax7z100_pcie_mig` / `azmig_wrapper.bit`。
+- 正式 `azmig` 继续保持 C2 已验证路径：`X4 + lane reversal + 128_bit + 125 MHz + BAR shim + slam_accel_ctrl@0x1000 + MIG-backed PL DDR3`。
+- 在此基础上接回真实 HLS IP `unified_surfel_observation_core`，HLS `m_axi_gmem0..4` 与 XDMA `M_AXI` 共同接入 MIG-backed PL DDR3 fabric。
+- 正式 `azmig_wrapper.bit` 通过 `/dev/xdma0_*`、shim smoke、reg smoke、DDR smoke 后，再进入 HLS tiny synthetic host transaction。
+
+---
+
+## 37. 2026-06-20 正式 azmig/HLS 恢复版 Windows 生成与 JTAG 下载结果
+
+### 当前变更
+- C2 已验证路径已恢复到正式 `slam_accel_ax7z100_pcie_mig` / `azmig_wrapper.bit`。
+- 正式 `azmig` 保持：`X4 + enable_lane_reversal=true + 128_bit + 125 MHz + BAR shim + slam_accel_ctrl@0x1000 + MIG-backed PL DDR3`。
+- 已接回真实 HLS IP `unified_surfel_observation_core`。
+- HLS `m_axi_gmem0..4` 与 XDMA `M_AXI` 共同接入 MIG-backed PL DDR3 fabric。
+- BAR0 布局继续固定：
+  - `0x0000`：XDMA shim identity/scratch。
+  - `0x1000`：`slam_accel_ctrl` register bank。
+
+### Windows 验证结果
+- HLS IP export 检查：PASS，`%TEMP%\lightning_hls_unified_obs\solution1\impl\ip\component.xml` 已存在。
+- board profile static validation：PASS，日志包含 `BOARD_PROFILE_PASS`。
+- BD validate：PASS，日志包含 `BD_VALIDATE_PASS`。
+- project synthesis：PASS，日志包含 `PROJECT_SYNTH_PASS`。
+- implementation + bitstream：PASS，日志包含 `IMPLEMENTATION_BITSTREAM_PASS`。
+- Windows JTAG download：PASS，日志包含 `JTAG_PROGRAM_PASS`，FPGA state 为 `FPGA is configured`。
+- bitstream 路径：
+  `fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit`
+- bitstream size：7,792,811 bytes。
+- post-implementation timing：PASS，WNS 0.108 ns，TNS 0.000 ns，WHS 0.018 ns，THS 0.000 ns。
+- DRC/bitgen：0 errors，0 critical warnings。当前仍有 Vivado warning/advisory，主要为 HLS DSP pipeline、MIG/clock、RAMB async-control、no-routable-load 诊断和 PL-only Zynq PS7-required warning；这些不阻塞本阶段 Orin 功能 gate。
+- resource summary：Slice LUTs 55,471 / 277,400 (20.00%)，Slice Registers 61,336 / 554,800 (11.06%)，Block RAM Tile 52.5 / 755 (6.95%)，DSPs 256 / 2,020 (12.67%)，Bonded IOB 74 / 362 (20.44%)，BUFGCTRL 10 / 32 (31.25%)。
+
+### Orin 正式 azmig gate
+JTAG 下载已完成后，Orin 侧执行：
+```bash
+sudo reboot
+lspci -nnk -s 0005:01:00.0
+lspci -vv -s 0005:01:00.0 | grep -Ei 'LnkCap|LnkSta|Region'
+ls -l /dev/xdma0_user /dev/xdma0_h2c_0 /dev/xdma0_c2h_0
+journalctl -k --no-pager | grep -Ei 'xdma|10ee|7024|0005:01:00|CmpltTO|BAR|probe|AER|link' | tail -n 120
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --ddr-smoke
+```
+
+### 验收与分支
+- PASS 标准：`Kernel driver in use: xdma`，`/dev/xdma0_user`、`/dev/xdma0_h2c_0`、`/dev/xdma0_c2h_0` 存在，无新的 `Failed to detect XDMA config BAR` / `CmpltTO`，并输出 `SHIM_SMOKE_PASS`、`REG_SMOKE_PASS`、`DDR_SMOKE_PASS`。
+- 如果正式 `azmig` 无 `/dev/xdma0_*`：停止，不做 HLS transaction；优先对比 C2 与正式 `azmig` 的新增变量，即 HLS IP、6-SI `mem_axi_ic`、HLS direct/control wiring。
+- 如果 shim/reg PASS 但 DDR smoke FAIL：优先查 HLS master 接入后是否影响 MIG fabric、地址映射或 AXI interconnect arbitration。
+- 如果 DDR smoke PASS：进入下一阶段 “HLS tiny synthetic host transaction”，写入 synthetic host image，触发 `KERNEL_SEL=4`，验证一次 HLS accelerator transaction 完成。
+- PCIe 当前 Gen2 x1 继续作为性能风险记录，不阻塞本阶段功能 gate。
+
+---
+
+## 38. 2026-06-20 正式 azmig/HLS 恢复版 Orin 验收结果
+
+### Orin 验收结果
+- 正式 `azmig_wrapper.bit` PCIe enumeration：PASS，`0005:01:00.0 Serial controller [0700]: Xilinx Corporation Device [10ee:7024]`。
+- XDMA driver bind：PASS，`Kernel driver in use: xdma`，`Kernel modules: xdma`。
+- BAR 分配：PASS，BAR0 和 BAR1 均为 64KB，kernel log 显示 `config bar 1, user 0`。
+- device nodes：PASS，`/dev/xdma0_user`、`/dev/xdma0_h2c_0`、`/dev/xdma0_c2h_0` 均存在。
+- XDMA probe：PASS，kernel log 显示 `identify_bars: 2 BARs: config 1, user 0, bypass -1` 和 `probe_one ... usr 16, ch 1,1`。
+- shim smoke：PASS，`SHIM_SMOKE_PASS`，`XDMA_SHIM_MAGIC=0x58444d41`，`XDMA_SHIM_VERSION=0x00010000`。
+- register smoke：PASS，`REG_SMOKE_PASS`，`VERSION=0x00020002`，`CTRL_BASE=0x00001000`，`KERNEL_SEL=4 MODE=1 SCAN_COUNT=1`。
+- DDR smoke：PASS，`scan_points`、`pose`、`map_header`、`active_blocks`、`obs_cells`、`output` 六个 PL DDR3 buffer base 的 4KB pattern write/read 全部通过。
+- 未观察到新的 `Failed to detect XDMA config BAR` 或 `CmpltTO`。
+
+### 风险记录
+- 当前 PCIe 仍实际协商为 Gen2 x1，kernel log 显示 `4.000 Gb/s available PCIe bandwidth, limited by 5.0 GT/s PCIe x1 link`，并提示硬件能力为 Gen2 x4。
+- x1 不阻塞当前 HLS 功能 bring-up；后续性能阶段需要单独排查 lane mapping、Orin root port 配置、转接板/线缆和端点训练状态。
+
+### 下一步
+- 进入 “HLS tiny synthetic host transaction”。
+- 目标：复用已通过的 PL DDR3 buffer layout，写入 tiny synthetic host image，配置 `slam_accel_ctrl@0x1000`，触发 `KERNEL_SEL=4`，验证真实 HLS IP 一次 transaction 能完成。
+- gate：先只要求 accelerator start/done、无 controller error、输出区域可读；通过后再做 `H/b/counts` tiny 数值比较。
+- 仍不进入完整 online SLAM、大帧 golden 或性能优化。

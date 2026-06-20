@@ -1,4 +1,4 @@
-# AX7Z100 Board Profile Static Validation
+﻿# AX7Z100 Board Profile Static Validation
 
 - docx: $Docx
 - MIG source: $MigPrj

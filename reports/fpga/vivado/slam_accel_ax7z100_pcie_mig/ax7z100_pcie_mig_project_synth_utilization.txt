@@ -1,7 +1,7 @@
 Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.
 ------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2018.3 (win64) Build 2405991 Thu Dec  6 23:38:27 MST 2018
-| Date         : Sat Jun 20 12:40:06 2026
+| Date         : Sat Jun 20 19:29:22 2026
 | Host         : DESKTOP-QEQDV5I running 64-bit major release  (build 9200)
 | Command      : report_utilization -file V:/azmig_syn/ax7z100_pcie_mig_util.rpt
 | Design       : azmig_wrapper
@@ -30,15 +30,15 @@ Table of Contents
 +----------------------------+-------+-------+-----------+-------+
 |          Site Type         |  Used | Fixed | Available | Util% |
 +----------------------------+-------+-------+-----------+-------+
-| Slice LUTs*                | 61751 |     0 |    277400 | 22.26 |
-|   LUT as Logic             | 56775 |     0 |    277400 | 20.47 |
+| Slice LUTs*                | 61916 |     0 |    277400 | 22.32 |
+|   LUT as Logic             | 56940 |     0 |    277400 | 20.53 |
 |   LUT as Memory            |  4976 |     0 |    108200 |  4.60 |
 |     LUT as Distributed RAM |  3917 |     0 |           |       |
 |     LUT as Shift Register  |  1059 |     0 |           |       |
-| Slice Registers            | 69374 |     0 |    554800 | 12.50 |
-|   Register as Flip Flop    | 69374 |     0 |    554800 | 12.50 |
+| Slice Registers            | 69549 |     0 |    554800 | 12.54 |
+|   Register as Flip Flop    | 69549 |     0 |    554800 | 12.54 |
 |   Register as Latch        |     0 |     0 |    554800 |  0.00 |
-| F7 Muxes                   |   958 |     0 |    138700 |  0.69 |
+| F7 Muxes                   |   940 |     0 |    138700 |  0.68 |
 | F8 Muxes                   |    96 |     0 |     69350 |  0.14 |
 +----------------------------+-------+-------+-----------+-------+
 * Warning! The Final LUT count, after physical optimizations and full implementation, is typically lower. Run opt_design after synthesis, if not already completed, for a more realistic count.
@@ -58,8 +58,8 @@ Table of Contents
 | 0     |          Yes |           - |            - |
 | 314   |          Yes |           - |          Set |
 | 263   |          Yes |           - |        Reset |
-| 580   |          Yes |         Set |            - |
-| 68217 |          Yes |       Reset |            - |
+| 582   |          Yes |         Set |            - |
+| 68390 |          Yes |       Reset |            - |
 +-------+--------------+-------------+--------------+
 
 
@@ -167,19 +167,19 @@ Table of Contents
 +------------------------+-------+----------------------+
 |        Ref Name        |  Used |  Functional Category |
 +------------------------+-------+----------------------+
-| FDRE                   | 68217 |         Flop & Latch |
-| LUT6                   | 19261 |                  LUT |
-| LUT3                   | 15725 |                  LUT |
-| LUT5                   | 14592 |                  LUT |
-| LUT4                   |  9967 |                  LUT |
-| LUT2                   |  7574 |                  LUT |
+| FDRE                   | 68390 |         Flop & Latch |
+| LUT6                   | 19333 |                  LUT |
+| LUT3                   | 15801 |                  LUT |
+| LUT5                   | 14596 |                  LUT |
+| LUT4                   | 10009 |                  LUT |
+| LUT2                   |  7592 |                  LUT |
 | RAMD32                 |  5734 |   Distributed Memory |
 | CARRY4                 |  2731 |           CarryLogic |
 | RAMS32                 |  1954 |   Distributed Memory |
 | LUT1                   |  1914 |                  LUT |
-| MUXF7                  |   958 |                MuxFx |
+| MUXF7                  |   940 |                MuxFx |
 | SRLC32E                |   657 |   Distributed Memory |
-| FDSE                   |   580 |         Flop & Latch |
+| FDSE                   |   582 |         Flop & Latch |
 | SRL16E                 |   402 |   Distributed Memory |
 | FDPE                   |   314 |         Flop & Latch |
 | FDCE                   |   263 |         Flop & Latch |

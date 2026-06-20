@@ -10,13 +10,16 @@
 - Bitstream generation: PASS
 - Windows JTAG programming script: uses `hw_server` + `xsdb`, because this Vivado 2018.3 batch install does not expose FPGA programming commands
 - Windows JTAG temporary programming: PASS
-- Full `azmig_wrapper.bit` regenerated after removing manual MSI-X BAR
-  overrides: PASS
-- Full `azmig_wrapper.bit` JTAG programming after BAR convergence: PASS
+- Full `azmig_wrapper.bit` regenerated with BAR shim and real HLS IP restored:
+  PASS
+- Full `azmig_wrapper.bit` JTAG programming after HLS restore: PASS
 - PCIe PERST#/MIG reset topology review: PASS
 - PCIe lane reversal schematic review and bring-up bitstream: PASS
 - Orin PCIe enumeration: PASS, observed `0005:01:00.0 Serial controller: Xilinx Device 7024`
-- XDMA Linux driver/device nodes with the full `azmig_wrapper.bit`: pending
+- XDMA Linux driver/device nodes with the HLS-restored full
+  `azmig_wrapper.bit`: PASS on Orin
+- Stage C2 before HLS restore: PASS on Orin with `/dev/xdma0_*`,
+  `SHIM_SMOKE_PASS`, `REG_SMOKE_PASS`, and `DDR_SMOKE_PASS`
 - XDMA Linux driver/device nodes with the X4 XDMA-only diagnostic bitstream:
   PASS, Orin observed `/dev/xdma0_user`, `/dev/xdma0_h2c_0`, and
   `/dev/xdma0_c2h_0`
@@ -25,9 +28,10 @@
 
 - `xdma_0`: Vivado XDMA 4.1, Gen2 x4, 128-bit AXI, 125 MHz AXI target
 - `xdma_0`: lane reversal enabled for AX7Z100 carrier/core-board x4 lane order
-- `xdma_0`: manual MSI-X BAR indicator overrides were removed after the
-  diagnostic bitstream proved that the Linux XDMA driver can create
-  `/dev/xdma0_*` without those overrides
+- `xdma_0`: manual MSI-X BAR indicator overrides remain removed.
+- `bar_shim_ctrl`: BAR0 offset `0x0000` provides XDMA-compatible
+  identity/scratch registers; `slam_accel_ctrl` is mapped at BAR0
+  offset `0x1000`.
 - `mig_7series_0`: PL DDR3 MIG 7-series AXI interface
 - `unified_obs_0`: true HLS IP `unified_surfel_observation_core`
 - `ctrl_0`: `slam_accel_ctrl` through an AXI-Lite BD wrapper
@@ -47,7 +51,9 @@
 ## Addressing
 
 - XDMA `M_AXI` and HLS `m_axi_gmem0..4` all target PL DDR3 range `0x0000_0000` to `0x3fff_ffff`.
-- XDMA `M_AXI_LITE` maps `slam_accel_ctrl` at BAR offset `0x0000_0000`, range `0x0001_0000`.
+- XDMA `M_AXI_LITE` maps BAR shim identity/scratch registers at BAR offset
+  `0x0000_0000`.
+- XDMA `M_AXI_LITE` maps `slam_accel_ctrl` at BAR offset `0x0000_1000`.
 - HLS direct scalar address registers remain 32-bit; controller still rejects nonzero `*_ADDR_HI`.
 
 ## Validation Results
@@ -60,19 +66,19 @@
 - `IMPL_1_STATUS=write_bitstream Complete!`
 - `IMPLEMENTATION_BITSTREAM_PASS`
 - Bitstream: `fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit`
-- Bitstream size: 7,638,099 bytes
+- Bitstream size: 7,792,811 bytes
 - HLS IP export default path: `fpga/vivado/.build/hls_unified_obs`
 - HLS IP export uses temporary short-drive mapping to avoid Vivado 2018.3
   Windows path-length failures
-- Bitgen flow: `0 Errors`, `1 Critical Warning`
+- Bitgen flow: `0 Errors`, `0 Critical Warnings`
 - Top-level external HLS `m_axi_gmem0..4`: none
 - Lane reversal generated-IP check: PASS, generated XDMA XCI has
   `PARAM_VALUE.enable_lane_reversal=true`
 
 ## Resource Summary
 
-- Slice LUTs: 55,269 / 277,400 (19.92%)
-- Slice Registers: 61,162 / 554,800 (11.02%)
+- Slice LUTs: 55,471 / 277,400 (20.00%)
+- Slice Registers: 61,336 / 554,800 (11.06%)
 - Block RAM Tile: 52.5 / 755 (6.95%)
 - DSPs: 256 / 2,020 (12.67%)
 - Bonded IOB: 74 / 362 (20.44%)
@@ -81,22 +87,19 @@
 
 ## Post-Implementation Timing
 
-- WNS: -0.234 ns
-- TNS: -3.143 ns
-- Setup failing endpoints: 193
-- WHS: 0.038 ns
+- WNS: 0.108 ns
+- TNS: 0.000 ns
+- Setup failing endpoints: 0
+- WHS: 0.018 ns
 - THS: 0.000 ns
 - Hold failing endpoints: 0
 
-Timing constraints are not met. This bitstream is acceptable for PCIe
-enumeration/reset experiments, but it is not a reliable functional-validation
-bitstream until timing is closed.
+Timing constraints are met for the HLS-restored `azmig_wrapper.bit`.
 
 ## DRC Summary
 
-- Post-bitgen log: DRC finished with `0 Errors`, `513 Warnings`, `312 Advisories`.
-- The one critical warning in the bitstream flow is the timing failure:
-  `Timing 38-282`.
+- Post-bitgen log: DRC finished with `0 Errors`, `826 Warnings/Advisories`
+  and no critical warnings.
 - Reported warning classes include HLS DSP pipeline advisories/warnings
   (`DPIP`, `DPOP`, `AVAL`), one clock placer warning, one clock output buffering
   warning, RAMB async control warnings, one no-routable-load warning, and one
@@ -120,9 +123,34 @@ bitstream until timing is closed.
 
 ## Next Step
 
-The X4 XDMA-only diagnostic bitstream has enumerated on Orin and created
-`/dev/xdma0_*`. The next step is regenerating the full `azmig_wrapper.bit` with
-only the XDMA BAR override removed, then checking whether the full MIG/HLS
-design also creates `/dev/xdma0_user`, `/dev/xdma0_h2c_0`, and
-`/dev/xdma0_c2h_0`. If it does, run `xdma_smoke.py --reg-smoke --ddr-smoke`.
-Do not run full online SLAM as the first board test.
+The full HLS-restored `azmig_wrapper.bit` has been generated, programmed over
+Windows JTAG, and passed the Orin gate:
+
+```bash
+sudo reboot
+lspci -nnk -s 0005:01:00.0
+lspci -vv -s 0005:01:00.0 | grep -Ei 'LnkCap|LnkSta|Region'
+ls -l /dev/xdma0_user /dev/xdma0_h2c_0 /dev/xdma0_c2h_0
+journalctl -k --no-pager | grep -Ei 'xdma|10ee|7024|0005:01:00|CmpltTO|BAR|probe|AER|link' | tail -n 120
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --ddr-smoke
+```
+
+Observed Orin result:
+
+- PCIe enumeration: PASS, `0005:01:00.0 [10ee:7024]`.
+- XDMA driver bind: PASS, `Kernel driver in use: xdma`.
+- Device nodes: PASS, `/dev/xdma0_user`, `/dev/xdma0_h2c_0`, and
+  `/dev/xdma0_c2h_0` exist.
+- XDMA probe: PASS, `config bar 1, user 0`.
+- Shim smoke: PASS, `SHIM_SMOKE_PASS`.
+- Register smoke: PASS, `REG_SMOKE_PASS`, `VERSION=0x00020002`,
+  `CTRL_BASE=0x00001000`.
+- DDR smoke: PASS for `scan_points`, `pose`, `map_header`, `active_blocks`,
+  `obs_cells`, and `output` 4KB pattern write/read.
+- No new `Failed to detect XDMA config BAR` or `CmpltTO` was observed.
+- Link risk remains: PCIe negotiated Gen2 x1, while the endpoint/root path is
+  capable of Gen2 x4.
+
+Next step: move to the HLS tiny synthetic host transaction. Do not run full
+online SLAM as the first HLS board test.

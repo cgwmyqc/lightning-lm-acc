@@ -11,9 +11,21 @@ if ([string]::IsNullOrWhiteSpace($ReferenceRoot)) {
 }
 $ReferenceRoot = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ReferenceRoot)
 
-$DocxMatch = Get-ChildItem -LiteralPath $RepoRoot -Filter "cource_s1_ALINX_ZYNQ(AX7Z100)*.docx" | Select-Object -First 1
+$DocxSearchRoots = @(
+    $RepoRoot,
+    (Join-Path $RepoRoot "course")
+)
+$DocxMatch = $null
+foreach ($Root in $DocxSearchRoots) {
+    if (Test-Path $Root) {
+        $DocxMatch = Get-ChildItem -LiteralPath $Root -Filter "cource_s1_ALINX_ZYNQ(AX7Z100)*.docx" | Select-Object -First 1
+        if ($null -ne $DocxMatch) {
+            break
+        }
+    }
+}
 if ($null -eq $DocxMatch) {
-    throw "Missing AX7Z100 docx in repo root: cource_s1_ALINX_ZYNQ(AX7Z100)*.docx"
+    throw "Missing AX7Z100 docx in repo root or course/: cource_s1_ALINX_ZYNQ(AX7Z100)*.docx"
 }
 $Docx = $DocxMatch.FullName
 $MigPrj = Join-Path $ReferenceRoot "12_ddr3_pl\mig_a.prj"

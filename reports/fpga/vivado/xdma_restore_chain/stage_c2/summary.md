@@ -68,5 +68,44 @@ python3 fpga/host/xdma_smoke/xdma_smoke.py --ddr-smoke
 
 ## Current Status
 
-C2 is programmed on FPGA through Windows JTAG. The next required gate is Orin
-side enumeration, XDMA driver binding, shim/register smoke, and DDR smoke.
+C2 is programmed on FPGA through Windows JTAG and has passed Orin-side
+enumeration, XDMA driver binding, shim/register smoke, and DDR smoke.
+
+## Orin Results
+
+- PCIe enumeration: PASS (`0005:01:00.0 [10ee:7024]`)
+- XDMA driver bind: PASS (`Kernel driver in use: xdma`)
+- Device nodes: PASS
+  - `/dev/xdma0_user`
+  - `/dev/xdma0_h2c_0`
+  - `/dev/xdma0_c2h_0`
+- XDMA probe: PASS
+  - `config bar 1, pos 1`
+  - `2 BARs: config 1, user 0, bypass -1`
+  - `probe_one ... usr 16, ch 1,1`
+- Shim smoke: PASS
+  - `SHIM_SMOKE_PASS`
+  - `XDMA_SHIM_MAGIC=0x58444d41`
+  - `XDMA_SHIM_VERSION=0x00010000`
+- Register smoke: PASS
+  - `REG_SMOKE_PASS`
+  - `VERSION=0x00020002`
+  - `CTRL_BASE=0x00001000`
+- DDR smoke: PASS
+  - `scan_points` at `0x00000000`, 4KB pattern
+  - `pose` at `0x01000000`, 4KB pattern
+  - `map_header` at `0x01001000`, 4KB pattern
+  - `active_blocks` at `0x02000000`, 4KB pattern
+  - `obs_cells` at `0x10000000`, 4KB pattern
+  - `output` at `0x30000000`, 4KB pattern
+- No new `Failed to detect XDMA config BAR` or `CmpltTO` was observed.
+- Risk: the link currently negotiates as Gen2 x1. Kernel log reports available
+  bandwidth limited by `5.0 GT/s PCIe x1`, while the endpoint is capable of
+  `5.0 GT/s PCIe x4`. This is a performance/link bring-up risk, not a blocker
+  for the current functional gate.
+
+## Next Step
+
+Return to the formal `slam_accel_ax7z100_pcie_mig` / `azmig_wrapper.bit` flow,
+restore the real HLS IP on top of the C2-proven XDMA + BAR shim + MIG path, and
+keep `slam_accel_ctrl` at BAR0 offset `0x1000`.

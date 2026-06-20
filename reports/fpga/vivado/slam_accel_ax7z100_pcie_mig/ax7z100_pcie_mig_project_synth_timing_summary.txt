@@ -1,7 +1,7 @@
 Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.
 --------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2018.3 (win64) Build 2405991 Thu Dec  6 23:38:27 MST 2018
-| Date         : Sat Jun 20 12:40:32 2026
+| Date         : Sat Jun 20 19:29:48 2026
 | Host         : DESKTOP-QEQDV5I running 64-bit major release  (build 9200)
 | Command      : report_timing_summary -file V:/azmig_syn/ax7z100_pcie_mig_timing.rpt
 | Design       : azmig_wrapper
@@ -126,7 +126,7 @@ Table of Contents
 
     WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints     WPWS(ns)     TPWS(ns)  TPWS Failing Endpoints  TPWS Total Endpoints
     -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------     --------     --------  ----------------------  --------------------
-     -0.366       -4.014                     11               198028       -0.643     -501.516                  19045               197985        0.000        0.000                       0                 78713
+     -0.366       -4.014                     11               198537       -0.643     -502.140                  19057               198494        0.000        0.000                       0                 78888
 
 
 Timing constraints are not met.
@@ -229,7 +229,7 @@ txoutclk_x0y0                                                                   
     clk_250mhz_mux_x0y0                                                                                                                                              1.364        0.000                      0                 5014       -0.328      -48.795                    718                 5014        0.000        0.000                       0                  2420
   mmcm_fb                                                                                                                                                                                                                                                                                                        8.929        0.000                       0                     2
   userclk1                                                                                                                                                           1.989        0.000                      0                  466       -0.091       -4.079                    110                  466        0.249        0.000                       0                    19
-  userclk2                                                                                                                                                           0.696        0.000                      0               155818       -0.336     -298.271                  12285               155818        3.232        0.000                       0                 62780
+  userclk2                                                                                                                                                           0.696        0.000                      0               156327       -0.336     -298.895                  12297               156327        3.232        0.000                       0                 62955
 
 
 ------------------------------------------------------------------------------------------------
@@ -4711,7 +4711,7 @@ From Clock:  userclk2
   To Clock:  userclk2
 
 Setup :            0  Failing Endpoints,  Worst Slack        0.696ns,  Total Violation        0.000ns
-Hold  :        12285  Failing Endpoints,  Worst Slack       -0.336ns,  Total Violation     -298.271ns
+Hold  :        12297  Failing Endpoints,  Worst Slack       -0.336ns,  Total Violation     -298.895ns
 PW    :            0  Failing Endpoints,  Worst Slack        3.232ns,  Total Violation        0.000ns
 ---------------------------------------------------------------------------------------------------
 
@@ -4749,7 +4749,7 @@ Slack (MET) :             0.696ns  (required time - arrival time)
                                                       0.077     1.173 r  azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT3
                          net (fo=1, unplaced)         0.419     1.593    azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk2
                          BUFG (Prop_bufg_I_O)         0.093     1.686 r  azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk2_i1.usrclk2_i1/O
-                         net (fo=62989, unplaced)     0.419     2.105    azmig_i/unified_obs_0/inst/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_1_fu_686/unified_surfel_obfYi_U24/ap_clk
+                         net (fo=63164, unplaced)     0.419     2.105    azmig_i/unified_obs_0/inst/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_1_fu_686/unified_surfel_obfYi_U24/ap_clk
                          FDRE                                         r  azmig_i/unified_obs_0/inst/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_1_fu_686/unified_surfel_obfYi_U24/din0_buf1_reg[16]/C
   -------------------------------------------------------------------    -------------------
                          FDRE (Prop_fdre_C_Q)         0.223     2.328 r  azmig_i/unified_obs_0/inst/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_1_fu_686/unified_surfel_obfYi_U24/din0_buf1_reg[16]/Q
@@ -4776,7 +4776,7 @@ Slack (MET) :             0.696ns  (required time - arrival time)
                                                       0.073     8.993 r  azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT3
                          net (fo=1, unplaced)         0.398     9.392    azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk2
                          BUFG (Prop_bufg_I_O)         0.083     9.475 r  azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk2_i1.usrclk2_i1/O
-                         net (fo=62989, unplaced)     0.274     9.749    azmig_i/unified_obs_0/inst/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_1_fu_686/unified_surfel_obfYi_U24/unified_surfel_observation_core_ap_dmul_3_max_dsp_64_u/U0/i_synth/MULT.OP/MULT/DSP48E1_SPD_DBL_VARIANT.FIX_MULT/DSP3/aclk
+                         net (fo=63164, unplaced)     0.274     9.749    azmig_i/unified_obs_0/inst/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_1_fu_686/unified_surfel_obfYi_U24/unified_surfel_observation_core_ap_dmul_3_max_dsp_64_u/U0/i_synth/MULT.OP/MULT/DSP48E1_SPD_DBL_VARIANT.FIX_MULT/DSP3/aclk
                          DSP48E1                                      r  azmig_i/unified_obs_0/inst/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_1_fu_686/unified_surfel_obfYi_U24/unified_surfel_observation_core_ap_dmul_3_max_dsp_64_u/U0/i_synth/MULT.OP/MULT/DSP48E1_SPD_DBL_VARIANT.FIX_MULT/DSP3/DSP/CLK
                          clock pessimism              0.211     9.960
                          clock uncertainty           -0.071     9.889
@@ -4821,7 +4821,7 @@ Slack (VIOLATED) :        -0.336ns  (arrival time - required time)
                                                       0.050     0.398 r  azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT3
                          net (fo=1, unplaced)         0.208     0.606    azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk2
                          BUFG (Prop_bufg_I_O)         0.026     0.632 r  azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk2_i1.usrclk2_i1/O
-                         net (fo=62989, unplaced)     0.074     0.706    azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/axi_basic_top/tx_inst/tx_pipeline_inst/CLK
+                         net (fo=63164, unplaced)     0.074     0.706    azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/axi_basic_top/tx_inst/tx_pipeline_inst/CLK
                          FDRE                                         r  azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/axi_basic_top/tx_inst/tx_pipeline_inst/throttle_ctl_pipeline.reg_tdata_reg[35]/C
   -------------------------------------------------------------------    -------------------
                          FDRE (Prop_fdre_C_Q)         0.100     0.806 r  azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/axi_basic_top/tx_inst/tx_pipeline_inst/throttle_ctl_pipeline.reg_tdata_reg[35]/Q
@@ -4839,7 +4839,7 @@ Slack (VIOLATED) :        -0.336ns  (arrival time - required time)
                                                       0.053     0.561 r  azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT3
                          net (fo=1, unplaced)         0.219     0.780    azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk2
                          BUFG (Prop_bufg_I_O)         0.030     0.810 r  azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk2_i1.usrclk2_i1/O
-                         net (fo=62989, unplaced)     0.219     1.029    azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/CLK
+                         net (fo=63164, unplaced)     0.219     1.029    azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/CLK
     PCIE_X0Y0            PCIE_2_1                                     r  azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_block_i/USERCLK2
                          clock pessimism             -0.178     0.851
     PCIE_X0Y0            PCIE_2_1 (Hold_pcie_2_1_USERCLK2_TRNTD[67])
@@ -8069,7 +8069,7 @@ Slack (MET) :             6.346ns  (required time - arrival time)
                                                       0.077     1.173 r  azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT3
                          net (fo=1, unplaced)         0.419     1.593    azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk2
                          BUFG (Prop_bufg_I_O)         0.093     1.686 r  azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk2_i1.usrclk2_i1/O
-                         net (fo=62989, unplaced)     0.419     2.105    azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/int_userclk2_out
+                         net (fo=63164, unplaced)     0.419     2.105    azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/int_userclk2_out
                          FDPE                                         r  azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/user_reset_out_reg/C
   -------------------------------------------------------------------    -------------------
                          FDPE (Prop_fdpe_C_Q)         0.223     2.328 f  azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/user_reset_out_reg/Q
@@ -8089,7 +8089,7 @@ Slack (MET) :             6.346ns  (required time - arrival time)
                                                       0.073     8.993 r  azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT3
                          net (fo=1, unplaced)         0.398     9.392    azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk2
                          BUFG (Prop_bufg_I_O)         0.083     9.475 r  azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk2_i1.usrclk2_i1/O
-                         net (fo=62989, unplaced)     0.274     9.749    azmig_i/xdma_0/inst/udma_wrapper/dma_top/reset_cntrlr/user_clk
+                         net (fo=63164, unplaced)     0.274     9.749    azmig_i/xdma_0/inst/udma_wrapper/dma_top/reset_cntrlr/user_clk
                          FDCE                                         r  azmig_i/xdma_0/inst/udma_wrapper/dma_top/reset_cntrlr/flush_txn_linkdown_ff_reg[0]/C
                          clock pessimism              0.211     9.960
                          clock uncertainty           -0.071     9.889
@@ -8133,7 +8133,7 @@ Slack (MET) :             0.169ns  (arrival time - required time)
                                                       0.050     0.398 r  azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT3
                          net (fo=1, unplaced)         0.208     0.606    azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk2
                          BUFG (Prop_bufg_I_O)         0.026     0.632 r  azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk2_i1.usrclk2_i1/O
-                         net (fo=62989, unplaced)     0.074     0.706    azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/rstblk/s_aclk
+                         net (fo=63164, unplaced)     0.074     0.706    azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/rstblk/s_aclk
                          FDPE                                         r  azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.rst_rd_reg2_reg/C
   -------------------------------------------------------------------    -------------------
                          FDPE (Prop_fdpe_C_Q)         0.100     0.806 f  azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.rst_rd_reg2_reg/Q
@@ -8151,7 +8151,7 @@ Slack (MET) :             0.169ns  (arrival time - required time)
                                                       0.053     0.561 r  azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT3
                          net (fo=1, unplaced)         0.219     0.780    azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk2
                          BUFG (Prop_bufg_I_O)         0.030     0.810 r  azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/userclk2_i1.usrclk2_i1/O
-                         net (fo=62989, unplaced)     0.219     1.029    azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/rstblk/s_aclk
+                         net (fo=63164, unplaced)     0.219     1.029    azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/rstblk/s_aclk
                          FDPE                                         r  azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.rd_rst_asreg_reg/C
                          clock pessimism             -0.178     0.851
                          FDPE (Remov_fdpe_C_PRE)     -0.110     0.741    azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/rstblk/ngwrdrst.grst.g7serrst.rd_rst_asreg_reg
