@@ -2947,3 +2947,68 @@ powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_m
 - Stage 42 residual probes 全部 `HLS_MANIFEST_NUMERIC_PASS`。
 - Stage 41 multi-cell counts 回到 `1/1/1`。
 - Stage 40 n64 golden counts 回到 `14/33/17`，并输出 `HLS_MANIFEST_NUMERIC_PASS`。
+
+### Orin 实测结果（2026-06-20）
+- 初始状态：`lspci` 可见 `0005:01:00.0 [10ee:7024]`，`xdma` 显示已绑定，`/dev/xdma0_user`、`/dev/xdma0_h2c_0`、`/dev/xdma0_c2h_0` 存在。
+- 但 kernel log 中已有 `CmpltTO`、AER fatal、`xdma_device_offline`、`device recovery failed`；`/sys/bus/pci/devices/0005:01:00.0/enable=0`。
+- 初始 `--shim-smoke --reg-smoke --ctrl-base 0x1000` 失败，BAR0 shim magic 读到 `0xffffffff`，说明当时 `/dev/xdma0_*` 是 stale node，BAR 已不可访问。
+- 执行 PCIe remove/rescan 后，`xdma` 重新 probe，日志恢复到 `config bar 1, user 0`，`enable=1`，设备节点重新创建。
+- Rescan 后 `SHIM_SMOKE_PASS`、`REG_SMOKE_PASS`、`DDR_SMOKE_PASS` 均通过。
+
+Stage 42 residual probe 复测结果：
+```text
+valid_only:        FAIL, expected=1/0/0, actual=0/0/0, RUN_COUNT 0 -> 1
+reject_z_only:     FAIL, expected=0/1/0, actual=1/0/0, RUN_COUNT 1 -> 2
+reject_x_only:     FAIL, expected=0/1/0, actual=1/0/0, RUN_COUNT 2 -> 3
+miss_only:         PASS, expected=0/0/1, actual=0/0/1, RUN_COUNT 3 -> 4
+invalid_flag_only: PASS, expected=0/0/1, actual=0/0/1, RUN_COUNT 4 -> 5
+```
+
+关键 dump：
+```text
+valid_only ACTUAL_COUNTS=0/0/0
+valid_only ACTUAL_H_UPPER=[0,0,0,0,0,0,0,0,0,0,0,1,2.25,-1.25,0,5.0625,-2.8125,0,1.5625,0,0]
+valid_only ACTUAL_B=[0,0,0.04999995231628418,0.1124998927116394,-0.062499940395355225,0]
+reject_z_only ACTUAL_COUNTS=1/0/0
+reject_z_only ACTUAL_H_UPPER=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+reject_x_only ACTUAL_COUNTS=1/0/0
+reject_x_only ACTUAL_H_UPPER=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+miss_only ACTUAL_COUNTS=0/0/1
+invalid_flag_only ACTUAL_COUNTS=0/0/1
+```
+
+当前结论：
+- Stage 43 Orin 验收未通过，停止在 Stage 42 residual probes；未继续执行 Stage 41 multi-cell 和 Stage 40 n64 golden。
+- 新结果不是单纯 Stage 42 的旧失败：`valid_only` 已经出现 H/b 与 residual 正常累计但 `valid_count=0`，说明 output counter 写回仍异常。
+- `reject_z_only/reject_x_only` 仍输出 `1/0/0`，说明 reject counter 修正没有在板上达到预期效果，或当前运行的 bitstream/HLS IP 不是 Windows CSim/CSynth 验证过的修正版。
+- 下一步优先回 Windows/Vivado 侧核对正式 `azmig_wrapper.bit` 实际打包的 HLS IP 是否为 Stage 43 export 产物，并检查 `SlamNormalEquation` 中 `valid_count/reject_count/miss_count` direct-port/struct offset 写回在综合后是否被正确连接。
+
+### Orin 重启后复测结果（2026-06-20 23:34）
+- 重启后 XDMA 状态正常：`0005:01:00.0 [10ee:7024]` 绑定 `xdma`，`/dev/xdma0_user`、`/dev/xdma0_h2c_0`、`/dev/xdma0_c2h_0` 存在，`enable=1`。
+- Kernel log 显示本轮启动已重新 probe 到 `config bar 1, user 0`；本次复测前后未见新的 `CmpltTO` 或 AER recovery failure。
+- `SHIM_SMOKE_PASS`、`REG_SMOKE_PASS`、`DDR_SMOKE_PASS` 均通过。
+
+重启后 Stage 42 residual probe 复测结果：
+```text
+valid_only:        FAIL, expected=1/0/0, actual=0/0/0, RUN_COUNT 0 -> 1
+reject_z_only:     FAIL, expected=0/1/0, actual=1/0/0, RUN_COUNT 1 -> 2
+reject_x_only:     FAIL, expected=0/1/0, actual=1/0/0, RUN_COUNT 2 -> 3
+miss_only:         PASS, expected=0/0/1, actual=0/0/1, RUN_COUNT 3 -> 4
+invalid_flag_only: PASS, expected=0/0/1, actual=0/0/1, RUN_COUNT 4 -> 5
+```
+
+重启后关键 dump：
+```text
+valid_only ACTUAL_COUNTS=0/0/0
+valid_only ACTUAL_H_UPPER=[0,0,0,0,0,0,0,0,0,0,0,1,2.25,-1.25,0,5.0625,-2.8125,0,1.5625,0,0]
+valid_only ACTUAL_B=[0,0,0.04999995231628418,0.1124998927116394,-0.062499940395355225,0]
+reject_z_only ACTUAL_COUNTS=1/0/0
+reject_x_only ACTUAL_COUNTS=1/0/0
+miss_only ACTUAL_COUNTS=0/0/1
+invalid_flag_only ACTUAL_COUNTS=0/0/1
+```
+
+重启后结论：
+- 该结果排除了上一次 stale `/dev/xdma0_*` 对 Stage 43 验收的影响。
+- Stage 43 仍失败在 output count fields：H/b 与 residual datapath 正常，`miss_count` 正常，但 `valid_count/reject_count` 写回仍不符合 expected。
+- 按 failure branch，Stage 41 multi-cell 和 Stage 40 n64 golden 未执行。

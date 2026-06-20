@@ -87,3 +87,25 @@ ACTUAL_RESIDUAL_MAX_ABS=0.04999995231628418
 ```
 
 Conclusion: Stage 41 passes XDMA, BAR shim, control register, DDR, and HLS start/done gates, but fails the multi-cell numeric contract. The miss path matches, while the residual reject point is counted as valid.
+
+## Stage 43 Orin Retest 2026-06-20
+
+Stage 41 multi-cell was not rerun because Stage 43 failed earlier at the Stage 42 residual probe gate:
+
+```text
+valid_only expected=1/0/0 actual=0/0/0 FAIL
+reject_z_only expected=0/1/0 actual=1/0/0 FAIL
+reject_x_only expected=0/1/0 actual=1/0/0 FAIL
+```
+
+Per the Stage 43 failure branch, do not rerun multi-cell until residual probe counters pass.
+
+## Stage 43 Orin Reboot Retest 2026-06-20 23:34
+
+Stage 41 multi-cell was not rerun after reboot because Stage 43 still failed at the Stage 42 residual probe gate:
+
+```text
+valid_only expected=1/0/0 actual=0/0/0 FAIL
+reject_z_only expected=0/1/0 actual=1/0/0 FAIL
+reject_x_only expected=0/1/0 actual=1/0/0 FAIL
+```

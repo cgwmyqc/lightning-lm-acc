@@ -94,3 +94,25 @@ ACTUAL_RESIDUAL_MAX_ABS=0.29527878422266252
 ```
 
 Conclusion: Stage 40 passes XDMA, BAR shim, control register, DDR, and HLS start/done gates, but fails the real golden numeric contract. Do not proceed to full-frame transaction until the HLS-side reject/miss or active-map ABI mismatch is resolved.
+
+## Stage 43 Orin Retest 2026-06-20
+
+Stage 40 n64 golden was not rerun because Stage 43 failed earlier at the Stage 42 residual probe gate:
+
+```text
+valid_only expected=1/0/0 actual=0/0/0 FAIL
+reject_z_only expected=0/1/0 actual=1/0/0 FAIL
+reject_x_only expected=0/1/0 actual=1/0/0 FAIL
+```
+
+Per the Stage 43 failure branch, do not rerun n64 golden until residual probe counters pass.
+
+## Stage 43 Orin Reboot Retest 2026-06-20 23:34
+
+Stage 40 n64 golden was not rerun after reboot because Stage 43 still failed at the Stage 42 residual probe gate:
+
+```text
+valid_only expected=1/0/0 actual=0/0/0 FAIL
+reject_z_only expected=0/1/0 actual=1/0/0 FAIL
+reject_x_only expected=0/1/0 actual=1/0/0 FAIL
+```
