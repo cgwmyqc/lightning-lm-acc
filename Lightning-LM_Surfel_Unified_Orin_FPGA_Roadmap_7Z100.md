@@ -2764,6 +2764,35 @@ HLS_MANIFEST_DONE_PASS
 HLS_MANIFEST_NUMERIC_PASS
 ```
 
+### Orin 实测结果（2026-06-20）
+- 测试对象：继续使用 Stage 40 的正式 `azmig_wrapper.bit`，未重新 JTAG 下载。
+- XDMA gate：PASS，`0005:01:00.0 [10ee:7024]` 绑定 `xdma`，`/dev/xdma0_user`、`/dev/xdma0_h2c_0`、`/dev/xdma0_c2h_0` 均存在。
+- Journal gate：PASS，仍为 `config bar 1, user 0`；未见新的 `Failed to detect XDMA config BAR`、`CmpltTO` 或 AER recovery failure。
+- Multi-cell host image：PASS，marker 为 `HOST_MULTICELL_SYNTHETIC_IMAGE_PASS`。
+- BAR shim/control register：PASS，marker 为 `SHIM_SMOKE_PASS`、`REG_SMOKE_PASS`；`VERSION=0x00020002`，`CTRL_BASE=0x00001000`。
+- PL DDR3 buffer path：PASS，marker 为 `DDR_SMOKE_PASS`。
+- HLS transaction 启动/完成：PASS，marker 为 `HLS_MANIFEST_START_PASS`、`HLS_MANIFEST_DONE_PASS`；`STATUS=0x00000204`，`ERROR=0x00000000`，`RUN_COUNT` 从 `2` 增加到 `3`。
+- HLS numeric：FAIL，未出现 `HLS_MANIFEST_NUMERIC_PASS`。
+
+失败差异：
+```text
+expected counts: 1/1/1, flags=0x00000000
+actual counts:   2/0/1, flags=0x00000000
+expected residual_sum:     0.050000000000000044
+actual residual_sum:       0.04999995231628418
+expected residual_abs_sum: 0.050000000000000044
+actual residual_abs_sum:   0.04999995231628418
+expected residual_max_abs: 0.050000000000000044
+actual residual_max_abs:   0.04999995231628418
+```
+
+当前结论：
+- Stage 41 进一步确认 PCIe/XDMA/BAR shim/AXI-Lite/MIG/HLS start-done 路径正常。
+- Miss path 在该 fixture 中看起来成立：`miss_count` 均为 `1`。
+- 主要不一致集中在 residual reject path：HLS 把应 reject 的点计入 valid，导致 `valid_count=2`、`reject_count=0`。
+- 下一步优先回 Windows/HLS 侧检查 residual outlier threshold、`abs(residual)` 比较、阈值常量来源、float/double 转换以及 reject 后是否仍累计 normal equation。
+- 在 multi-cell `HLS_MANIFEST_NUMERIC_PASS` 前，不进入 Stage 40 n64 复测或 full `frame_000001`。
+
 ### 分支判断
 - 如果 multi-cell PASS：active block/cell 基本 stride 在小规模下成立，下一步回到 Stage 40 n64，重点查 golden n64 的 neighbor lookup、expected recompute 或 HLS/CPU lookup 逻辑差异。
 - 如果 multi-cell 在 `HLS_MANIFEST_DONE_PASS` 后 numeric FAIL：优先修改 HLS active map / obs cell ABI 读取方式，尤其复核 `DATA_PACK`、m_axi struct access width、32B/64B record stride，然后重新 HLS export 和 `azmig_wrapper.bit`。
