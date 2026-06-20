@@ -2842,6 +2842,42 @@ sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.buil
 sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_residual_probe/invalid_flag_only/manifest.json --ctrl-base 0x1000 --dump-normal-equation
 ```
 
+### Orin 实测结果（2026-06-20）
+- 测试对象：继续使用 Stage 40/41 的正式 `azmig_wrapper.bit`，未重新 JTAG 下载。
+- XDMA gate：PASS，`0005:01:00.0 [10ee:7024]` 绑定 `xdma`，`/dev/xdma0_user`、`/dev/xdma0_h2c_0`、`/dev/xdma0_c2h_0` 均存在。
+- Journal gate：PASS，仍为 `config bar 1, user 0`；未见新的 `Failed to detect XDMA config BAR`、`CmpltTO` 或 AER recovery failure。
+- Residual probe image：PASS，marker 为 `HOST_RESIDUAL_PROBE_IMAGES_PASS`。
+- BAR shim/control register：PASS，marker 为 `SHIM_SMOKE_PASS`、`REG_SMOKE_PASS`；`VERSION=0x00020002`，`CTRL_BASE=0x00001000`。
+- PL DDR3 buffer path：PASS，marker 为 `DDR_SMOKE_PASS`。
+
+单点 probe 结果：
+```text
+valid_only:        PASS, expected=1/0/0, actual=1/0/0, RUN_COUNT 3 -> 4
+reject_z_only:     FAIL, expected=0/1/0, actual=1/0/0, RUN_COUNT 4 -> 5
+reject_x_only:     FAIL, expected=0/1/0, actual=1/0/0, RUN_COUNT 5 -> 6
+miss_only:         PASS, expected=0/0/1, actual=0/0/1, RUN_COUNT 6 -> 7
+invalid_flag_only: PASS, expected=0/0/1, actual=0/0/1, RUN_COUNT 7 -> 8
+```
+
+关键 dump：
+```text
+valid_only ACTUAL_H_UPPER=[0,0,0,0,0,0,0,0,0,0,0,1,2.25,-1.25,0,5.0625,-2.8125,0,1.5625,0,0]
+valid_only ACTUAL_B=[0,0,0.04999995231628418,0.1124998927116394,-0.062499940395355225,0]
+reject_z_only ACTUAL_H_UPPER=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+reject_z_only ACTUAL_B=[0,0,0,0,0,0]
+reject_x_only ACTUAL_H_UPPER=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+reject_x_only ACTUAL_B=[0,0,0,0,0,0]
+miss_only ACTUAL_H_UPPER=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+invalid_flag_only ACTUAL_H_UPPER=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+```
+
+当前结论：
+- `valid_only` PASS，说明单点 valid 的 H/b 累计路径成立。
+- `miss_only` 和 `invalid_flag_only` PASS，说明 active block miss path 与 `ObsCellFloat64.flags` 读取路径成立。
+- `reject_z_only` 与 `reject_x_only` 表现一致，说明问题不优先指向 `normal_x/y/z` 字段顺序。
+- 两个 reject probe 的 H/b 均为全零，说明 rejected point 没有被累计进 normal equation；但 counts 被写成 `valid=1,reject=0,miss=0`，因此当前首要怀疑是 HLS reject 分支的 counter/classification 写法：outlier path 跳过累计后错误增加 `valid_count`，或没有增加 `reject_count`。
+- 下一步回 Windows/HLS 侧优先查 residual outlier 分支的计数更新顺序、`valid_count++` 放置位置、`reject_count++` 是否被综合条件屏蔽；暂不优先查 DDR layout、flags offset、miss path 或 normal 字段 packing。
+
 ### 分支判断
 - 如果 `reject_z_only` / `reject_x_only` 变成 valid：优先查 residual threshold 或 `normal/plane_d` 字段解释。
 - 如果 `invalid_flag_only` 变成 valid：优先查 `ObsCellFloat64.flags` packing/offset。
