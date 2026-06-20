@@ -2683,6 +2683,33 @@ HLS_MANIFEST_DONE_PASS
 HLS_MANIFEST_NUMERIC_PASS
 ```
 
+### Orin 实测结果（2026-06-20）
+- 测试对象：已通过 Stage 39 tiny synthetic 的正式 `azmig_wrapper.bit`。
+- 预处理：本地缺少 `fpga/golden/localization/frame_000001/loc_scan.bin`，已从 `fpga/golden_src/localization/frame_000001` 重新生成 ABI golden；full golden counts 为 `6050/911/2`。
+- XDMA gate：PASS，`0005:01:00.0 [10ee:7024]` 绑定 `xdma`，`/dev/xdma0_user`、`/dev/xdma0_h2c_0`、`/dev/xdma0_c2h_0` 均存在。
+- Journal gate：PASS，仍为 `config bar 1, user 0`；未见新的 `Failed to detect XDMA config BAR`、`CmpltTO` 或 AER recovery failure。
+- Host image：PASS，marker 为 `HOST_GOLDEN_IMAGE_PASS`。
+- BAR shim/control register：PASS，marker 为 `SHIM_SMOKE_PASS`、`REG_SMOKE_PASS`；`VERSION=0x00020002`，`CTRL_BASE=0x00001000`。
+- PL DDR3 buffer path：PASS，marker 为 `DDR_SMOKE_PASS`。
+- HLS transaction 启动/完成：PASS，marker 为 `HLS_MANIFEST_START_PASS`、`HLS_MANIFEST_DONE_PASS`；`STATUS=0x00000204`，`ERROR=0x00000000`，`RUN_COUNT` 从 `1` 增加到 `2`。
+- HLS numeric：FAIL，未出现 `HLS_MANIFEST_NUMERIC_PASS`。
+
+失败差异：
+```text
+expected counts: 14/33/17, flags=0x00000000
+actual counts:   64/0/0,   flags=0x00000000
+expected residual_abs_sum: 1.3874737319668577
+actual residual_abs_sum:   2.2681722148352881
+expected residual_max_abs: 0.29527878422266252
+actual residual_max_abs:   0.29527878422266252
+```
+
+当前结论：
+- Stage 40 的 PCIe/XDMA/BAR shim/AXI-Lite/MIG/HLS start-done 路径已经通过。
+- 当前阻塞点不是 `/dev/xdma*`、DDR 写读或 HLS timeout，而是 HLS real golden numeric contract。
+- 优先回 Windows/HLS 侧检查 `MaxPoints=64` 下的 reject/miss 判定、active map/obs cell lookup ABI、map header 字段解释、output normal equation 写出顺序。
+- 在 `HLS_MANIFEST_NUMERIC_PASS` 前，不进入 full `frame_000001` host transaction。
+
 ### 风险与后续
 - 本阶段不重新生成 bitstream，不改 Vivado BD，不处理 PCIe Gen2 x1 性能风险。
 - 如果 timeout：优先查更多点数下 HLS AXI master 到 MIG 的 arbitration/address path，并记录 `STATUS/ERROR/RUN_COUNT`。
