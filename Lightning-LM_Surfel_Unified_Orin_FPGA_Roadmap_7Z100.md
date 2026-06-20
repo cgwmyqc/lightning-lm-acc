@@ -1748,3 +1748,85 @@ python3 fpga/host/xdma_smoke/xdma_smoke.py --reg-smoke --ddr-smoke
 ```
 
 通过后再进入 tiny synthetic host image 写入和可选 `--start-zero`。
+
+---
+
+## 26. 2026-06-20 Orin 枚举成功但 XDMA Driver Probe 失败
+
+### 当前阶段状态
+- Orin 侧已经可以枚举 AX7Z100 PCIe endpoint：
+  - `0005:01:00.0 Serial controller [0700]: Xilinx Corporation Device [10ee:7024]`
+- Orin 侧 `xdma.ko` 已加载，且 `modinfo xdma` alias 支持 `10ee:7024`。
+- 当前仍没有 `/dev/xdma*`，`lspci -nnk` 中只有 `Kernel modules: xdma`，没有 `Kernel driver in use: xdma`。
+- `/sys/bus/pci/devices/0005:01:00.0/enable = 0`，说明 xdma driver 没有成功绑定该 endpoint。
+- PCIe link 当前实测为 `Gen2 x1`，endpoint 最大能力为 `Gen2 x4`。这是后续 lane/转接/物理链路性能问题，但不是 `/dev/xdma*` 不出现的第一阻塞点。
+
+### 关键日志与诊断
+Orin kernel log 中已经看到 xdma driver probe 被触发，但 probe 失败：
+
+```text
+xdma:xdma_device_open: xdma device 0005:01:00.0
+xdma:map_single_bar: BAR0 ... length=65536
+pcieport 0005:00:00.0: PCIe Bus Error: severity=Uncorrected (Non-Fatal), type=Transaction Layer
+pcieport 0005:00:00.0: [14] CmpltTO (First)
+xdma:map_single_bar: BAR1 ... length=65536
+xdma:map_bars: Failed to detect XDMA config BAR
+xdma:probe_one: ... err -22.
+xdma: probe of 0005:01:00.0 failed with error -22
+```
+
+结论：
+- Orin PCIe root port、供电、PERST 基础链路已经不是当前第一阻塞点，因为 endpoint 已枚举。
+- Orin XDMA 驱动缺失也不是当前第一阻塞点，因为 `xdma.ko` 已加载、ID 已匹配、probe 已触发。
+- 当前第一阻塞点转到 FPGA/Vivado 侧：7Z100 当前 bitstream 没有向 Linux XDMA reference driver 暴露可识别、可访问的 XDMA config BAR，或 BAR 路由/访问在 probe 阶段产生 completion timeout。
+- 7Z015 能直接出现 `/dev/xdma*`，大概率是因为它使用的是标准/参考 XDMA 工程，BAR 布局与 Xilinx Linux XDMA driver 兼容。
+
+### Orin 侧保留检查步骤
+每次更换 bitstream 或 Vivado XDMA 配置后，在 Orin 侧执行：
+
+```bash
+lspci -nnk -s 0005:01:00.0
+lspci -vv -s 0005:01:00.0
+lsmod | grep -i xdma
+ls -l /dev/xdma*
+journalctl -k --no-pager | grep -Ei 'xdma|10ee|7024|0005:01:00|CmpltTO|BAR|probe'
+```
+
+通过标准：
+
+```text
+Kernel driver in use: xdma
+/dev/xdma0_user 存在
+/dev/xdma0_h2c_0 存在
+/dev/xdma0_c2h_0 存在
+dmesg 不再出现 Failed to detect XDMA config BAR
+```
+
+### Windows/Vivado 侧下一步
+下一步需要回 Windows/Vivado FPGA 侧排查。第一步不要直接调完整 SLAM/HLS/MIG 工程，先建立最小 XDMA-only 7Z100 bitstream：
+
+- 使用 AX7Z100 正确 part/package。
+- XDMA 配置保持 Linux XDMA reference driver 兼容。
+- 开启标准 H2C/C2H channel。
+- 暴露一个 AXI-Lite user BAR，连接最小 version/scratch register。
+- 暂时不接 HLS core。
+- 暂时不接复杂 MIG/DDR datapath。
+- 检查并避免 XDMA config BAR、AXI-Lite user BAR、MSI/MSI-X BAR 配置互相冲突。
+- 对比旧 7Z015 `ch06_xdma_test` 或 AX7Z100/ALINX `33_PCIe_test` 的 XDMA IP 参数和 BAR 配置。
+
+最小 XDMA-only bitstream 烧录后，先在 Orin 侧确认 `/dev/xdma*` 出现，再逐步加回：
+
+1. `slam_accel_ctrl` AXI-Lite 寄存器。
+2. `xdma_smoke.py --reg-smoke`。
+3. PL DDR3/MIG。
+4. `xdma_smoke.py --ddr-smoke`。
+5. HLS observation core。
+6. localization golden CSim/硬件输出对齐。
+7. 在线 Orin runtime guarded enable。
+
+### 本阶段验收标准
+- Orin `lspci -nnk` 显示 `Kernel driver in use: xdma`。
+- `/dev/xdma0_user`、`/dev/xdma0_h2c_0`、`/dev/xdma0_c2h_0` 出现。
+- `Failed to detect XDMA config BAR` 消失。
+- 最小 AXI-Lite scratch register 可读写。
+- 完成最小 XDMA-only 验证后，再回到 SLAM/HLS/MIG 集成。
