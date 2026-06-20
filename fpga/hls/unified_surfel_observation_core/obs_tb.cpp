@@ -151,6 +151,78 @@ bool CompareEquation(const SlamNormalEquation& actual, const SlamNormalEquation&
     return counts_ok && values_ok;
 }
 
+void FillRejectProbe(SlamAccelScanPoint& scan, SlamAccelPose& pose, ActiveMapHeader& map_header,
+                     ActiveBlockRecord& block, std::vector<ObsCellFloat64>& cells) {
+    scan.x = 1.25f;
+    scan.y = 2.25f;
+    scan.z = 1.25f;
+    scan.intensity = 1.0f;
+
+    pose.qx = 0.0f;
+    pose.qy = 0.0f;
+    pose.qz = 0.0f;
+    pose.qw = 1.0f;
+    pose.tx = 0.0f;
+    pose.ty = 0.0f;
+    pose.tz = 0.0f;
+    pose.flags = 0;
+
+    map_header.magic = SLAM_ACCEL_ABI_MAGIC;
+    map_header.version = SLAM_ACCEL_GOLDEN_VERSION;
+    map_header.mode = LOCALIZATION_OBSERVATION;
+    map_header.cells_per_block = SLAM_ACCEL_CELLS_PER_BLOCK;
+    map_header.cell_resolution = 1.0f;
+    map_header.inv_cell_resolution = 1.0f;
+    map_header.window_id = 1;
+    map_header.window_version = 1;
+    map_header.num_blocks = 1;
+    map_header.num_cells = SLAM_ACCEL_CELLS_PER_BLOCK;
+    map_header.lookup_nearby_type = 0;
+    map_header.flags = 0;
+
+    block.x = 0;
+    block.y = 0;
+    block.z = 0;
+    block.first_cell = 0;
+    block.valid_cell_count = 1;
+    block.flags = 0;
+
+    cells.assign(SLAM_ACCEL_CELLS_PER_BLOCK, ObsCellFloat64());
+    const uint32_t cell_idx = (1u * SLAM_ACCEL_BLOCK_DIM_Y + 2u) * SLAM_ACCEL_BLOCK_DIM_X + 1u;
+    ObsCellFloat64& cell = cells[cell_idx];
+    cell.centroid_x = 1.25f;
+    cell.centroid_y = 2.25f;
+    cell.centroid_z = 0.80f;
+    cell.normal_x = 0.0f;
+    cell.normal_y = 0.0f;
+    cell.normal_z = 1.0f;
+    cell.plane_d = -0.80f;
+    cell.quality = 1.0f;
+    cell.count = 1;
+    cell.flags = OBS_CELL_VALID;
+}
+
+bool RunRejectProbe(std::string& report) {
+    SlamAccelScanPoint scan;
+    SlamAccelPose pose;
+    ActiveMapHeader map_header;
+    ActiveBlockRecord block;
+    std::vector<ObsCellFloat64> cells;
+    FillRejectProbe(scan, pose, map_header, block, cells);
+
+    SlamNormalEquation actual;
+    unified_surfel_observation_core(&scan, 1, &pose, &map_header, &block, cells.data(), &actual);
+
+    const bool counts_ok = actual.valid_count == 0 && actual.reject_count == 1 && actual.miss_count == 0;
+    const bool values_ok = actual.h_upper[0] == 0.0 && actual.b[0] == 0.0 && actual.residual_sum == 0.0 &&
+                           actual.residual_abs_sum == 0.0 && actual.residual_max_abs == 0.0;
+    std::ostringstream ss;
+    ss << "reject_probe counts=" << actual.valid_count << "/" << actual.reject_count << "/" << actual.miss_count
+       << " residual_abs_sum=" << actual.residual_abs_sum;
+    report = ss.str();
+    return counts_ok && values_ok;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -181,6 +253,12 @@ int main(int argc, char** argv) {
     if (!pass) {
         return 2;
     }
+    std::string reject_report;
+    if (!RunRejectProbe(reject_report)) {
+        std::cerr << "[obs_tb] " << reject_report << std::endl;
+        return 3;
+    }
+    std::cout << "[obs_tb] " << reject_report << std::endl;
     std::cout << "[obs_tb] PASS " << golden_dir << std::endl;
     return 0;
 }

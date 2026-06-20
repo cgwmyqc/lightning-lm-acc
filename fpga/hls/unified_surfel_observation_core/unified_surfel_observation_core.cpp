@@ -272,18 +272,24 @@ void unified_surfel_observation_core(const SlamAccelScanPoint* scan_points, uint
 
     double h[6][6] = {{0.0}};
     double b[6] = {0.0};
+    uint32_t valid_count = 0;
+    uint32_t reject_count = 0;
+    uint32_t miss_count = 0;
+    double residual_sum = 0.0;
+    double residual_abs_sum = 0.0;
+    double residual_max_abs = 0.0;
     for (uint32_t i = 0; i < num_points; ++i) {
 #pragma HLS LOOP_TRIPCOUNT min = 1 max = 8192 avg = 4096
         const SlamAccelScanPoint& scan = scan_points[i];
         if (!std::isfinite(scan.x) || !std::isfinite(scan.y) || !std::isfinite(scan.z)) {
-            ++output->reject_count;
+            ++reject_count;
             continue;
         }
 
         const Vec3 p = RotatePoint(*pose, scan);
         ObsCellFloat64 cell;
         if (!LookupNearest(*map_header, active_blocks, obs_cells, p, cell)) {
-            ++output->miss_count;
+            ++miss_count;
             continue;
         }
 
@@ -293,7 +299,7 @@ void unified_surfel_observation_core(const SlamAccelScanPoint* scan_points, uint
         const double residual = nx * p.x + ny * p.y + nz * p.z + cell.plane_d;
         const double abs_residual = std::fabs(residual);
         if (!std::isfinite(residual) || abs_residual > 0.3) {
-            ++output->reject_count;
+            ++reject_count;
             continue;
         }
 
@@ -306,14 +312,20 @@ void unified_surfel_observation_core(const SlamAccelScanPoint* scan_points, uint
         j[5] = ny * p.x - nx * p.y;
         AccumulateUpper(h, b, j, residual);
 
-        ++output->valid_count;
-        output->residual_sum += residual;
-        output->residual_abs_sum += abs_residual;
-        if (abs_residual > output->residual_max_abs) {
-            output->residual_max_abs = abs_residual;
+        ++valid_count;
+        residual_sum += residual;
+        residual_abs_sum += abs_residual;
+        if (abs_residual > residual_max_abs) {
+            residual_max_abs = abs_residual;
         }
     }
     StoreOutput(h, b, output);
+    output->valid_count = valid_count;
+    output->reject_count = reject_count;
+    output->miss_count = miss_count;
+    output->residual_sum = residual_sum;
+    output->residual_abs_sum = residual_abs_sum;
+    output->residual_max_abs = residual_max_abs;
 }
 
 }  // namespace hls

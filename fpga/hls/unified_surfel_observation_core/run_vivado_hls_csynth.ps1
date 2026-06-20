@@ -7,14 +7,22 @@ param(
 $ErrorActionPreference = "Stop"
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$RepoRoot = Resolve-Path (Join-Path $ScriptDir "..\..\..")
+$DefaultBuildRoot = Join-Path $RepoRoot "fpga\vivado\.build"
+. (Join-Path $RepoRoot "fpga\vivado\slam_accel_hls_mem_harness\vivado_path.ps1")
 if ([string]::IsNullOrWhiteSpace($ProjectDir)) {
-    $ProjectDir = Join-Path $env:TEMP "lightning_hls_unified_obs"
+    $ProjectDir = Join-Path $DefaultBuildRoot "hls_unified_obs_csynth"
 }
 
-$RepoRoot = Resolve-Path (Join-Path $ScriptDir "..\..\..")
 $GoldenDir = Join-Path $RepoRoot "fpga\golden\localization\frame_000001"
 $ProjectDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ProjectDir)
 $Tcl = Join-Path $ScriptDir "create_vivado_hls_project.tcl"
 
-& $VivadoHls -f $Tcl -tclargs $GoldenDir $ProjectDir $Part "csynth"
-exit $LASTEXITCODE
+$ShortPathInfo = New-LightningVivadoShortPath -ActualPath $ProjectDir -BuildRoot $DefaultBuildRoot
+try {
+    $VivadoProjectDir = $ShortPathInfo.ShortPath
+    & $VivadoHls -f $Tcl -tclargs $GoldenDir $VivadoProjectDir $Part "csynth"
+    exit $LASTEXITCODE
+} finally {
+    Remove-LightningVivadoShortPath -ShortPathInfo $ShortPathInfo
+}

@@ -1,4 +1,4 @@
-Property                                          Type    Read-only  Value
+﻿Property                                          Type    Read-only  Value
 CLASS                                             string  true       bd_cell
 CONFIG.BASEADDR                                   string  false      0x00001000
 CONFIG.Component_Name                             string  false      azmig_xdma_0_0

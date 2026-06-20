@@ -2883,3 +2883,67 @@ invalid_flag_only ACTUAL_H_UPPER=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 - 如果 `invalid_flag_only` 变成 valid：优先查 `ObsCellFloat64.flags` packing/offset。
 - 如果 x/z reject 表现不同：优先查 `normal_x/y/z` 字段顺序或 HLS packing。
 - 如果五个 probes 全 PASS：回头复核 Stage 41 fixture 构造和 expected recompute。
+
+## 43. 2026-06-20 HLS Reject Counter 写回修正
+
+### 当前结论
+- Stage 42 已确认 residual outlier 样本不会累计进 `H/b`，但计数输出为 `valid=1/reject=0/miss=0`。
+- 这说明 residual reject 分支已经触发，主要风险在 HLS 对 `SlamNormalEquation` output 计数字段的循环内 read-modify-write 或 field direct port 写回。
+- 本阶段保持 BAR shim、`slam_accel_ctrl@0x1000`、PL DDR3 layout、MIG、XDMA、HLS direct ports 不变，只修 HLS output counter 写回方式。
+
+### 本次 Windows 侧变更
+- 修改 `fpga/hls/unified_surfel_observation_core/unified_surfel_observation_core.cpp`：
+  - `valid_count/reject_count/miss_count` 改为本地变量。
+  - `residual_sum/residual_abs_sum/residual_max_abs` 改为本地变量。
+  - point loop 内不再直接 `++output->...`。
+  - loop 结束后统一写回 output 计数字段和 residual summary。
+- 修改 `fpga/hls/unified_surfel_observation_core/obs_tb.cpp`：
+  - 增加 single-point residual reject probe。
+  - probe 期望 counts 为 `0/1/0`，且 `H/b/residual` 保持 0。
+- 修改 `fpga/hls/unified_surfel_observation_core/run_vivado_hls_csynth.ps1`：
+  - C Synthesis 默认工程目录从 `%TEMP%` 改为 `fpga/vivado/.build/hls_unified_obs_csynth`。
+  - 复用 Vivado 短路径 helper，规避 Vivado HLS 2018.3 在 Windows 长路径/异常 `%TEMP%` 路径下无法创建工程的问题。
+- 新增报告目录：`reports/fpga/hls/unified_surfel_observation_core/stage43_reject_counter_fix/`。
+
+### Windows 验证计划
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\unified_surfel_observation_core\run_gpp_csim.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\unified_surfel_observation_core\run_vivado_hls_csim.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\unified_surfel_observation_core\run_vivado_hls_csynth.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\unified_surfel_observation_core\run_vivado_hls_export_ip.ps1
+```
+
+### Windows 验证结果
+- g++ CSim：PASS。Golden counts `6050/911/2`；新增 reject probe counts `0/1/0`。
+- Vivado HLS CSim：PASS，`CSim done with 0 errors`；新增 reject probe counts `0/1/0`。
+- Vivado HLS C Synthesis：PASS。Target clock `10.00 ns`，estimated clock `9.307 ns`；资源估算 `BRAM_18K=36`、`DSP48E=256`、`FF=26493`、`LUT=41601`。
+- Vivado HLS IP export：PASS。Vivado HLS 2018.3 仍会生成溢出的 `core_revision`，脚本已自动把本地 `run_ippack.tcl` revision 改为 `1` 并重新 pack 成功。
+- 新 HLS IP 路径：`fpga/vivado/.build/hls_unified_obs/solution1/impl/ip/component.xml`。
+
+### Vivado 重新生成计划
+HLS export PASS 后重新生成正式 `azmig_wrapper.bit`：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\validate_board_profile.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_bd_validate.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_project_synth.ps1 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_impl_bitstream.ps1 -Jobs 18
+```
+
+### Vivado 重新生成结果
+- Board profile static validation：PASS。
+- BD validate：PASS；正式 `azmig` 已引用新 HLS IP，HLS `m_axi_gmem0..4` 仍接入 MIG-backed PL DDR3 fabric，没有外露到顶层。
+- Project synthesis：PASS，命令使用 `-Jobs 18`。
+- Implementation / bitstream：PASS，命令使用 `-Jobs 18`。
+- Post-implementation timing：PASS，`WNS=0.145 ns`、`TNS=0.000 ns`、`WHS=0.025 ns`、`THS=0.000 ns`，Vivado 报告 `All user specified timing constraints are met.`。
+- DRC：bitstream run 结论为 `0 Errors, 0 Critical Warnings`；普通 warnings/advisories 主要来自 HLS DSP pipelining 和板级/IP advisories。
+- 新 bitstream 路径：`fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit`。
+- Windows JTAG 下载：PASS，marker 为 `JTAG_PROGRAM_PASS`；FPGA 状态为 configured。
+
+### Orin 后续验收
+- JTAG 下载新 `azmig_wrapper.bit`。
+- `--shim-smoke --reg-smoke --ctrl-base 0x1000` PASS。
+- `--ddr-smoke` PASS。
+- Stage 42 residual probes 全部 `HLS_MANIFEST_NUMERIC_PASS`。
+- Stage 41 multi-cell counts 回到 `1/1/1`。
+- Stage 40 n64 golden counts 回到 `14/33/17`，并输出 `HLS_MANIFEST_NUMERIC_PASS`。
