@@ -1,0 +1,2 @@
+BITSTREAM_PATH=F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\.build\xdma_restore_stage_c2_impl\xdma_restore_stage_c2.runs\impl_1\xdma_restore_stage_c2_wrapper.bit
+BITSTREAM_SIZE_BYTES=4625939

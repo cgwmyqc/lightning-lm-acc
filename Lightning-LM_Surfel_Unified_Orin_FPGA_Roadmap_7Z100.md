@@ -2422,3 +2422,38 @@ python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 
 - Stage B2 FAIL：不继续加 MIG/HLS，优先查 `128_bit + 125 MHz` XDMA 配置、timing、BAR completion 和 generated XDMA property diff。
 - Stage C2 PASS：再重新生成正式 `azmig_wrapper.bit`，该版本才恢复真实 HLS IP。
 - 正式 `azmig_wrapper.bit` 通过 `/dev/xdma0_*`、shim smoke、reg smoke、DDR smoke 后，再进入 HLS tiny synthetic transaction。
+
+---
+
+## 35. 2026-06-20 Stage C2 Windows 生成与 JTAG 下载结果
+
+### 当前变更
+- Stage C2 已生成：`X4 + lane reversal + 128_bit + 125 MHz + BAR shim + slam_accel_ctrl@0x1000 + MIG-backed PL DDR3`。
+- Stage C2 仍不接 HLS，不生成正式 `azmig_wrapper.bit`。
+- BAR0 布局继续保持：`0x0000` shim identity/scratch，`0x1000` 为 `slam_accel_ctrl`。
+
+### Windows 验证结果
+- Stage C2 BD validate：PASS，日志包含 `XDMA_RESTORE_STAGE_C2_BD_VALIDATE_PASS`。
+- Stage C2 project synthesis：PASS，日志包含 `XDMA_RESTORE_STAGE_C2_PROJECT_SYNTH_PASS`。
+- Stage C2 implementation + bitstream：PASS，日志包含 `XDMA_RESTORE_STAGE_C2_IMPLEMENTATION_BITSTREAM_PASS`。
+- Stage C2 JTAG download：PASS，日志包含 `JTAG_PROGRAM_PASS`，FPGA state 为 `FPGA is configured`。
+- bitstream 路径：
+  `fpga/vivado/.build/xdma_restore_stage_c2_impl/xdma_restore_stage_c2.runs/impl_1/xdma_restore_stage_c2_wrapper.bit`
+- bitstream size：4,625,939 bytes。
+- post-implementation timing：PASS，WNS 0.183 ns，TNS 0.000 ns，WHS 0.030 ns，THS 0.000 ns。
+- DRC：0 errors，0 critical warnings，26 warnings。warning 类型主要为 MIG clock placer/clock buffering、BRAM async-control、no-routable-load 诊断和 PL-only Zynq PS7-required warning。
+
+### Orin Stage C2 验收命令
+```bash
+sudo reboot
+lspci -nnk -s 0005:01:00.0
+ls -l /dev/xdma0_user /dev/xdma0_h2c_0 /dev/xdma0_c2h_0
+journalctl -k --no-pager | grep -Ei 'xdma|10ee|7024|0005:01:00|CmpltTO|BAR|probe|AER|link' | tail -n 120
+python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000
+python3 fpga/host/xdma_smoke/xdma_smoke.py --ddr-smoke
+```
+
+### 后续判断
+- Stage C2 Orin PASS：再回到正式 `slam_accel_ax7z100_pcie_mig` / `azmig_wrapper.bit`，接回真实 HLS IP，并保留 BAR shim 与 `slam_accel_ctrl@0x1000`。
+- Stage C2 无 `/dev/xdma0_*`：停止，不接 HLS，优先查 MIG/interconnect 是否影响 BAR completion 或 AXI-Lite probe。
+- Stage C2 shim/reg PASS 但 DDR smoke FAIL：重点查 MIG init、MIG reset/clock、AXI address map、XDMA memory BAR 到 MIG 的 interconnect。
