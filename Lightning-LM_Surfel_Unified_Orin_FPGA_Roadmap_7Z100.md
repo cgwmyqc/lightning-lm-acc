@@ -2797,3 +2797,53 @@ actual residual_max_abs:   0.04999995231628418
 - 如果 multi-cell PASS：active block/cell 基本 stride 在小规模下成立，下一步回到 Stage 40 n64，重点查 golden n64 的 neighbor lookup、expected recompute 或 HLS/CPU lookup 逻辑差异。
 - 如果 multi-cell 在 `HLS_MANIFEST_DONE_PASS` 后 numeric FAIL：优先修改 HLS active map / obs cell ABI 读取方式，尤其复核 `DATA_PACK`、m_axi struct access width、32B/64B record stride，然后重新 HLS export 和 `azmig_wrapper.bit`。
 - 如果 multi-cell timeout：优先查 HLS master 到 MIG 的 AXI arbitration/address path，但目前 Stage 40 已 done，该分支概率较低。
+
+## 42. 2026-06-20 Residual Reject 单点探针
+
+### 当前结论
+- Stage 41 已把问题缩小到 residual reject：HLS start/done 正常，miss path 在 multi-cell fixture 中成立，但一个应 reject 的点被计入 valid。
+- 本阶段不重新生成 bitstream，不修改 Vivado BD，不修改 HLS `DATA_PACK`；先用单点 probe 区分字段读取问题和 residual 阈值判断问题。
+
+### 本次 Windows 侧变更
+- 新增 `fpga/host/xdma_smoke/make_residual_probe_host_images.py`。
+- 新增 5 个 manifest：
+  - `valid_only`：期望 `1/0/0`。
+  - `reject_z_only`：通过 `normal_z + plane_d` 构造 residual > 0.3，期望 `0/1/0`。
+  - `reject_x_only`：通过 `normal_x + plane_d` 构造 residual > 0.3，期望 `0/1/0`。
+  - `miss_only`：无有效 cell，期望 `0/0/1`。
+  - `invalid_flag_only`：cell 坐标命中但 `flags=0`，期望 `0/0/1`。
+- `xdma_smoke.py` 新增 `--dump-normal-equation`，可在 HLS output readback 后打印 `H_upper[21]` 与 `b[6]`。
+- 更新 `fpga/host/xdma_smoke/README.md` 与 `reports/fpga/host/xdma_smoke/residual_probe/`。
+
+### Windows 静态验证结果
+```powershell
+python fpga\host\xdma_smoke\make_residual_probe_host_images.py --out-dir fpga\vivado\.build\host_residual_probe --report-dir reports\fpga\host\xdma_smoke\residual_probe
+python -m py_compile fpga\host\xdma_smoke\address_map.py fpga\host\xdma_smoke\make_residual_probe_host_images.py fpga\host\xdma_smoke\xdma_smoke.py
+python fpga\host\xdma_smoke\xdma_smoke.py --help
+```
+
+- residual probe image：PASS，marker 为 `HOST_RESIDUAL_PROBE_IMAGES_PASS`。
+- Python compile：PASS。
+- `xdma_smoke.py --help`：PASS，已显示 `--dump-normal-equation`。
+- 生成路径：`fpga/vivado/.build/host_residual_probe/`。
+- 报告路径：`reports/fpga/host/xdma_smoke/residual_probe/`。
+
+### Orin 下一步 gate
+继续使用当前正式 `azmig_wrapper.bit`，不需要重新 JTAG 下载：
+
+```bash
+python3 fpga/host/xdma_smoke/make_residual_probe_host_images.py --out-dir fpga/vivado/.build/host_residual_probe --report-dir reports/fpga/host/xdma_smoke/residual_probe
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --ddr-smoke
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_residual_probe/valid_only/manifest.json --ctrl-base 0x1000 --dump-normal-equation
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_residual_probe/reject_z_only/manifest.json --ctrl-base 0x1000 --dump-normal-equation
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_residual_probe/reject_x_only/manifest.json --ctrl-base 0x1000 --dump-normal-equation
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_residual_probe/miss_only/manifest.json --ctrl-base 0x1000 --dump-normal-equation
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_residual_probe/invalid_flag_only/manifest.json --ctrl-base 0x1000 --dump-normal-equation
+```
+
+### 分支判断
+- 如果 `reject_z_only` / `reject_x_only` 变成 valid：优先查 residual threshold 或 `normal/plane_d` 字段解释。
+- 如果 `invalid_flag_only` 变成 valid：优先查 `ObsCellFloat64.flags` packing/offset。
+- 如果 x/z reject 表现不同：优先查 `normal_x/y/z` 字段顺序或 HLS packing。
+- 如果五个 probes 全 PASS：回头复核 Stage 41 fixture 构造和 expected recompute。

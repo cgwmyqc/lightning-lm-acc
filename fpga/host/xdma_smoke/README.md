@@ -90,6 +90,24 @@ This gate must print `HLS_MANIFEST_START_PASS`, `HLS_MANIFEST_DONE_PASS`, and
 `HLS_MANIFEST_NUMERIC_PASS`. A failure here points to HLS active-map or obs-cell
 ABI/stride interpretation rather than the real golden dataset.
 
+If Stage 41 shows that the miss path works but a residual reject is counted as
+valid, run the Stage 42 single-point residual probes:
+
+```bash
+python3 fpga/host/xdma_smoke/make_residual_probe_host_images.py --out-dir fpga/vivado/.build/host_residual_probe --report-dir reports/fpga/host/xdma_smoke/residual_probe
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --ddr-smoke
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_residual_probe/valid_only/manifest.json --ctrl-base 0x1000 --dump-normal-equation
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_residual_probe/reject_z_only/manifest.json --ctrl-base 0x1000 --dump-normal-equation
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_residual_probe/reject_x_only/manifest.json --ctrl-base 0x1000 --dump-normal-equation
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_residual_probe/miss_only/manifest.json --ctrl-base 0x1000 --dump-normal-equation
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_residual_probe/invalid_flag_only/manifest.json --ctrl-base 0x1000 --dump-normal-equation
+```
+
+The expected counts are `1/0/0`, `0/1/0`, `0/1/0`, `0/0/1`, and `0/0/1`
+respectively. These probes isolate residual threshold behavior from
+`ObsCellFloat64` field packing and flag reads.
+
 For the XDMA-only diagnostic bitstream, use the smaller diagnostic smoke instead
 of the full `slam_accel_ctrl` smoke:
 

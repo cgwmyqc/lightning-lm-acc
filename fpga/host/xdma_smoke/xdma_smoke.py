@@ -246,6 +246,12 @@ def print_normal_equation_summary(prefix, value):
     print(f"{prefix}_RESIDUAL_MAX_ABS={value['residual_max_abs']:.17g}")
 
 
+def print_normal_equation_dump(prefix, value):
+    print_normal_equation_summary(prefix, value)
+    print(f"{prefix}_H_UPPER=[" + ",".join(f"{item:.17g}" for item in value["h_upper"]) + "]")
+    print(f"{prefix}_B=[" + ",".join(f"{item:.17g}" for item in value["b"]) + "]")
+
+
 def write_manifest_with_fd(h2c, manifest, base_dir):
     for segment in manifest["segments"]:
         payload = (base_dir / segment["file"]).read_bytes()
@@ -265,7 +271,7 @@ def configure_hls_tiny_registers(user_fd, ctrl_base, scan_count):
     write32(user_fd, ctrl_base + CTRL_SCAN_COUNT, scan_count)
 
 
-def hls_manifest(user_path, h2c_path, c2h_path, manifest_path, ctrl_base, timeout_sec, label):
+def hls_manifest(user_path, h2c_path, c2h_path, manifest_path, ctrl_base, timeout_sec, label, dump_normal_equation):
     manifest_file = Path(manifest_path)
     manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
     expected = manifest["expected"]
@@ -318,12 +324,18 @@ def hls_manifest(user_path, h2c_path, c2h_path, manifest_path, ctrl_base, timeou
         try:
             worst_name, worst_abs, worst_rel = compare_normal_equation(actual, expected)
         except RuntimeError:
-            print_normal_equation_summary("EXPECTED", expected)
-            print_normal_equation_summary("ACTUAL", actual)
+            if dump_normal_equation:
+                print_normal_equation_dump("EXPECTED", expected)
+                print_normal_equation_dump("ACTUAL", actual)
+            else:
+                print_normal_equation_summary("EXPECTED", expected)
+                print_normal_equation_summary("ACTUAL", actual)
             raise
         print(f"HLS_{label}_NUMERIC_PASS")
         if is_tiny:
             print("HLS_TINY_NUMERIC_PASS")
+        if dump_normal_equation:
+            print_normal_equation_dump("ACTUAL", actual)
         print(
             "COUNTS="
             f"{actual['valid_count']}/{actual['reject_count']}/{actual['miss_count']} "
@@ -367,6 +379,7 @@ def main():
     parser.add_argument("--hls-manifest", default="", help="Write, start, and verify an HLS transaction manifest")
     parser.add_argument("--hls-tiny", default="", help="Write, start, and verify a tiny synthetic HLS transaction")
     parser.add_argument("--hls-timeout-sec", type=float, default=5.0)
+    parser.add_argument("--dump-normal-equation", action="store_true", help="Print H_upper and b after HLS readback")
     parser.add_argument("--start-zero", action="store_true", help="Optionally issue a zero-point accelerator start")
     args = parser.parse_args()
 
@@ -386,9 +399,27 @@ def main():
     if args.write_image:
         write_manifest(args.h2c, args.write_image)
     if args.hls_manifest:
-        hls_manifest(args.user, args.h2c, args.c2h, args.hls_manifest, args.ctrl_base, args.hls_timeout_sec, "MANIFEST")
+        hls_manifest(
+            args.user,
+            args.h2c,
+            args.c2h,
+            args.hls_manifest,
+            args.ctrl_base,
+            args.hls_timeout_sec,
+            "MANIFEST",
+            args.dump_normal_equation,
+        )
     if args.hls_tiny:
-        hls_manifest(args.user, args.h2c, args.c2h, args.hls_tiny, args.ctrl_base, args.hls_timeout_sec, "TINY")
+        hls_manifest(
+            args.user,
+            args.h2c,
+            args.c2h,
+            args.hls_tiny,
+            args.ctrl_base,
+            args.hls_timeout_sec,
+            "TINY",
+            args.dump_normal_equation,
+        )
     if args.start_zero:
         start_zero(args.user, args.ctrl_base)
 
