@@ -254,11 +254,12 @@ def configure_hls_tiny_registers(user_fd, ctrl_base, scan_count):
     write32(user_fd, ctrl_base + CTRL_SCAN_COUNT, scan_count)
 
 
-def hls_tiny(user_path, h2c_path, c2h_path, manifest_path, ctrl_base, timeout_sec):
+def hls_manifest(user_path, h2c_path, c2h_path, manifest_path, ctrl_base, timeout_sec, label):
     manifest_file = Path(manifest_path)
     manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
     expected = manifest["expected"]
     scan_count = int(manifest["scan_count"])
+    is_tiny = label == "TINY"
 
     user = h2c = c2h = None
     try:
@@ -270,7 +271,9 @@ def hls_tiny(user_path, h2c_path, c2h_path, manifest_path, ctrl_base, timeout_se
 
         run_count_before = read32(user, ctrl_base + CTRL_RUN_COUNT)
         write32(user, ctrl_base + CTRL_CONTROL, 0x1)
-        print("HLS_TINY_START_PASS")
+        print(f"HLS_{label}_START_PASS")
+        if is_tiny:
+            print("HLS_TINY_START_PASS")
         print(f"CTRL_BASE=0x{ctrl_base:08x} SCAN_COUNT={scan_count} RUN_COUNT_BEFORE={run_count_before}")
 
         deadline = time.monotonic() + timeout_sec
@@ -280,27 +283,31 @@ def hls_tiny(user_path, h2c_path, c2h_path, manifest_path, ctrl_base, timeout_se
             last_status = read32(user, ctrl_base + CTRL_STATUS)
             last_error = read32(user, ctrl_base + CTRL_ERROR)
             if last_status & STATUS_ERROR or last_error != 0:
-                raise RuntimeError(f"HLS tiny entered error: STATUS=0x{last_status:08x} ERROR=0x{last_error:08x}")
+                raise RuntimeError(f"HLS {label.lower()} entered error: STATUS=0x{last_status:08x} ERROR=0x{last_error:08x}")
             if last_status & STATUS_DONE:
                 break
             time.sleep(0.001)
         else:
             run_count_timeout = read32(user, ctrl_base + CTRL_RUN_COUNT)
             raise RuntimeError(
-                "HLS tiny timeout: "
+                f"HLS {label.lower()} timeout: "
                 f"STATUS=0x{last_status:08x} ERROR=0x{last_error:08x} RUN_COUNT={run_count_timeout}"
             )
 
         run_count_after = read32(user, ctrl_base + CTRL_RUN_COUNT)
         if run_count_after <= run_count_before:
             raise RuntimeError(f"RUN_COUNT did not increment: before={run_count_before} after={run_count_after}")
-        print("HLS_TINY_DONE_PASS")
+        print(f"HLS_{label}_DONE_PASS")
+        if is_tiny:
+            print("HLS_TINY_DONE_PASS")
         print(f"STATUS=0x{last_status:08x} ERROR=0x{last_error:08x} RUN_COUNT_AFTER={run_count_after}")
 
         output = os.pread(c2h, NORMAL_EQUATION_BYTES, OUTPUT_BASE)
         actual = parse_normal_equation(output)
         worst_name, worst_abs, worst_rel = compare_normal_equation(actual, expected)
-        print("HLS_TINY_NUMERIC_PASS")
+        print(f"HLS_{label}_NUMERIC_PASS")
+        if is_tiny:
+            print("HLS_TINY_NUMERIC_PASS")
         print(
             "COUNTS="
             f"{actual['valid_count']}/{actual['reject_count']}/{actual['miss_count']} "
@@ -341,15 +348,18 @@ def main():
     parser.add_argument("--reg-smoke", action="store_true", help="Run AXI-Lite VERSION/config write-read smoke")
     parser.add_argument("--ddr-smoke", action="store_true", help="Run PL DDR pattern write/read smoke")
     parser.add_argument("--write-image", default="", help="Write a generated host image manifest through H2C")
+    parser.add_argument("--hls-manifest", default="", help="Write, start, and verify an HLS transaction manifest")
     parser.add_argument("--hls-tiny", default="", help="Write, start, and verify a tiny synthetic HLS transaction")
     parser.add_argument("--hls-timeout-sec", type=float, default=5.0)
     parser.add_argument("--start-zero", action="store_true", help="Optionally issue a zero-point accelerator start")
     args = parser.parse_args()
 
     validate_layout()
-    if not any([args.shim_smoke, args.reg_smoke, args.ddr_smoke, args.write_image, args.hls_tiny, args.start_zero]):
+    if not any(
+        [args.shim_smoke, args.reg_smoke, args.ddr_smoke, args.write_image, args.hls_manifest, args.hls_tiny, args.start_zero]
+    ):
         parser.error(
-            "select at least one action: --shim-smoke, --reg-smoke, --ddr-smoke, --write-image, --hls-tiny, or --start-zero"
+            "select at least one action: --shim-smoke, --reg-smoke, --ddr-smoke, --write-image, --hls-manifest, --hls-tiny, or --start-zero"
         )
     if args.shim_smoke:
         shim_smoke(args.user)
@@ -359,8 +369,10 @@ def main():
         ddr_smoke(args.h2c, args.c2h, args.ddr_size)
     if args.write_image:
         write_manifest(args.h2c, args.write_image)
+    if args.hls_manifest:
+        hls_manifest(args.user, args.h2c, args.c2h, args.hls_manifest, args.ctrl_base, args.hls_timeout_sec, "MANIFEST")
     if args.hls_tiny:
-        hls_tiny(args.user, args.h2c, args.c2h, args.hls_tiny, args.ctrl_base, args.hls_timeout_sec)
+        hls_manifest(args.user, args.h2c, args.c2h, args.hls_tiny, args.ctrl_base, args.hls_timeout_sec, "TINY")
     if args.start_zero:
         start_zero(args.user, args.ctrl_base)
 

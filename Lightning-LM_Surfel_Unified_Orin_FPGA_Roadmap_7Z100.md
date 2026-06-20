@@ -2633,3 +2633,59 @@ WORST_FIELD=b[2] MAX_ABS=2.98023e-09 MAX_REL=5.96046e-08
 ```
 
 结论：正式 `azmig_wrapper.bit` 已完成第一笔真实 HLS IP host transaction。XDMA、BAR shim、`slam_accel_ctrl@0x1000`、PL DDR3 buffer layout、HLS `ap_start/ap_done`、HLS AXI master 到 MIG 路径，以及 tiny synthetic normal-equation 数值对齐均已通过。
+
+---
+
+## 40. 2026-06-20 Golden frame_000001 n64 Host Transaction 准备
+
+### 当前变更
+- 新增 `fpga/host/xdma_smoke/make_golden_host_image.py`。
+- 输入固定为 `fpga/golden/localization/frame_000001`，第一版使用 `--max-points 64`，不直接跑 full frame。
+- 输出固定为 `fpga/vivado/.build/host_golden_frame_000001_n64/manifest.json`。
+- 生成器把 golden ABI 拆到当前 PL DDR3 layout：`scan_points`、`pose`、`map_header`、`active_blocks`、`obs_cells`、`output_zero`。
+- `MaxPoints=64` 时重新计算 expected normal equation，并在 manifest 写入完整 expected：`h_upper[21]`、`b[6]`、`valid/reject/miss`、`flags`、residual summary。
+- `xdma_smoke.py` 新增通用 `--hls-manifest <manifest.json>`；`--hls-tiny` 保留为兼容入口。
+
+### Windows 静态验证结果
+```powershell
+python fpga\host\xdma_smoke\make_golden_host_image.py --golden-dir fpga\golden\localization\frame_000001 --max-points 64 --out-dir fpga\vivado\.build\host_golden_frame_000001_n64 --report-dir reports\fpga\host\xdma_smoke\golden_frame_000001_n64
+python -m py_compile fpga\host\xdma_smoke\address_map.py fpga\host\xdma_smoke\make_golden_host_image.py fpga\host\xdma_smoke\xdma_smoke.py
+python fpga\host\xdma_smoke\xdma_smoke.py --help
+```
+
+- golden host image 生成：PASS，marker 为 `HOST_GOLDEN_IMAGE_PASS`。
+- Python compile：PASS。
+- `xdma_smoke.py --help`：PASS，已显示 `--hls-manifest` 和 `--hls-tiny`。
+- full scan count：6963。
+- n64 scan count：64。
+- active blocks：3719。
+- obs cells：952064。
+- `scan_points.bin`：1024 bytes。
+- `active_blocks.bin`：119008 bytes。
+- `obs_cells.bin`：60932096 bytes。
+- expected counts：`14/33/17`。
+- expected residual sum：`0.87436966027431406`。
+- 生成报告：`reports/fpga/host/xdma_smoke/golden_frame_000001_n64/golden_host_image.md`。
+
+### Orin 下一步 gate
+```bash
+python3 fpga/host/xdma_smoke/make_golden_host_image.py --golden-dir fpga/golden/localization/frame_000001 --max-points 64 --out-dir fpga/vivado/.build/host_golden_frame_000001_n64 --report-dir reports/fpga/host/xdma_smoke/golden_frame_000001_n64
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --ddr-smoke
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_golden_frame_000001_n64/manifest.json --ctrl-base 0x1000
+```
+
+PASS marker：
+```text
+HOST_GOLDEN_IMAGE_PASS
+HLS_MANIFEST_START_PASS
+HLS_MANIFEST_DONE_PASS
+HLS_MANIFEST_NUMERIC_PASS
+```
+
+### 风险与后续
+- 本阶段不重新生成 bitstream，不改 Vivado BD，不处理 PCIe Gen2 x1 性能风险。
+- 如果 timeout：优先查更多点数下 HLS AXI master 到 MIG 的 arbitration/address path，并记录 `STATUS/ERROR/RUN_COUNT`。
+- 如果 done 但 counts 不一致：优先查 `MaxPoints=64` scan slicing、active map 拆分、mode/header ABI。
+- 如果 counts 一致但 `H/b` 失败：优先查 double endian、output field direct address、expected recompute 逻辑。
+- 如果 n64 PASS：下一步跑 full `frame_000001` host transaction；full PASS 后再进入 PCIe Gen2 x4 链路修正和性能阶段。

@@ -67,6 +67,16 @@ sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-tiny fpga/vivado/.build/ho
 The HLS tiny gate must print `HLS_TINY_START_PASS`,
 `HLS_TINY_DONE_PASS`, and `HLS_TINY_NUMERIC_PASS`.
 
+After tiny synthetic passes, run the bounded real golden frame gate:
+
+```bash
+python3 fpga/host/xdma_smoke/make_golden_host_image.py --golden-dir fpga/golden/localization/frame_000001 --max-points 64 --out-dir fpga/vivado/.build/host_golden_frame_000001_n64 --report-dir reports/fpga/host/xdma_smoke/golden_frame_000001_n64
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_golden_frame_000001_n64/manifest.json --ctrl-base 0x1000
+```
+
+The bounded golden gate must print `HLS_MANIFEST_START_PASS`,
+`HLS_MANIFEST_DONE_PASS`, and `HLS_MANIFEST_NUMERIC_PASS`.
+
 For the XDMA-only diagnostic bitstream, use the smaller diagnostic smoke instead
 of the full `slam_accel_ctrl` smoke:
 
