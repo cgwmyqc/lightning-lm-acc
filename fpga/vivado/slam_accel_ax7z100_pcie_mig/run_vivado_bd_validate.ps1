@@ -68,7 +68,9 @@ New-Item -ItemType Directory -Force -Path $ReportDir | Out-Null
 foreach ($Item in @(
     @{ Source = $Log; Target = "vivado_bd_validate_log.txt" },
     @{ Source = $Journal; Target = "vivado_bd_validate_jou.txt" },
-    @{ Source = (Join-Path $ProjectDir "ax7z100_pcie_mig_ip_status.rpt"); Target = "ax7z100_pcie_mig_ip_status.txt" }
+    @{ Source = (Join-Path $ProjectDir "ax7z100_pcie_mig_ip_status.rpt"); Target = "ax7z100_pcie_mig_ip_status.txt" },
+    @{ Source = (Join-Path $ProjectDir "ax7z100_pcie_mig_xdma_bd_properties.rpt"); Target = "ax7z100_pcie_mig_xdma_bd_properties.txt" },
+    @{ Source = (Join-Path $ProjectDir "ax7z100_pcie_mig_xdma_ip_properties.rpt"); Target = "ax7z100_pcie_mig_xdma_ip_properties.txt" }
 )) {
     if (Test-Path $Item.Source) {
         Copy-Item -Force $Item.Source (Join-Path $ReportDir $Item.Target)

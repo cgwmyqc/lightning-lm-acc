@@ -2032,3 +2032,133 @@ python3 fpga/host/xdma_smoke/xdma_smoke.py --reg-smoke --ddr-smoke
 ```
 
 如果完整 `azmig_wrapper.bit` 仍无法创建 `/dev/xdma0_*`，下一阶段按变量拆分：先保持 X4 lane reversal，逐项隔离 `128-bit AXI`、MIG、`slam_accel_ctrl`、HLS IP。
+
+---
+
+## 30. 2026-06-20 XDMA 诊断 PASS 但正式 azmig 无 `/dev/xdma*` 的分层恢复路线
+
+### 当前结论
+- `xdma_config_bar_diag` 已经在 Orin 侧 PASS，说明以下链路可工作：
+  - Orin PCIe root complex
+  - Xilinx XDMA Linux driver
+  - device id `10ee:7024`
+  - AX7Z100 `Gen2 X4 + enable_lane_reversal=true`
+  - XDMA config BAR 基础访问路径
+  - `/dev/xdma0_user`、`/dev/xdma0_h2c_0`、`/dev/xdma0_c2h_0` 创建设备节点
+- 正式 `azmig_wrapper.bit` 仍然表现为：
+  - `lspci` 能看到 `0005:01:00.0 [10ee:7024]`
+  - 没有 `/dev/xdma*`
+  - xdma driver probe 失败，仍按 `Failed to detect XDMA config BAR + CmpltTO` 处理
+- 因此当前问题不再归因于 Orin driver 安装、PCIe 线缆、lane reversal 或基础 XDMA config BAR，而应归因于正式 Vivado BD 内部差异。
+
+### 已知差异
+`xdma_config_bar_diag`：
+- XDMA 4.1 Basic mode，`Gen2 X4 + enable_lane_reversal=true`
+- `CONFIG.axi_data_width = 64_bit`
+- `CONFIG.axisten_freq = 250`
+- `M_AXI_LITE -> diag_axi_lite_regs`
+- `M_AXI -> AXI BRAM Controller + BRAM`
+- 不接 MIG、不接 HLS、不接 `slam_accel_ctrl`
+- implementation timing clean，WNS 为正
+- Orin `/dev/xdma0_*` PASS
+
+正式 `azmig_wrapper.bit`：
+- XDMA 4.1 Basic mode，`Gen2 X4 + enable_lane_reversal=true`
+- `CONFIG.axi_data_width = 128_bit`
+- `CONFIG.axisten_freq = 125`
+- `M_AXI_LITE -> slam_accel_ctrl`
+- `M_AXI -> AXI interconnect -> MIG`
+- HLS `unified_surfel_observation_core` 也接入 AXI memory fabric
+- implementation timing 未收敛，存在 `Timing 38-282`
+- Orin `/dev/xdma0_*` FAIL
+
+### 当前最高优先级怀疑点
+1. `slam_accel_ctrl` / AXI-Lite wrapper / reset / timing 导致 user BAR 读访问 completion timeout。
+2. 正式工程 timing 未收敛，影响 XDMA BAR 或 user BAR 响应。
+3. `128-bit + 125 MHz` XDMA 配置与当前板级实现组合不稳定。
+4. MIG/HLS/AXI interconnect 引入跨时钟、复位或 back-pressure 问题。
+5. 正式工程 XDMA generated IP 属性未与诊断工程的 BAR/MSI 配置完全对齐。
+
+注意：Linux XDMA driver probe 会扫描并访问 BAR；如果某个 BAR 后面的 AXI-Lite slave 不响应，也可能表现为 `Failed to detect XDMA config BAR + CmpltTO`，因此不能只检查 XDMA IP 静态参数。
+
+### 本次仓库更新
+- 正式 `azmig` Vivado flow 已补齐 XDMA property report：
+  - `ax7z100_pcie_mig_xdma_bd_properties.rpt`
+  - `ax7z100_pcie_mig_xdma_ip_properties.rpt`
+- 三个入口脚本都会把上述报告复制到 `reports/fpga/vivado/slam_accel_ax7z100_pcie_mig/`：
+  - `run_vivado_bd_validate.ps1`
+  - `run_vivado_project_synth.ps1`
+  - `run_vivado_impl_bitstream.ps1`
+- Windows 侧下一轮必须先对比正式工程和 `xdma_config_bar_diag` 的 XDMA property report，再继续改 BD。
+
+### Windows 侧分层恢复路线
+不要直接继续改完整 `azmig_wrapper.bit`。按下面顺序生成和验证分层 bitstream，每层都必须记录 bitstream 路径、XDMA property diff、timing、Orin `/dev/xdma*` gate 结果。
+
+Step 0：冻结 golden board image
+- 保留 `xdma_config_bar_diag` 作为唯一已证明 Orin `/dev/xdma*` PASS 的板级基准。
+- 每次修改正式工程后，都与该工程的 XDMA property report 做 diff。
+
+Step 1：`azmig_xdma64_diagregs_bram`
+- 使用正式 azmig 工程框架。
+- 保持诊断工程已验证组合：`64_bit + 250 MHz`。
+- `M_AXI_LITE -> diag_axi_lite_regs`。
+- `M_AXI -> AXI BRAM Controller + BRAM`。
+- 不接 MIG、不接 HLS、不接 `slam_accel_ctrl`。
+- 目标：确认从 diag 工程迁移到 azmig 工程框架后仍能创建 `/dev/xdma*`。
+
+Step 2：`azmig_xdma64_ctrl_bram`
+- 保持 `64_bit + 250 MHz`。
+- `M_AXI_LITE` 从 `diag_axi_lite_regs` 换成 `slam_accel_ctrl`。
+- `M_AXI` 仍接 BRAM。
+- 不接 MIG、不接 HLS。
+- 若该层失败，优先修 `slam_accel_ctrl`、AXI-Lite wrapper、reset 和 timing。
+
+Step 3：`azmig_xdma128_ctrl_bram`
+- 切到正式目标 `128_bit + 125 MHz`。
+- `M_AXI_LITE -> slam_accel_ctrl`。
+- `M_AXI -> BRAM`。
+- 不接 MIG、不接 HLS。
+- 若该层失败，优先定位 XDMA width/frequency 组合、时序和 BAR 响应。
+
+Step 4：`azmig_xdma128_ctrl_mig`
+- 保持 `128_bit + 125 MHz`。
+- 加回 MIG 和 interconnect。
+- 暂不接 HLS IP。
+- 通过后运行 `xdma_smoke.py --reg-smoke --ddr-smoke`。
+
+Step 5：完整 HLS 集成
+- 加回 `unified_surfel_observation_core`。
+- HLS 先保持 idle，只做 register smoke。
+- 再写入 tiny synthetic image。
+- 最后启动 HLS core。
+
+### Orin 侧每层 gate
+每个 bitstream JTAG 下载后，Orin 侧执行：
+
+```bash
+lspci -nnk -s 0005:01:00.0
+ls -l /dev/xdma*
+journalctl -k --no-pager | grep -Ei 'xdma|10ee|7024|0005:01:00|CmpltTO|BAR|probe|AER|link' | tail -n 120
+```
+
+通过标准：
+- `Kernel driver in use: xdma`
+- `/dev/xdma0_user` 存在
+- `/dev/xdma0_h2c_0` 存在
+- `/dev/xdma0_c2h_0` 存在
+- 不出现 `Failed to detect XDMA config BAR`
+- 不出现新的 `CmpltTO`
+
+快速换 bitstream 时可以先尝试：
+
+```bash
+sudo sh -c 'echo 1 > /sys/bus/pci/devices/0005:01:00.0/remove'
+sudo sh -c 'echo 1 > /sys/bus/pci/rescan'
+```
+
+但凡修改 XDMA BAR、lane、width/frequency、MSI/MSI-X 或 PCIe 配置，可靠验收仍建议保持 FPGA 已配置后重启 Orin。
+
+### 阶段性规则
+- 在 `/dev/xdma*` 稳定出现前，不进入 HLS 功能验证和在线 SLAM 联调。
+- timing 未收敛的 bitstream 只允许用于 bring-up，不允许作为 accelerator 功能正确性证明。
+- 若某一层失败，不继续加下一层模块；先用 Orin journal 和 Windows timing/property diff 锁定该层新增变量。

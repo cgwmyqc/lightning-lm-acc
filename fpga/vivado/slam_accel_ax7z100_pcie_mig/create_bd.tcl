@@ -262,6 +262,12 @@ set_property top ${design_name}_wrapper [current_fileset]
 update_compile_order -fileset sources_1
 
 report_ip_status -file [file join $project_dir "ax7z100_pcie_mig_ip_status.rpt"]
+report_property -file [file join $project_dir "ax7z100_pcie_mig_xdma_bd_properties.rpt"] $xdma_0
+
+set xdma_ips [get_ips -quiet *xdma*]
+if {[llength $xdma_ips] > 0} {
+    report_property -file [file join $project_dir "ax7z100_pcie_mig_xdma_ip_properties.rpt"] [lindex $xdma_ips 0]
+}
 
 set external_hls_axi [get_bd_intf_ports -quiet *m_axi_gmem*]
 if {[llength $external_hls_axi] != 0} {

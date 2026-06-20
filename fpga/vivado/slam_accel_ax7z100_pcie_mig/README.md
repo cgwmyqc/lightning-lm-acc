@@ -121,6 +121,12 @@ python fpga\host\xdma_smoke\xdma_smoke.py --help
 python fpga\host\xdma_smoke\make_tiny_synthetic_host_image.py --out-dir fpga\vivado\.build\host_synthetic_tiny --report-dir reports\fpga\host\xdma_smoke\tiny_synthetic
 ```
 
+The Vivado flow also exports XDMA property reports for comparison with
+`xdma_config_bar_diag`:
+
+- `reports/fpga/vivado/slam_accel_ax7z100_pcie_mig/ax7z100_pcie_mig_xdma_bd_properties*.txt`
+- `reports/fpga/vivado/slam_accel_ax7z100_pcie_mig/ax7z100_pcie_mig_xdma_ip_properties*.txt`
+
 ## Windows JTAG Programming
 
 Vivado HLS is not used to program the board. HLS only exports
@@ -133,6 +139,11 @@ powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_m
 
 After programming, the first Orin-side gate is XDMA register and PL DDR3 memory
 smoke, not full SLAM.
+
+If `xdma_config_bar_diag` creates `/dev/xdma0_*` but this full image does not,
+do not continue modifying the full design directly. Restore the board design in
+layers: `xdma64 + diag_regs + BRAM`, then `xdma64 + slam_accel_ctrl + BRAM`,
+then `xdma128 + slam_accel_ctrl + BRAM`, then add MIG, and only then add HLS.
 
 The default generated project directories are:
 

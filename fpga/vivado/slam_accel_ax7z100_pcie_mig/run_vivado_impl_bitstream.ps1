@@ -85,6 +85,8 @@ foreach ($Item in @(
     @{ Source = (Join-Path $ProjectDir "azmig.runs\synth_1\runme.log"); Target = "vivado_impl_synth_runme_log.txt" },
     @{ Source = (Join-Path $ProjectDir "azmig.runs\impl_1\runme.log"); Target = "vivado_impl_runme_log.txt" },
     @{ Source = (Join-Path $ProjectDir "ax7z100_pcie_mig_ip_status.rpt"); Target = "ax7z100_pcie_mig_ip_status_impl.txt" },
+    @{ Source = (Join-Path $ProjectDir "ax7z100_pcie_mig_xdma_bd_properties.rpt"); Target = "ax7z100_pcie_mig_xdma_bd_properties_impl.txt" },
+    @{ Source = (Join-Path $ProjectDir "ax7z100_pcie_mig_xdma_ip_properties.rpt"); Target = "ax7z100_pcie_mig_xdma_ip_properties_impl.txt" },
     @{ Source = (Join-Path $ProjectDir "ax7z100_pcie_mig_impl_util.rpt"); Target = "ax7z100_pcie_mig_impl_utilization.txt" },
     @{ Source = (Join-Path $ProjectDir "ax7z100_pcie_mig_impl_timing.rpt"); Target = "ax7z100_pcie_mig_impl_timing_summary.txt" },
     @{ Source = (Join-Path $ProjectDir "ax7z100_pcie_mig_impl_drc.rpt"); Target = "ax7z100_pcie_mig_impl_drc.txt" },
