@@ -19,7 +19,7 @@ if ([string]::IsNullOrWhiteSpace($ProjectDir)) {
     $ProjectDir = Join-Path $BuildRoot "azmig_impl"
 }
 if ([string]::IsNullOrWhiteSpace($HlsProjectDir)) {
-    $HlsProjectDir = Join-Path $env:TEMP "lightning_hls_unified_obs"
+    $HlsProjectDir = Join-Path $BuildRoot "hls_unified_obs"
 }
 if ([string]::IsNullOrWhiteSpace($ReferenceRoot)) {
     $ReferenceRoot = Resolve-Path (Join-Path $RepoRoot "..")
@@ -39,6 +39,10 @@ if (!(Test-Path $ComponentXml)) {
     & powershell -ExecutionPolicy Bypass -File $ExportScript -ProjectDir $HlsProjectDir -Part $Part -VivadoHls $VivadoHls
     if ($LASTEXITCODE -ne 0) {
         exit $LASTEXITCODE
+    }
+    if (!(Test-Path $ComponentXml)) {
+        Write-Error "HLS IP export did not produce component.xml: $ComponentXml"
+        exit 1
     }
 }
 

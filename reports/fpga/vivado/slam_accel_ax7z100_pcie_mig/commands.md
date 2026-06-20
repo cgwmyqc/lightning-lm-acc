@@ -83,6 +83,18 @@ Generated bitstream:
 fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit
 ```
 
+## HLS IP Export Path
+
+The board-level scripts now default the HLS IP export project to:
+
+```text
+fpga/vivado/.build/hls_unified_obs
+```
+
+The PowerShell wrapper uses the existing temporary short-drive mapping when
+invoking Vivado HLS, so the generated files remain under `fpga/vivado/.build/`
+while Vivado 2018.3 sees a short path such as `V:/hls_unified_obs`.
+
 ## Windows JTAG Programming Preparation
 
 Use `hw_server` + `xsdb` over JTAG for temporary programming. This is not Flash
@@ -251,3 +263,53 @@ Then run:
 ```bash
 python3 fpga/host/xdma_smoke/xdma_smoke.py --reg-smoke --ddr-smoke
 ```
+
+## XDMA BAR Convergence Run
+
+After the X4 XDMA-only diagnostic bitstream produced `/dev/xdma0_*` on Orin,
+the full `azmig` design was regenerated with only the manual MSI-X BAR
+indicator overrides removed from the source Tcl:
+
+```text
+Removed CONFIG.pf0_msix_cap_pba_bir {BAR_1}
+Removed CONFIG.pf0_msix_cap_table_bir {BAR_1}
+```
+
+Rerun:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_bd_validate.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_project_synth.ps1 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_impl_bitstream.ps1 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\program_bitstream_jtag.ps1 -Bitstream .\fpga\vivado\.build\azmig_impl\azmig.runs\impl_1\azmig_wrapper.bit
+```
+
+Observed result on 2026-06-20:
+
+```text
+BD_VALIDATE_PASS
+VIVADO_RUN_JOBS=18
+PROJECT_SYNTH_PASS
+SYNTH_1_STATUS=synth_design Complete!
+IMPL_1_STATUS=write_bitstream Complete!
+IMPLEMENTATION_BITSTREAM_PASS
+BITSTREAM_SIZE_BYTES=7638099
+JTAG_PROGRAM_PASS
+FPGA_STATE=FPGA is configured
+DONE PIN: 1
+```
+
+Timing remains unchanged:
+
+```text
+WNS=-0.234 ns
+TNS=-3.143 ns
+Setup failing endpoints=193
+WHS=0.038 ns
+THS=0.000 ns
+Hold failing endpoints=0
+```
+
+This image is the next full-design Orin bring-up candidate. Orin must now
+reboot while AX7Z100 stays powered/configured, then check whether
+`/dev/xdma0_*` is also created by the full MIG/HLS design.

@@ -1830,3 +1830,205 @@ dmesg 不再出现 Failed to detect XDMA config BAR
 - `Failed to detect XDMA config BAR` 消失。
 - 最小 AXI-Lite scratch register 可读写。
 - 完成最小 XDMA-only 验证后，再回到 SLAM/HLS/MIG 集成。
+
+---
+
+## 27. 2026-06-20 XDMA Config BAR 最小诊断工程
+
+### 当前阶段状态
+- 已新增最小 XDMA-only 诊断工程：`fpga/vivado/xdma_config_bar_diag/`。
+- 目标是隔离 Orin 侧 `xdma:map_bars: Failed to detect XDMA config BAR`，不再把 HLS、MIG、`slam_accel_ctrl` 和 DDR fabric 混入第一轮 driver probe 定位。
+- 当前完整 `slam_accel_ax7z100_pcie_mig` 工程保持不破坏；诊断通过后再逐项加回 X4、128-bit AXI、MIG、`slam_accel_ctrl` 和 HLS IP。
+
+### 变更摘要
+- 新增 `diag_axi_lite_regs.v`：最小 AXI-Lite scratch/version register block，挂到 XDMA `M_AXI_LITE`。
+- 新增 `create_bd.tcl`：只实例化 XDMA 4.1、AXI-Lite register block、AXI BRAM Controller 和 BRAM。
+- 诊断 XDMA 配置向 7Z015 可用形态收敛：
+  - `mode_selection=Basic`
+  - `pf0_device_id=7024`
+  - `axilite_master_en=true`
+  - `enable_lane_reversal=true`
+  - `pl_link_cap_max_link_width=X4`
+  - `axi_data_width=64_bit`
+  - 不设置手工 `pf0_msix_cap_table_bir/pba_bir` 覆盖，避免沿用完整工程里的 `BAR_1` override
+- 新增 PowerShell/Tcl 入口：
+  - `run_vivado_bd_validate.ps1`
+  - `run_vivado_project_synth.ps1`
+  - `run_vivado_impl_bitstream.ps1`
+  - `program_bitstream_jtag.ps1`
+- 新增报告目录：`reports/fpga/vivado/xdma_config_bar_diag/`。
+
+### 验证命令
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_config_bar_diag\run_vivado_bd_validate.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_config_bar_diag\run_vivado_project_synth.ps1 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_config_bar_diag\run_vivado_impl_bitstream.ps1 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_config_bar_diag\program_bitstream_jtag.ps1
+```
+
+默认 bitstream：
+
+```text
+fpga/vivado/.build/xdma_diag_impl/xdma_diag.runs/impl_1/xdma_diag_wrapper.bit
+```
+
+Orin 侧换 bitstream 后复测：
+
+```bash
+sudo reboot
+lspci -nnk -s 0005:01:00.0
+lspci -vvv -s 0005:01:00.0
+lsmod | grep -i xdma
+ls -l /dev/xdma*
+journalctl -k --no-pager | grep -Ei 'xdma|10ee|7024|0005:01:00|CmpltTO|BAR|probe'
+```
+
+### 当前验证结果
+- 脚本/RTL/report 文档：已准备。
+- BD validate：PASS；Vivado 2018.3 可创建 XDMA-only BD、生成 wrapper 和报告。
+- synthesis：PASS，`run_vivado_project_synth.ps1 -Jobs 18` 完成，日志含 `XDMA_CONFIG_BAR_DIAG_PROJECT_SYNTH_PASS`。
+- implementation/bitstream：PASS，`run_vivado_impl_bitstream.ps1 -Jobs 18` 完成，日志含 `XDMA_CONFIG_BAR_DIAG_IMPLEMENTATION_BITSTREAM_PASS`。
+- 生成 bitstream：`fpga/vivado/.build/xdma_diag_impl/xdma_diag.runs/impl_1/xdma_diag_wrapper.bit`，大小 3,450,035 bytes。
+- post-implementation timing：WNS 1.246 ns，TNS 0.000 ns，WHS 0.033 ns，setup/hold failing endpoints 均为 0。
+- post-bitgen/DRC：0 errors，0 critical warnings；DRC 24 warnings，主要是 XDMA/BRAM 相关 warning，未阻塞诊断 bitstream。
+- JTAG：PASS，`program_bitstream_jtag.ps1` 完成，`FPGA_STATE=FPGA is configured`，DONE PIN 为 1，`JTAG_PROGRAM_PASS`。
+- Orin `/dev/xdma*` retest：待运行。
+
+### 下一步
+- 先生成并下载 `xdma_config_bar_diag` bitstream。
+- 若 Orin 出现 `Kernel driver in use: xdma` 和 `/dev/xdma0_*`，说明当前完整工程的 XDMA BAR/config、X4/128-bit、MIG/HLS 接入之一触发 driver probe 不兼容；随后按“X4 -> 128-bit -> MIG -> slam_accel_ctrl/HLS”逐项恢复。
+- 若最小诊断 bitstream 仍然报 `Failed to detect XDMA config BAR`，下一步直接复刻 ALINX `33_PCIe_test` 或旧 7Z015 `ch06_xdma_test` 的 XDMA IP 参数，逐字段对比 generated `.xci`。
+
+---
+
+## 28. 2026-06-20 X1 诊断 Bitstream 不枚举后的修正
+
+### 当前阶段状态
+- X1 XDMA-only 诊断 bitstream 已完成 Windows 侧 BD validate、synthesis、implementation/bitstream 和 JTAG 下载。
+- Orin reboot 后 `lspci` 没有枚举出 FPGA endpoint，说明该结果不再是 XDMA Config BAR probe 阶段失败，而是 PCIe link/enumeration 没有建立。
+- 结合第 24 节 lane reversal 结论，当前最可疑原因是 AX7Z100 lane 物理反序下，X1 只启用 FPGA lane0，但 Orin/root lane0 实际可能接到 FPGA lane3，导致 X1 link training 失败。
+- 之前完整工程 `X4 + enable_lane_reversal=true` 已经能枚举 `10ee:7024`，因此诊断工程不再使用 X1 作为默认 bring-up 配置。
+
+### 变更摘要
+- 修改 `fpga/vivado/xdma_config_bar_diag/create_bd.tcl`：
+  - `CONFIG.pl_link_cap_max_link_width` 从 `X1` 改为 `X4`。
+  - 保持 `CONFIG.enable_lane_reversal {true}`。
+  - 保持 `CONFIG.axi_data_width {64_bit}`。
+  - `CONFIG.axisten_freq` 从 `125` 调整为 `250`，因为 Vivado XDMA 4.1 对 `X4 + 64-bit AXI` 组合要求 AXI target 频率为 250 MHz。
+  - 保持不接 MIG、不接 HLS、不接 `slam_accel_ctrl`。
+  - 保持不设置手工 MSI-X BAR indicator override。
+- 更新 `xdma_config_bar_diag` README 和 reports，记录 X1 失败现象和 X4 诊断方向。
+
+### 验证命令
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_config_bar_diag\run_vivado_bd_validate.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_config_bar_diag\run_vivado_project_synth.ps1 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_config_bar_diag\run_vivado_impl_bitstream.ps1 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_config_bar_diag\program_bitstream_jtag.ps1
+```
+
+### 当前验证结果
+- X4 诊断 BD validate：PASS；当前配置为 `Gen2 X4 + 64-bit AXI + 250 MHz AXI target + lane reversal`。
+- X4 诊断 synthesis：PASS，`run_vivado_project_synth.ps1 -Jobs 18` 完成，日志含 `XDMA_CONFIG_BAR_DIAG_PROJECT_SYNTH_PASS`。
+- X4 诊断 implementation/bitstream：PASS，`run_vivado_impl_bitstream.ps1 -Jobs 18` 完成，日志含 `XDMA_CONFIG_BAR_DIAG_IMPLEMENTATION_BITSTREAM_PASS`。
+- X4 诊断 bitstream：`fpga/vivado/.build/xdma_diag_impl/xdma_diag.runs/impl_1/xdma_diag_wrapper.bit`，大小 3,187,655 bytes。
+- X4 诊断 timing：WNS 0.290 ns，TNS 0.000 ns，WHS 0.030 ns，setup/hold failing endpoints 均为 0。
+- X4 诊断 DRC/bitgen：0 errors，0 critical warnings；DRC 24 warnings，未阻塞诊断 bitstream。
+- X4 诊断 JTAG：PASS，`program_bitstream_jtag.ps1` 完成，`FPGA_STATE=FPGA is configured`，DONE PIN 为 1，`JTAG_PROGRAM_PASS`。
+- Orin 枚举复测：PASS，已看到 `0005:01:00.0 Serial controller: Xilinx Corporation Device 7024`，并已出现 `/dev/xdma0_user`、`/dev/xdma0_h2c_0`、`/dev/xdma0_c2h_0`、`/dev/xdma0_control`、`/dev/xdma0_xvc` 和 `/dev/xdma0_events_*`。
+
+### 下一步
+- 重新生成并下载 X4 lane-reversal XDMA-only 诊断 bitstream。
+- 若 Orin 重新枚举 `10ee:7024`，继续观察是否仍进入 `Failed to detect XDMA config BAR`。
+- 若 Orin 出现 `/dev/xdma0_*`，说明 X4 诊断结构解决当前阻塞，再逐步恢复 128-bit AXI、MIG、`slam_accel_ctrl` 和 HLS。
+- 若 X4 诊断仍不枚举，先回刷之前能枚举的完整 `azmig_wrapper.bit` 做 control 复测，再判断是否存在板卡上电、Orin root port、JTAG 配置时序或 PERST#/refclk 问题。
+
+---
+
+## 29. 2026-06-20 XDMA 诊断 PASS 后回到完整 azmig_wrapper.bit
+
+### 当前结论
+- X4 XDMA-only 诊断 bitstream 已经在 Orin 侧通过枚举和 driver bind。
+- Orin 侧实测：
+  - `0005:01:00.0 Serial controller: Xilinx Corporation Device 7024`
+  - `/dev/xdma0_user`
+  - `/dev/xdma0_control`
+  - `/dev/xdma0_h2c_0`
+  - `/dev/xdma0_c2h_0`
+  - `/dev/xdma0_xvc`
+  - `/dev/xdma0_events_*`
+- 固化失败原因：前一版 X1 诊断 bitstream 在 AX7Z100 反序 x4 lane 布线下不适合作为 bring-up 默认配置；X1 只启用单 lane，可能没有接到 Orin/root complex 实际 lane0，因此 link training 失败。
+- 正确 bring-up 基线是 `Gen2 X4 + enable_lane_reversal=true`。
+
+### 本次变更
+- 新增 Orin 侧 XDMA-only 诊断 smoke 工具：
+  - `fpga/host/xdma_smoke/xdma_diag_smoke.py`
+  - 读取 `/dev/xdma0_user + 0x0`，期望 `0x58444d41`
+  - 读取 `/dev/xdma0_user + 0x4`，期望 `0x00010000`
+  - 写读 scratch `0x8/0xc`
+  - 通过 `/dev/xdma0_h2c_0` 和 `/dev/xdma0_c2h_0` 在 BRAM offset `0x0` 做 4KB pattern smoke
+- 完整 `slam_accel_ax7z100_pcie_mig` 工程第一轮只修改 XDMA BAR 配置：
+  - 保持 `X4 + enable_lane_reversal=true`
+  - 保持 `128-bit AXI + 125 MHz`
+  - 保持 MIG、HLS、`slam_accel_ctrl` 接法不变
+  - 移除 `pf0_msix_cap_table_bir/pba_bir {BAR_1}` 手工覆盖
+- HLS IP export 默认目录从异常 `%TEMP%` 路径改为 `fpga/vivado/.build/hls_unified_obs`，并通过临时短盘符传给 Vivado HLS，规避 Vivado 2018.3 Windows 深路径失败；生成物仍不纳入 git。
+
+### Orin 诊断 smoke 命令
+该命令只用于 XDMA-only 诊断 bitstream，不用于完整 `azmig_wrapper.bit`：
+
+```bash
+python3 fpga/host/xdma_smoke/xdma_diag_smoke.py --user-smoke --bram-smoke
+```
+
+### 完整 azmig 重新生成命令
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_bd_validate.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_project_synth.ps1 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_impl_bitstream.ps1 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\program_bitstream_jtag.ps1 -Bitstream .\fpga\vivado\.build\azmig_impl\azmig.runs\impl_1\azmig_wrapper.bit
+```
+
+### Windows 侧验证结果
+- HLS IP export：PASS，`component.xml` 生成于 `fpga/vivado/.build/hls_unified_obs/solution1/impl/ip/component.xml`；Vivado HLS 首次因 `core_revision` 超出 Vivado 2018.3 IP packager 范围失败，脚本已按既有逻辑改写本地 `run_ippack.tcl` revision 为 `1` 后重新 pack 成功。
+- BD validate：PASS，日志含 `BD_VALIDATE_PASS`。
+- Project synthesis：PASS，`-Jobs 18`，日志含 `PROJECT_SYNTH_PASS` 和 `SYNTH_1_STATUS=synth_design Complete!`。
+- Implementation + bitstream：PASS，`-Jobs 18`，日志含 `IMPL_1_STATUS=write_bitstream Complete!` 和 `IMPLEMENTATION_BITSTREAM_PASS`。
+- 新完整 bitstream：
+  - `fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit`
+  - size：7,638,099 bytes
+- JTAG 临时下载：PASS，日志含 `JTAG_PROGRAM_PASS`、`FPGA_STATE=FPGA is configured`、DONE PIN 为 1。
+- Post-implementation timing 仍未收敛：
+  - WNS：-0.234 ns
+  - TNS：-3.143 ns
+  - setup failing endpoints：193
+  - WHS：0.038 ns
+  - THS：0.000 ns
+  - hold failing endpoints：0
+- 结论：该镜像可用于 XDMA/full-design bring-up 验证，但 timing 未收敛前不作为可靠 accelerator 功能验证镜像。
+
+### 下一步验收
+完整 `azmig_wrapper.bit` JTAG 下载后，Orin 保持 AX7Z100 上电并 reboot，然后检查：
+
+```bash
+lspci -nn | grep -Ei '10ee|7024|xilinx'
+lspci -nnk -s 0005:01:00.0
+ls -l /dev/xdma0_user /dev/xdma0_h2c_0 /dev/xdma0_c2h_0
+journalctl -k --no-pager | grep -Ei 'xdma|10ee|7024|BAR|probe|0005:01:00'
+```
+
+通过标准：
+- `Kernel driver in use: xdma`
+- `/dev/xdma0_user`、`/dev/xdma0_h2c_0`、`/dev/xdma0_c2h_0` 均存在
+- 不再出现 `Failed to detect XDMA config BAR`
+
+通过后再运行完整工程 smoke：
+
+```bash
+python3 fpga/host/xdma_smoke/xdma_smoke.py --reg-smoke --ddr-smoke
+```
+
+如果完整 `azmig_wrapper.bit` 仍无法创建 `/dev/xdma0_*`，下一阶段按变量拆分：先保持 X4 lane reversal，逐项隔离 `128-bit AXI`、MIG、`slam_accel_ctrl`、HLS IP。

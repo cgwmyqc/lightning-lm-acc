@@ -163,8 +163,6 @@ set_property -dict [list \
     CONFIG.mode_selection {Basic} \
     CONFIG.pcie_id_if {false} \
     CONFIG.pf0_device_id {7024} \
-    CONFIG.pf0_msix_cap_pba_bir {BAR_1} \
-    CONFIG.pf0_msix_cap_table_bir {BAR_1} \
     CONFIG.pl_link_cap_max_link_speed {5.0_GT/s} \
     CONFIG.pl_link_cap_max_link_width {X4} \
     CONFIG.plltype {QPLL1} \

@@ -1,0 +1,2 @@
+BITSTREAM_PATH=F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\.build\xdma_diag_impl\xdma_diag.runs\impl_1\xdma_diag_wrapper.bit
+BITSTREAM_SIZE_BYTES=3187655

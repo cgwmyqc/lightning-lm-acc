@@ -46,6 +46,13 @@ After a bitstream is loaded and XDMA device nodes exist:
 python3 xdma_smoke.py --reg-smoke --ddr-smoke
 ```
 
+For the XDMA-only diagnostic bitstream, use the smaller diagnostic smoke instead
+of the full `slam_accel_ctrl` smoke:
+
+```bash
+python3 fpga/host/xdma_smoke/xdma_diag_smoke.py --user-smoke --bram-smoke
+```
+
 Optional start-only check:
 
 ```bash

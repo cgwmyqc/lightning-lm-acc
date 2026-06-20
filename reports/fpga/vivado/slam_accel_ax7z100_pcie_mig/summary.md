@@ -10,15 +10,24 @@
 - Bitstream generation: PASS
 - Windows JTAG programming script: uses `hw_server` + `xsdb`, because this Vivado 2018.3 batch install does not expose FPGA programming commands
 - Windows JTAG temporary programming: PASS
+- Full `azmig_wrapper.bit` regenerated after removing manual MSI-X BAR
+  overrides: PASS
+- Full `azmig_wrapper.bit` JTAG programming after BAR convergence: PASS
 - PCIe PERST#/MIG reset topology review: PASS
 - PCIe lane reversal schematic review and bring-up bitstream: PASS
 - Orin PCIe enumeration: PASS, observed `0005:01:00.0 Serial controller: Xilinx Device 7024`
-- XDMA Linux driver/device nodes: pending, `/dev/xdma*` not yet present on Orin
+- XDMA Linux driver/device nodes with the full `azmig_wrapper.bit`: pending
+- XDMA Linux driver/device nodes with the X4 XDMA-only diagnostic bitstream:
+  PASS, Orin observed `/dev/xdma0_user`, `/dev/xdma0_h2c_0`, and
+  `/dev/xdma0_c2h_0`
 
 ## Integrated Blocks
 
 - `xdma_0`: Vivado XDMA 4.1, Gen2 x4, 128-bit AXI, 125 MHz AXI target
 - `xdma_0`: lane reversal enabled for AX7Z100 carrier/core-board x4 lane order
+- `xdma_0`: manual MSI-X BAR indicator overrides were removed after the
+  diagnostic bitstream proved that the Linux XDMA driver can create
+  `/dev/xdma0_*` without those overrides
 - `mig_7series_0`: PL DDR3 MIG 7-series AXI interface
 - `unified_obs_0`: true HLS IP `unified_surfel_observation_core`
 - `ctrl_0`: `slam_accel_ctrl` through an AXI-Lite BD wrapper
@@ -52,6 +61,9 @@
 - `IMPLEMENTATION_BITSTREAM_PASS`
 - Bitstream: `fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit`
 - Bitstream size: 7,638,099 bytes
+- HLS IP export default path: `fpga/vivado/.build/hls_unified_obs`
+- HLS IP export uses temporary short-drive mapping to avoid Vivado 2018.3
+  Windows path-length failures
 - Bitgen flow: `0 Errors`, `1 Critical Warning`
 - Top-level external HLS `m_axi_gmem0..4`: none
 - Lane reversal generated-IP check: PASS, generated XDMA XCI has
@@ -108,9 +120,9 @@ bitstream until timing is closed.
 
 ## Next Step
 
-The lane-reversal bitstream has enumerated on Orin as `10ee:7024`. The next
-step is XDMA Linux driver bring-up on Orin: confirm BAR allocation with
-`lspci -vvv`, load or build the Xilinx XDMA driver, and get
-`/dev/xdma0_user`, `/dev/xdma0_h2c_0`, and `/dev/xdma0_c2h_0` created before
-running `xdma_smoke.py --reg-smoke --ddr-smoke`. Do not run full online SLAM as
-the first board test.
+The X4 XDMA-only diagnostic bitstream has enumerated on Orin and created
+`/dev/xdma0_*`. The next step is regenerating the full `azmig_wrapper.bit` with
+only the XDMA BAR override removed, then checking whether the full MIG/HLS
+design also creates `/dev/xdma0_user`, `/dev/xdma0_h2c_0`, and
+`/dev/xdma0_c2h_0`. If it does, run `xdma_smoke.py --reg-smoke --ddr-smoke`.
+Do not run full online SLAM as the first board test.

@@ -1,0 +1,564 @@
+#-----------------------------------------------------------
+# Vivado v2018.3 (64-bit)
+# SW Build 2405991 on Thu Dec  6 23:38:27 MST 2018
+# IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
+# Start of session at: Sat Jun 20 11:25:07 2026
+# Process ID: 39168
+# Current directory: F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc
+# Command line: vivado.exe -mode batch -source F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\xdma_config_bar_diag\run_project_synth.tcl -journal V:\xdma_diag_syn\vivado_project_synth.jou -log V:\xdma_diag_syn\vivado_project_synth.log -tclargs V:\xdma_diag_syn xc7z100ffg900-2 18
+# Log file: V:/xdma_diag_syn/vivado_project_synth.log
+# Journal file: V:\xdma_diag_syn\vivado_project_synth.jou
+#-----------------------------------------------------------
+CRITICAL WARNING: [Common 17-741] No write access right to the local Tcl store at 'C'. XilinxTclStore is reverted to the installation area. If you want to use local Tcl Store, please change the access right and relaunch Vivado.
+source {F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\xdma_config_bar_diag\run_project_synth.tcl}
+# set script_dir [file dirname [file normalize [info script]]]
+# set project_dir [file normalize [file join $script_dir ".." ".build" "xdma_diag_syn"]]
+# set target_part "xc7z100ffg900-2"
+# set jobs 18
+# set user_args $argv
+# if {[llength $user_args] >= 1 && [string length [lindex $user_args 0]] > 0} {
+#     set project_dir [file normalize [lindex $user_args 0]]
+# }
+# if {[llength $user_args] >= 2 && [string length [lindex $user_args 1]] > 0} {
+#     set target_part [lindex $user_args 1]
+# }
+# if {[llength $user_args] >= 3 && [string length [lindex $user_args 2]] > 0} {
+#     set jobs [lindex $user_args 2]
+# }
+# if {![string is integer -strict $jobs] || $jobs < 1} {
+#     error "Invalid jobs value: $jobs"
+# }
+# source [file join $script_dir "create_bd.tcl"]
+## set script_dir [file dirname [file normalize [info script]]]
+## set repo_root [file normalize [file join $script_dir ".." ".." ".."]]
+## set project_dir [file normalize [file join $script_dir ".." ".build" "xdma_diag_bd"]]
+## set target_part "xc7z100ffg900-2"
+## set design_name "xdma_diag"
+## set user_args $argv
+## if {[llength $user_args] >= 1 && [string length [lindex $user_args 0]] > 0} {
+##     set project_dir [file normalize [lindex $user_args 0]]
+## }
+## if {[llength $user_args] >= 2 && [string length [lindex $user_args 1]] > 0} {
+##     set target_part [lindex $user_args 1]
+## }
+## proc first_addr_seg {pattern} {
+##     set segs [get_bd_addr_segs -quiet $pattern]
+##     if {[llength $segs] == 0} {
+##         error "No address segment matches: $pattern"
+##     }
+##     return [lindex $segs 0]
+## }
+## proc first_addr_space {pattern} {
+##     set spaces [get_bd_addr_spaces -quiet $pattern]
+##     if {[llength $spaces] == 0} {
+##         error "No address space matches: $pattern"
+##     }
+##     return [lindex $spaces 0]
+## }
+## file mkdir $project_dir
+## cd $project_dir
+## create_project -force xdma_diag $project_dir -part $target_part
+## add_files -norecurse [file join $script_dir "diag_axi_lite_regs.v"]
+## add_files -fileset constrs_1 -norecurse [file join $script_dir "xdma_config_bar_diag.xdc"]
+## update_compile_order -fileset sources_1
+## create_bd_design $design_name
+Wrote  : <V:\xdma_diag_syn\xdma_diag.srcs\sources_1\bd\xdma_diag\xdma_diag.bd> 
+create_bd_design: Time (s): cpu = 00:00:05 ; elapsed = 00:00:07 . Memory (MB): peak = 365.891 ; gain = 39.953
+## set pcie_mgt [create_bd_intf_port -mode Master -vlnv xilinx.com:interface:pcie_7x_mgt_rtl:1.0 pcie_mgt]
+## set pcie_ref [create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:diff_clock_rtl:1.0 pcie_ref]
+## set_property CONFIG.FREQ_HZ {100000000} $pcie_ref
+## set pcie_rst_n [create_bd_port -dir I -type rst pcie_rst_n]
+## set_property CONFIG.POLARITY {ACTIVE_LOW} $pcie_rst_n
+## set util_ds_buf_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 util_ds_buf_0]
+## set_property CONFIG.C_BUF_TYPE {IBUFDSGTE} $util_ds_buf_0
+INFO: [Device 21-403] Loading part xc7z100ffg900-2
+xit::create_sub_core: Time (s): cpu = 00:00:07 ; elapsed = 00:00:09 . Memory (MB): peak = 786.254 ; gain = 334.836
+create_bd_cell: Time (s): cpu = 00:00:17 ; elapsed = 00:00:24 . Memory (MB): peak = 786.254 ; gain = 409.273
+## set xdma_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:xdma:4.1 xdma_0]
+## set_property -dict [list \
+##     CONFIG.axi_data_width {64_bit} \
+##     CONFIG.axilite_master_en {true} \
+##     CONFIG.axilite_master_scale {Kilobytes} \
+##     CONFIG.axilite_master_size {64} \
+##     CONFIG.axisten_freq {250} \
+##     CONFIG.enable_lane_reversal {true} \
+##     CONFIG.mode_selection {Basic} \
+##     CONFIG.pcie_id_if {false} \
+##     CONFIG.pf0_device_id {7024} \
+##     CONFIG.pl_link_cap_max_link_speed {5.0_GT/s} \
+##     CONFIG.pl_link_cap_max_link_width {X4} \
+##     CONFIG.plltype {QPLL1} \
+## ] $xdma_0
+INFO: [IP_Flow 19-5107] Inferred bus interface 's_axi' of definition 'xilinx.com:interface:aximm:1.0' (from Xilinx Repository).
+INFO: [IP_Flow 19-5107] Inferred bus interface 's_axi_aresetn' of definition 'xilinx.com:signal:reset:1.0' (from Xilinx Repository).
+INFO: [IP_Flow 19-5107] Inferred bus interface 's_axi_aclk' of definition 'xilinx.com:signal:clock:1.0' (from Xilinx Repository).
+INFO: [IP_Flow 19-4728] Bus Interface 's_axi_aresetn': Added interface parameter 'POLARITY' with value 'ACTIVE_LOW'.
+INFO: [IP_Flow 19-4728] Bus Interface 's_axi_aclk': Added interface parameter 'ASSOCIATED_BUSIF' with value 's_axi'.
+INFO: [IP_Flow 19-4728] Bus Interface 's_axi_aclk': Added interface parameter 'ASSOCIATED_RESET' with value 's_axi_aresetn'.
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1704] No user IP repositories specified
+## set diag_regs_0 [create_bd_cell -type module -reference diag_axi_lite_regs diag_regs_0]
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-2] xdma_diag_axi_bram_ctrl_0_0: In IP Integrator, please note that memory depth value gets calculated based on the Data Width of the IP and Address range selected in the Address Editor.Incase a validation error occured on the range of this parameter, please check if the selected Data width and the Address Range are valid. For valid Data width and memory depth values, please refer to the AXI BRAM Controller Product Guide.
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-1] xdma_diag_axi_bram_ctrl_0_0: In IP Integrator, The Maximum address range supported is 2G. Selecting the address range more than 2G in the address editor may resets the value of Memory depth to default value (1024). please refer to the AXI BRAM Controller Product Guide.
+## set axi_bram_ctrl_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_bram_ctrl:4.1 axi_bram_ctrl_0]
+## set_property -dict [list CONFIG.DATA_WIDTH {64} CONFIG.SINGLE_PORT_BRAM {1}] $axi_bram_ctrl_0
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-2] xdma_diag_axi_bram_ctrl_0_0: In IP Integrator, please note that memory depth value gets calculated based on the Data Width of the IP and Address range selected in the Address Editor.Incase a validation error occured on the range of this parameter, please check if the selected Data width and the Address Range are valid. For valid Data width and memory depth values, please refer to the AXI BRAM Controller Product Guide.
+INFO: [xilinx.com:ip:axi_bram_ctrl:4.1-1] xdma_diag_axi_bram_ctrl_0_0: In IP Integrator, The Maximum address range supported is 2G. Selecting the address range more than 2G in the address editor may resets the value of Memory depth to default value (1024). please refer to the AXI BRAM Controller Product Guide.
+## set axi_bram_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:blk_mem_gen:8.4 axi_bram_0]
+## connect_bd_intf_net [get_bd_intf_ports pcie_ref] [get_bd_intf_pins util_ds_buf_0/CLK_IN_D]
+## connect_bd_net [get_bd_pins util_ds_buf_0/IBUF_OUT] [get_bd_pins xdma_0/sys_clk]
+## connect_bd_net [get_bd_ports pcie_rst_n] [get_bd_pins xdma_0/sys_rst_n]
+## connect_bd_intf_net [get_bd_intf_ports pcie_mgt] [get_bd_intf_pins xdma_0/pcie_mgt]
+## connect_bd_net [get_bd_pins xdma_0/axi_aclk] \
+##     [get_bd_pins diag_regs_0/s_axi_aclk] \
+##     [get_bd_pins axi_bram_ctrl_0/s_axi_aclk]
+## connect_bd_net [get_bd_pins xdma_0/axi_aresetn] \
+##     [get_bd_pins diag_regs_0/s_axi_aresetn] \
+##     [get_bd_pins axi_bram_ctrl_0/s_axi_aresetn]
+## connect_bd_intf_net [get_bd_intf_pins xdma_0/M_AXI_LITE] [get_bd_intf_pins diag_regs_0/S_AXI]
+## connect_bd_intf_net [get_bd_intf_pins xdma_0/M_AXI] [get_bd_intf_pins axi_bram_ctrl_0/S_AXI]
+## connect_bd_intf_net [get_bd_intf_pins axi_bram_ctrl_0/BRAM_PORTA] [get_bd_intf_pins axi_bram_0/BRAM_PORTA]
+## set reg_seg [first_addr_seg "diag_regs_0/S_AXI/*"]
+## create_bd_addr_seg -range 0x00010000 -offset 0x00000000 [first_addr_space "xdma_0/M_AXI_LITE"] $reg_seg SEG_diag_regs_0_Reg
+## set bram_seg [first_addr_seg "axi_bram_ctrl_0/S_AXI/*"]
+## create_bd_addr_seg -range 0x00010000 -offset 0x00000000 [first_addr_space "xdma_0/M_AXI"] $bram_seg SEG_axi_bram_ctrl_0_Mem
+## validate_bd_design
+WARNING: [BD 41-2180] Resetting the memory initialization file of </axi_bram_0> to default.
+WARNING: [BD 41-927] Following properties on pin /diag_regs_0/s_axi_aclk have been updated from connected ip. They may not be synchronized with cell properties. You can set property on pin directly to confirm the value and resolve the warning.
+	CLK_DOMAIN=xdma_diag_xdma_0_0_axi_aclk 
+## save_bd_design
+Wrote  : <V:\xdma_diag_syn\xdma_diag.srcs\sources_1\bd\xdma_diag\xdma_diag.bd> 
+## set bd_file [get_files -of_objects [get_filesets sources_1] *${design_name}.bd]
+## generate_target all $bd_file
+INFO: [BD 41-1662] The design 'xdma_diag.bd' is already validated. Therefore parameter propagation will not be re-run.
+WARNING: [BD 41-2180] Resetting the memory initialization file of </axi_bram_0> to default.
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/axi_bram_0/addra'(32) to net 'axi_bram_ctrl_0_BRAM_PORTA_ADDR'(16) - Only lower order bits will be connected.
+VHDL Output written to : V:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/synth/xdma_diag.v
+WARNING: [BD 41-235] Width mismatch when connecting pin: '/axi_bram_0/addra'(32) to net 'axi_bram_ctrl_0_BRAM_PORTA_ADDR'(16) - Only lower order bits will be connected.
+VHDL Output written to : V:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/sim/xdma_diag.v
+VHDL Output written to : V:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/hdl/xdma_diag_wrapper.v
+INFO: [BD 41-1029] Generation completed for the IP Integrator block util_ds_buf_0 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block xdma_0 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block diag_regs_0 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block axi_bram_ctrl_0 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block axi_bram_0 .
+Exporting to file V:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/hw_handoff/xdma_diag.hwh
+Generated Block Design Tcl file V:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/hw_handoff/xdma_diag_bd.tcl
+Generated Hardware Definition File V:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/synth/xdma_diag.hwdef
+generate_target: Time (s): cpu = 00:00:16 ; elapsed = 00:00:26 . Memory (MB): peak = 845.238 ; gain = 36.262
+## make_wrapper -files $bd_file -top -import
+WARNING: [Vivado 12-3482] The generated wrapper file has already been imported into the project, the imported file is:
+'V:/xdma_diag_syn/xdma_diag.srcs/sources_1/imports/hdl/xdma_diag_wrapper.v'
+## set wrapper_file [get_files *${design_name}_wrapper.v]
+## set_property top ${design_name}_wrapper [current_fileset]
+## update_compile_order -fileset sources_1
+## report_ip_status -file [file join $project_dir "xdma_config_bar_diag_ip_status.rpt"]
+## report_property -file [file join $project_dir "xdma_config_bar_diag_xdma_bd_properties.rpt"] $xdma_0
+## set xdma_ips [get_ips -quiet *xdma*]
+## if {[llength $xdma_ips] > 0} {
+##     report_property -file [file join $project_dir "xdma_config_bar_diag_xdma_ip_properties.rpt"] [lindex $xdma_ips 0]
+## }
+WARNING: [Vivado 12-3672] The is_managed property should only be queried on the file object representing this IP. Use the get_files command to access file objects.
+WARNING: [Vivado 12-3670] The generate_synth_checkpoint property should only be queried on the file object representing this IP. Use the get_files command to access file objects.
+## puts "XDMA_CONFIG_BAR_DIAG_BD_VALIDATE_PASS"
+XDMA_CONFIG_BAR_DIAG_BD_VALIDATE_PASS
+## puts "Project: $project_dir"
+Project: V:/xdma_diag_syn
+## puts "Wrapper: $wrapper_file"
+Wrapper: V:/xdma_diag_syn/xdma_diag.srcs/sources_1/imports/hdl/xdma_diag_wrapper.v
+## puts "XDMA diag: Gen2 X4, 64-bit AXI, 250 MHz AXI target, AXI-Lite master enabled, lane reversal enabled, no manual MSI-X BIR override"
+XDMA diag: Gen2 X4, 64-bit AXI, 250 MHz AXI target, AXI-Lite master enabled, lane reversal enabled, no manual MSI-X BIR override
+# puts "VIVADO_RUN_JOBS=$jobs"
+VIVADO_RUN_JOBS=18
+# launch_runs synth_1 -jobs $jobs
+[Sat Jun 20 11:26:34 2026] Launched xdma_diag_diag_regs_0_0_synth_1, xdma_diag_axi_bram_0_0_synth_1, xdma_diag_xdma_0_0_synth_1, xdma_diag_util_ds_buf_0_0_synth_1, xdma_diag_axi_bram_ctrl_0_0_synth_1...
+Run output will be captured here:
+xdma_diag_diag_regs_0_0_synth_1: V:/xdma_diag_syn/xdma_diag.runs/xdma_diag_diag_regs_0_0_synth_1/runme.log
+xdma_diag_axi_bram_0_0_synth_1: V:/xdma_diag_syn/xdma_diag.runs/xdma_diag_axi_bram_0_0_synth_1/runme.log
+xdma_diag_xdma_0_0_synth_1: V:/xdma_diag_syn/xdma_diag.runs/xdma_diag_xdma_0_0_synth_1/runme.log
+xdma_diag_util_ds_buf_0_0_synth_1: V:/xdma_diag_syn/xdma_diag.runs/xdma_diag_util_ds_buf_0_0_synth_1/runme.log
+xdma_diag_axi_bram_ctrl_0_0_synth_1: V:/xdma_diag_syn/xdma_diag.runs/xdma_diag_axi_bram_ctrl_0_0_synth_1/runme.log
+[Sat Jun 20 11:26:34 2026] Launched synth_1...
+Run output will be captured here: V:/xdma_diag_syn/xdma_diag.runs/synth_1/runme.log
+# wait_on_run synth_1
+[Sat Jun 20 11:26:34 2026] Waiting for synth_1 to finish...
+
+*** Running vivado
+    with args -log xdma_diag_wrapper.vds -m64 -product Vivado -mode batch -messageDb vivado.pb -notrace -source xdma_diag_wrapper.tcl
+
+
+****** Vivado v2018.3 (64-bit)
+  **** SW Build 2405991 on Thu Dec  6 23:38:27 MST 2018
+  **** IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
+    ** Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.
+
+CRITICAL WARNING: [Common 17-741] No write access right to the local Tcl store at 'C'. XilinxTclStore is reverted to the installation area. If you want to use local Tcl Store, please change the access right and relaunch Vivado.
+source xdma_diag_wrapper.tcl -notrace
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1704] No user IP repositories specified
+INFO: [IP_Flow 19-2313] Loaded Vivado IP repository 'E:/Xilinx/Vivado/2018.3/data/ip'.
+add_files: Time (s): cpu = 00:00:04 ; elapsed = 00:00:07 . Memory (MB): peak = 373.219 ; gain = 54.566
+Command: synth_design -top xdma_diag_wrapper -part xc7z100ffg900-2
+Starting synth_design
+Attempting to get a license for feature 'Synthesis' and/or device 'xc7z100'
+INFO: [Common 17-349] Got license for feature 'Synthesis' and/or device 'xc7z100'
+INFO: Launching helper process for spawning children vivado processes
+INFO: Helper process launched with PID 28656 
+---------------------------------------------------------------------------------
+Starting RTL Elaboration : Time (s): cpu = 00:00:02 ; elapsed = 00:00:02 . Memory (MB): peak = 488.297 ; gain = 106.711
+---------------------------------------------------------------------------------
+INFO: [Synth 8-6157] synthesizing module 'xdma_diag_wrapper' [V:/xdma_diag_syn/xdma_diag.srcs/sources_1/imports/hdl/xdma_diag_wrapper.v:12]
+INFO: [Synth 8-6157] synthesizing module 'xdma_diag' [V:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/synth/xdma_diag.v:13]
+INFO: [Synth 8-6157] synthesizing module 'xdma_diag_axi_bram_0_0' [V:/xdma_diag_syn/xdma_diag.runs/synth_1/.Xil/Vivado-31664-DESKTOP-QEQDV5I/realtime/xdma_diag_axi_bram_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'xdma_diag_axi_bram_0_0' (1#1) [V:/xdma_diag_syn/xdma_diag.runs/synth_1/.Xil/Vivado-31664-DESKTOP-QEQDV5I/realtime/xdma_diag_axi_bram_0_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'axi_bram_0' of module 'xdma_diag_axi_bram_0_0' requires 8 connections, but only 7 given [V:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/synth/xdma_diag.v:108]
+INFO: [Synth 8-6157] synthesizing module 'xdma_diag_axi_bram_ctrl_0_0' [V:/xdma_diag_syn/xdma_diag.runs/synth_1/.Xil/Vivado-31664-DESKTOP-QEQDV5I/realtime/xdma_diag_axi_bram_ctrl_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'xdma_diag_axi_bram_ctrl_0_0' (2#1) [V:/xdma_diag_syn/xdma_diag.runs/synth_1/.Xil/Vivado-31664-DESKTOP-QEQDV5I/realtime/xdma_diag_axi_bram_ctrl_0_0_stub.v:6]
+INFO: [Synth 8-6157] synthesizing module 'xdma_diag_diag_regs_0_0' [V:/xdma_diag_syn/xdma_diag.runs/synth_1/.Xil/Vivado-31664-DESKTOP-QEQDV5I/realtime/xdma_diag_diag_regs_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'xdma_diag_diag_regs_0_0' (3#1) [V:/xdma_diag_syn/xdma_diag.runs/synth_1/.Xil/Vivado-31664-DESKTOP-QEQDV5I/realtime/xdma_diag_diag_regs_0_0_stub.v:6]
+INFO: [Synth 8-6157] synthesizing module 'xdma_diag_util_ds_buf_0_0' [V:/xdma_diag_syn/xdma_diag.runs/synth_1/.Xil/Vivado-31664-DESKTOP-QEQDV5I/realtime/xdma_diag_util_ds_buf_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'xdma_diag_util_ds_buf_0_0' (4#1) [V:/xdma_diag_syn/xdma_diag.runs/synth_1/.Xil/Vivado-31664-DESKTOP-QEQDV5I/realtime/xdma_diag_util_ds_buf_0_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'util_ds_buf_0' of module 'xdma_diag_util_ds_buf_0_0' requires 4 connections, but only 3 given [V:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/synth/xdma_diag.v:183]
+INFO: [Synth 8-6157] synthesizing module 'xdma_diag_xdma_0_0' [V:/xdma_diag_syn/xdma_diag.runs/synth_1/.Xil/Vivado-31664-DESKTOP-QEQDV5I/realtime/xdma_diag_xdma_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'xdma_diag_xdma_0_0' (5#1) [V:/xdma_diag_syn/xdma_diag.runs/synth_1/.Xil/Vivado-31664-DESKTOP-QEQDV5I/realtime/xdma_diag_xdma_0_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'xdma_0' of module 'xdma_diag_xdma_0_0' requires 75 connections, but only 69 given [V:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/synth/xdma_diag.v:187]
+INFO: [Synth 8-6155] done synthesizing module 'xdma_diag' (6#1) [V:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/synth/xdma_diag.v:13]
+INFO: [Synth 8-6155] done synthesizing module 'xdma_diag_wrapper' (7#1) [V:/xdma_diag_syn/xdma_diag.srcs/sources_1/imports/hdl/xdma_diag_wrapper.v:12]
+---------------------------------------------------------------------------------
+Finished RTL Elaboration : Time (s): cpu = 00:00:02 ; elapsed = 00:00:03 . Memory (MB): peak = 544.730 ; gain = 163.145
+---------------------------------------------------------------------------------
+
+Report Check Netlist: 
++------+------------------+-------+---------+-------+------------------+
+|      |Item              |Errors |Warnings |Status |Description       |
++------+------------------+-------+---------+-------+------------------+
+|1     |multi_driven_nets |      0|        0|Passed |Multi driven nets |
++------+------------------+-------+---------+-------+------------------+
+---------------------------------------------------------------------------------
+Start Handling Custom Attributes
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:02 ; elapsed = 00:00:03 . Memory (MB): peak = 544.730 ; gain = 163.145
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished RTL Optimization Phase 1 : Time (s): cpu = 00:00:02 ; elapsed = 00:00:03 . Memory (MB): peak = 544.730 ; gain = 163.145
+---------------------------------------------------------------------------------
+INFO: [Device 21-403] Loading part xc7z100ffg900-2
+INFO: [Project 1-570] Preparing netlist for logic optimization
+
+Processing XDC Constraints
+Initializing timing engine
+Parsing XDC File [v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_util_ds_buf_0_0/xdma_diag_util_ds_buf_0_0/xdma_diag_util_ds_buf_0_0_in_context.xdc] for cell 'xdma_diag_i/util_ds_buf_0'
+Finished Parsing XDC File [v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_util_ds_buf_0_0/xdma_diag_util_ds_buf_0_0/xdma_diag_util_ds_buf_0_0_in_context.xdc] for cell 'xdma_diag_i/util_ds_buf_0'
+Parsing XDC File [v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_xdma_0_0/xdma_diag_xdma_0_0/xdma_diag_xdma_0_0_in_context.xdc] for cell 'xdma_diag_i/xdma_0'
+Finished Parsing XDC File [v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_xdma_0_0/xdma_diag_xdma_0_0/xdma_diag_xdma_0_0_in_context.xdc] for cell 'xdma_diag_i/xdma_0'
+Parsing XDC File [v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_diag_regs_0_0/xdma_diag_diag_regs_0_0/xdma_diag_diag_regs_0_0_in_context.xdc] for cell 'xdma_diag_i/diag_regs_0'
+Finished Parsing XDC File [v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_diag_regs_0_0/xdma_diag_diag_regs_0_0/xdma_diag_diag_regs_0_0_in_context.xdc] for cell 'xdma_diag_i/diag_regs_0'
+Parsing XDC File [v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_axi_bram_ctrl_0_0/xdma_diag_axi_bram_ctrl_0_0/xdma_diag_axi_bram_ctrl_0_0_in_context.xdc] for cell 'xdma_diag_i/axi_bram_ctrl_0'
+Finished Parsing XDC File [v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_axi_bram_ctrl_0_0/xdma_diag_axi_bram_ctrl_0_0/xdma_diag_axi_bram_ctrl_0_0_in_context.xdc] for cell 'xdma_diag_i/axi_bram_ctrl_0'
+Parsing XDC File [v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_axi_bram_0_0/xdma_diag_axi_bram_0_0/xdma_diag_axi_bram_0_0_in_context.xdc] for cell 'xdma_diag_i/axi_bram_0'
+Finished Parsing XDC File [v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_axi_bram_0_0/xdma_diag_axi_bram_0_0/xdma_diag_axi_bram_0_0_in_context.xdc] for cell 'xdma_diag_i/axi_bram_0'
+Parsing XDC File [F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/xdma_config_bar_diag/xdma_config_bar_diag.xdc]
+Finished Parsing XDC File [F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/xdma_config_bar_diag/xdma_config_bar_diag.xdc]
+INFO: [Project 1-236] Implementation specific constraints were found while reading constraint file [F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/xdma_config_bar_diag/xdma_config_bar_diag.xdc]. These constraints will be ignored for synthesis but will be used in implementation. Impacted constraints are listed in the file [.Xil/xdma_diag_wrapper_propImpl.xdc].
+Resolution: To avoid this warning, move constraints listed in [.Xil/xdma_diag_wrapper_propImpl.xdc] to another XDC file and exclude this new file from synthesis with the used_in_synthesis property (File Properties dialog in GUI) and re-run elaboration/synthesis.
+Parsing XDC File [V:/xdma_diag_syn/xdma_diag.runs/synth_1/dont_touch.xdc]
+Finished Parsing XDC File [V:/xdma_diag_syn/xdma_diag.runs/synth_1/dont_touch.xdc]
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 933.023 ; gain = 0.000
+Completed Processing XDC Constraints
+
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 933.023 ; gain = 0.000
+INFO: [Project 1-111] Unisim Transformation Summary:
+No Unisim elements were transformed.
+
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 933.023 ; gain = 0.000
+Constraint Validation Runtime : Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.006 . Memory (MB): peak = 933.023 ; gain = 0.000
+WARNING: [Timing 38-316] Clock period '20.000' specified during out-of-context synthesis of instance 'xdma_diag_i/axi_bram_0' at clock pin 'clka' is different from the actual clock period '4.000', this can lead to different synthesis results.
+---------------------------------------------------------------------------------
+Finished Constraint Validation : Time (s): cpu = 00:00:12 ; elapsed = 00:00:14 . Memory (MB): peak = 933.023 ; gain = 551.438
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Loading Part and Timing Information
+---------------------------------------------------------------------------------
+Loading part: xc7z100ffg900-2
+---------------------------------------------------------------------------------
+Finished Loading Part and Timing Information : Time (s): cpu = 00:00:12 ; elapsed = 00:00:14 . Memory (MB): peak = 933.023 ; gain = 551.438
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Applying 'set_property' XDC Constraints
+---------------------------------------------------------------------------------
+Applied set_property IO_BUFFER_TYPE = NONE for pcie_ref_clk_n[0]. (constraint file  v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_util_ds_buf_0_0/xdma_diag_util_ds_buf_0_0/xdma_diag_util_ds_buf_0_0_in_context.xdc, line 3).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for pcie_ref_clk_n[0]. (constraint file  v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_util_ds_buf_0_0/xdma_diag_util_ds_buf_0_0/xdma_diag_util_ds_buf_0_0_in_context.xdc, line 4).
+Applied set_property IO_BUFFER_TYPE = NONE for pcie_ref_clk_p[0]. (constraint file  v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_util_ds_buf_0_0/xdma_diag_util_ds_buf_0_0/xdma_diag_util_ds_buf_0_0_in_context.xdc, line 5).
+Applied set_property CLOCK_BUFFER_TYPE = NONE for pcie_ref_clk_p[0]. (constraint file  v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_util_ds_buf_0_0/xdma_diag_util_ds_buf_0_0/xdma_diag_util_ds_buf_0_0_in_context.xdc, line 6).
+Applied set_property DONT_TOUCH = true for xdma_diag_i. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for xdma_diag_i/util_ds_buf_0. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for xdma_diag_i/xdma_0. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for xdma_diag_i/diag_regs_0. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for xdma_diag_i/axi_bram_ctrl_0. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for xdma_diag_i/axi_bram_0. (constraint file  auto generated constraint, line ).
+---------------------------------------------------------------------------------
+Finished applying 'set_property' XDC Constraints : Time (s): cpu = 00:00:12 ; elapsed = 00:00:14 . Memory (MB): peak = 933.023 ; gain = 551.438
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished RTL Optimization Phase 2 : Time (s): cpu = 00:00:12 ; elapsed = 00:00:14 . Memory (MB): peak = 933.023 ; gain = 551.438
+---------------------------------------------------------------------------------
+
+Report RTL Partitions: 
++-+--------------+------------+----------+
+| |RTL Partition |Replication |Instances |
++-+--------------+------------+----------+
++-+--------------+------------+----------+
+---------------------------------------------------------------------------------
+Start RTL Component Statistics 
+---------------------------------------------------------------------------------
+Detailed RTL Component Info : 
+---------------------------------------------------------------------------------
+Finished RTL Component Statistics 
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start RTL Hierarchical Component Statistics 
+---------------------------------------------------------------------------------
+Hierarchical RTL Component report 
+---------------------------------------------------------------------------------
+Finished RTL Hierarchical Component Statistics
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Part Resource Summary
+---------------------------------------------------------------------------------
+Part Resources:
+DSPs: 2020 (col length:140)
+BRAMs: 1510 (col length: RAMB18 140 RAMB36 70)
+---------------------------------------------------------------------------------
+Finished Part Resource Summary
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Cross Boundary and Area Optimization
+---------------------------------------------------------------------------------
+Warning: Parallel synthesis criteria is not met 
+---------------------------------------------------------------------------------
+Finished Cross Boundary and Area Optimization : Time (s): cpu = 00:00:12 ; elapsed = 00:00:15 . Memory (MB): peak = 933.023 ; gain = 551.438
+---------------------------------------------------------------------------------
+
+Report RTL Partitions: 
++-+--------------+------------+----------+
+| |RTL Partition |Replication |Instances |
++-+--------------+------------+----------+
++-+--------------+------------+----------+
+---------------------------------------------------------------------------------
+Start Applying XDC Timing Constraints
+---------------------------------------------------------------------------------
+INFO: [Synth 8-5578] Moved timing constraint from pin 'xdma_diag_i/util_ds_buf_0/IBUF_OUT[0]' to pin '{xdma_diag_i/util_ds_buf_0/bbstub_IBUF_OUT[0]/O}'
+INFO: [Synth 8-5578] Moved timing constraint from pin 'xdma_diag_i/util_ds_buf_0/IBUF_DS_ODIV2[0]' to pin '{xdma_diag_i/util_ds_buf_0/bbstub_IBUF_DS_ODIV2[0]/O}'
+INFO: [Synth 8-5578] Moved timing constraint from pin 'xdma_diag_i/xdma_0/axi_aclk' to pin 'xdma_diag_i/xdma_0/bbstub_axi_aclk/O'
+INFO: [Synth 8-5578] Moved timing constraint from pin 'xdma_diag_i/axi_bram_ctrl_0/bram_clk_a' to pin 'xdma_diag_i/axi_bram_ctrl_0/bbstub_bram_clk_a/O'
+INFO: [Synth 8-5819] Moved 4 constraints on hierarchical pins to their respective driving/loading pins
+---------------------------------------------------------------------------------
+Finished Applying XDC Timing Constraints : Time (s): cpu = 00:00:21 ; elapsed = 00:00:25 . Memory (MB): peak = 969.918 ; gain = 588.332
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Timing Optimization
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Timing Optimization : Time (s): cpu = 00:00:21 ; elapsed = 00:00:25 . Memory (MB): peak = 970.066 ; gain = 588.480
+---------------------------------------------------------------------------------
+
+Report RTL Partitions: 
++-+--------------+------------+----------+
+| |RTL Partition |Replication |Instances |
++-+--------------+------------+----------+
++-+--------------+------------+----------+
+---------------------------------------------------------------------------------
+Start Technology Mapping
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Technology Mapping : Time (s): cpu = 00:00:22 ; elapsed = 00:00:25 . Memory (MB): peak = 979.879 ; gain = 598.293
+---------------------------------------------------------------------------------
+
+Report RTL Partitions: 
++-+--------------+------------+----------+
+| |RTL Partition |Replication |Instances |
++-+--------------+------------+----------+
++-+--------------+------------+----------+
+---------------------------------------------------------------------------------
+Start IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Flattening Before IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Flattening Before IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished IO Insertion : Time (s): cpu = 00:00:22 ; elapsed = 00:00:26 . Memory (MB): peak = 979.879 ; gain = 598.293
+---------------------------------------------------------------------------------
+
+Report Check Netlist: 
++------+------------------+-------+---------+-------+------------------+
+|      |Item              |Errors |Warnings |Status |Description       |
++------+------------------+-------+---------+-------+------------------+
+|1     |multi_driven_nets |      0|        0|Passed |Multi driven nets |
++------+------------------+-------+---------+-------+------------------+
+---------------------------------------------------------------------------------
+Start Renaming Generated Instances
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Instances : Time (s): cpu = 00:00:22 ; elapsed = 00:00:26 . Memory (MB): peak = 979.879 ; gain = 598.293
+---------------------------------------------------------------------------------
+
+Report RTL Partitions: 
++-+--------------+------------+----------+
+| |RTL Partition |Replication |Instances |
++-+--------------+------------+----------+
++-+--------------+------------+----------+
+---------------------------------------------------------------------------------
+Start Rebuilding User Hierarchy
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Rebuilding User Hierarchy : Time (s): cpu = 00:00:22 ; elapsed = 00:00:26 . Memory (MB): peak = 979.879 ; gain = 598.293
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Ports
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Ports : Time (s): cpu = 00:00:22 ; elapsed = 00:00:26 . Memory (MB): peak = 979.879 ; gain = 598.293
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Handling Custom Attributes
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:22 ; elapsed = 00:00:26 . Memory (MB): peak = 979.879 ; gain = 598.293
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Nets
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Nets : Time (s): cpu = 00:00:22 ; elapsed = 00:00:26 . Memory (MB): peak = 979.879 ; gain = 598.293
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Writing Synthesis Report
+---------------------------------------------------------------------------------
+
+Report BlackBoxes: 
++------+----------------------------+----------+
+|      |BlackBox name               |Instances |
++------+----------------------------+----------+
+|1     |xdma_diag_axi_bram_0_0      |         1|
+|2     |xdma_diag_axi_bram_ctrl_0_0 |         1|
+|3     |xdma_diag_diag_regs_0_0     |         1|
+|4     |xdma_diag_util_ds_buf_0_0   |         1|
+|5     |xdma_diag_xdma_0_0          |         1|
++------+----------------------------+----------+
+
+Report Cell Usage: 
++------+----------------------------+------+
+|      |Cell                        |Count |
++------+----------------------------+------+
+|1     |xdma_diag_axi_bram_0_0      |     1|
+|2     |xdma_diag_axi_bram_ctrl_0_0 |     1|
+|3     |xdma_diag_diag_regs_0_0     |     1|
+|4     |xdma_diag_util_ds_buf_0_0   |     1|
+|5     |xdma_diag_xdma_0_0          |     1|
+|6     |IBUF                        |     9|
+|7     |OBUF                        |     8|
++------+----------------------------+------+
+
+Report Instance Areas: 
++------+--------------+----------+------+
+|      |Instance      |Module    |Cells |
++------+--------------+----------+------+
+|1     |top           |          |   714|
+|2     |  xdma_diag_i |xdma_diag |   697|
++------+--------------+----------+------+
+---------------------------------------------------------------------------------
+Finished Writing Synthesis Report : Time (s): cpu = 00:00:22 ; elapsed = 00:00:26 . Memory (MB): peak = 979.879 ; gain = 598.293
+---------------------------------------------------------------------------------
+Synthesis finished with 0 errors, 0 critical warnings and 0 warnings.
+Synthesis Optimization Runtime : Time (s): cpu = 00:00:12 ; elapsed = 00:00:17 . Memory (MB): peak = 979.879 ; gain = 210.000
+Synthesis Optimization Complete : Time (s): cpu = 00:00:22 ; elapsed = 00:00:26 . Memory (MB): peak = 979.879 ; gain = 598.293
+INFO: [Project 1-571] Translating synthesized netlist
+INFO: [Project 1-570] Preparing netlist for logic optimization
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.001 . Memory (MB): peak = 1005.715 ; gain = 0.000
+INFO: [Project 1-111] Unisim Transformation Summary:
+No Unisim elements were transformed.
+
+INFO: [Common 17-83] Releasing license: Synthesis
+32 Infos, 4 Warnings, 0 Critical Warnings and 0 Errors encountered.
+synth_design completed successfully
+synth_design: Time (s): cpu = 00:00:25 ; elapsed = 00:00:30 . Memory (MB): peak = 1005.746 ; gain = 632.527
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1005.746 ; gain = 0.000
+WARNING: [Constraints 18-5210] No constraints selected for write.
+Resolution: This message can indicate that there are no constraints for the design, or it can indicate that the used_in flags are set such that the constraints are ignored. This later case is used when running synth_design to not write synthesis constraints to the resulting checkpoint. Instead, project constraints are read when the synthesized design is opened.
+INFO: [Common 17-1381] The checkpoint 'V:/xdma_diag_syn/xdma_diag.runs/synth_1/xdma_diag_wrapper.dcp' has been generated.
+INFO: [runtcl-4] Executing : report_utilization -file xdma_diag_wrapper_utilization_synth.rpt -pb xdma_diag_wrapper_utilization_synth.pb
+INFO: [Common 17-206] Exiting Vivado at Sat Jun 20 11:34:28 2026...
+[Sat Jun 20 11:34:31 2026] synth_1 finished
+wait_on_run: Time (s): cpu = 00:00:01 ; elapsed = 00:07:57 . Memory (MB): peak = 862.074 ; gain = 0.000
+# set run_status [get_property STATUS [get_runs synth_1]]
+# puts "SYNTH_1_STATUS=$run_status"
+SYNTH_1_STATUS=synth_design Complete!
+# if {[string first "synth_design Complete" $run_status] < 0} {
+#     error "synth_1 did not complete: $run_status"
+# }
+# open_run synth_1
+Design is defaulting to impl run constrset: constrs_1
+Design is defaulting to synth run part: xc7z100ffg900-2
+INFO: [Project 1-454] Reading design checkpoint 'v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_axi_bram_0_0/xdma_diag_axi_bram_0_0.dcp' for cell 'xdma_diag_i/axi_bram_0'
+INFO: [Project 1-454] Reading design checkpoint 'v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_axi_bram_ctrl_0_0/xdma_diag_axi_bram_ctrl_0_0.dcp' for cell 'xdma_diag_i/axi_bram_ctrl_0'
+INFO: [Project 1-454] Reading design checkpoint 'v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_diag_regs_0_0/xdma_diag_diag_regs_0_0.dcp' for cell 'xdma_diag_i/diag_regs_0'
+INFO: [Project 1-454] Reading design checkpoint 'v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_util_ds_buf_0_0/xdma_diag_util_ds_buf_0_0.dcp' for cell 'xdma_diag_i/util_ds_buf_0'
+INFO: [Project 1-454] Reading design checkpoint 'v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_xdma_0_0/xdma_diag_xdma_0_0.dcp' for cell 'xdma_diag_i/xdma_0'
+INFO: [Netlist 29-17] Analyzing 1259 Unisim elements for replacement
+INFO: [Netlist 29-28] Unisim Transformation completed in 1 CPU seconds
+INFO: [Project 1-479] Netlist was created with Vivado 2018.3
+INFO: [Project 1-570] Preparing netlist for logic optimization
+Parsing XDC File [v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_util_ds_buf_0_0/xdma_diag_util_ds_buf_0_0_board.xdc] for cell 'xdma_diag_i/util_ds_buf_0/U0'
+Finished Parsing XDC File [v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_util_ds_buf_0_0/xdma_diag_util_ds_buf_0_0_board.xdc] for cell 'xdma_diag_i/util_ds_buf_0/U0'
+Parsing XDC File [v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_xdma_0_0/ip_0/source/xdma_diag_xdma_0_0_pcie2_ip-PCIE_X0Y0.xdc] for cell 'xdma_diag_i/xdma_0/inst/xdma_diag_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst'
+INFO: [Timing 38-35] Done setting XDC timing constraints. [v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_xdma_0_0/ip_0/source/xdma_diag_xdma_0_0_pcie2_ip-PCIE_X0Y0.xdc:136]
+INFO: [Timing 38-2] Deriving generated clocks [v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_xdma_0_0/ip_0/source/xdma_diag_xdma_0_0_pcie2_ip-PCIE_X0Y0.xdc:136]
+create_generated_clock: Time (s): cpu = 00:00:15 ; elapsed = 00:00:16 . Memory (MB): peak = 1768.000 ; gain = 630.000
+Finished Parsing XDC File [v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_xdma_0_0/ip_0/source/xdma_diag_xdma_0_0_pcie2_ip-PCIE_X0Y0.xdc] for cell 'xdma_diag_i/xdma_0/inst/xdma_diag_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst'
+Parsing XDC File [v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_xdma_0_0/ip_3/pcie2_fifo_generator_dma_cpl.xdc] for cell 'xdma_diag_i/xdma_0/inst/xdma_diag_xdma_0_0_pcie2_to_pcie3_wrapper_i/xdma_diag_xdma_0_0_axi_stream_intf_i/xdma_diag_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0'
+Finished Parsing XDC File [v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_xdma_0_0/ip_3/pcie2_fifo_generator_dma_cpl.xdc] for cell 'xdma_diag_i/xdma_0/inst/xdma_diag_xdma_0_0_pcie2_to_pcie3_wrapper_i/xdma_diag_xdma_0_0_axi_stream_intf_i/xdma_diag_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0'
+Parsing XDC File [v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_xdma_0_0/ip_4/pcie2_fifo_generator_tgt_brdg.xdc] for cell 'xdma_diag_i/xdma_0/inst/xdma_diag_xdma_0_0_pcie2_to_pcie3_wrapper_i/xdma_diag_xdma_0_0_axi_stream_intf_i/xdma_diag_xdma_0_0_rx_demux_i/tgt_brdg_fifo_inst/U0'
+Finished Parsing XDC File [v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_xdma_0_0/ip_4/pcie2_fifo_generator_tgt_brdg.xdc] for cell 'xdma_diag_i/xdma_0/inst/xdma_diag_xdma_0_0_pcie2_to_pcie3_wrapper_i/xdma_diag_xdma_0_0_axi_stream_intf_i/xdma_diag_xdma_0_0_rx_demux_i/tgt_brdg_fifo_inst/U0'
+Parsing XDC File [v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_xdma_0_0/xdma_diag_xdma_0_0_board.xdc] for cell 'xdma_diag_i/xdma_0/inst'
+Finished Parsing XDC File [v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_xdma_0_0/xdma_diag_xdma_0_0_board.xdc] for cell 'xdma_diag_i/xdma_0/inst'
+Parsing XDC File [v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_xdma_0_0/source/xdma_diag_xdma_0_0_pcie3_7vx_ip.xdc] for cell 'xdma_diag_i/xdma_0/inst'
+Finished Parsing XDC File [v:/xdma_diag_syn/xdma_diag.srcs/sources_1/bd/xdma_diag/ip/xdma_diag_xdma_0_0/source/xdma_diag_xdma_0_0_pcie3_7vx_ip.xdc] for cell 'xdma_diag_i/xdma_0/inst'
+Parsing XDC File [F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/xdma_config_bar_diag/xdma_config_bar_diag.xdc]
+Finished Parsing XDC File [F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/xdma_config_bar_diag/xdma_config_bar_diag.xdc]
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'xdma_diag_i/xdma_0/inst/udma_wrapper/dma_top/base/IRQ_INST/usr_irq_xpm_cdc'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'xdma_diag_i/xdma_0/inst/udma_wrapper/dma_top/base/IRQ_INST/usr_irq_xpm_cdc'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'xdma_diag_i/xdma_0/inst/xdma_diag_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pl_received_hot_rst_cdc'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'xdma_diag_i/xdma_0/inst/xdma_diag_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pl_received_hot_rst_cdc'
+Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'xdma_diag_i/xdma_0/inst/xdma_diag_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/phy_lnk_up_cdc'
+Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'xdma_diag_i/xdma_0/inst/xdma_diag_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/phy_lnk_up_cdc'
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.017 . Memory (MB): peak = 1768.301 ; gain = 0.000
+INFO: [Project 1-111] Unisim Transformation Summary:
+  A total of 481 instances were transformed.
+  RAM16X1D => RAM32X1D (RAMD32, RAMD32): 22 instances
+  RAM32M => RAM32M (RAMD32, RAMD32, RAMD32, RAMD32, RAMD32, RAMD32, RAMS32, RAMS32): 440 instances
+  RAM32X1D => RAM32X1D (RAMD32, RAMD32): 10 instances
+  RAM64X1S => RAM64X1S (RAMS64E): 9 instances
+
+open_run: Time (s): cpu = 00:00:29 ; elapsed = 00:00:34 . Memory (MB): peak = 1768.301 ; gain = 906.227
+# report_utilization -file [file join $project_dir "xdma_config_bar_diag_synth_util.rpt"]
+# report_timing_summary -file [file join $project_dir "xdma_config_bar_diag_synth_timing.rpt"]
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+INFO: [Timing 38-91] UpdateTimingParams: Speed grade: -2, Delay Type: min_max.
+INFO: [Timing 38-191] Multithreading enabled for timing update using a maximum of 2 CPUs
+report_timing_summary: Time (s): cpu = 00:00:08 ; elapsed = 00:00:06 . Memory (MB): peak = 1839.812 ; gain = 71.512
+# puts "XDMA_CONFIG_BAR_DIAG_PROJECT_SYNTH_PASS"
+XDMA_CONFIG_BAR_DIAG_PROJECT_SYNTH_PASS
+# exit
+INFO: [Common 17-206] Exiting Vivado at Sat Jun 20 11:35:10 2026...
