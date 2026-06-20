@@ -132,6 +132,8 @@ reports/localization/ndt_vs_cpu_sim/mid360_20260313_outdoor_30deg_up_quan_03_sho
 
 本规则覆盖 Orin 侧和 Windows FPGA 侧全链路。每次完成 Orin 侧代码、ROS app、golden 工具、CPU_SIM、配置、ABI、Windows HLS、RTL、Vivado/Vitis 工程 TCL、host runtime、XDMA 工具或接口定义变更后，必须同步更新本文档。
 
+从 2026-06-19 起，board-level Vivado synthesis、implementation 和 bitstream 脚本默认使用多核心运行，默认 `-jobs 18`；如本机资源不足，可显式传入 `-Jobs N` 降低并记录原因。
+
 每次更新至少记录：
 
 - 当前阶段状态
@@ -1510,3 +1512,239 @@ dmesg | grep -Ei 'xdma|10ee|7024'
 - 用户在 Orin 侧执行上述 `lspci`、rescan、reboot 和 `dmesg` 命令，并回传输出。
 - 若 `lspci` 仍完全没有 `10ee:7024`，下一阶段定位 PCIe refclk、PERST#、lane wiring 和 Orin root-port enable。
 - 若 `lspci` 出现 `10ee:7024` 但无 `/dev/xdma0_*`，下一阶段定位 XDMA Linux driver 编译/加载/device node。
+
+---
+
+## 23. 2026-06-17 PCIe Reset/约束复核与最小修正版 Bitstream
+
+### 当前阶段状态
+- 已复核当前 AX7Z100 XDC，未发现“PCIe reset 接到开发板物理按键”的错误。
+- 当前物理约束仍保持：
+  - `pcie_rst_n = AB22`
+  - `pcie_ref_clk_p/n = N8/N7`
+  - `sys_clk_p/n = F9/E8`
+- 上述 PCIe reset/refclk 约束与 ALINX `33_PCIe_test` 参考工程一致。
+- 已发现并修正 BD 级 reset 拓扑差异：原先 `pcie_rst_n` 同时驱动 XDMA `sys_rst_n` 和 MIG `sys_rst`，现在改为 `pcie_rst_n` 只驱动 XDMA `sys_rst_n`。
+- MIG `sys_rst` 改由 `mig_rst_hi` 固定到 inactive high，匹配当前 MIG `SysResetPolarity=ACTIVE LOW` 配置。
+- 已重新生成 bitstream，并通过 Windows JTAG 临时下载。
+
+### 本次变更摘要
+- 修改 `fpga/vivado/slam_accel_ax7z100_pcie_mig/create_bd.tcl`：
+  - 新增 `mig_rst_hi` 1-bit constant，值为 `1`。
+  - 保持 `pcie_rst_n -> xdma_0/sys_rst_n`。
+  - 移除 `pcie_rst_n -> mig_7series_0/sys_rst`。
+  - 新增 `mig_rst_hi/dout -> mig_7series_0/sys_rst`。
+- 更新 `fpga/vivado/slam_accel_ax7z100_pcie_mig/README.md`，补充 reset topology。
+- 更新 `reports/fpga/vivado/slam_accel_ax7z100_pcie_mig/`：
+  - `commands.md`
+  - `summary.md`
+  - `reset_topology_review.md`
+  - Vivado/JTAG logs 和 post-implementation reports。
+
+### 验证命令
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_bd_validate.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_project_synth.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_impl_bitstream.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\program_bitstream_jtag.ps1 -Bitstream .\fpga\vivado\.build\azmig_impl\azmig.runs\impl_1\azmig_wrapper.bit
+```
+
+### 验证结果
+- BD validate：PASS，marker 为 `BD_VALIDATE_PASS`。
+- Project synthesis：PASS，marker 为 `PROJECT_SYNTH_PASS`。
+- Implementation + bitstream：PASS，marker 为 `IMPLEMENTATION_BITSTREAM_PASS`。
+- JTAG 临时下载：PASS，marker 为 `JTAG_PROGRAM_PASS`。
+- JTAG 状态：
+  - `FPGA_STATE=FPGA is configured`
+  - `DONE PIN = 1`
+  - CRC/IDCODE/SECURITY/BAD PACKET error 均为 0。
+- 新 bitstream：
+  - `fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit`
+  - size：7,638,099 bytes。
+
+### 资源、时序与风险
+- Post-implementation 资源：
+  - Slice LUTs：55,269 / 277,400，19.92%
+  - Slice Registers：61,162 / 554,800，11.02%
+  - Block RAM Tile：52.5 / 755，6.95%
+  - DSPs：256 / 2,020，12.67%
+  - Bonded IOB：74 / 362，20.44%
+- Post-implementation timing：
+  - WNS：-0.234 ns
+  - TNS：-3.143 ns
+  - setup failing endpoints：193
+  - WHS：0.038 ns
+  - THS：0.000 ns
+  - hold failing endpoints：0
+- 结论：该 bitstream 可用于 PCIe reset/enumeration 实验，但 timing 未收敛，不能作为可靠功能验证 bitstream。
+- Bitstream flow 有 1 个 critical warning，来源为 `Timing 38-282` timing failure。
+
+### Orin 侧下一步排查
+在 AX7Z100 保持上电且 JTAG 配置不丢失的前提下，Orin 侧重新枚举：
+
+```bash
+sudo reboot
+lspci -nn | grep -Ei '10ee|7024|xilinx|memory|serial'
+dmesg | grep -Ei 'pcie|pci|aer|link|xdma|xilinx|10ee'
+```
+
+如果仍看不到 `10ee:7024`，下一步优先定位：
+- Orin PCIe root port 是否启用，device tree/kernel 是否匹配当前插槽。
+- Orin/root-complex 100 MHz PCIe reference clock 是否到达 AX7Z100 `N8/N7`。
+- PERST# 是否到达 AX7Z100 `AB22`，并在枚举阶段被释放为高电平。
+- PCIe lane wiring、方向、转接和 X4 lane 是否匹配。
+- JTAG 下载后 AX7Z100 是否曾断电或复位，导致临时 bitstream 丢失。
+
+如果能看到 `10ee:7024` 但没有 `/dev/xdma0_*`，下一步转向 XDMA Linux driver 编译、加载和 device node 创建。
+
+---
+
+## 24. 2026-06-19 AX7Z100 PCIe Lane Reversal Bring-Up
+
+### 当前阶段状态
+- Orin 侧仍无法枚举 `10ee:7024`。
+- 已新增并检查 `hardware/` 下的开发板原理图。
+- 复核结论：
+  - PCIe refclk 仍确认走 Bank112 `CLK0`，即当前 `N8/N7` 约束正确。
+  - `PCIE_PERST` 仍对应 `AB22`，没有发现接到物理按键的证据。
+  - PCIe x4 lane 在底板到核心板连接中呈反序迹象。
+  - 当前/上一版 generated XDMA IP 中 `enable_lane_reversal=false`，这是当前最强枚举失败嫌疑。
+
+### 本次变更摘要
+- 修改 `fpga/vivado/slam_accel_ax7z100_pcie_mig/create_bd.tcl`：
+  - 在 XDMA 4.1 配置中新增 `CONFIG.enable_lane_reversal {true}`。
+  - 保持 Gen2 x4、`GTH_Quad_128`、`N8/N7` refclk、`AB22` PERST 不变。
+  - 不改 HLS、MIG、host ABI 或 PL DDR3 地址布局。
+- 更新 `fpga/vivado/slam_accel_ax7z100_pcie_mig/README.md`。
+- 新增 `reports/fpga/vivado/slam_accel_ax7z100_pcie_mig/lane_reversal_review.md`。
+
+### 验证命令
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_bd_validate.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_project_synth.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_impl_bitstream.ps1
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\program_bitstream_jtag.ps1 -Bitstream .\fpga\vivado\.build\azmig_impl\azmig.runs\impl_1\azmig_wrapper.bit
+```
+
+### 验证结果
+- BD validate：PASS，marker 为 `BD_VALIDATE_PASS`。
+- Project synthesis：PASS，marker 为 `PROJECT_SYNTH_PASS`。
+- Implementation + bitstream：PASS，marker 为 `IMPLEMENTATION_BITSTREAM_PASS`。
+- JTAG 临时下载：PASS，marker 为 `JTAG_PROGRAM_PASS`。
+- generated XDMA `.xci` 已确认：
+  - `PARAM_VALUE.enable_lane_reversal = true`
+- 新 bitstream：
+  - `fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit`
+  - size：7,638,099 bytes。
+- JTAG 状态：
+  - `FPGA_STATE=FPGA is configured`
+  - `DONE PIN = 1`
+
+### 资源、时序与风险
+- Post-implementation 资源：
+  - Slice LUTs：55,269 / 277,400，19.92%
+  - Slice Registers：61,162 / 554,800，11.02%
+  - Block RAM Tile：52.5 / 755，6.95%
+  - DSPs：256 / 2,020，12.67%
+  - Bonded IOB：74 / 362，20.44%
+  - BUFGCTRL：10 / 32，31.25%
+- Post-implementation timing：
+  - WNS：-0.234 ns
+  - TNS：-3.143 ns
+  - setup failing endpoints：193
+  - WHS：0.038 ns
+  - THS：0.000 ns
+  - hold failing endpoints：0
+- 结论：该 lane-reversal bitstream 只用于 PCIe enumeration bring-up；timing 未收敛前，不作为可靠 accelerator 功能验证 bitstream。
+
+### Orin 侧下一步
+JTAG 下载 lane-reversal bitstream 后，AX7Z100 保持上电并重新启动 Orin：
+
+```bash
+sudo reboot
+lspci -nn | grep -Ei '10ee|7024|xilinx|memory|serial'
+dmesg | grep -Ei 'pcie|pci|aer|link|xdma|xilinx|10ee'
+```
+
+若出现 `10ee:7024`，进入 XDMA driver/device node 和 `xdma_smoke.py --reg-smoke --ddr-smoke`。
+
+若仍无 `10ee:7024`，下一阶段改做最小 XDMA-only link diagnostic bitstream，并同时实测 Orin 100 MHz refclk、`AB22` PERST# 电平、lane/转接方向。
+
+---
+
+## 25. 2026-06-19 Vivado 多核心默认化与 Orin XDMA Driver Bring-Up
+
+### 当前阶段状态
+- Lane-reversal bitstream 已让 Orin 成功枚举 FPGA PCIe endpoint。
+- Orin 侧实测：
+  - `0005:01:00.0 Serial controller: Xilinx Corporation Device 7024`
+- 结论：PCIe link/enumeration 已从失败推进到 PASS，当前问题转移到 Orin Linux XDMA driver/device node。
+- 当前 `/dev/xdma*` 未出现，这是 driver 加载、绑定或 device node 创建阶段的问题；不再优先怀疑 FPGA pinout、lane reversal 或 PERST#。
+- 当前 bitstream timing 仍未收敛，仍只作为 bring-up 实验镜像，不作为可靠 accelerator 功能验证镜像。
+
+### 本次变更摘要
+- 修改 board-level Vivado 脚本：
+  - `run_project_synth.tcl`：新增 `jobs` Tcl 参数，默认 `18`，`launch_runs synth_1 -jobs $jobs`。
+  - `run_project_impl_bitstream.tcl`：新增 `jobs` Tcl 参数，默认 `18`，`synth_1` 和 `impl_1 -to_step write_bitstream` 都使用 `$jobs`。
+  - `run_vivado_project_synth.ps1`：新增 `-Jobs 18` 参数并传给 Tcl。
+  - `run_vivado_impl_bitstream.ps1`：新增 `-Jobs 18` 参数并传给 Tcl。
+- 更新 `reports/fpga/vivado/slam_accel_ax7z100_pcie_mig/commands.md` 和 `summary.md`：
+  - 记录后续综合/实现/bitstream 默认使用 `-Jobs 18`。
+  - 记录 Orin 已枚举 `10ee:7024`。
+  - 记录下一步为 XDMA driver bring-up。
+
+### 后续 Vivado 命令
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_project_synth.ps1 -Jobs 18
+
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_impl_bitstream.ps1 -Jobs 18
+```
+
+脚本默认值已是 `18`，命令中显式写出 `-Jobs 18` 是为了日志和操作可复核。若需要降低并行度，使用 `-Jobs N` 并在报告中记录原因。
+
+### Orin 侧下一步
+先确认 endpoint 和 BAR：
+
+```bash
+lspci -nn -s 0005:01:00.0 -vvv
+dmesg | grep -Ei 'pcie|pci|aer|link|xdma|xilinx|10ee|7024'
+```
+
+检查 XDMA driver：
+
+```bash
+lsmod | grep -i xdma
+modinfo xdma 2>/dev/null || true
+ls -l /dev/xdma*
+dmesg | grep -Ei 'xdma|10ee|7024'
+```
+
+如果 `lsmod` 没有 `xdma`，下一步在 Orin 编译/安装 Xilinx XDMA Linux driver，优先参考旧 7Z015 `ch06_xdma_test` 已跑通流程。
+
+如果 driver 已加载但没有节点，重点检查：
+- `lspci -vvv` 中 BAR 是否分配成功。
+- driver 是否匹配 vendor/device `10ee:7024`。
+- `dmesg` 中是否存在 BAR、MSI/MSI-X、probe failed、IOMMU、permission 或 major/minor 创建设备节点失败信息。
+
+### 验收标准
+- Orin `lspci -nn` 稳定看到 `10ee:7024`。
+- XDMA driver 加载后出现：
+  - `/dev/xdma0_user`
+  - `/dev/xdma0_h2c_0`
+  - `/dev/xdma0_c2h_0`
+- 之后运行：
+
+```bash
+python3 fpga/host/xdma_smoke/xdma_smoke.py --reg-smoke --ddr-smoke
+```
+
+通过后再进入 tiny synthetic host image 写入和可选 `--start-zero`。

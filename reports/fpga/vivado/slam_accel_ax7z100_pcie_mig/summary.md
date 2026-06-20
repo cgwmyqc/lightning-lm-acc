@@ -10,11 +10,15 @@
 - Bitstream generation: PASS
 - Windows JTAG programming script: uses `hw_server` + `xsdb`, because this Vivado 2018.3 batch install does not expose FPGA programming commands
 - Windows JTAG temporary programming: PASS
-- Host runtime and board test: not run in this stage
+- PCIe PERST#/MIG reset topology review: PASS
+- PCIe lane reversal schematic review and bring-up bitstream: PASS
+- Orin PCIe enumeration: PASS, observed `0005:01:00.0 Serial controller: Xilinx Device 7024`
+- XDMA Linux driver/device nodes: pending, `/dev/xdma*` not yet present on Orin
 
 ## Integrated Blocks
 
 - `xdma_0`: Vivado XDMA 4.1, Gen2 x4, 128-bit AXI, 125 MHz AXI target
+- `xdma_0`: lane reversal enabled for AX7Z100 carrier/core-board x4 lane order
 - `mig_7series_0`: PL DDR3 MIG 7-series AXI interface
 - `unified_obs_0`: true HLS IP `unified_surfel_observation_core`
 - `ctrl_0`: `slam_accel_ctrl` through an AXI-Lite BD wrapper
@@ -27,6 +31,9 @@
 - `xdma_0/axi_aclk` clocks XDMA master, AXI-Lite control, `slam_accel_ctrl`, and HLS `ap_clk`.
 - `mig_7series_0/ui_clk` clocks MIG S_AXI.
 - AXI interconnect performs the HLS/XDMA to MIG clock/data-width crossing.
+- PCIe `pcie_rst_n` / PERST# only drives XDMA `sys_rst_n`.
+- MIG `sys_rst` is held inactive high by `mig_rst_hi`; it is no longer driven
+  by PCIe PERST#.
 
 ## Addressing
 
@@ -44,13 +51,15 @@
 - `IMPL_1_STATUS=write_bitstream Complete!`
 - `IMPLEMENTATION_BITSTREAM_PASS`
 - Bitstream: `fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit`
-- Bitstream size: 7,738,631 bytes
-- Bitgen: `0 Errors`, `0 Critical Warnings`
+- Bitstream size: 7,638,099 bytes
+- Bitgen flow: `0 Errors`, `1 Critical Warning`
 - Top-level external HLS `m_axi_gmem0..4`: none
+- Lane reversal generated-IP check: PASS, generated XDMA XCI has
+  `PARAM_VALUE.enable_lane_reversal=true`
 
 ## Resource Summary
 
-- Slice LUTs: 55,295 / 277,400 (19.93%)
+- Slice LUTs: 55,269 / 277,400 (19.92%)
 - Slice Registers: 61,162 / 554,800 (11.02%)
 - Block RAM Tile: 52.5 / 755 (6.95%)
 - DSPs: 256 / 2,020 (12.67%)
@@ -60,18 +69,22 @@
 
 ## Post-Implementation Timing
 
-- WNS: 0.085 ns
-- TNS: 0.000 ns
-- Setup failing endpoints: 0
-- WHS: 0.032 ns
+- WNS: -0.234 ns
+- TNS: -3.143 ns
+- Setup failing endpoints: 193
+- WHS: 0.038 ns
 - THS: 0.000 ns
 - Hold failing endpoints: 0
 
-All user specified timing constraints are met.
+Timing constraints are not met. This bitstream is acceptable for PCIe
+enumeration/reset experiments, but it is not a reliable functional-validation
+bitstream until timing is closed.
 
 ## DRC Summary
 
 - Post-bitgen log: DRC finished with `0 Errors`, `513 Warnings`, `312 Advisories`.
+- The one critical warning in the bitstream flow is the timing failure:
+  `Timing 38-282`.
 - Reported warning classes include HLS DSP pipeline advisories/warnings
   (`DPIP`, `DPOP`, `AVAL`), one clock placer warning, one clock output buffering
   warning, RAMB async control warnings, one no-routable-load warning, and one
@@ -90,10 +103,14 @@ All user specified timing constraints are met.
   customization failure/crash.
 - Generated Vivado projects remain under `fpga/vivado/.build/` and are not
   tracked by git.
+- Board-level Vivado synthesis/implementation/bitstream scripts default to
+  `-jobs 18`; pass `-Jobs N` only when machine resources require a lower value.
 
 ## Next Step
 
-Program the bitstream over Windows JTAG, then run the Orin XDMA smoke sequence:
-device-node detection, `VERSION` read, AXI-Lite register write/read, and PL DDR3
-4 KB pattern write/read. Do not run full online SLAM as the first board test.
-JTAG programming is temporary and does not persist after board power-off.
+The lane-reversal bitstream has enumerated on Orin as `10ee:7024`. The next
+step is XDMA Linux driver bring-up on Orin: confirm BAR allocation with
+`lspci -vvv`, load or build the Xilinx XDMA driver, and get
+`/dev/xdma0_user`, `/dev/xdma0_h2c_0`, and `/dev/xdma0_c2h_0` created before
+running `xdma_smoke.py --reg-smoke --ddr-smoke`. Do not run full online SLAM as
+the first board test.

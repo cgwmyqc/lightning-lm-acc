@@ -3,6 +3,7 @@ set project_dir [file normalize [file join $script_dir ".." ".build" "azmig_impl
 set target_part "xc7z100ffg900-2"
 set hls_ip_dir [file normalize [file join $::env(TEMP) "lightning_hls_unified_obs" "solution1" "impl" "ip"]]
 set reference_root [file normalize [file join $script_dir ".." ".." ".." ".."]]
+set jobs 18
 
 set user_args $argv
 if {[llength $user_args] >= 1 && [string length [lindex $user_args 0]] > 0} {
@@ -17,6 +18,12 @@ if {[llength $user_args] >= 3 && [string length [lindex $user_args 2]] > 0} {
 if {[llength $user_args] >= 4 && [string length [lindex $user_args 3]] > 0} {
     set reference_root [file normalize [lindex $user_args 3]]
 }
+if {[llength $user_args] >= 5 && [string length [lindex $user_args 4]] > 0} {
+    set jobs [lindex $user_args 4]
+}
+if {![string is integer -strict $jobs] || $jobs < 1} {
+    error "Invalid jobs value: $jobs"
+}
 
 source [file join $script_dir "create_bd.tcl"]
 
@@ -26,7 +33,8 @@ proc write_report_if_possible {report_name report_cmd} {
     }
 }
 
-launch_runs synth_1 -jobs 2
+puts "VIVADO_RUN_JOBS=$jobs"
+launch_runs synth_1 -jobs $jobs
 wait_on_run synth_1
 set synth_status [get_property STATUS [get_runs synth_1]]
 puts "SYNTH_1_STATUS=$synth_status"
@@ -34,7 +42,7 @@ if {[string first "synth_design Complete" $synth_status] < 0} {
     error "synth_1 did not complete: $synth_status"
 }
 
-launch_runs impl_1 -to_step write_bitstream -jobs 2
+launch_runs impl_1 -to_step write_bitstream -jobs $jobs
 wait_on_run impl_1
 set impl_status [get_property STATUS [get_runs impl_1]]
 puts "IMPL_1_STATUS=$impl_status"

@@ -4,7 +4,8 @@ param(
     [string]$Vivado = "vivado",
     [string]$VivadoHls = "vivado_hls",
     [string]$HlsProjectDir,
-    [string]$ReferenceRoot
+    [string]$ReferenceRoot,
+    [int]$Jobs = 18
 )
 
 $ErrorActionPreference = "Stop"
@@ -22,6 +23,9 @@ if ([string]::IsNullOrWhiteSpace($HlsProjectDir)) {
 }
 if ([string]::IsNullOrWhiteSpace($ReferenceRoot)) {
     $ReferenceRoot = Resolve-Path (Join-Path $RepoRoot "..")
+}
+if ($Jobs -lt 1) {
+    throw "Jobs must be >= 1"
 }
 
 $ProjectDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ProjectDir)
@@ -53,7 +57,7 @@ try {
     $VivadoProjectDir = $ShortPathInfo.ShortPath
     $VivadoLog = Join-Path $VivadoProjectDir "vivado_impl_bitstream.log"
     $VivadoJournal = Join-Path $VivadoProjectDir "vivado_impl_bitstream.jou"
-    & $Vivado -mode batch -source $Tcl -journal $VivadoJournal -log $VivadoLog -tclargs $VivadoProjectDir $Part $HlsIpDir $ReferenceRoot
+    & $Vivado -mode batch -source $Tcl -journal $VivadoJournal -log $VivadoLog -tclargs $VivadoProjectDir $Part $HlsIpDir $ReferenceRoot $Jobs
     $ExitCode = $LASTEXITCODE
 } finally {
     Remove-LightningVivadoShortPath -ShortPathInfo $ShortPathInfo

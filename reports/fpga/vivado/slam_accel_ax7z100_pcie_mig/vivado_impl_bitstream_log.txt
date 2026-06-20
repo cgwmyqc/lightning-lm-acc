@@ -2,8 +2,8 @@
 # Vivado v2018.3 (64-bit)
 # SW Build 2405991 on Thu Dec  6 23:38:27 MST 2018
 # IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
-# Start of session at: Wed Jun 17 20:19:31 2026
-# Process ID: 97544
+# Start of session at: Fri Jun 19 22:02:14 2026
+# Process ID: 31964
 # Current directory: F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc
 # Command line: vivado.exe -mode batch -source F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_project_impl_bitstream.tcl -journal V:\azmig_impl\vivado_impl_bitstream.jou -log V:\azmig_impl\vivado_impl_bitstream.log -tclargs V:\azmig_impl xc7z100ffg900-2 C:\Users\admin\AppData\Local\Temp\lightning_hls_unified_obs\solution1\impl\ip F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc
 # Log file: V:/azmig_impl/vivado_impl_bitstream.log
@@ -65,7 +65,7 @@ source {F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vi
 ##     set fh [open $native_source_path r]
 ##     set native_text [read $fh]
 ##     close $fh
-## 
+##
 ##     foreach required {
 ##         "<TargetFPGA>xc7z100-ffg900/-2</TargetFPGA>"
 ##         "<InputClkFreq>200</InputClkFreq>"
@@ -76,7 +76,7 @@ source {F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vi
 ##             error "MIG native source check failed: $required"
 ##         }
 ##     }
-## 
+##
 ##     # Vivado 2018.3 MIG can crash if a NATIVE .prj is modified into AXI form
 ##     # too late. Extract ALINX's known-good AXI MIG XML payload from 33_PCIe_test
 ##     # while keeping the 12_ddr3_pl native .prj as the static board-parameter
@@ -84,7 +84,7 @@ source {F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vi
 ##     set fh [open $axi_source_tcl r]
 ##     set tcl_text [read $fh]
 ##     close $fh
-## 
+##
 ##     set text ""
 ##     foreach line [split $tcl_text "\n"] {
 ##         if {[regexp {puts \$mig_prj_file \{(.*)\}} $line -> payload]} {
@@ -94,7 +94,7 @@ source {F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vi
 ##     if {[string length $text] == 0} {
 ##         error "Failed to extract AXI MIG XML from $axi_source_tcl"
 ##     }
-## 
+##
 ##     foreach required {
 ##         "<TargetFPGA>xc7z100-ffg900/-2</TargetFPGA>"
 ##         "<InputClkFreq>200</InputClkFreq>"
@@ -107,9 +107,9 @@ source {F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vi
 ##             error "AXI MIG source check failed: $required"
 ##         }
 ##     }
-## 
+##
 ##     regsub {<ModuleName>[^<]+</ModuleName>} $text "<ModuleName>${module_name}</ModuleName>" text
-## 
+##
 ##     file mkdir [file dirname $dest_path]
 ##     set out [open $dest_path w]
 ##     puts $out $text
@@ -144,7 +144,7 @@ INFO: [IP_Flow 19-2313] Loaded Vivado IP repository 'E:/Xilinx/Vivado/2018.3/dat
 ## add_files -fileset constrs_1 -norecurse [file join $script_dir "slam_accel_ax7z100_pcie_mig.xdc"]
 ## update_compile_order -fileset sources_1
 ## create_bd_design $design_name
-Wrote  : <V:\azmig_impl\azmig.srcs\sources_1\bd\azmig\azmig.bd> 
+Wrote  : <V:\azmig_impl\azmig.srcs\sources_1\bd\azmig\azmig.bd>
 ## set pcie_mgt [create_bd_intf_port -mode Master -vlnv xilinx.com:interface:pcie_7x_mgt_rtl:1.0 pcie_mgt]
 ## set pcie_ref [create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:diff_clock_rtl:1.0 pcie_ref]
 ## set_property CONFIG.FREQ_HZ {100000000} $pcie_ref
@@ -169,6 +169,8 @@ INFO: [IP_Flow 19-1700] Loaded user IP repository 'c:/Users/admin/AppData/Local/
 ## set hls [create_bd_cell -type ip -vlnv xilinx.com:hls:unified_surfel_observation_core:1.0 unified_obs_0]
 ## set zero32 [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 const_zero_32]
 ## set_property -dict [list CONFIG.CONST_WIDTH {32} CONFIG.CONST_VAL {0}] $zero32
+## set mig_rst_hi [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 mig_rst_hi]
+## set_property -dict [list CONFIG.CONST_WIDTH {1} CONFIG.CONST_VAL {1}] $mig_rst_hi
 ## set util_ds_buf_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 util_ds_buf_0]
 ## set_property CONFIG.C_BUF_TYPE {IBUFDSGTE} $util_ds_buf_0
 ## set mig_7series_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:mig_7series:4.2 mig_7series_0]
@@ -182,7 +184,7 @@ INFO: [IP_Flow 19-1700] Loaded user IP repository 'c:/Users/admin/AppData/Local/
 ##     CONFIG.XML_INPUT_FILE $mig_prj_name \
 ## ] $mig_7series_0
 INFO: [Device 21-403] Loading part xc7z100ffg900-2
-create_bd_cell: Time (s): cpu = 00:00:06 ; elapsed = 00:00:07 . Memory (MB): peak = 906.656 ; gain = 214.906
+create_bd_cell: Time (s): cpu = 00:00:06 ; elapsed = 00:00:08 . Memory (MB): peak = 907.340 ; gain = 215.270
 ## set xdma_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:xdma:4.1 xdma_0]
 ## set_property -dict [list \
 ##     CONFIG.axi_data_width {128_bit} \
@@ -190,6 +192,7 @@ create_bd_cell: Time (s): cpu = 00:00:06 ; elapsed = 00:00:07 . Memory (MB): pea
 ##     CONFIG.axilite_master_scale {Kilobytes} \
 ##     CONFIG.axilite_master_size {64} \
 ##     CONFIG.axisten_freq {125} \
+##     CONFIG.enable_lane_reversal {true} \
 ##     CONFIG.mode_selection {Basic} \
 ##     CONFIG.pcie_id_if {false} \
 ##     CONFIG.pf0_device_id {7024} \
@@ -204,7 +207,8 @@ create_bd_cell: Time (s): cpu = 00:00:06 ; elapsed = 00:00:07 . Memory (MB): pea
 ## set rst_mig_ui [create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 rst_mig_ui]
 ## connect_bd_intf_net [get_bd_intf_ports pcie_ref] [get_bd_intf_pins util_ds_buf_0/CLK_IN_D]
 ## connect_bd_net [get_bd_pins util_ds_buf_0/IBUF_OUT] [get_bd_pins xdma_0/sys_clk]
-## connect_bd_net [get_bd_ports pcie_rst_n] [get_bd_pins xdma_0/sys_rst_n] [get_bd_pins mig_7series_0/sys_rst]
+## connect_bd_net [get_bd_ports pcie_rst_n] [get_bd_pins xdma_0/sys_rst_n]
+## connect_bd_net [get_bd_pins mig_rst_hi/dout] [get_bd_pins mig_7series_0/sys_rst]
 ## connect_bd_intf_net [get_bd_intf_ports pcie_mgt] [get_bd_intf_pins xdma_0/pcie_mgt]
 ## connect_bd_intf_net [get_bd_intf_ports sys] [get_bd_intf_pins mig_7series_0/SYS_CLK]
 ## connect_bd_intf_net [get_bd_intf_ports ddr3] [get_bd_intf_pins mig_7series_0/DDR3]
@@ -274,12 +278,12 @@ WARNING: [BD 41-1306] The connection to interface pin /unified_obs_0/ap_ready is
 ## create_bd_addr_seg -range 0x00010000 -offset 0x00000000 [first_addr_space "xdma_0/M_AXI_LITE"] $ctrl_seg SEG_ctrl_0_Reg
 ## validate_bd_design
 WARNING: [BD 41-927] Following properties on pin /ctrl_0/aclk have been updated from connected ip. They may not be synchronized with cell properties. You can set property on pin directly to confirm the value and resolve the warning.
-	CLK_DOMAIN=azmig_xdma_0_0_axi_aclk 
+	CLK_DOMAIN=azmig_xdma_0_0_axi_aclk
 WARNING: [BD 41-927] Following properties on pin /unified_obs_0/ap_clk have been updated from connected ip. They may not be synchronized with cell properties. You can set property on pin directly to confirm the value and resolve the warning.
-	CLK_DOMAIN=azmig_xdma_0_0_axi_aclk 
-validate_bd_design: Time (s): cpu = 00:00:07 ; elapsed = 00:00:08 . Memory (MB): peak = 957.992 ; gain = 22.207
+	CLK_DOMAIN=azmig_xdma_0_0_axi_aclk
+validate_bd_design: Time (s): cpu = 00:00:07 ; elapsed = 00:00:10 . Memory (MB): peak = 958.965 ; gain = 22.801
 ## save_bd_design
-Wrote  : <V:\azmig_impl\azmig.srcs\sources_1\bd\azmig\azmig.bd> 
+Wrote  : <V:\azmig_impl\azmig.srcs\sources_1\bd\azmig\azmig.bd>
 ## set bd_file [get_files -of_objects [get_filesets sources_1] *${design_name}.bd]
 ## generate_target all $bd_file
 INFO: [BD 41-1662] The design 'azmig.bd' is already validated. Therefore parameter propagation will not be re-run.
@@ -310,6 +314,7 @@ INFO: [BD 41-1029] Generation completed for the IP Integrator block ctrl_0 .
 WARNING: [IP_Flow 19-519] IP 'azmig_unified_obs_0_0' detected a language mismatch between 'VHDL Simulation Wrapper' and 'Verilog Simulation' output products. Please check with the IP provider to see if this is expected.
 INFO: [BD 41-1029] Generation completed for the IP Integrator block unified_obs_0 .
 INFO: [BD 41-1029] Generation completed for the IP Integrator block const_zero_32 .
+INFO: [BD 41-1029] Generation completed for the IP Integrator block mig_rst_hi .
 INFO: [BD 41-1029] Generation completed for the IP Integrator block util_ds_buf_0 .
 INFO: [BD 41-1029] Generation completed for the IP Integrator block mig_7series_0 .
 INFO: [BD 41-1029] Generation completed for the IP Integrator block xdma_0 .
@@ -330,7 +335,7 @@ INFO: [BD 41-1029] Generation completed for the IP Integrator block rst_mig_ui .
 Exporting to file V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/hw_handoff/azmig.hwh
 Generated Block Design Tcl file V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/hw_handoff/azmig_bd.tcl
 Generated Hardware Definition File V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.hwdef
-generate_target: Time (s): cpu = 00:00:28 ; elapsed = 00:00:36 . Memory (MB): peak = 1325.836 ; gain = 341.219
+generate_target: Time (s): cpu = 00:00:31 ; elapsed = 00:00:42 . Memory (MB): peak = 1324.242 ; gain = 339.434
 ## make_wrapper -files $bd_file -top -import
 WARNING: [Vivado 12-3482] The generated wrapper file has already been imported into the project, the imported file is:
 'V:/azmig_impl/azmig.srcs/sources_1/imports/hdl/azmig_wrapper.v'
@@ -360,26 +365,26 @@ Wrapper: V:/azmig_impl/azmig.srcs/sources_1/imports/hdl/azmig_wrapper.v
 #     }
 # }
 # launch_runs synth_1 -jobs 2
-[Wed Jun 17 20:20:57 2026] Launched azmig_unified_obs_0_0_synth_1, azmig_ctrl_0_0_synth_1, azmig_xdma_0_0_synth_1, azmig_mig_7series_0_0_synth_1, azmig_util_ds_buf_0_0_synth_1, azmig_xbar_0_synth_1, azmig_auto_us_0_synth_1, azmig_auto_us_2_synth_1, azmig_auto_cc_0_synth_1, azmig_auto_ds_0_synth_1, azmig_auto_us_1_synth_1, azmig_auto_us_3_synth_1, azmig_rst_mig_ui_0_synth_1...
+[Fri Jun 19 22:03:51 2026] Launched azmig_xbar_0_synth_1, azmig_xdma_0_0_synth_1, azmig_mig_7series_0_0_synth_1, azmig_unified_obs_0_0_synth_1, azmig_ctrl_0_0_synth_1, azmig_util_ds_buf_0_0_synth_1, azmig_auto_ds_0_synth_1, azmig_auto_us_1_synth_1, azmig_auto_us_3_synth_1, azmig_auto_us_0_synth_1, azmig_auto_us_2_synth_1, azmig_rst_mig_ui_0_synth_1, azmig_auto_cc_0_synth_1...
 Run output will be captured here:
-azmig_unified_obs_0_0_synth_1: V:/azmig_impl/azmig.runs/azmig_unified_obs_0_0_synth_1/runme.log
-azmig_ctrl_0_0_synth_1: V:/azmig_impl/azmig.runs/azmig_ctrl_0_0_synth_1/runme.log
+azmig_xbar_0_synth_1: V:/azmig_impl/azmig.runs/azmig_xbar_0_synth_1/runme.log
 azmig_xdma_0_0_synth_1: V:/azmig_impl/azmig.runs/azmig_xdma_0_0_synth_1/runme.log
 azmig_mig_7series_0_0_synth_1: V:/azmig_impl/azmig.runs/azmig_mig_7series_0_0_synth_1/runme.log
+azmig_unified_obs_0_0_synth_1: V:/azmig_impl/azmig.runs/azmig_unified_obs_0_0_synth_1/runme.log
+azmig_ctrl_0_0_synth_1: V:/azmig_impl/azmig.runs/azmig_ctrl_0_0_synth_1/runme.log
 azmig_util_ds_buf_0_0_synth_1: V:/azmig_impl/azmig.runs/azmig_util_ds_buf_0_0_synth_1/runme.log
-azmig_xbar_0_synth_1: V:/azmig_impl/azmig.runs/azmig_xbar_0_synth_1/runme.log
-azmig_auto_us_0_synth_1: V:/azmig_impl/azmig.runs/azmig_auto_us_0_synth_1/runme.log
-azmig_auto_us_2_synth_1: V:/azmig_impl/azmig.runs/azmig_auto_us_2_synth_1/runme.log
-azmig_auto_cc_0_synth_1: V:/azmig_impl/azmig.runs/azmig_auto_cc_0_synth_1/runme.log
 azmig_auto_ds_0_synth_1: V:/azmig_impl/azmig.runs/azmig_auto_ds_0_synth_1/runme.log
 azmig_auto_us_1_synth_1: V:/azmig_impl/azmig.runs/azmig_auto_us_1_synth_1/runme.log
 azmig_auto_us_3_synth_1: V:/azmig_impl/azmig.runs/azmig_auto_us_3_synth_1/runme.log
+azmig_auto_us_0_synth_1: V:/azmig_impl/azmig.runs/azmig_auto_us_0_synth_1/runme.log
+azmig_auto_us_2_synth_1: V:/azmig_impl/azmig.runs/azmig_auto_us_2_synth_1/runme.log
 azmig_rst_mig_ui_0_synth_1: V:/azmig_impl/azmig.runs/azmig_rst_mig_ui_0_synth_1/runme.log
-[Wed Jun 17 20:20:57 2026] Launched synth_1...
+azmig_auto_cc_0_synth_1: V:/azmig_impl/azmig.runs/azmig_auto_cc_0_synth_1/runme.log
+[Fri Jun 19 22:03:51 2026] Launched synth_1...
 Run output will be captured here: V:/azmig_impl/azmig.runs/synth_1/runme.log
-launch_runs: Time (s): cpu = 00:00:01 ; elapsed = 00:00:05 . Memory (MB): peak = 1358.492 ; gain = 32.402
+launch_runs: Time (s): cpu = 00:00:01 ; elapsed = 00:00:05 . Memory (MB): peak = 1356.680 ; gain = 31.406
 # wait_on_run synth_1
-[Wed Jun 17 20:20:57 2026] Waiting for synth_1 to finish...
+[Fri Jun 19 22:03:51 2026] Waiting for synth_1 to finish...
 
 *** Running vivado
     with args -log azmig_wrapper.vds -m64 -product Vivado -mode batch -messageDb vivado.pb -notrace -source azmig_wrapper.tcl
@@ -394,80 +399,86 @@ source azmig_wrapper.tcl -notrace
 INFO: [IP_Flow 19-234] Refreshing IP repositories
 INFO: [IP_Flow 19-1700] Loaded user IP repository 'c:/Users/admin/AppData/Local/Temp/lightning_hls_unified_obs/solution1/impl/ip'.
 INFO: [IP_Flow 19-2313] Loaded Vivado IP repository 'E:/Xilinx/Vivado/2018.3/data/ip'.
-add_files: Time (s): cpu = 00:00:04 ; elapsed = 00:00:07 . Memory (MB): peak = 409.281 ; gain = 57.312
+add_files: Time (s): cpu = 00:00:05 ; elapsed = 00:00:08 . Memory (MB): peak = 408.355 ; gain = 57.465
 Command: synth_design -top azmig_wrapper -part xc7z100ffg900-2
 Starting synth_design
 Attempting to get a license for feature 'Synthesis' and/or device 'xc7z100'
 INFO: [Common 17-349] Got license for feature 'Synthesis' and/or device 'xc7z100'
 INFO: Launching helper process for spawning children vivado processes
-INFO: Helper process launched with PID 80160 
+INFO: Helper process launched with PID 39648
 ---------------------------------------------------------------------------------
-Starting RTL Elaboration : Time (s): cpu = 00:00:01 ; elapsed = 00:00:02 . Memory (MB): peak = 524.074 ; gain = 107.898
+Starting RTL Elaboration : Time (s): cpu = 00:00:02 ; elapsed = 00:00:02 . Memory (MB): peak = 523.473 ; gain = 108.219
 ---------------------------------------------------------------------------------
 INFO: [Synth 8-6157] synthesizing module 'azmig_wrapper' [V:/azmig_impl/azmig.srcs/sources_1/imports/hdl/azmig_wrapper.v:12]
 INFO: [Synth 8-6157] synthesizing module 'azmig' [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:13]
 INFO: [Synth 8-6157] synthesizing module 'azmig_const_zero_32_0' [v:/azmig_impl/azmig.srcs/sources_1/bd/azmig/ip/azmig_const_zero_32_0/synth/azmig_const_zero_32_0.v:57]
 INFO: [Synth 8-6157] synthesizing module 'xlconstant_v1_1_5_xlconstant' [v:/azmig_impl/azmig.srcs/sources_1/bd/azmig/ipshared/4649/hdl/xlconstant_v1_1_vl_rfs.v:23]
-	Parameter CONST_VAL bound to: 0 - type: integer 
-	Parameter CONST_WIDTH bound to: 32 - type: integer 
+	Parameter CONST_VAL bound to: 0 - type: integer
+	Parameter CONST_WIDTH bound to: 32 - type: integer
 INFO: [Synth 8-6155] done synthesizing module 'xlconstant_v1_1_5_xlconstant' (1#1) [v:/azmig_impl/azmig.srcs/sources_1/bd/azmig/ipshared/4649/hdl/xlconstant_v1_1_vl_rfs.v:23]
 INFO: [Synth 8-6155] done synthesizing module 'azmig_const_zero_32_0' (2#1) [v:/azmig_impl/azmig.srcs/sources_1/bd/azmig/ip/azmig_const_zero_32_0/synth/azmig_const_zero_32_0.v:57]
-INFO: [Synth 8-6157] synthesizing module 'azmig_ctrl_0_0' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_ctrl_0_0_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_ctrl_0_0' (3#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_ctrl_0_0_stub.v:6]
-WARNING: [Synth 8-350] instance 'ctrl_0' of module 'azmig_ctrl_0_0' requires 43 connections, but only 40 given [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:395]
-INFO: [Synth 8-6157] synthesizing module 'azmig_mem_axi_ic_0' [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:1025]
-INFO: [Synth 8-6157] synthesizing module 'm00_couplers_imp_2QRP7E' [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:2875]
-INFO: [Synth 8-6157] synthesizing module 'azmig_auto_cc_0' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_auto_cc_0_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_cc_0' (4#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_auto_cc_0_stub.v:6]
-INFO: [Synth 8-6157] synthesizing module 'azmig_auto_ds_0' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_auto_ds_0_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_ds_0' (5#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_auto_ds_0_stub.v:6]
-WARNING: [Synth 8-350] instance 'auto_ds' of module 'azmig_auto_ds_0' requires 76 connections, but only 74 given [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3304]
-INFO: [Synth 8-6155] done synthesizing module 'm00_couplers_imp_2QRP7E' (6#1) [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:2875]
-INFO: [Synth 8-6157] synthesizing module 's00_couplers_imp_QISGC1' [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3381]
-INFO: [Synth 8-6157] synthesizing module 'azmig_auto_us_0' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_auto_us_0_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_us_0' (7#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_auto_us_0_stub.v:6]
-WARNING: [Synth 8-350] instance 'auto_us' of module 'azmig_auto_us_0' requires 76 connections, but only 74 given [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3668]
-INFO: [Synth 8-6155] done synthesizing module 's00_couplers_imp_QISGC1' (8#1) [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3381]
-INFO: [Synth 8-6157] synthesizing module 's01_couplers_imp_1RXOY8P' [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3745]
-INFO: [Synth 8-6157] synthesizing module 'azmig_auto_us_1' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_auto_us_1_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_us_1' (9#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_auto_us_1_stub.v:6]
-WARNING: [Synth 8-350] instance 'auto_us' of module 'azmig_auto_us_1' requires 72 connections, but only 70 given [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4032]
-INFO: [Synth 8-6155] done synthesizing module 's01_couplers_imp_1RXOY8P' (10#1) [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3745]
-INFO: [Synth 8-6157] synthesizing module 's02_couplers_imp_1WJUXWG' [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4105]
-INFO: [Synth 8-6155] done synthesizing module 's02_couplers_imp_1WJUXWG' (11#1) [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4105]
-INFO: [Synth 8-6157] synthesizing module 's03_couplers_imp_LWAVGO' [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4349]
-INFO: [Synth 8-6157] synthesizing module 'azmig_auto_us_2' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_auto_us_2_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_us_2' (12#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_auto_us_2_stub.v:6]
-WARNING: [Synth 8-350] instance 'auto_us' of module 'azmig_auto_us_2' requires 72 connections, but only 70 given [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4636]
-INFO: [Synth 8-6155] done synthesizing module 's03_couplers_imp_LWAVGO' (13#1) [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4349]
-INFO: [Synth 8-6157] synthesizing module 's04_couplers_imp_1NCQQ4Y' [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4709]
-INFO: [Synth 8-6155] done synthesizing module 's04_couplers_imp_1NCQQ4Y' (14#1) [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4709]
-INFO: [Synth 8-6157] synthesizing module 's05_couplers_imp_TZGRAY' [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4953]
-INFO: [Synth 8-6157] synthesizing module 'azmig_auto_us_3' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_auto_us_3_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_us_3' (15#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_auto_us_3_stub.v:6]
-WARNING: [Synth 8-350] instance 'auto_us' of module 'azmig_auto_us_3' requires 72 connections, but only 70 given [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:5240]
-INFO: [Synth 8-6155] done synthesizing module 's05_couplers_imp_TZGRAY' (16#1) [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4953]
-INFO: [Synth 8-6157] synthesizing module 'azmig_xbar_0' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_xbar_0_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_xbar_0' (17#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_xbar_0_stub.v:6]
-WARNING: [Synth 8-350] instance 'xbar' of module 'azmig_xbar_0' requires 78 connections, but only 76 given [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:2796]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_mem_axi_ic_0' (18#1) [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:1025]
-INFO: [Synth 8-6157] synthesizing module 'azmig_mig_7series_0_0' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_mig_7series_0_0_stub.v:5]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_mig_7series_0_0' (19#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_mig_7series_0_0_stub.v:5]
-WARNING: [Synth 8-350] instance 'mig_7series_0' of module 'azmig_mig_7series_0_0' requires 64 connections, but only 57 given [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:692]
-INFO: [Synth 8-6157] synthesizing module 'azmig_rst_mig_ui_0' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_rst_mig_ui_0_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_rst_mig_ui_0' (20#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_rst_mig_ui_0_stub.v:6]
-WARNING: [Synth 8-350] instance 'rst_mig_ui' of module 'azmig_rst_mig_ui_0' requires 10 connections, but only 6 given [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:750]
-INFO: [Synth 8-6157] synthesizing module 'azmig_unified_obs_0_0' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_unified_obs_0_0_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_unified_obs_0_0' (21#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_unified_obs_0_0_stub.v:6]
-WARNING: [Synth 8-350] instance 'unified_obs_0' of module 'azmig_unified_obs_0_0' requires 197 connections, but only 193 given [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:757]
-INFO: [Synth 8-6157] synthesizing module 'azmig_util_ds_buf_0_0' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_util_ds_buf_0_0_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_util_ds_buf_0_0' (22#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_util_ds_buf_0_0_stub.v:6]
-WARNING: [Synth 8-350] instance 'util_ds_buf_0' of module 'azmig_util_ds_buf_0_0' requires 4 connections, but only 3 given [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:951]
-INFO: [Synth 8-6157] synthesizing module 'azmig_xdma_0_0' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_xdma_0_0_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_xdma_0_0' (23#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-51208-DESKTOP-QEQDV5I/realtime/azmig_xdma_0_0_stub.v:6]
-WARNING: [Synth 8-350] instance 'xdma_0' of module 'azmig_xdma_0_0' requires 75 connections, but only 67 given [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:955]
-INFO: [Synth 8-6155] done synthesizing module 'azmig' (24#1) [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:13]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_wrapper' (25#1) [V:/azmig_impl/azmig.srcs/sources_1/imports/hdl/azmig_wrapper.v:12]
+INFO: [Synth 8-6157] synthesizing module 'azmig_ctrl_0_0' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_ctrl_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_ctrl_0_0' (3#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_ctrl_0_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'ctrl_0' of module 'azmig_ctrl_0_0' requires 43 connections, but only 40 given [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:396]
+INFO: [Synth 8-6157] synthesizing module 'azmig_mem_axi_ic_0' [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:1028]
+INFO: [Synth 8-6157] synthesizing module 'm00_couplers_imp_2QRP7E' [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:2878]
+INFO: [Synth 8-6157] synthesizing module 'azmig_auto_cc_0' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_auto_cc_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_cc_0' (4#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_auto_cc_0_stub.v:6]
+INFO: [Synth 8-6157] synthesizing module 'azmig_auto_ds_0' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_auto_ds_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_ds_0' (5#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_auto_ds_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'auto_ds' of module 'azmig_auto_ds_0' requires 76 connections, but only 74 given [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3307]
+INFO: [Synth 8-6155] done synthesizing module 'm00_couplers_imp_2QRP7E' (6#1) [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:2878]
+INFO: [Synth 8-6157] synthesizing module 's00_couplers_imp_QISGC1' [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3384]
+INFO: [Synth 8-6157] synthesizing module 'azmig_auto_us_0' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_auto_us_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_us_0' (7#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_auto_us_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'auto_us' of module 'azmig_auto_us_0' requires 76 connections, but only 74 given [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3671]
+INFO: [Synth 8-6155] done synthesizing module 's00_couplers_imp_QISGC1' (8#1) [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3384]
+INFO: [Synth 8-6157] synthesizing module 's01_couplers_imp_1RXOY8P' [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3748]
+INFO: [Synth 8-6157] synthesizing module 'azmig_auto_us_1' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_auto_us_1_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_us_1' (9#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_auto_us_1_stub.v:6]
+WARNING: [Synth 8-350] instance 'auto_us' of module 'azmig_auto_us_1' requires 72 connections, but only 70 given [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4035]
+INFO: [Synth 8-6155] done synthesizing module 's01_couplers_imp_1RXOY8P' (10#1) [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3748]
+INFO: [Synth 8-6157] synthesizing module 's02_couplers_imp_1WJUXWG' [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4108]
+INFO: [Synth 8-6155] done synthesizing module 's02_couplers_imp_1WJUXWG' (11#1) [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4108]
+INFO: [Synth 8-6157] synthesizing module 's03_couplers_imp_LWAVGO' [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4352]
+INFO: [Synth 8-6157] synthesizing module 'azmig_auto_us_2' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_auto_us_2_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_us_2' (12#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_auto_us_2_stub.v:6]
+WARNING: [Synth 8-350] instance 'auto_us' of module 'azmig_auto_us_2' requires 72 connections, but only 70 given [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4639]
+INFO: [Synth 8-6155] done synthesizing module 's03_couplers_imp_LWAVGO' (13#1) [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4352]
+INFO: [Synth 8-6157] synthesizing module 's04_couplers_imp_1NCQQ4Y' [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4712]
+INFO: [Synth 8-6155] done synthesizing module 's04_couplers_imp_1NCQQ4Y' (14#1) [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4712]
+INFO: [Synth 8-6157] synthesizing module 's05_couplers_imp_TZGRAY' [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4956]
+INFO: [Synth 8-6157] synthesizing module 'azmig_auto_us_3' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_auto_us_3_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_us_3' (15#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_auto_us_3_stub.v:6]
+WARNING: [Synth 8-350] instance 'auto_us' of module 'azmig_auto_us_3' requires 72 connections, but only 70 given [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:5243]
+INFO: [Synth 8-6155] done synthesizing module 's05_couplers_imp_TZGRAY' (16#1) [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4956]
+INFO: [Synth 8-6157] synthesizing module 'azmig_xbar_0' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_xbar_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_xbar_0' (17#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_xbar_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'xbar' of module 'azmig_xbar_0' requires 78 connections, but only 76 given [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:2799]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_mem_axi_ic_0' (18#1) [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:1028]
+INFO: [Synth 8-6157] synthesizing module 'azmig_mig_7series_0_0' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_mig_7series_0_0_stub.v:5]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_mig_7series_0_0' (19#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_mig_7series_0_0_stub.v:5]
+WARNING: [Synth 8-350] instance 'mig_7series_0' of module 'azmig_mig_7series_0_0' requires 64 connections, but only 57 given [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:693]
+INFO: [Synth 8-6157] synthesizing module 'azmig_mig_rst_hi_0' [v:/azmig_impl/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_rst_hi_0/synth/azmig_mig_rst_hi_0.v:57]
+INFO: [Synth 8-6157] synthesizing module 'xlconstant_v1_1_5_xlconstant__parameterized0' [v:/azmig_impl/azmig.srcs/sources_1/bd/azmig/ipshared/4649/hdl/xlconstant_v1_1_vl_rfs.v:23]
+	Parameter CONST_VAL bound to: 1 - type: integer
+	Parameter CONST_WIDTH bound to: 1 - type: integer
+INFO: [Synth 8-6155] done synthesizing module 'xlconstant_v1_1_5_xlconstant__parameterized0' (19#1) [v:/azmig_impl/azmig.srcs/sources_1/bd/azmig/ipshared/4649/hdl/xlconstant_v1_1_vl_rfs.v:23]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_mig_rst_hi_0' (20#1) [v:/azmig_impl/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_rst_hi_0/synth/azmig_mig_rst_hi_0.v:57]
+INFO: [Synth 8-6157] synthesizing module 'azmig_rst_mig_ui_0' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_rst_mig_ui_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_rst_mig_ui_0' (21#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_rst_mig_ui_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'rst_mig_ui' of module 'azmig_rst_mig_ui_0' requires 10 connections, but only 6 given [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:753]
+INFO: [Synth 8-6157] synthesizing module 'azmig_unified_obs_0_0' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_unified_obs_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_unified_obs_0_0' (22#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_unified_obs_0_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'unified_obs_0' of module 'azmig_unified_obs_0_0' requires 197 connections, but only 193 given [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:760]
+INFO: [Synth 8-6157] synthesizing module 'azmig_util_ds_buf_0_0' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_util_ds_buf_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_util_ds_buf_0_0' (23#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_util_ds_buf_0_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'util_ds_buf_0' of module 'azmig_util_ds_buf_0_0' requires 4 connections, but only 3 given [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:954]
+INFO: [Synth 8-6157] synthesizing module 'azmig_xdma_0_0' [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_xdma_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_xdma_0_0' (24#1) [V:/azmig_impl/azmig.runs/synth_1/.Xil/Vivado-33800-DESKTOP-QEQDV5I/realtime/azmig_xdma_0_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'xdma_0' of module 'azmig_xdma_0_0' requires 75 connections, but only 67 given [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:958]
+INFO: [Synth 8-6155] done synthesizing module 'azmig' (25#1) [V:/azmig_impl/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:13]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_wrapper' (26#1) [V:/azmig_impl/azmig.srcs/sources_1/imports/hdl/azmig_wrapper.v:12]
 WARNING: [Synth 8-3331] design s05_couplers_imp_TZGRAY has unconnected port M_ACLK
 WARNING: [Synth 8-3331] design s05_couplers_imp_TZGRAY has unconnected port M_ARESETN
 WARNING: [Synth 8-3331] design s05_couplers_imp_TZGRAY has unconnected port S_AXI_arlock[1]
@@ -559,10 +570,10 @@ WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AX
 WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[31]
 WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[30]
 ---------------------------------------------------------------------------------
-Finished RTL Elaboration : Time (s): cpu = 00:00:02 ; elapsed = 00:00:03 . Memory (MB): peak = 587.238 ; gain = 171.062
+Finished RTL Elaboration : Time (s): cpu = 00:00:03 ; elapsed = 00:00:03 . Memory (MB): peak = 586.066 ; gain = 170.812
 ---------------------------------------------------------------------------------
 
-Report Check Netlist: 
+Report Check Netlist:
 +------+------------------+-------+---------+-------+------------------+
 |      |Item              |Errors |Warnings |Status |Description       |
 +------+------------------+-------+---------+-------+------------------+
@@ -572,10 +583,10 @@ Report Check Netlist:
 Start Handling Custom Attributes
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Handling Custom Attributes : Time (s): cpu = 00:00:03 ; elapsed = 00:00:03 . Memory (MB): peak = 587.238 ; gain = 171.062
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 586.066 ; gain = 170.812
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished RTL Optimization Phase 1 : Time (s): cpu = 00:00:03 ; elapsed = 00:00:03 . Memory (MB): peak = 587.238 ; gain = 171.062
+Finished RTL Optimization Phase 1 : Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 586.066 ; gain = 170.812
 ---------------------------------------------------------------------------------
 INFO: [Device 21-403] Loading part xc7z100ffg900-2
 INFO: [Project 1-570] Preparing netlist for logic optimization
@@ -614,25 +625,25 @@ INFO: [Project 1-236] Implementation specific constraints were found while readi
 Resolution: To avoid this warning, move constraints listed in [.Xil/azmig_wrapper_propImpl.xdc] to another XDC file and exclude this new file from synthesis with the used_in_synthesis property (File Properties dialog in GUI) and re-run elaboration/synthesis.
 Parsing XDC File [V:/azmig_impl/azmig.runs/synth_1/dont_touch.xdc]
 Finished Parsing XDC File [V:/azmig_impl/azmig.runs/synth_1/dont_touch.xdc]
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1050.910 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1051.172 ; gain = 0.000
 Completed Processing XDC Constraints
 
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1050.910 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1051.172 ; gain = 0.000
 INFO: [Project 1-111] Unisim Transformation Summary:
 No Unisim elements were transformed.
 
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.001 . Memory (MB): peak = 1050.910 ; gain = 0.000
-Constraint Validation Runtime : Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.010 . Memory (MB): peak = 1050.910 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1051.172 ; gain = 0.000
+Constraint Validation Runtime : Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.008 . Memory (MB): peak = 1051.172 ; gain = 0.000
 WARNING: [Timing 38-316] Clock period '10.000' specified during out-of-context synthesis of instance 'azmig_i/unified_obs_0' at clock pin 'ap_clk' is different from the actual clock period '8.000', this can lead to different synthesis results.
 ---------------------------------------------------------------------------------
-Finished Constraint Validation : Time (s): cpu = 00:00:12 ; elapsed = 00:00:14 . Memory (MB): peak = 1051.250 ; gain = 635.074
+Finished Constraint Validation : Time (s): cpu = 00:00:14 ; elapsed = 00:00:16 . Memory (MB): peak = 1051.172 ; gain = 635.918
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Loading Part and Timing Information
 ---------------------------------------------------------------------------------
 Loading part: xc7z100ffg900-2
 ---------------------------------------------------------------------------------
-Finished Loading Part and Timing Information : Time (s): cpu = 00:00:12 ; elapsed = 00:00:14 . Memory (MB): peak = 1051.250 ; gain = 635.074
+Finished Loading Part and Timing Information : Time (s): cpu = 00:00:14 ; elapsed = 00:00:16 . Memory (MB): peak = 1051.172 ; gain = 635.918
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Applying 'set_property' XDC Constraints
@@ -791,6 +802,7 @@ Applied set_property DONT_TOUCH = true for azmig_i. (constraint file  auto gener
 Applied set_property DONT_TOUCH = true for azmig_i/ctrl_0. (constraint file  auto generated constraint, line ).
 Applied set_property DONT_TOUCH = true for azmig_i/unified_obs_0. (constraint file  auto generated constraint, line ).
 Applied set_property DONT_TOUCH = true for azmig_i/const_zero_32. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for azmig_i/mig_rst_hi. (constraint file  auto generated constraint, line ).
 Applied set_property DONT_TOUCH = true for azmig_i/util_ds_buf_0. (constraint file  auto generated constraint, line ).
 Applied set_property DONT_TOUCH = true for azmig_i/mig_7series_0. (constraint file  auto generated constraint, line ).
 Applied set_property DONT_TOUCH = true for azmig_i/xdma_0. (constraint file  auto generated constraint, line ).
@@ -804,28 +816,28 @@ Applied set_property DONT_TOUCH = true for azmig_i/mem_axi_ic/m00_couplers/auto_
 Applied set_property DONT_TOUCH = true for azmig_i/mem_axi_ic. (constraint file  auto generated constraint, line ).
 Applied set_property DONT_TOUCH = true for azmig_i/rst_mig_ui. (constraint file  auto generated constraint, line ).
 ---------------------------------------------------------------------------------
-Finished applying 'set_property' XDC Constraints : Time (s): cpu = 00:00:12 ; elapsed = 00:00:14 . Memory (MB): peak = 1051.250 ; gain = 635.074
+Finished applying 'set_property' XDC Constraints : Time (s): cpu = 00:00:14 ; elapsed = 00:00:16 . Memory (MB): peak = 1051.172 ; gain = 635.918
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished RTL Optimization Phase 2 : Time (s): cpu = 00:00:13 ; elapsed = 00:00:15 . Memory (MB): peak = 1051.250 ; gain = 635.074
+Finished RTL Optimization Phase 2 : Time (s): cpu = 00:00:14 ; elapsed = 00:00:16 . Memory (MB): peak = 1051.172 ; gain = 635.918
 ---------------------------------------------------------------------------------
 
-Report RTL Partitions: 
+Report RTL Partitions:
 +-+--------------+------------+----------+
 | |RTL Partition |Replication |Instances |
 +-+--------------+------------+----------+
 +-+--------------+------------+----------+
 ---------------------------------------------------------------------------------
-Start RTL Component Statistics 
+Start RTL Component Statistics
 ---------------------------------------------------------------------------------
-Detailed RTL Component Info : 
+Detailed RTL Component Info :
 ---------------------------------------------------------------------------------
-Finished RTL Component Statistics 
+Finished RTL Component Statistics
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Start RTL Hierarchical Component Statistics 
+Start RTL Hierarchical Component Statistics
 ---------------------------------------------------------------------------------
-Hierarchical RTL Component report 
+Hierarchical RTL Component report
 ---------------------------------------------------------------------------------
 Finished RTL Hierarchical Component Statistics
 ---------------------------------------------------------------------------------
@@ -841,7 +853,7 @@ Finished Part Resource Summary
 ---------------------------------------------------------------------------------
 Start Cross Boundary and Area Optimization
 ---------------------------------------------------------------------------------
-Warning: Parallel synthesis criteria is not met 
+Warning: Parallel synthesis criteria is not met
 WARNING: [Synth 8-3331] design azmig_mem_axi_ic_0 has unconnected port S01_AXI_arlock[1]
 WARNING: [Synth 8-3331] design azmig_mem_axi_ic_0 has unconnected port S01_AXI_awlock[1]
 WARNING: [Synth 8-3331] design azmig_mem_axi_ic_0 has unconnected port S02_ACLK
@@ -854,10 +866,10 @@ WARNING: [Synth 8-3331] design azmig_mem_axi_ic_0 has unconnected port S04_ACLK
 WARNING: [Synth 8-3331] design azmig_mem_axi_ic_0 has unconnected port S04_ARESETN
 INFO: [Common 17-14] Message 'Synth 8-3331' appears 100 times and further instances of the messages will be disabled. Use the Tcl command set_msg_config to change the current settings.
 ---------------------------------------------------------------------------------
-Finished Cross Boundary and Area Optimization : Time (s): cpu = 00:00:14 ; elapsed = 00:00:16 . Memory (MB): peak = 1051.250 ; gain = 635.074
+Finished Cross Boundary and Area Optimization : Time (s): cpu = 00:00:15 ; elapsed = 00:00:18 . Memory (MB): peak = 1051.172 ; gain = 635.918
 ---------------------------------------------------------------------------------
 
-Report RTL Partitions: 
+Report RTL Partitions:
 +-+--------------+------------+----------+
 | |RTL Partition |Replication |Instances |
 +-+--------------+------------+----------+
@@ -871,16 +883,16 @@ INFO: [Synth 8-5578] Moved timing constraint from pin 'azmig_i/mig_7series_0/ui_
 INFO: [Synth 8-5578] Moved timing constraint from pin 'azmig_i/xdma_0/axi_aclk' to pin 'azmig_i/xdma_0/bbstub_axi_aclk/O'
 INFO: [Synth 8-5819] Moved 4 constraints on hierarchical pins to their respective driving/loading pins
 ---------------------------------------------------------------------------------
-Finished Applying XDC Timing Constraints : Time (s): cpu = 00:00:22 ; elapsed = 00:00:24 . Memory (MB): peak = 1051.250 ; gain = 635.074
+Finished Applying XDC Timing Constraints : Time (s): cpu = 00:00:24 ; elapsed = 00:00:27 . Memory (MB): peak = 1051.172 ; gain = 635.918
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Timing Optimization
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Timing Optimization : Time (s): cpu = 00:00:22 ; elapsed = 00:00:24 . Memory (MB): peak = 1051.250 ; gain = 635.074
+Finished Timing Optimization : Time (s): cpu = 00:00:24 ; elapsed = 00:00:27 . Memory (MB): peak = 1051.172 ; gain = 635.918
 ---------------------------------------------------------------------------------
 
-Report RTL Partitions: 
+Report RTL Partitions:
 +-+--------------+------------+----------+
 | |RTL Partition |Replication |Instances |
 +-+--------------+------------+----------+
@@ -889,10 +901,10 @@ Report RTL Partitions:
 Start Technology Mapping
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Technology Mapping : Time (s): cpu = 00:00:23 ; elapsed = 00:00:25 . Memory (MB): peak = 1051.250 ; gain = 635.074
+Finished Technology Mapping : Time (s): cpu = 00:00:24 ; elapsed = 00:00:28 . Memory (MB): peak = 1051.172 ; gain = 635.918
 ---------------------------------------------------------------------------------
 
-Report RTL Partitions: 
+Report RTL Partitions:
 +-+--------------+------------+----------+
 | |RTL Partition |Replication |Instances |
 +-+--------------+------------+----------+
@@ -913,10 +925,10 @@ Start Final Netlist Cleanup
 Finished Final Netlist Cleanup
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished IO Insertion : Time (s): cpu = 00:00:23 ; elapsed = 00:00:26 . Memory (MB): peak = 1051.250 ; gain = 635.074
+Finished IO Insertion : Time (s): cpu = 00:00:25 ; elapsed = 00:00:29 . Memory (MB): peak = 1051.172 ; gain = 635.918
 ---------------------------------------------------------------------------------
 
-Report Check Netlist: 
+Report Check Netlist:
 +------+------------------+-------+---------+-------+------------------+
 |      |Item              |Errors |Warnings |Status |Description       |
 +------+------------------+-------+---------+-------+------------------+
@@ -926,10 +938,10 @@ Report Check Netlist:
 Start Renaming Generated Instances
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Renaming Generated Instances : Time (s): cpu = 00:00:23 ; elapsed = 00:00:26 . Memory (MB): peak = 1051.250 ; gain = 635.074
+Finished Renaming Generated Instances : Time (s): cpu = 00:00:25 ; elapsed = 00:00:29 . Memory (MB): peak = 1051.172 ; gain = 635.918
 ---------------------------------------------------------------------------------
 
-Report RTL Partitions: 
+Report RTL Partitions:
 +-+--------------+------------+----------+
 | |RTL Partition |Replication |Instances |
 +-+--------------+------------+----------+
@@ -938,31 +950,31 @@ Report RTL Partitions:
 Start Rebuilding User Hierarchy
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Rebuilding User Hierarchy : Time (s): cpu = 00:00:23 ; elapsed = 00:00:26 . Memory (MB): peak = 1051.250 ; gain = 635.074
+Finished Rebuilding User Hierarchy : Time (s): cpu = 00:00:25 ; elapsed = 00:00:29 . Memory (MB): peak = 1051.172 ; gain = 635.918
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Renaming Generated Ports
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Renaming Generated Ports : Time (s): cpu = 00:00:24 ; elapsed = 00:00:26 . Memory (MB): peak = 1051.250 ; gain = 635.074
+Finished Renaming Generated Ports : Time (s): cpu = 00:00:25 ; elapsed = 00:00:29 . Memory (MB): peak = 1051.172 ; gain = 635.918
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Handling Custom Attributes
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Handling Custom Attributes : Time (s): cpu = 00:00:24 ; elapsed = 00:00:26 . Memory (MB): peak = 1051.250 ; gain = 635.074
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:25 ; elapsed = 00:00:29 . Memory (MB): peak = 1051.172 ; gain = 635.918
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Renaming Generated Nets
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Renaming Generated Nets : Time (s): cpu = 00:00:24 ; elapsed = 00:00:26 . Memory (MB): peak = 1051.250 ; gain = 635.074
+Finished Renaming Generated Nets : Time (s): cpu = 00:00:25 ; elapsed = 00:00:29 . Memory (MB): peak = 1051.172 ; gain = 635.918
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Writing Synthesis Report
 ---------------------------------------------------------------------------------
 
-Report BlackBoxes: 
+Report BlackBoxes:
 +------+----------------------+----------+
 |      |BlackBox name         |Instances |
 +------+----------------------+----------+
@@ -981,7 +993,7 @@ Report BlackBoxes:
 |13    |azmig_xdma_0_0        |         1|
 +------+----------------------+----------+
 
-Report Cell Usage: 
+Report Cell Usage:
 +------+----------------------+------+
 |      |Cell                  |Count |
 +------+----------------------+------+
@@ -1002,7 +1014,7 @@ Report Cell Usage:
 |15    |OBUF                  |     8|
 +------+----------------------+------+
 
-Report Instance Areas: 
+Report Instance Areas:
 +------+-------------------+-------------------------+------+
 |      |Instance           |Module                   |Cells |
 +------+-------------------+-------------------------+------+
@@ -1015,32 +1027,33 @@ Report Instance Areas:
 |7     |      s01_couplers |s01_couplers_imp_1RXOY8P |   842|
 |8     |      s03_couplers |s03_couplers_imp_LWAVGO  |   970|
 |9     |      s05_couplers |s05_couplers_imp_TZGRAY  |   778|
+|10    |    mig_rst_hi     |azmig_mig_rst_hi_0       |     0|
 +------+-------------------+-------------------------+------+
 ---------------------------------------------------------------------------------
-Finished Writing Synthesis Report : Time (s): cpu = 00:00:24 ; elapsed = 00:00:26 . Memory (MB): peak = 1051.250 ; gain = 635.074
+Finished Writing Synthesis Report : Time (s): cpu = 00:00:25 ; elapsed = 00:00:29 . Memory (MB): peak = 1051.172 ; gain = 635.918
 ---------------------------------------------------------------------------------
 Synthesis finished with 0 errors, 0 critical warnings and 14 warnings.
-Synthesis Optimization Runtime : Time (s): cpu = 00:00:14 ; elapsed = 00:00:18 . Memory (MB): peak = 1051.250 ; gain = 171.062
-Synthesis Optimization Complete : Time (s): cpu = 00:00:24 ; elapsed = 00:00:26 . Memory (MB): peak = 1051.250 ; gain = 635.074
+Synthesis Optimization Runtime : Time (s): cpu = 00:00:13 ; elapsed = 00:00:20 . Memory (MB): peak = 1051.172 ; gain = 170.812
+Synthesis Optimization Complete : Time (s): cpu = 00:00:25 ; elapsed = 00:00:29 . Memory (MB): peak = 1051.172 ; gain = 635.918
 INFO: [Project 1-571] Translating synthesized netlist
 INFO: [Project 1-570] Preparing netlist for logic optimization
 INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1074.391 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1073.891 ; gain = 0.000
 INFO: [Project 1-111] Unisim Transformation Summary:
 No Unisim elements were transformed.
 
 INFO: [Common 17-83] Releasing license: Synthesis
-69 Infos, 113 Warnings, 0 Critical Warnings and 0 Errors encountered.
+73 Infos, 113 Warnings, 0 Critical Warnings and 0 Errors encountered.
 synth_design completed successfully
-synth_design: Time (s): cpu = 00:00:27 ; elapsed = 00:00:31 . Memory (MB): peak = 1074.391 ; gain = 665.109
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1074.391 ; gain = 0.000
+synth_design: Time (s): cpu = 00:00:28 ; elapsed = 00:00:34 . Memory (MB): peak = 1073.895 ; gain = 665.539
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.001 . Memory (MB): peak = 1073.895 ; gain = 0.000
 WARNING: [Constraints 18-5210] No constraints selected for write.
 Resolution: This message can indicate that there are no constraints for the design, or it can indicate that the used_in flags are set such that the constraints are ignored. This later case is used when running synth_design to not write synthesis constraints to the resulting checkpoint. Instead, project constraints are read when the synthesized design is opened.
 INFO: [Common 17-1381] The checkpoint 'V:/azmig_impl/azmig.runs/synth_1/azmig_wrapper.dcp' has been generated.
 INFO: [runtcl-4] Executing : report_utilization -file azmig_wrapper_utilization_synth.rpt -pb azmig_wrapper_utilization_synth.pb
-INFO: [Common 17-206] Exiting Vivado at Wed Jun 17 20:35:29 2026...
-[Wed Jun 17 20:35:32 2026] synth_1 finished
-wait_on_run: Time (s): cpu = 00:00:02 ; elapsed = 00:14:35 . Memory (MB): peak = 1359.641 ; gain = 1.148
+INFO: [Common 17-206] Exiting Vivado at Fri Jun 19 22:20:51 2026...
+[Fri Jun 19 22:20:53 2026] synth_1 finished
+wait_on_run: Time (s): cpu = 00:00:03 ; elapsed = 00:17:03 . Memory (MB): peak = 1357.688 ; gain = 1.008
 # set synth_status [get_property STATUS [get_runs synth_1]]
 # puts "SYNTH_1_STATUS=$synth_status"
 SYNTH_1_STATUS=synth_design Complete!
@@ -1048,10 +1061,10 @@ SYNTH_1_STATUS=synth_design Complete!
 #     error "synth_1 did not complete: $synth_status"
 # }
 # launch_runs impl_1 -to_step write_bitstream -jobs 2
-[Wed Jun 17 20:35:32 2026] Launched impl_1...
+[Fri Jun 19 22:20:53 2026] Launched impl_1...
 Run output will be captured here: V:/azmig_impl/azmig.runs/impl_1/runme.log
 # wait_on_run impl_1
-[Wed Jun 17 20:35:32 2026] Waiting for impl_1 to finish...
+[Fri Jun 19 22:20:53 2026] Waiting for impl_1 to finish...
 
 *** Running vivado
     with args -log azmig_wrapper.vdi -applog -m64 -product Vivado -messageDb vivado.pb -mode batch -source azmig_wrapper.tcl -notrace
@@ -1066,7 +1079,7 @@ source azmig_wrapper.tcl -notrace
 INFO: [IP_Flow 19-234] Refreshing IP repositories
 INFO: [IP_Flow 19-1700] Loaded user IP repository 'c:/Users/admin/AppData/Local/Temp/lightning_hls_unified_obs/solution1/impl/ip'.
 INFO: [IP_Flow 19-2313] Loaded Vivado IP repository 'E:/Xilinx/Vivado/2018.3/data/ip'.
-add_files: Time (s): cpu = 00:00:04 ; elapsed = 00:00:06 . Memory (MB): peak = 411.059 ; gain = 53.961
+add_files: Time (s): cpu = 00:00:05 ; elapsed = 00:00:07 . Memory (MB): peak = 410.125 ; gain = 52.621
 Command: link_design -top azmig_wrapper -part xc7z100ffg900-2
 Design is defaulting to srcset: sources_1
 Design is defaulting to constrset: constrs_1
@@ -1084,7 +1097,7 @@ INFO: [Project 1-454] Reading design checkpoint 'v:/azmig_impl/azmig.srcs/source
 INFO: [Project 1-454] Reading design checkpoint 'v:/azmig_impl/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_2/azmig_auto_us_2.dcp' for cell 'azmig_i/mem_axi_ic/s03_couplers/auto_us'
 INFO: [Project 1-454] Reading design checkpoint 'v:/azmig_impl/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_3/azmig_auto_us_3.dcp' for cell 'azmig_i/mem_axi_ic/s05_couplers/auto_us'
 INFO: [Netlist 29-17] Analyzing 5249 Unisim elements for replacement
-INFO: [Netlist 29-28] Unisim Transformation completed in 1 CPU seconds
+INFO: [Netlist 29-28] Unisim Transformation completed in 2 CPU seconds
 INFO: [Project 1-479] Netlist was created with Vivado 2018.3
 INFO: [Device 21-403] Loading part xc7z100ffg900-2
 INFO: [Project 1-570] Preparing netlist for logic optimization
@@ -1099,7 +1112,7 @@ Finished Parsing XDC File [v:/azmig_impl/azmig.srcs/sources_1/bd/azmig/ip/azmig_
 Parsing XDC File [v:/azmig_impl/azmig.srcs/sources_1/bd/azmig/ip/azmig_xdma_0_0/ip_0/source/azmig_xdma_0_0_pcie2_ip-PCIE_X0Y0.xdc] for cell 'azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst'
 INFO: [Timing 38-35] Done setting XDC timing constraints. [v:/azmig_impl/azmig.srcs/sources_1/bd/azmig/ip/azmig_xdma_0_0/ip_0/source/azmig_xdma_0_0_pcie2_ip-PCIE_X0Y0.xdc:136]
 INFO: [Timing 38-2] Deriving generated clocks [v:/azmig_impl/azmig.srcs/sources_1/bd/azmig/ip/azmig_xdma_0_0/ip_0/source/azmig_xdma_0_0_pcie2_ip-PCIE_X0Y0.xdc:136]
-create_generated_clock: Time (s): cpu = 00:00:24 ; elapsed = 00:00:21 . Memory (MB): peak = 2263.078 ; gain = 784.785
+create_generated_clock: Time (s): cpu = 00:00:26 ; elapsed = 00:00:25 . Memory (MB): peak = 2261.176 ; gain = 785.270
 Finished Parsing XDC File [v:/azmig_impl/azmig.srcs/sources_1/bd/azmig/ip/azmig_xdma_0_0/ip_0/source/azmig_xdma_0_0_pcie2_ip-PCIE_X0Y0.xdc] for cell 'azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst'
 Parsing XDC File [v:/azmig_impl/azmig.srcs/sources_1/bd/azmig/ip/azmig_xdma_0_0/ip_3/pcie2_fifo_generator_dma_cpl.xdc] for cell 'azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0'
 Finished Parsing XDC File [v:/azmig_impl/azmig.srcs/sources_1/bd/azmig/ip/azmig_xdma_0_0/ip_3/pcie2_fifo_generator_dma_cpl.xdc] for cell 'azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0'
@@ -1202,7 +1215,7 @@ Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_
 Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/phy_lnk_up_cdc'
 Finished Sourcing Tcl File [E:/Xilinx/Vivado/2018.3/data/ip/xpm/xpm_cdc/tcl/xpm_cdc_single.tcl] for cell 'azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/phy_lnk_up_cdc'
 INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.068 . Memory (MB): peak = 2274.461 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.061 . Memory (MB): peak = 2272.852 ; gain = 0.000
 INFO: [Project 1-111] Unisim Transformation Summary:
   A total of 1087 instances were transformed.
   IOBUFDS_DIFF_OUT_DCIEN => IOBUFDS_DIFF_OUT_DCIEN (IBUFDS_IBUFDISABLE_INT, IBUFDS_IBUFDISABLE_INT, INV, OBUFTDS_DCIEN, OBUFTDS_DCIEN): 4 instances
@@ -1216,7 +1229,7 @@ INFO: [Project 1-111] Unisim Transformation Summary:
 
 25 Infos, 0 Warnings, 0 Critical Warnings and 0 Errors encountered.
 link_design completed successfully
-link_design: Time (s): cpu = 00:01:17 ; elapsed = 00:01:16 . Memory (MB): peak = 2274.461 ; gain = 1863.402
+link_design: Time (s): cpu = 00:01:26 ; elapsed = 00:01:29 . Memory (MB): peak = 2272.852 ; gain = 1862.727
 Command: opt_design
 Attempting to get a license for feature 'Implementation' and/or device 'xc7z100'
 INFO: [Common 17-349] Got license for feature 'Implementation' and/or device 'xc7z100'
@@ -1227,61 +1240,61 @@ INFO: [DRC 23-27] Running DRC with 2 threads
 INFO: [Project 1-461] DRC finished with 0 Errors
 INFO: [Project 1-462] Please refer to the DRC report (report_drc) for more information.
 
-Time (s): cpu = 00:00:02 ; elapsed = 00:00:02 . Memory (MB): peak = 2274.461 ; gain = 0.000
+Time (s): cpu = 00:00:01 ; elapsed = 00:00:02 . Memory (MB): peak = 2272.852 ; gain = 0.000
 
 Starting Cache Timing Information Task
 INFO: [Timing 38-35] Done setting XDC timing constraints.
-Ending Cache Timing Information Task | Checksum: 23754b6e7
+Ending Cache Timing Information Task | Checksum: 2445c7706
 
-Time (s): cpu = 00:00:11 ; elapsed = 00:00:07 . Memory (MB): peak = 2274.461 ; gain = 0.000
+Time (s): cpu = 00:00:13 ; elapsed = 00:00:10 . Memory (MB): peak = 2272.852 ; gain = 0.000
 
 Starting Logic Optimization Task
 
 Phase 1 Retarget
 INFO: [Opt 31-138] Pushed 29 inverter(s) to 150 load pin(s).
 INFO: [Opt 31-49] Retargeted 0 cell(s).
-Phase 1 Retarget | Checksum: 268ddeed1
+Phase 1 Retarget | Checksum: 25e7e3317
 
-Time (s): cpu = 00:00:14 ; elapsed = 00:00:12 . Memory (MB): peak = 2345.895 ; gain = 37.230
-INFO: [Opt 31-389] Phase Retarget created 3076 cells and removed 3724 cells
-INFO: [Opt 31-1021] In phase Retarget, 115 netlist objects are constrained preventing optimization. Please run opt_design with -debug_log to get more detail. 
+Time (s): cpu = 00:00:15 ; elapsed = 00:00:14 . Memory (MB): peak = 2346.645 ; gain = 36.449
+INFO: [Opt 31-389] Phase Retarget created 3077 cells and removed 3725 cells
+INFO: [Opt 31-1021] In phase Retarget, 115 netlist objects are constrained preventing optimization. Please run opt_design with -debug_log to get more detail.
 
 Phase 2 Constant propagation
 INFO: [Opt 31-138] Pushed 31 inverter(s) to 41 load pin(s).
-Phase 2 Constant propagation | Checksum: 27af5bd30
+Phase 2 Constant propagation | Checksum: 22b46e00e
 
-Time (s): cpu = 00:00:20 ; elapsed = 00:00:18 . Memory (MB): peak = 2345.895 ; gain = 37.230
+Time (s): cpu = 00:00:22 ; elapsed = 00:00:22 . Memory (MB): peak = 2346.645 ; gain = 36.449
 INFO: [Opt 31-389] Phase Constant propagation created 3219 cells and removed 14184 cells
-INFO: [Opt 31-1021] In phase Constant propagation, 55 netlist objects are constrained preventing optimization. Please run opt_design with -debug_log to get more detail. 
+INFO: [Opt 31-1021] In phase Constant propagation, 56 netlist objects are constrained preventing optimization. Please run opt_design with -debug_log to get more detail.
 
 Phase 3 Sweep
-Phase 3 Sweep | Checksum: 29c5e0bd1
+Phase 3 Sweep | Checksum: 247848c2b
 
-Time (s): cpu = 00:00:31 ; elapsed = 00:00:30 . Memory (MB): peak = 2345.895 ; gain = 37.230
+Time (s): cpu = 00:00:34 ; elapsed = 00:00:35 . Memory (MB): peak = 2346.645 ; gain = 36.449
 INFO: [Opt 31-389] Phase Sweep created 0 cells and removed 3849 cells
-INFO: [Opt 31-1021] In phase Sweep, 275 netlist objects are constrained preventing optimization. Please run opt_design with -debug_log to get more detail. 
+INFO: [Opt 31-1021] In phase Sweep, 275 netlist objects are constrained preventing optimization. Please run opt_design with -debug_log to get more detail.
 
 Phase 4 BUFG optimization
 INFO: [Opt 31-194] Inserted BUFG azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_125mhz_BUFG_inst to drive 0 load(s) on clock net azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_125mhz_BUFG
 INFO: [Opt 31-194] Inserted BUFG azmig_i/mig_7series_0/u_azmig_mig_7series_0_0_mig/u_ddr3_infrastructure/mmcm_ps_clk_bufg_in_BUFG_inst to drive 0 load(s) on clock net azmig_i/mig_7series_0/u_azmig_mig_7series_0_0_mig/u_ddr3_infrastructure/mmcm_ps_clk_bufg_in_BUFG
 INFO: [Opt 31-193] Inserted 2 BUFG(s) on clock nets
-Phase 4 BUFG optimization | Checksum: 1d7af4908
+Phase 4 BUFG optimization | Checksum: 249fd14d1
 
-Time (s): cpu = 00:00:35 ; elapsed = 00:00:34 . Memory (MB): peak = 2345.895 ; gain = 37.230
+Time (s): cpu = 00:00:38 ; elapsed = 00:00:39 . Memory (MB): peak = 2346.645 ; gain = 36.449
 INFO: [Opt 31-662] Phase BUFG optimization created 0 cells of which 0 are BUFGs and removed 0 cells.
 
 Phase 5 Shift Register Optimization
-Phase 5 Shift Register Optimization | Checksum: 18a39b71d
+Phase 5 Shift Register Optimization | Checksum: 22a7c51b8
 
-Time (s): cpu = 00:00:44 ; elapsed = 00:00:43 . Memory (MB): peak = 2345.895 ; gain = 37.230
+Time (s): cpu = 00:00:49 ; elapsed = 00:00:50 . Memory (MB): peak = 2346.645 ; gain = 36.449
 INFO: [Opt 31-389] Phase Shift Register Optimization created 0 cells and removed 0 cells
 
 Phase 6 Post Processing Netlist
-Phase 6 Post Processing Netlist | Checksum: 1ef9292a9
+Phase 6 Post Processing Netlist | Checksum: 1d82a19c9
 
-Time (s): cpu = 00:00:46 ; elapsed = 00:00:46 . Memory (MB): peak = 2345.895 ; gain = 37.230
+Time (s): cpu = 00:00:51 ; elapsed = 00:00:53 . Memory (MB): peak = 2346.645 ; gain = 36.449
 INFO: [Opt 31-389] Phase Post Processing Netlist created 0 cells and removed 3 cells
-INFO: [Opt 31-1021] In phase Post Processing Netlist, 63 netlist objects are constrained preventing optimization. Please run opt_design with -debug_log to get more detail. 
+INFO: [Opt 31-1021] In phase Post Processing Netlist, 63 netlist objects are constrained preventing optimization. Please run opt_design with -debug_log to get more detail.
 Opt_design Change Summary
 =========================
 
@@ -1289,8 +1302,8 @@ Opt_design Change Summary
 -------------------------------------------------------------------------------------------------------------------------
 |  Phase                        |  #Cells created  |  #Cells Removed  |  #Constrained objects preventing optimizations  |
 -------------------------------------------------------------------------------------------------------------------------
-|  Retarget                     |            3076  |            3724  |                                            115  |
-|  Constant propagation         |            3219  |           14184  |                                             55  |
+|  Retarget                     |            3077  |            3725  |                                            115  |
+|  Constant propagation         |            3219  |           14184  |                                             56  |
 |  Sweep                        |               0  |            3849  |                                            275  |
 |  BUFG optimization            |               0  |               0  |                                              0  |
 |  Shift Register Optimization  |               0  |               0  |                                              0  |
@@ -1301,10 +1314,10 @@ Opt_design Change Summary
 
 Starting Connectivity Check Task
 
-Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.419 . Memory (MB): peak = 2345.895 ; gain = 0.000
-Ending Logic Optimization Task | Checksum: 1e166f3cf
+Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.582 . Memory (MB): peak = 2346.645 ; gain = 0.000
+Ending Logic Optimization Task | Checksum: 2392dd6af
 
-Time (s): cpu = 00:00:47 ; elapsed = 00:00:47 . Memory (MB): peak = 2345.895 ; gain = 37.230
+Time (s): cpu = 00:00:52 ; elapsed = 00:00:54 . Memory (MB): peak = 2346.645 ; gain = 36.449
 
 Starting Power Optimization Task
 INFO: [Pwropt 34-132] Skipping clock gating for clocks with a period < 2.00 ns.
@@ -1323,12 +1336,12 @@ INFO: [Pwropt 34-201] Structural ODC has moved 3 WE to EN ports
 Number of BRAM Ports augmented: 18 newly gated: 32 Total Ports: 116
 Number of Flops added for Enable Generation: 2
 
-Ending PowerOpt Patch Enables Task | Checksum: 162b12db2
+Ending PowerOpt Patch Enables Task | Checksum: 127c1e6c7
 
-Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.832 . Memory (MB): peak = 3394.762 ; gain = 0.000
-Ending Power Optimization Task | Checksum: 162b12db2
+Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.954 . Memory (MB): peak = 3397.562 ; gain = 0.000
+Ending Power Optimization Task | Checksum: 127c1e6c7
 
-Time (s): cpu = 00:00:59 ; elapsed = 00:00:38 . Memory (MB): peak = 3394.762 ; gain = 1048.867
+Time (s): cpu = 00:01:08 ; elapsed = 00:00:44 . Memory (MB): peak = 3397.562 ; gain = 1050.918
 
 Starting Final Cleanup Task
 
@@ -1337,39 +1350,39 @@ INFO: [Timing 38-35] Done setting XDC timing constraints.
 INFO: [Opt 31-194] Inserted BUFG azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_125mhz_BUFG_inst to drive 0 load(s) on clock net azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/clk_125mhz_BUFG
 INFO: [Opt 31-194] Inserted BUFG azmig_i/mig_7series_0/u_azmig_mig_7series_0_0_mig/u_ddr3_infrastructure/pll_clk3_out_BUFG_inst to drive 0 load(s) on clock net azmig_i/mig_7series_0/u_azmig_mig_7series_0_0_mig/u_ddr3_infrastructure/pll_clk3_out_BUFG
 INFO: [Opt 31-193] Inserted 2 BUFG(s) on clock nets
-Ending Logic Optimization Task | Checksum: 17e279ef7
+Ending Logic Optimization Task | Checksum: 1a81ac624
 
-Time (s): cpu = 00:00:24 ; elapsed = 00:00:20 . Memory (MB): peak = 3394.762 ; gain = 0.000
-Ending Final Cleanup Task | Checksum: 17e279ef7
+Time (s): cpu = 00:00:28 ; elapsed = 00:00:24 . Memory (MB): peak = 3397.562 ; gain = 0.000
+Ending Final Cleanup Task | Checksum: 1a81ac624
 
-Time (s): cpu = 00:00:26 ; elapsed = 00:00:22 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Time (s): cpu = 00:00:31 ; elapsed = 00:00:27 . Memory (MB): peak = 3397.562 ; gain = 0.000
 
 Starting Netlist Obfuscation Task
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.076 . Memory (MB): peak = 3394.762 ; gain = 0.000
-Ending Netlist Obfuscation Task | Checksum: 17e279ef7
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.086 . Memory (MB): peak = 3397.562 ; gain = 0.000
+Ending Netlist Obfuscation Task | Checksum: 1a81ac624
 
-Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.076 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.087 . Memory (MB): peak = 3397.562 ; gain = 0.000
 INFO: [Common 17-83] Releasing license: Implementation
 58 Infos, 0 Warnings, 0 Critical Warnings and 0 Errors encountered.
 opt_design completed successfully
-opt_design: Time (s): cpu = 00:02:29 ; elapsed = 00:02:01 . Memory (MB): peak = 3394.762 ; gain = 1120.301
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.071 . Memory (MB): peak = 3394.762 ; gain = 0.000
+opt_design: Time (s): cpu = 00:02:51 ; elapsed = 00:02:23 . Memory (MB): peak = 3397.562 ; gain = 1124.711
+Netlist sorting complete. Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.096 . Memory (MB): peak = 3397.562 ; gain = 0.000
 Writing placer database...
 INFO: [Timing 38-480] Writing timing data to binary archive.
 Writing XDEF routing.
 Writing XDEF routing logical nets.
 Writing XDEF routing special nets.
-Write XDEF Complete: Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.134 . Memory (MB): peak = 3394.762 ; gain = 0.000
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.044 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Write XDEF Complete: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.147 . Memory (MB): peak = 3397.562 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.052 . Memory (MB): peak = 3397.562 ; gain = 0.000
 INFO: [Common 17-1381] The checkpoint 'V:/azmig_impl/azmig.runs/impl_1/azmig_wrapper_opt.dcp' has been generated.
-write_checkpoint: Time (s): cpu = 00:00:40 ; elapsed = 00:00:28 . Memory (MB): peak = 3394.762 ; gain = 0.000
+write_checkpoint: Time (s): cpu = 00:00:43 ; elapsed = 00:00:30 . Memory (MB): peak = 3397.562 ; gain = 0.000
 INFO: [runtcl-4] Executing : report_drc -file azmig_wrapper_drc_opted.rpt -pb azmig_wrapper_drc_opted.pb -rpx azmig_wrapper_drc_opted.rpx
 Command: report_drc -file azmig_wrapper_drc_opted.rpt -pb azmig_wrapper_drc_opted.pb -rpx azmig_wrapper_drc_opted.rpx
 INFO: [IP_Flow 19-1839] IP Catalog is up to date.
 INFO: [DRC 23-27] Running DRC with 2 threads
 INFO: [Coretcl 2-168] The results of DRC are in file V:/azmig_impl/azmig.runs/impl_1/azmig_wrapper_drc_opted.rpt.
 report_drc completed successfully
-report_drc: Time (s): cpu = 00:00:10 ; elapsed = 00:00:06 . Memory (MB): peak = 3394.762 ; gain = 0.000
+report_drc: Time (s): cpu = 00:00:12 ; elapsed = 00:00:07 . Memory (MB): peak = 3397.562 ; gain = 0.000
 Command: place_design
 Attempting to get a license for feature 'Implementation' and/or device 'xc7z100'
 INFO: [Common 17-349] Got license for feature 'Implementation' and/or device 'xc7z100'
@@ -1409,11 +1422,11 @@ INFO: [Place 30-611] Multithreading enabled for place_design using a maximum of 
 Phase 1 Placer Initialization
 
 Phase 1.1 Placer Initialization Netlist Sorting
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.066 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.101 . Memory (MB): peak = 3397.562 ; gain = 0.000
 Phase 1.1 Placer Initialization Netlist Sorting | Checksum: f0e01d23
 
-Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.128 . Memory (MB): peak = 3394.762 ; gain = 0.000
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.069 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.190 . Memory (MB): peak = 3397.562 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.059 . Memory (MB): peak = 3397.562 ; gain = 0.000
 
 Phase 1.2 IO Placement/ Clock Placement/ Build Placer Device
 INFO: [Timing 38-35] Done setting XDC timing constraints.
@@ -1456,33 +1469,33 @@ WARNING: [Place 30-575] Sub-optimal placement for a clock-capable IO pin and MMC
 Resolution: A dedicated routing path between the two can be used if: (a) The clock-capable IO (CCIO) is placed on a CCIO capable site (b) The MMCM is placed in the same clock region as the CCIO pin. If the IOB is driving multiple MMCMs, all MMCMs must be placed in the same clock region, one clock region above or one clock region below the IOB. Both the above conditions must be met at the same time, else it may lead to longer and less predictable clock insertion delays.
 Phase 1.2 IO Placement/ Clock Placement/ Build Placer Device | Checksum: 1746ef7c2
 
-Time (s): cpu = 00:00:23 ; elapsed = 00:00:21 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Time (s): cpu = 00:00:26 ; elapsed = 00:00:25 . Memory (MB): peak = 3397.562 ; gain = 0.000
 
 Phase 1.3 Build Placer Netlist Model
-Phase 1.3 Build Placer Netlist Model | Checksum: 2731b4522
+Phase 1.3 Build Placer Netlist Model | Checksum: 239595978
 
-Time (s): cpu = 00:01:00 ; elapsed = 00:00:52 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Time (s): cpu = 00:01:07 ; elapsed = 00:00:59 . Memory (MB): peak = 3397.562 ; gain = 0.000
 
 Phase 1.4 Constrain Clocks/Macros
-Phase 1.4 Constrain Clocks/Macros | Checksum: 2731b4522
+Phase 1.4 Constrain Clocks/Macros | Checksum: 239595978
 
-Time (s): cpu = 00:01:00 ; elapsed = 00:00:52 . Memory (MB): peak = 3394.762 ; gain = 0.000
-Phase 1 Placer Initialization | Checksum: 2731b4522
+Time (s): cpu = 00:01:07 ; elapsed = 00:01:00 . Memory (MB): peak = 3397.562 ; gain = 0.000
+Phase 1 Placer Initialization | Checksum: 239595978
 
-Time (s): cpu = 00:01:00 ; elapsed = 00:00:52 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Time (s): cpu = 00:01:07 ; elapsed = 00:01:00 . Memory (MB): peak = 3397.562 ; gain = 0.000
 
 Phase 2 Global Placement
 
 Phase 2.1 Floorplanning
-Phase 2.1 Floorplanning | Checksum: 191a88181
+Phase 2.1 Floorplanning | Checksum: 1d0c1f2af
 
-Time (s): cpu = 00:01:08 ; elapsed = 00:00:59 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Time (s): cpu = 00:01:17 ; elapsed = 00:01:08 . Memory (MB): peak = 3397.562 ; gain = 0.000
 
 Phase 2.2 Physical Synthesis In Placer
 INFO: [Physopt 32-65] No nets found for high-fanout optimization.
 INFO: [Physopt 32-232] Optimized 0 net. Created 0 new instance.
 INFO: [Physopt 32-775] End 1 Pass. Optimized 0 net or cell. Created 0 new cell, deleted 0 existing cell and moved 0 existing cell
-INFO: [Physopt 32-46] Identified 10 candidate nets for critical-cell optimization.
+INFO: [Physopt 32-46] Identified 4 candidate nets for critical-cell optimization.
 INFO: [Physopt 32-232] Optimized 0 net. Created 0 new instance.
 INFO: [Physopt 32-775] End 1 Pass. Optimized 0 net or cell. Created 0 new cell, deleted 0 existing cell and moved 0 existing cell
 INFO: [Physopt 32-456] No candidate cells for DSP register optimization found in the design.
@@ -1493,7 +1506,7 @@ INFO: [Physopt 32-526] No candidate cells for BRAM register optimization found i
 INFO: [Physopt 32-775] End 1 Pass. Optimized 0 net or cell. Created 0 new cell, deleted 0 existing cell and moved 0 existing cell
 INFO: [Physopt 32-949] No candidate nets found for HD net replication
 INFO: [Physopt 32-775] End 1 Pass. Optimized 0 net or cell. Created 0 new cell, deleted 0 existing cell and moved 0 existing cell
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.041 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.070 . Memory (MB): peak = 3397.562 ; gain = 0.000
 
 Summary of Physical Synthesis Optimizations
 ============================================
@@ -1508,66 +1521,66 @@ Summary of Physical Synthesis Optimizations
 |  Shift Register                |            0  |              0  |                     0  |           0  |           1  |  00:00:00  |
 |  BRAM Register                 |            0  |              0  |                     0  |           0  |           1  |  00:00:00  |
 |  HD Interface Net Replication  |            0  |              0  |                     0  |           0  |           1  |  00:00:00  |
-|  Total                         |            0  |              0  |                     0  |           0  |           6  |  00:00:01  |
+|  Total                         |            0  |              0  |                     0  |           0  |           6  |  00:00:02  |
 ----------------------------------------------------------------------------------------------------------------------------------------
 
 
-Phase 2.2 Physical Synthesis In Placer | Checksum: 243ccb222
+Phase 2.2 Physical Synthesis In Placer | Checksum: 14da33ce0
 
-Time (s): cpu = 00:02:32 ; elapsed = 00:02:26 . Memory (MB): peak = 3394.762 ; gain = 0.000
-Phase 2 Global Placement | Checksum: f91b3360
+Time (s): cpu = 00:03:04 ; elapsed = 00:02:53 . Memory (MB): peak = 3397.562 ; gain = 0.000
+Phase 2 Global Placement | Checksum: 1f70413ea
 
-Time (s): cpu = 00:02:37 ; elapsed = 00:02:31 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Time (s): cpu = 00:03:08 ; elapsed = 00:02:58 . Memory (MB): peak = 3397.562 ; gain = 0.000
 
 Phase 3 Detail Placement
 
 Phase 3.1 Commit Multi Column Macros
-Phase 3.1 Commit Multi Column Macros | Checksum: f91b3360
+Phase 3.1 Commit Multi Column Macros | Checksum: 1f70413ea
 
-Time (s): cpu = 00:02:37 ; elapsed = 00:02:31 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Time (s): cpu = 00:03:09 ; elapsed = 00:02:59 . Memory (MB): peak = 3397.562 ; gain = 0.000
 
 Phase 3.2 Commit Most Macros & LUTRAMs
-Phase 3.2 Commit Most Macros & LUTRAMs | Checksum: 2358ad180
+Phase 3.2 Commit Most Macros & LUTRAMs | Checksum: 1875adb81
 
-Time (s): cpu = 00:02:58 ; elapsed = 00:02:48 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Time (s): cpu = 00:03:33 ; elapsed = 00:03:18 . Memory (MB): peak = 3397.562 ; gain = 0.000
 
 Phase 3.3 Area Swap Optimization
-Phase 3.3 Area Swap Optimization | Checksum: 1f7fda265
+Phase 3.3 Area Swap Optimization | Checksum: 1bc32ffa9
 
-Time (s): cpu = 00:03:00 ; elapsed = 00:02:49 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Time (s): cpu = 00:03:35 ; elapsed = 00:03:20 . Memory (MB): peak = 3397.562 ; gain = 0.000
 
 Phase 3.4 Pipeline Register Optimization
-Phase 3.4 Pipeline Register Optimization | Checksum: 1bf07ca11
+Phase 3.4 Pipeline Register Optimization | Checksum: 1c666a2ff
 
-Time (s): cpu = 00:03:00 ; elapsed = 00:02:50 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Time (s): cpu = 00:03:35 ; elapsed = 00:03:20 . Memory (MB): peak = 3397.562 ; gain = 0.000
 
 Phase 3.5 Fast Optimization
-Phase 3.5 Fast Optimization | Checksum: 1d4881e03
+Phase 3.5 Fast Optimization | Checksum: 1ad45737b
 
-Time (s): cpu = 00:03:15 ; elapsed = 00:03:01 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Time (s): cpu = 00:03:52 ; elapsed = 00:03:32 . Memory (MB): peak = 3397.562 ; gain = 0.000
 
 Phase 3.6 Small Shape Detail Placement
-Phase 3.6 Small Shape Detail Placement | Checksum: 1631c57d5
+Phase 3.6 Small Shape Detail Placement | Checksum: 12a29477f
 
-Time (s): cpu = 00:03:49 ; elapsed = 00:03:43 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Time (s): cpu = 00:04:36 ; elapsed = 00:04:27 . Memory (MB): peak = 3397.562 ; gain = 0.000
 
 Phase 3.7 Re-assign LUT pins
-Phase 3.7 Re-assign LUT pins | Checksum: 1e3a859eb
+Phase 3.7 Re-assign LUT pins | Checksum: 1001043a6
 
-Time (s): cpu = 00:03:55 ; elapsed = 00:03:50 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Time (s): cpu = 00:04:43 ; elapsed = 00:04:35 . Memory (MB): peak = 3397.562 ; gain = 0.000
 
 Phase 3.8 Pipeline Register Optimization
-Phase 3.8 Pipeline Register Optimization | Checksum: 243b74f1f
+Phase 3.8 Pipeline Register Optimization | Checksum: 1b60f68f3
 
-Time (s): cpu = 00:03:56 ; elapsed = 00:03:51 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Time (s): cpu = 00:04:45 ; elapsed = 00:04:37 . Memory (MB): peak = 3397.562 ; gain = 0.000
 
 Phase 3.9 Fast Optimization
-Phase 3.9 Fast Optimization | Checksum: 150ab8760
+Phase 3.9 Fast Optimization | Checksum: 23a36d8ad
 
-Time (s): cpu = 00:04:15 ; elapsed = 00:04:05 . Memory (MB): peak = 3394.762 ; gain = 0.000
-Phase 3 Detail Placement | Checksum: 150ab8760
+Time (s): cpu = 00:04:58 ; elapsed = 00:04:52 . Memory (MB): peak = 3397.562 ; gain = 0.000
+Phase 3 Detail Placement | Checksum: 23a36d8ad
 
-Time (s): cpu = 00:04:16 ; elapsed = 00:04:06 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Time (s): cpu = 00:04:59 ; elapsed = 00:04:53 . Memory (MB): peak = 3397.562 ; gain = 0.000
 
 Phase 4 Post Placement Optimization and Clean-Up
 
@@ -1575,64 +1588,64 @@ Phase 4.1 Post Commit Optimization
 INFO: [Timing 38-35] Done setting XDC timing constraints.
 
 Phase 4.1.1 Post Placement Optimization
-Post Placement Optimization Initialization | Checksum: 1321c52df
+Post Placement Optimization Initialization | Checksum: 1cf01443b
 
 Phase 4.1.1.1 BUFG Insertion
 INFO: [Place 46-33] Processed net azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/user_reset_out, BUFG insertion was skipped due to placement/routing conflicts.
 INFO: [Place 46-33] Processed net azmig_i/xdma_0/inst/udma_wrapper/dma_top/dma_pcie_req/dma_pcie_rc/u_dma_rc_mem_pfch/user_rst_n_3ff_reg[0], BUFG insertion was skipped due to placement/routing conflicts.
 INFO: [Place 46-33] Processed net azmig_i/xdma_0/inst/udma_wrapper/dma_top/dma_enable.aximm.dma_aximm/axi4mm_axi_mm_master_wr/WPL_FIFO/SR[0], BUFG insertion was skipped due to placement/routing conflicts.
 INFO: [Place 46-46] BUFG insertion identified 3 candidate nets, 0 success, 0 bufg driver replicated, 3 skipped for placement/routing, 0 skipped for timing, 0 skipped for netlist change reason
-Phase 4.1.1.1 BUFG Insertion | Checksum: 1321c52df
+Phase 4.1.1.1 BUFG Insertion | Checksum: 1cf01443b
 
-Time (s): cpu = 00:04:52 ; elapsed = 00:04:34 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Time (s): cpu = 00:05:37 ; elapsed = 00:05:23 . Memory (MB): peak = 3397.562 ; gain = 0.000
 INFO: [Place 30-746] Post Placement Timing Summary WNS=0.201. For the most accurate timing information please run report_timing.
-Phase 4.1.1 Post Placement Optimization | Checksum: 224fc3f3f
+Phase 4.1.1 Post Placement Optimization | Checksum: f3149ad8
 
-Time (s): cpu = 00:05:50 ; elapsed = 00:05:26 . Memory (MB): peak = 3394.762 ; gain = 0.000
-Phase 4.1 Post Commit Optimization | Checksum: 224fc3f3f
+Time (s): cpu = 00:06:11 ; elapsed = 00:06:03 . Memory (MB): peak = 3397.562 ; gain = 0.000
+Phase 4.1 Post Commit Optimization | Checksum: f3149ad8
 
-Time (s): cpu = 00:05:50 ; elapsed = 00:05:27 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Time (s): cpu = 00:06:11 ; elapsed = 00:06:04 . Memory (MB): peak = 3397.562 ; gain = 0.000
 
 Phase 4.2 Post Placement Cleanup
-Phase 4.2 Post Placement Cleanup | Checksum: 224fc3f3f
+Phase 4.2 Post Placement Cleanup | Checksum: f3149ad8
 
-Time (s): cpu = 00:05:52 ; elapsed = 00:05:28 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Time (s): cpu = 00:06:13 ; elapsed = 00:06:05 . Memory (MB): peak = 3397.562 ; gain = 0.000
 
 Phase 4.3 Placer Reporting
-Phase 4.3 Placer Reporting | Checksum: 224fc3f3f
+Phase 4.3 Placer Reporting | Checksum: f3149ad8
 
-Time (s): cpu = 00:05:52 ; elapsed = 00:05:29 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Time (s): cpu = 00:06:14 ; elapsed = 00:06:06 . Memory (MB): peak = 3397.562 ; gain = 0.000
 
 Phase 4.4 Final Placement Cleanup
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.086 . Memory (MB): peak = 3394.762 ; gain = 0.000
-Phase 4.4 Final Placement Cleanup | Checksum: 24661e1dd
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.065 . Memory (MB): peak = 3397.562 ; gain = 0.000
+Phase 4.4 Final Placement Cleanup | Checksum: 1147a3d76
 
-Time (s): cpu = 00:05:54 ; elapsed = 00:05:30 . Memory (MB): peak = 3394.762 ; gain = 0.000
-Phase 4 Post Placement Optimization and Clean-Up | Checksum: 24661e1dd
+Time (s): cpu = 00:06:15 ; elapsed = 00:06:07 . Memory (MB): peak = 3397.562 ; gain = 0.000
+Phase 4 Post Placement Optimization and Clean-Up | Checksum: 1147a3d76
 
-Time (s): cpu = 00:05:55 ; elapsed = 00:05:31 . Memory (MB): peak = 3394.762 ; gain = 0.000
-Ending Placer Task | Checksum: 1b911eee2
+Time (s): cpu = 00:06:15 ; elapsed = 00:06:08 . Memory (MB): peak = 3397.562 ; gain = 0.000
+Ending Placer Task | Checksum: e66a5457
 
-Time (s): cpu = 00:05:55 ; elapsed = 00:05:32 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Time (s): cpu = 00:06:16 ; elapsed = 00:06:08 . Memory (MB): peak = 3397.562 ; gain = 0.000
 INFO: [Common 17-83] Releasing license: Implementation
 94 Infos, 23 Warnings, 0 Critical Warnings and 0 Errors encountered.
 place_design completed successfully
-place_design: Time (s): cpu = 00:06:02 ; elapsed = 00:05:37 . Memory (MB): peak = 3394.762 ; gain = 0.000
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.080 . Memory (MB): peak = 3394.762 ; gain = 0.000
+place_design: Time (s): cpu = 00:06:23 ; elapsed = 00:06:15 . Memory (MB): peak = 3397.562 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.046 . Memory (MB): peak = 3397.562 ; gain = 0.000
 INFO: [Timing 38-480] Writing timing data to binary archive.
 Writing placer database...
-Netlist sorting complete. Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.043 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.059 . Memory (MB): peak = 3397.562 ; gain = 0.000
 Writing XDEF routing.
 Writing XDEF routing logical nets.
 Writing XDEF routing special nets.
-Write XDEF Complete: Time (s): cpu = 00:00:24 ; elapsed = 00:00:08 . Memory (MB): peak = 3394.762 ; gain = 0.000
+Write XDEF Complete: Time (s): cpu = 00:00:25 ; elapsed = 00:00:09 . Memory (MB): peak = 3397.562 ; gain = 0.000
 INFO: [Common 17-1381] The checkpoint 'V:/azmig_impl/azmig.runs/impl_1/azmig_wrapper_placed.dcp' has been generated.
-write_checkpoint: Time (s): cpu = 00:00:49 ; elapsed = 00:00:30 . Memory (MB): peak = 3394.762 ; gain = 0.000
+write_checkpoint: Time (s): cpu = 00:00:52 ; elapsed = 00:00:32 . Memory (MB): peak = 3397.562 ; gain = 0.000
 INFO: [runtcl-4] Executing : report_io -file azmig_wrapper_io_placed.rpt
-report_io: Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.164 . Memory (MB): peak = 3394.762 ; gain = 0.000
+report_io: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.218 . Memory (MB): peak = 3397.562 ; gain = 0.000
 INFO: [runtcl-4] Executing : report_utilization -file azmig_wrapper_utilization_placed.rpt -pb azmig_wrapper_utilization_placed.pb
 INFO: [runtcl-4] Executing : report_control_sets -verbose -file azmig_wrapper_control_sets_placed.rpt
-report_control_sets: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.542 . Memory (MB): peak = 3394.762 ; gain = 0.000
+report_control_sets: Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.430 . Memory (MB): peak = 3397.562 ; gain = 0.000
 Command: route_design
 Attempting to get a license for feature 'Implementation' and/or device 'xc7z100'
 INFO: [Common 17-349] Got license for feature 'Implementation' and/or device 'xc7z100'
@@ -1670,7 +1683,7 @@ GCIO site IOB_X1Y322
 GCIO site IOB_X1Y324
 GCIO site IOB_X1Y326
 GCIO site IOB_X1Y328
-WARNING: [DRC PLCK-23] Clock Placer Checks: Sub-optimal placement for a clock-capable IO pin and MMCM pair. 
+WARNING: [DRC PLCK-23] Clock Placer Checks: Sub-optimal placement for a clock-capable IO pin and MMCM pair.
 Resolution: A dedicated routing path between the two can be used if: (a) The clock-capable IO (CCIO) is placed on a CCIO capable site (b) The MMCM is placed in the same clock region as the CCIO pin. If the IOB is driving multiple MMCMs, all MMCMs must be placed in the same clock region, one clock region above or one clock region below the IOB. Both the above conditions must be met at the same time, else it may lead to longer and less predictable clock insertion delays.
  This is normally an ERROR but the CLOCK_DEDICATED_ROUTE constraint is set to FALSE allowing your design to continue. The use of this override is highly discouraged as it may lead to very poor timing results. It is recommended that this error condition be corrected in the design.
 
@@ -1682,115 +1695,132 @@ INFO: [Vivado_Tcl 4-199] Please refer to the DRC report (report_drc) for more in
 
 Starting Routing Task
 INFO: [Route 35-254] Multithreading enabled for route_design using a maximum of 2 CPUs
-Checksum: PlaceDB: f2337ce5 ConstDB: 0 ShapeSum: c6de71fd RouteDB: 0
+Checksum: PlaceDB: 1f8be25a ConstDB: 0 ShapeSum: c6de71fd RouteDB: 0
 
 Phase 1 Build RT Design
-Phase 1 Build RT Design | Checksum: eb3952b3
+Phase 1 Build RT Design | Checksum: f6a5b16d
 
-Time (s): cpu = 00:02:14 ; elapsed = 00:01:52 . Memory (MB): peak = 3477.605 ; gain = 82.844
-Post Restoration Checksum: NetGraph: 92ae3ecb NumContArr: 588b13e8 Constraints: 0 Timing: 0
+Time (s): cpu = 00:02:37 ; elapsed = 00:02:11 . Memory (MB): peak = 3397.562 ; gain = 0.000
+Post Restoration Checksum: NetGraph: 19c26d3e NumContArr: dce3442f Constraints: 0 Timing: 0
 
 Phase 2 Router Initialization
 
 Phase 2.1 Create Timer
-Phase 2.1 Create Timer | Checksum: eb3952b3
+Phase 2.1 Create Timer | Checksum: f6a5b16d
 
-Time (s): cpu = 00:02:16 ; elapsed = 00:01:54 . Memory (MB): peak = 3515.973 ; gain = 121.211
+Time (s): cpu = 00:02:38 ; elapsed = 00:02:12 . Memory (MB): peak = 3397.562 ; gain = 0.000
 
 Phase 2.2 Fix Topology Constraints
-Phase 2.2 Fix Topology Constraints | Checksum: eb3952b3
+Phase 2.2 Fix Topology Constraints | Checksum: f6a5b16d
 
-Time (s): cpu = 00:02:17 ; elapsed = 00:01:55 . Memory (MB): peak = 3532.691 ; gain = 137.930
+Time (s): cpu = 00:02:40 ; elapsed = 00:02:14 . Memory (MB): peak = 3397.562 ; gain = 0.000
 
 Phase 2.3 Pre Route Cleanup
-Phase 2.3 Pre Route Cleanup | Checksum: eb3952b3
+Phase 2.3 Pre Route Cleanup | Checksum: f6a5b16d
 
-Time (s): cpu = 00:02:17 ; elapsed = 00:01:55 . Memory (MB): peak = 3532.691 ; gain = 137.930
+Time (s): cpu = 00:02:40 ; elapsed = 00:02:14 . Memory (MB): peak = 3397.562 ; gain = 0.000
  Number of Nodes with overlaps = 0
 
 Phase 2.4 Update Timing
-Phase 2.4 Update Timing | Checksum: 253610450
+Phase 2.4 Update Timing | Checksum: 956a0c2a
 
-Time (s): cpu = 00:03:04 ; elapsed = 00:02:30 . Memory (MB): peak = 3667.703 ; gain = 272.941
-INFO: [Route 35-416] Intermediate Timing Summary | WNS=0.132  | TNS=0.000  | WHS=-0.540 | THS=-4556.087|
+Time (s): cpu = 00:03:32 ; elapsed = 00:02:54 . Memory (MB): peak = 3520.828 ; gain = 123.266
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=-0.390 | TNS=-0.390 | WHS=-0.527 | THS=-4826.694|
 
 
 Phase 2.5 Update Timing for Bus Skew
 
 Phase 2.5.1 Update Timing
-Phase 2.5.1 Update Timing | Checksum: 25d079340
+Phase 2.5.1 Update Timing | Checksum: aa579e3b
 
-Time (s): cpu = 00:03:32 ; elapsed = 00:02:48 . Memory (MB): peak = 4012.410 ; gain = 617.648
-INFO: [Route 35-416] Intermediate Timing Summary | WNS=0.132  | TNS=0.000  | WHS=N/A    | THS=N/A    |
+Time (s): cpu = 00:04:03 ; elapsed = 00:03:15 . Memory (MB): peak = 3965.738 ; gain = 568.176
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=-0.390 | TNS=-0.374 | WHS=N/A    | THS=N/A    |
 
-Phase 2.5 Update Timing for Bus Skew | Checksum: 1b712f8f5
+Phase 2.5 Update Timing for Bus Skew | Checksum: 13b043629
 
-Time (s): cpu = 00:03:32 ; elapsed = 00:02:48 . Memory (MB): peak = 4012.410 ; gain = 617.648
-Phase 2 Router Initialization | Checksum: 1d6add56d
+Time (s): cpu = 00:04:03 ; elapsed = 00:03:15 . Memory (MB): peak = 3965.738 ; gain = 568.176
+Phase 2 Router Initialization | Checksum: 1fdbe4a8a
 
-Time (s): cpu = 00:03:32 ; elapsed = 00:02:49 . Memory (MB): peak = 4012.410 ; gain = 617.648
+Time (s): cpu = 00:04:04 ; elapsed = 00:03:15 . Memory (MB): peak = 3965.738 ; gain = 568.176
 
 Phase 3 Initial Routing
-Phase 3 Initial Routing | Checksum: 4746a8d1
+Phase 3 Initial Routing | Checksum: 20b9177de
 
-Time (s): cpu = 00:04:13 ; elapsed = 00:03:14 . Memory (MB): peak = 4012.410 ; gain = 617.648
+Time (s): cpu = 00:04:33 ; elapsed = 00:03:34 . Memory (MB): peak = 3965.738 ; gain = 568.176
 
 Phase 4 Rip-up And Reroute
 
 Phase 4.1 Global Iteration 0
- Number of Nodes with overlaps = 9570
- Number of Nodes with overlaps = 779
- Number of Nodes with overlaps = 240
- Number of Nodes with overlaps = 66
- Number of Nodes with overlaps = 18
- Number of Nodes with overlaps = 7
+ Number of Nodes with overlaps = 9460
+ Number of Nodes with overlaps = 636
+ Number of Nodes with overlaps = 126
+ Number of Nodes with overlaps = 25
+ Number of Nodes with overlaps = 6
+ Number of Nodes with overlaps = 3
  Number of Nodes with overlaps = 0
-INFO: [Route 35-416] Intermediate Timing Summary | WNS=0.083  | TNS=0.000  | WHS=N/A    | THS=N/A    |
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=-0.255 | TNS=-207.144| WHS=N/A    | THS=N/A    |
 
-Phase 4.1 Global Iteration 0 | Checksum: 196614b43
+Phase 4.1 Global Iteration 0 | Checksum: 1d7079325
 
-Time (s): cpu = 00:05:17 ; elapsed = 00:04:00 . Memory (MB): peak = 4012.410 ; gain = 617.648
-Phase 4 Rip-up And Reroute | Checksum: 196614b43
+Time (s): cpu = 00:05:59 ; elapsed = 00:04:41 . Memory (MB): peak = 3965.738 ; gain = 568.176
 
-Time (s): cpu = 00:05:17 ; elapsed = 00:04:00 . Memory (MB): peak = 4012.410 ; gain = 617.648
+Phase 4.2 Global Iteration 1
+ Number of Nodes with overlaps = 19
+ Number of Nodes with overlaps = 0
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=-0.255 | TNS=-4.523 | WHS=N/A    | THS=N/A    |
+
+Phase 4.2 Global Iteration 1 | Checksum: 881f8c1b
+
+Time (s): cpu = 00:06:04 ; elapsed = 00:04:48 . Memory (MB): peak = 3965.738 ; gain = 568.176
+Phase 4 Rip-up And Reroute | Checksum: 881f8c1b
+
+Time (s): cpu = 00:06:05 ; elapsed = 00:04:49 . Memory (MB): peak = 3965.738 ; gain = 568.176
 
 Phase 5 Delay and Skew Optimization
 
 Phase 5.1 Delay CleanUp
-Phase 5.1 Delay CleanUp | Checksum: 196614b43
 
-Time (s): cpu = 00:05:18 ; elapsed = 00:04:00 . Memory (MB): peak = 4012.410 ; gain = 617.648
+Phase 5.1.1 Update Timing
+Phase 5.1.1 Update Timing | Checksum: 161ffe97d
+
+Time (s): cpu = 00:06:13 ; elapsed = 00:04:54 . Memory (MB): peak = 3965.738 ; gain = 568.176
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=-0.241 | TNS=-3.686 | WHS=N/A    | THS=N/A    |
+
+ Number of Nodes with overlaps = 0
+Phase 5.1 Delay CleanUp | Checksum: 20e5dbed4
+
+Time (s): cpu = 00:06:15 ; elapsed = 00:04:56 . Memory (MB): peak = 3965.738 ; gain = 568.176
 
 Phase 5.2 Clock Skew Optimization
-Phase 5.2 Clock Skew Optimization | Checksum: 196614b43
+Phase 5.2 Clock Skew Optimization | Checksum: 20e5dbed4
 
-Time (s): cpu = 00:05:18 ; elapsed = 00:04:01 . Memory (MB): peak = 4012.410 ; gain = 617.648
-Phase 5 Delay and Skew Optimization | Checksum: 196614b43
+Time (s): cpu = 00:06:15 ; elapsed = 00:04:57 . Memory (MB): peak = 3965.738 ; gain = 568.176
+Phase 5 Delay and Skew Optimization | Checksum: 20e5dbed4
 
-Time (s): cpu = 00:05:18 ; elapsed = 00:04:01 . Memory (MB): peak = 4012.410 ; gain = 617.648
+Time (s): cpu = 00:06:16 ; elapsed = 00:04:57 . Memory (MB): peak = 3965.738 ; gain = 568.176
 
 Phase 6 Post Hold Fix
 
 Phase 6.1 Hold Fix Iter
 
 Phase 6.1.1 Update Timing
-Phase 6.1.1 Update Timing | Checksum: 237cd5262
+Phase 6.1.1 Update Timing | Checksum: 19d663889
 
-Time (s): cpu = 00:05:25 ; elapsed = 00:04:06 . Memory (MB): peak = 4012.410 ; gain = 617.648
-INFO: [Route 35-416] Intermediate Timing Summary | WNS=0.083  | TNS=0.000  | WHS=0.031  | THS=0.000  |
+Time (s): cpu = 00:06:24 ; elapsed = 00:05:03 . Memory (MB): peak = 3965.738 ; gain = 568.176
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=-0.236 | TNS=-3.681 | WHS=0.038  | THS=0.000  |
 
-Phase 6.1 Hold Fix Iter | Checksum: 1de3a92e5
+Phase 6.1 Hold Fix Iter | Checksum: 18adea000
 
-Time (s): cpu = 00:05:26 ; elapsed = 00:04:06 . Memory (MB): peak = 4012.410 ; gain = 617.648
-Phase 6 Post Hold Fix | Checksum: 1de3a92e5
+Time (s): cpu = 00:06:25 ; elapsed = 00:05:04 . Memory (MB): peak = 3965.738 ; gain = 568.176
+Phase 6 Post Hold Fix | Checksum: 18adea000
 
-Time (s): cpu = 00:05:26 ; elapsed = 00:04:07 . Memory (MB): peak = 4012.410 ; gain = 617.648
+Time (s): cpu = 00:06:25 ; elapsed = 00:05:04 . Memory (MB): peak = 3965.738 ; gain = 568.176
 
 Phase 7 Route finalize
 
 Router Utilization Summary
-  Global Vertical Routing Utilization    = 5.032 %
-  Global Horizontal Routing Utilization  = 7.10495 %
+  Global Vertical Routing Utilization    = 5.30448 %
+  Global Horizontal Routing Utilization  = 7.03157 %
   Routable Net Status*
   *Does not include unroutable nets such as driverless and loadless.
   Run report_route_status for detailed report.
@@ -1799,48 +1829,76 @@ Router Utilization Summary
   Number of Partially Routed Nets     = 0
   Number of Node Overlaps             = 0
 
-Phase 7 Route finalize | Checksum: 1f45067e5
+Congestion Report
+North Dir 1x1 Area, Max Cong = 68.4685%, No Congested Regions.
+South Dir 1x1 Area, Max Cong = 67.5676%, No Congested Regions.
+East Dir 1x1 Area, Max Cong = 85.2941%, Congestion bounded by tiles (Lower Left Tile -> Upper Right Tile):
+   INT_L_X58Y84 -> INT_L_X58Y84
+West Dir 1x1 Area, Max Cong = 83.8235%, No Congested Regions.
 
-Time (s): cpu = 00:05:27 ; elapsed = 00:04:08 . Memory (MB): peak = 4012.410 ; gain = 617.648
+------------------------------
+Reporting congestion hotspots
+------------------------------
+Direction: North
+----------------
+Congested clusters found at Level 0
+Effective congestion level: 0 Aspect Ratio: 1 Sparse Ratio: 0
+Direction: South
+----------------
+Congested clusters found at Level 0
+Effective congestion level: 0 Aspect Ratio: 1 Sparse Ratio: 0
+Direction: East
+----------------
+Congested clusters found at Level 0
+Effective congestion level: 0 Aspect Ratio: 1 Sparse Ratio: 1
+Direction: West
+----------------
+Congested clusters found at Level 0
+Effective congestion level: 0 Aspect Ratio: 1 Sparse Ratio: 0
+
+Phase 7 Route finalize | Checksum: 1b1cf3617
+
+Time (s): cpu = 00:06:27 ; elapsed = 00:05:05 . Memory (MB): peak = 3965.738 ; gain = 568.176
 
 Phase 8 Verifying routed nets
 
  Verification completed successfully
-Phase 8 Verifying routed nets | Checksum: 1f45067e5
+Phase 8 Verifying routed nets | Checksum: 1b1cf3617
 
-Time (s): cpu = 00:05:28 ; elapsed = 00:04:08 . Memory (MB): peak = 4012.410 ; gain = 617.648
+Time (s): cpu = 00:06:27 ; elapsed = 00:05:06 . Memory (MB): peak = 3965.738 ; gain = 568.176
 
 Phase 9 Depositing Routes
-Phase 9 Depositing Routes | Checksum: 1083b9a28
+Phase 9 Depositing Routes | Checksum: 15e3bc63a
 
-Time (s): cpu = 00:05:37 ; elapsed = 00:04:19 . Memory (MB): peak = 4012.410 ; gain = 617.648
+Time (s): cpu = 00:06:39 ; elapsed = 00:05:21 . Memory (MB): peak = 3965.738 ; gain = 568.176
 
 Phase 10 Post Router Timing
-INFO: [Route 35-57] Estimated Timing Summary | WNS=0.083  | TNS=0.000  | WHS=0.031  | THS=0.000  |
+INFO: [Route 35-57] Estimated Timing Summary | WNS=-0.236 | TNS=-3.681 | WHS=0.038  | THS=0.000  |
 
-INFO: [Route 35-327] The final timing numbers are based on the router estimated timing analysis. For a complete and accurate timing signoff, please run report_timing_summary.
-Phase 10 Post Router Timing | Checksum: 1083b9a28
+WARNING: [Route 35-328] Router estimated timing not met.
+Resolution: For a complete and accurate timing signoff, report_timing_summary must be run after route_design. Alternatively, route_design can be run with the -timing_summary option to enable a complete timing signoff at the end of route_design.
+Phase 10 Post Router Timing | Checksum: 15e3bc63a
 
-Time (s): cpu = 00:05:38 ; elapsed = 00:04:20 . Memory (MB): peak = 4012.410 ; gain = 617.648
+Time (s): cpu = 00:06:40 ; elapsed = 00:05:22 . Memory (MB): peak = 3965.738 ; gain = 568.176
 INFO: [Route 35-16] Router Completed Successfully
 
-Time (s): cpu = 00:05:38 ; elapsed = 00:04:20 . Memory (MB): peak = 4012.410 ; gain = 617.648
+Time (s): cpu = 00:06:40 ; elapsed = 00:05:22 . Memory (MB): peak = 3965.738 ; gain = 568.176
 
 Routing Is Done.
 INFO: [Common 17-83] Releasing license: Implementation
-112 Infos, 24 Warnings, 0 Critical Warnings and 0 Errors encountered.
+113 Infos, 25 Warnings, 0 Critical Warnings and 0 Errors encountered.
 route_design completed successfully
-route_design: Time (s): cpu = 00:05:48 ; elapsed = 00:04:26 . Memory (MB): peak = 4012.410 ; gain = 617.648
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.076 . Memory (MB): peak = 4012.410 ; gain = 0.000
+route_design: Time (s): cpu = 00:06:50 ; elapsed = 00:05:29 . Memory (MB): peak = 3965.738 ; gain = 568.176
+Netlist sorting complete. Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.099 . Memory (MB): peak = 3965.738 ; gain = 0.000
 INFO: [Timing 38-480] Writing timing data to binary archive.
 Writing placer database...
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.044 . Memory (MB): peak = 4012.410 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.061 . Memory (MB): peak = 3965.738 ; gain = 0.000
 Writing XDEF routing.
 Writing XDEF routing logical nets.
 Writing XDEF routing special nets.
-Write XDEF Complete: Time (s): cpu = 00:00:28 ; elapsed = 00:00:10 . Memory (MB): peak = 4012.410 ; gain = 0.000
+Write XDEF Complete: Time (s): cpu = 00:00:35 ; elapsed = 00:00:13 . Memory (MB): peak = 3965.738 ; gain = 0.000
 INFO: [Common 17-1381] The checkpoint 'V:/azmig_impl/azmig.runs/impl_1/azmig_wrapper_routed.dcp' has been generated.
-write_checkpoint: Time (s): cpu = 00:00:52 ; elapsed = 00:00:31 . Memory (MB): peak = 4012.410 ; gain = 0.000
+write_checkpoint: Time (s): cpu = 00:01:01 ; elapsed = 00:00:35 . Memory (MB): peak = 3965.738 ; gain = 0.000
 INFO: [runtcl-4] Executing : report_drc -file azmig_wrapper_drc_routed.rpt -pb azmig_wrapper_drc_routed.pb -rpx azmig_wrapper_drc_routed.rpx
 Command: report_drc -file azmig_wrapper_drc_routed.rpt -pb azmig_wrapper_drc_routed.pb -rpx azmig_wrapper_drc_routed.rpx
 INFO: [IP_Flow 19-1839] IP Catalog is up to date.
@@ -1879,14 +1937,14 @@ GCIO site IOB_X1Y326
 GCIO site IOB_X1Y328
 INFO: [Coretcl 2-168] The results of DRC are in file V:/azmig_impl/azmig.runs/impl_1/azmig_wrapper_drc_routed.rpt.
 report_drc completed successfully
-report_drc: Time (s): cpu = 00:00:27 ; elapsed = 00:00:14 . Memory (MB): peak = 4012.410 ; gain = 0.000
+report_drc: Time (s): cpu = 00:00:31 ; elapsed = 00:00:19 . Memory (MB): peak = 3965.738 ; gain = 0.000
 INFO: [runtcl-4] Executing : report_methodology -file azmig_wrapper_methodology_drc_routed.rpt -pb azmig_wrapper_methodology_drc_routed.pb -rpx azmig_wrapper_methodology_drc_routed.rpx
 Command: report_methodology -file azmig_wrapper_methodology_drc_routed.rpt -pb azmig_wrapper_methodology_drc_routed.pb -rpx azmig_wrapper_methodology_drc_routed.rpx
 INFO: [Timing 38-35] Done setting XDC timing constraints.
 INFO: [DRC 23-133] Running Methodology with 2 threads
 INFO: [Coretcl 2-1520] The results of Report Methodology are in file V:/azmig_impl/azmig.runs/impl_1/azmig_wrapper_methodology_drc_routed.rpt.
 report_methodology completed successfully
-report_methodology: Time (s): cpu = 00:01:03 ; elapsed = 00:00:38 . Memory (MB): peak = 4184.523 ; gain = 172.113
+report_methodology: Time (s): cpu = 00:01:16 ; elapsed = 00:00:47 . Memory (MB): peak = 4154.457 ; gain = 188.719
 INFO: [runtcl-4] Executing : report_power -file azmig_wrapper_power_routed.rpt -pb azmig_wrapper_power_summary_routed.pb -rpx azmig_wrapper_power_routed.rpx
 Command: report_power -file azmig_wrapper_power_routed.rpt -pb azmig_wrapper_power_summary_routed.pb -rpx azmig_wrapper_power_routed.rpx
 INFO: [Timing 38-35] Done setting XDC timing constraints.
@@ -1895,19 +1953,20 @@ Running Vector-less Activity Propagation...
 Finished Running Vector-less Activity Propagation
 WARNING: [Power 33-332] Found switching activity that implies high-fanout reset nets being asserted for excessive periods of time which may result in inaccurate power analysis.
 Resolution: To review and fix problems, please run Power Constraints Advisor in the GUI from Tools > Power Constraints Advisor or run report_power with the -advisory option to generate a text report.
-124 Infos, 25 Warnings, 0 Critical Warnings and 0 Errors encountered.
+125 Infos, 26 Warnings, 0 Critical Warnings and 0 Errors encountered.
 report_power completed successfully
-report_power: Time (s): cpu = 00:00:58 ; elapsed = 00:00:40 . Memory (MB): peak = 4317.570 ; gain = 133.047
+report_power: Time (s): cpu = 00:01:01 ; elapsed = 00:00:43 . Memory (MB): peak = 4287.141 ; gain = 132.684
 INFO: [runtcl-4] Executing : report_route_status -file azmig_wrapper_route_status.rpt -pb azmig_wrapper_route_status.pb
-INFO: [runtcl-4] Executing : report_timing_summary -max_paths 10 -file azmig_wrapper_timing_summary_routed.rpt -pb azmig_wrapper_timing_summary_routed.pb -rpx azmig_wrapper_timing_summary_routed.rpx -warn_on_violation 
+INFO: [runtcl-4] Executing : report_timing_summary -max_paths 10 -file azmig_wrapper_timing_summary_routed.rpt -pb azmig_wrapper_timing_summary_routed.pb -rpx azmig_wrapper_timing_summary_routed.rpx -warn_on_violation
 INFO: [Timing 38-91] UpdateTimingParams: Speed grade: -2, Delay Type: min_max.
 INFO: [Timing 38-191] Multithreading enabled for timing update using a maximum of 2 CPUs
+CRITICAL WARNING: [Timing 38-282] The design failed to meet the timing requirements. Please see the timing summary report for details on the timing violations.
 WARNING: [Timing 38-436] There are set_bus_skew constraint(s) in this design. Please run report_bus_skew to ensure that bus skew requirements are met.
-report_timing_summary: Time (s): cpu = 00:00:06 ; elapsed = 00:00:05 . Memory (MB): peak = 4329.934 ; gain = 12.363
+report_timing_summary: Time (s): cpu = 00:00:07 ; elapsed = 00:00:06 . Memory (MB): peak = 4303.980 ; gain = 16.840
 INFO: [runtcl-4] Executing : report_incremental_reuse -file azmig_wrapper_incremental_reuse_routed.rpt
 INFO: [Vivado_Tcl 4-1062] Incremental flow is disabled. No incremental reuse Info to report.
 INFO: [runtcl-4] Executing : report_clock_utilization -file azmig_wrapper_clock_utilization_routed.rpt
-report_clock_utilization: Time (s): cpu = 00:00:08 ; elapsed = 00:00:08 . Memory (MB): peak = 4333.742 ; gain = 3.809
+report_clock_utilization: Time (s): cpu = 00:00:08 ; elapsed = 00:00:08 . Memory (MB): peak = 4307.293 ; gain = 3.312
 INFO: [runtcl-4] Executing : report_bus_skew -warn_on_violation -file azmig_wrapper_bus_skew_routed.rpt -pb azmig_wrapper_bus_skew_routed.pb -rpx azmig_wrapper_bus_skew_routed.rpx
 INFO: [Timing 38-91] UpdateTimingParams: Speed grade: -2, Delay Type: min_max.
 INFO: [Timing 38-191] Multithreading enabled for timing update using a maximum of 2 CPUs
@@ -2275,7 +2334,7 @@ WARNING: [DRC REQP-1839] RAMB36 async control check: The RAMB36E1 azmig_i/xdma_0
 WARNING: [DRC REQP-1839] RAMB36 async control check: The RAMB36E1 azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_rx/brams[0].ram/use_tdp.ramb36/genblk5_0.bram36_tdp_bl.bram36_tdp_bl has an input control pin azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_rx/brams[0].ram/use_tdp.ramb36/genblk5_0.bram36_tdp_bl.bram36_tdp_bl/ADDRARDADDR[8] (net: azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_rx/brams[0].ram/use_tdp.ramb36/MIMRXWADDR[4]) which is driven by a register (azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/tgt_brdg_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/gntv_or_sync_fifo.gl0.wr/gwss.gpf.wrpf/gpfs.prog_full_i_reg) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
 WARNING: [DRC REQP-1839] RAMB36 async control check: The RAMB36E1 azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_rx/brams[0].ram/use_tdp.ramb36/genblk5_0.bram36_tdp_bl.bram36_tdp_bl has an input control pin azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_rx/brams[0].ram/use_tdp.ramb36/genblk5_0.bram36_tdp_bl.bram36_tdp_bl/ADDRARDADDR[9] (net: azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_rx/brams[0].ram/use_tdp.ramb36/MIMRXWADDR[5]) which is driven by a register (azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/tgt_brdg_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/gntv_or_sync_fifo.gl0.wr/gwss.gpf.wrpf/gpfs.prog_full_i_reg) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
 WARNING: [DRC REQP-1840] RAMB18 async control check: The RAMB18E1 azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/gntv_or_sync_fifo.mem/gbm.gbmg.gbmga.ngecc.bmg/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_noinit.ram/DEVICE_7SERIES.NO_BMM_INFO.SDP.WIDE_PRIM18.ram has an input control pin azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/gntv_or_sync_fifo.mem/gbm.gbmg.gbmga.ngecc.bmg/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_noinit.ram/DEVICE_7SERIES.NO_BMM_INFO.SDP.WIDE_PRIM18.ram/ENARDEN (net: azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/gntv_or_sync_fifo.mem/gbm.gbmg.gbmga.ngecc.bmg/inst_blk_mem_gen/gnbram.gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].ram.r/prim_noinit.ram/DEVICE_7SERIES.NO_BMM_INFO.SDP.WIDE_PRIM18.ram_ENARDEN_cooolgate_en_sig_21) which is driven by a register (azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/pcie2_ip_i/inst/inst/user_reset_out_reg) that has an active asychronous set or reset. This may cause corruption of the memory contents and/or read values when the set/reset is asserted and is not analyzed by the default static timing analysis. It is suggested to eliminate the use of a set/reset to registers driving this RAMB pin or else use a synchronous reset in which the assertion of the reset is timed by default.
-WARNING: [DRC RTSTAT-10] No routable loads: 47 net(s) have no routable loads. The problem bus(es) and/or net(s) are azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwdch2.axi_wdch/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/aempty_fwft_i, azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grach2.axi_rach/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/aempty_fwft_i, azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwach2.axi_wach/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/aempty_fwft_i, azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/tgt_brdg_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/aempty_fwft_i, azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grdch2.axi_rdch/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/aempty_fwft_i, azmig_i/mem_axi_ic/m00_couplers/auto_ds/inst/gen_downsizer.gen_simple_downsizer.axi_downsizer_inst/USE_READ.read_addr_inst/cmd_queue/inst/fifo_gen_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/aempty_fwft_i, azmig_i/mem_axi_ic/m00_couplers/auto_ds/inst/gen_downsizer.gen_simple_downsizer.axi_downsizer_inst/USE_WRITE.write_addr_inst/cmd_queue/inst/fifo_gen_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/aempty_fwft_i, azmig_i/mem_axi_ic/m00_couplers/auto_ds/inst/gen_downsizer.gen_simple_downsizer.axi_downsizer_inst/USE_WRITE.write_addr_inst/USE_B_CHANNEL.cmd_b_queue/inst/fifo_gen_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/aempty_fwft_i, azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwrch2.axi_wrch/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/aempty_fwft_i, azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/aempty_fwft_i, azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/gntv_or_sync_fifo.gl0.wr/gwss.wsts/ram_afull_fb, azmig_i/mem_axi_ic/m00_couplers/auto_ds/inst/gen_downsizer.gen_simple_downsizer.axi_downsizer_inst/USE_READ.read_addr_inst/cmd_queue/inst/fifo_gen_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.gl0.wr/gwss.wsts/ram_afull_fb, azmig_i/mem_axi_ic/m00_couplers/auto_ds/inst/gen_downsizer.gen_simple_downsizer.axi_downsizer_inst/USE_WRITE.write_addr_inst/cmd_queue/inst/fifo_gen_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.gl0.wr/gwss.wsts/ram_afull_fb, azmig_i/mem_axi_ic/m00_couplers/auto_ds/inst/gen_downsizer.gen_simple_downsizer.axi_downsizer_inst/USE_WRITE.write_addr_inst/USE_B_CHANNEL.cmd_b_queue/inst/fifo_gen_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.gl0.wr/gwss.wsts/ram_afull_fb, azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/tgt_brdg_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/gntv_or_sync_fifo.gl0.wr/gwss.wsts/ram_afull_fb... and (the first 15 of 47 listed).
+WARNING: [DRC RTSTAT-10] No routable loads: 47 net(s) have no routable loads. The problem bus(es) and/or net(s) are azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grdch2.axi_rdch/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/aempty_fwft_i, azmig_i/mem_axi_ic/m00_couplers/auto_ds/inst/gen_downsizer.gen_simple_downsizer.axi_downsizer_inst/USE_READ.read_addr_inst/cmd_queue/inst/fifo_gen_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/aempty_fwft_i, azmig_i/mem_axi_ic/m00_couplers/auto_ds/inst/gen_downsizer.gen_simple_downsizer.axi_downsizer_inst/USE_WRITE.write_addr_inst/cmd_queue/inst/fifo_gen_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/aempty_fwft_i, azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/aempty_fwft_i, azmig_i/mem_axi_ic/m00_couplers/auto_ds/inst/gen_downsizer.gen_simple_downsizer.axi_downsizer_inst/USE_WRITE.write_addr_inst/USE_B_CHANNEL.cmd_b_queue/inst/fifo_gen_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/aempty_fwft_i, azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwrch2.axi_wrch/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/aempty_fwft_i, azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/tgt_brdg_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/aempty_fwft_i, azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwdch2.axi_wdch/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/aempty_fwft_i, azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gwrite_ch.gwach2.axi_wach/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/aempty_fwft_i, azmig_i/mem_axi_ic/m00_couplers/auto_cc/inst/gen_clock_conv.gen_async_conv.asyncfifo_axi/inst_fifo_gen/gaxi_full_lite.gread_ch.grach2.axi_rach/grf.rf/gntv_or_sync_fifo.gl0.rd/gr1.gr1_int.rfwft/aempty_fwft_i, azmig_i/mem_axi_ic/m00_couplers/auto_ds/inst/gen_downsizer.gen_simple_downsizer.axi_downsizer_inst/USE_WRITE.write_addr_inst/cmd_queue/inst/fifo_gen_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.gl0.wr/gwss.wsts/ram_afull_fb, azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/dma_cpl_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/gntv_or_sync_fifo.gl0.wr/gwss.wsts/ram_afull_fb, azmig_i/mem_axi_ic/m00_couplers/auto_ds/inst/gen_downsizer.gen_simple_downsizer.axi_downsizer_inst/USE_WRITE.write_addr_inst/USE_B_CHANNEL.cmd_b_queue/inst/fifo_gen_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.gl0.wr/gwss.wsts/ram_afull_fb, azmig_i/mem_axi_ic/m00_couplers/auto_ds/inst/gen_downsizer.gen_simple_downsizer.axi_downsizer_inst/USE_READ.read_addr_inst/cmd_queue/inst/fifo_gen_inst/inst_fifo_gen/gconvfifo.rf/grf.rf/gntv_or_sync_fifo.gl0.wr/gwss.wsts/ram_afull_fb, azmig_i/xdma_0/inst/azmig_xdma_0_0_pcie2_to_pcie3_wrapper_i/azmig_xdma_0_0_axi_stream_intf_i/azmig_xdma_0_0_rx_demux_i/tgt_brdg_fifo_inst/U0/inst_fifo_gen/gaxis_fifo.gaxisf.axisf/grf.rf/gntv_or_sync_fifo.gl0.wr/gwss.wsts/ram_afull_fb... and (the first 15 of 47 listed).
 WARNING: [DRC ZPS7-1] PS7 block required: The PS7 cell must be used in this Zynq design in order to enable correct default configuration.
 INFO: [DRC AVAL-4] enum_USE_DPORT_FALSE_enum_DREG_ADREG_0_connects_CED_CEAD_RSTD_GND: azmig_i/unified_obs_0/inst/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_1_fu_686/unified_surfel_obcud_U18/unified_surfel_observation_core_ap_dadddsub_3_full_dsp_64_u/U0/i_synth/ADDSUB_OP.ADDSUB/SPEED_OP.LOGIC.OP/ALIGN_BLK/FRAC_ADDSUB/DSP_ADD.FRAC_ADDSUB/DSP48E1_ADD.DSP48E1_ADD/DSP: DSP48E1 is not using the D port (USE_DPORT = FALSE). For improved power characteristics, set DREG and ADREG to '1', tie CED, CEAD, and RSTD to logic '0'.
 INFO: [DRC AVAL-4] enum_USE_DPORT_FALSE_enum_DREG_ADREG_0_connects_CED_CEAD_RSTD_GND: azmig_i/unified_obs_0/inst/grp_unified_surfel_obser_1_fu_198/grp_p_anonymous_namespace_1_fu_686/unified_surfel_obcud_U18/unified_surfel_observation_core_ap_dadddsub_3_full_dsp_64_u/U0/i_synth/ADDSUB_OP.ADDSUB/SPEED_OP.LOGIC.OP/ALIGN_BLK/FRAC_ADDSUB/DSP_ADD.FRAC_ADDSUB/DSP48E1_GEN.DSP48E1_DEL/DSP: DSP48E1 is not using the D port (USE_DPORT = FALSE). For improved power characteristics, set DREG and ADREG to '1', tie CED, CEAD, and RSTD to logic '0'.
@@ -2443,17 +2502,17 @@ Loading route data...
 Processing options...
 Creating bitmap...
 Creating bitstream...
-Bitstream compression saved 77422688 bits.
+Bitstream compression saved 78226944 bits.
 Writing bitstream ./azmig_wrapper.bit...
 INFO: [Vivado 12-1842] Bitgen Completed Successfully.
 INFO: [Project 1-118] WebTalk data collection is enabled (User setting is ON. Install Setting is ON.).
 INFO: [Common 17-83] Releasing license: Implementation
-303 Infos, 351 Warnings, 0 Critical Warnings and 0 Errors encountered.
+304 Infos, 352 Warnings, 1 Critical Warnings and 0 Errors encountered.
 write_bitstream completed successfully
-write_bitstream: Time (s): cpu = 00:01:44 ; elapsed = 00:01:24 . Memory (MB): peak = 5032.449 ; gain = 696.262
-INFO: [Common 17-206] Exiting Vivado at Wed Jun 17 20:54:07 2026...
-[Wed Jun 17 20:54:09 2026] impl_1 finished
-wait_on_run: Time (s): cpu = 00:00:02 ; elapsed = 00:18:36 . Memory (MB): peak = 1359.641 ; gain = 0.000
+write_bitstream: Time (s): cpu = 00:02:00 ; elapsed = 00:01:45 . Memory (MB): peak = 5020.684 ; gain = 710.930
+INFO: [Common 17-206] Exiting Vivado at Fri Jun 19 22:42:35 2026...
+[Fri Jun 19 22:42:37 2026] impl_1 finished
+wait_on_run: Time (s): cpu = 00:00:03 ; elapsed = 00:21:44 . Memory (MB): peak = 1357.688 ; gain = 0.000
 # set impl_status [get_property STATUS [get_runs impl_1]]
 # puts "IMPL_1_STATUS=$impl_status"
 IMPL_1_STATUS=write_bitstream Complete!
@@ -2482,10 +2541,10 @@ INFO: [Project 1-853] Binary constraint restore complete.
 Reading XDEF placement.
 Reading placer database...
 Reading XDEF routing.
-Read XDEF File: Time (s): cpu = 00:00:11 ; elapsed = 00:00:12 . Memory (MB): peak = 3070.359 ; gain = 78.547
-Restored from archive | CPU: 12.000000 secs | Memory: 0.000000 MB |
-Finished XDEF File Restore: Time (s): cpu = 00:00:11 ; elapsed = 00:00:12 . Memory (MB): peak = 3070.359 ; gain = 78.547
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.040 . Memory (MB): peak = 3070.359 ; gain = 0.000
+Read XDEF File: Time (s): cpu = 00:00:13 ; elapsed = 00:00:13 . Memory (MB): peak = 3068.090 ; gain = 76.660
+Restored from archive | CPU: 14.000000 secs | Memory: 0.000000 MB |
+Finished XDEF File Restore: Time (s): cpu = 00:00:13 ; elapsed = 00:00:13 . Memory (MB): peak = 3068.090 ; gain = 76.660
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.051 . Memory (MB): peak = 3068.090 ; gain = 0.000
 INFO: [Project 1-111] Unisim Transformation Summary:
   A total of 1069 instances were transformed.
   IOBUFDS_DIFF_OUT_DCIEN => IOBUFDS_DIFF_OUT_DCIEN (IBUFDS_IBUFDISABLE_INT, IBUFDS_IBUFDISABLE_INT, INV, OBUFTDS_DCIEN, OBUFTDS_DCIEN): 4 instances
@@ -2498,18 +2557,18 @@ INFO: [Project 1-111] Unisim Transformation Summary:
   RAM64X1S => RAM64X1S (RAMS64E): 9 instances
   SRLC32E => SRL16E: 9 instances
 
-open_run: Time (s): cpu = 00:00:57 ; elapsed = 00:01:03 . Memory (MB): peak = 3070.359 ; gain = 1710.719
-report_utilization: Time (s): cpu = 00:00:17 ; elapsed = 00:00:17 . Memory (MB): peak = 3159.527 ; gain = 89.168
+open_run: Time (s): cpu = 00:00:58 ; elapsed = 00:01:12 . Memory (MB): peak = 3068.090 ; gain = 1710.402
+report_utilization: Time (s): cpu = 00:00:19 ; elapsed = 00:00:21 . Memory (MB): peak = 3159.750 ; gain = 91.660
 INFO: [Timing 38-91] UpdateTimingParams: Speed grade: -2, Delay Type: min_max.
 INFO: [Timing 38-191] Multithreading enabled for timing update using a maximum of 2 CPUs
 WARNING: [Timing 38-436] There are set_bus_skew constraint(s) in this design. Please run report_bus_skew to ensure that bus skew requirements are met.
-report_timing_summary: Time (s): cpu = 00:00:35 ; elapsed = 00:00:21 . Memory (MB): peak = 3312.559 ; gain = 153.031
+report_timing_summary: Time (s): cpu = 00:00:42 ; elapsed = 00:00:25 . Memory (MB): peak = 3309.648 ; gain = 149.898
 Command: report_drc -file V:/azmig_impl/ax7z100_pcie_mig_impl_drc.rpt
 INFO: [IP_Flow 19-1839] IP Catalog is up to date.
 INFO: [DRC 23-27] Running DRC with 2 threads
 INFO: [Coretcl 2-168] The results of DRC are in file V:/azmig_impl/ax7z100_pcie_mig_impl_drc.rpt.
 report_drc completed successfully
-report_drc: Time (s): cpu = 00:00:17 ; elapsed = 00:00:09 . Memory (MB): peak = 3520.457 ; gain = 207.898
+report_drc: Time (s): cpu = 00:00:20 ; elapsed = 00:00:11 . Memory (MB): peak = 3513.035 ; gain = 203.387
 # set bit_files [glob -nocomplain -directory [file join $project_dir "azmig.runs" "impl_1"] "*.bit"]
 # set bit_path ""
 # if {[llength $bit_files] > 0} {
@@ -2534,4 +2593,4 @@ BITSTREAM_PATH=V:/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit
 # puts "IMPLEMENTATION_BITSTREAM_PASS"
 IMPLEMENTATION_BITSTREAM_PASS
 # exit
-INFO: [Common 17-206] Exiting Vivado at Wed Jun 17 20:56:00 2026...
+INFO: [Common 17-206] Exiting Vivado at Fri Jun 19 22:44:47 2026...

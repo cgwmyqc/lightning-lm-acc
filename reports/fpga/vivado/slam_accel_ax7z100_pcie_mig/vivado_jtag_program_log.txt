@@ -7,15 +7,15 @@ initializing
   0%    0MB   0.0MB/s  ??:?? ETA
  11%    0MB   1.6MB/s  ??:?? ETA
  19%    1MB   1.4MB/s  ??:?? ETA
- 26%    1MB   1.3MB/s  ??:?? ETA
- 34%    2MB   1.3MB/s  ??:?? ETA
- 41%    3MB   1.2MB/s  ??:?? ETA
- 50%    3MB   1.2MB/s  00:02 ETA
- 58%    4MB   1.2MB/s  00:02 ETA
- 68%    5MB   1.2MB/s  00:01 ETA
- 75%    5MB   1.2MB/s  00:01 ETA
+ 27%    1MB   1.3MB/s  ??:?? ETA
+ 35%    2MB   1.3MB/s  ??:?? ETA
+ 42%    3MB   1.2MB/s  ??:?? ETA
+ 50%    3MB   1.2MB/s  00:03 ETA
+ 59%    4MB   1.2MB/s  00:02 ETA
+ 67%    4MB   1.2MB/s  00:02 ETA
+ 76%    5MB   1.2MB/s  00:01 ETA
  84%    6MB   1.2MB/s  00:00 ETA
- 92%    6MB   1.2MB/s  00:00 ETA
+ 93%    6MB   1.2MB/s  00:00 ETA
 100%    7MB   1.2MB/s  00:06    
 FPGA_STATE=FPGA is configured
 FPGA_CONFIG_STATUS=CONFIG STATUS: 1175486460

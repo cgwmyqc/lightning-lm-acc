@@ -10,6 +10,8 @@ state as the source of truth.
 - PCIe reference clock: Orin/root-complex 100 MHz into `pcie_ref` (`N8/N7`)
 - PL DDR3/MIG system clock: AX7Z100 board 200 MHz into `sys` (`F9/E8`)
 - PCIe link: Gen2 x4, matching the ALINX `33_PCIe_test` first-pass setup
+- PCIe lane reversal: enabled in XDMA, because the AX7Z100 carrier/core-board
+  schematic indicates the x4 slot lane order is reversed into Bank112
 - DDR fabric: PL DDR3 through MIG 7-series AXI interface
 - Control: `slam_accel_ctrl` remains the only register bank, reached through
   XDMA AXI-Lite
@@ -72,6 +74,26 @@ python3 fpga/host/xdma_smoke/xdma_smoke.py --reg-smoke --start-zero
 - `mig_7series_0/ui_clk` clocks the MIG S_AXI memory side.
 - The shared AXI interconnect performs the clock/data-width crossing between
   XDMA/HLS masters and MIG S_AXI.
+
+## PCIe Lane Mapping
+
+- The schematic path through `AX7Z035B_AX7Z100B_SCH.pdf` pages 2/13 and
+  `AC7Z100B_SCH.pdf` pages 8/15 shows the slot PCIe x4 signals going into
+  FPGA Bank112.
+- `PCIE_CLK_P/N` maps to Bank112 `CLK0`, so the current `N8/N7` refclk
+  constraint remains correct.
+- The x4 lane order appears reversed between the PCIe slot and Bank112 lanes,
+  so XDMA is configured with `enable_lane_reversal=true`.
+
+## Reset Topology
+
+- `pcie_rst_n` is the PCIe PERST# input from the Orin/root complex on `AB22`.
+  It only drives XDMA `sys_rst_n`.
+- MIG `sys_rst` is not driven by PCIe PERST#. It is held inactive high by
+  `mig_rst_hi`, matching the current MIG `SysResetPolarity=ACTIVE LOW`
+  configuration derived from the AX7Z100 references.
+- MIG AXI-side reset still comes from `mig_7series_0/ui_clk_sync_rst` through
+  `rst_mig_ui`.
 
 ## Reference Inputs
 

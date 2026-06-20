@@ -135,6 +135,8 @@ set ctrl [create_bd_cell -type module -reference slam_accel_ctrl_axi_lite_wrappe
 set hls [create_bd_cell -type ip -vlnv xilinx.com:hls:unified_surfel_observation_core:1.0 unified_obs_0]
 set zero32 [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 const_zero_32]
 set_property -dict [list CONFIG.CONST_WIDTH {32} CONFIG.CONST_VAL {0}] $zero32
+set mig_rst_hi [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 mig_rst_hi]
+set_property -dict [list CONFIG.CONST_WIDTH {1} CONFIG.CONST_VAL {1}] $mig_rst_hi
 
 set util_ds_buf_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 util_ds_buf_0]
 set_property CONFIG.C_BUF_TYPE {IBUFDSGTE} $util_ds_buf_0
@@ -157,6 +159,7 @@ set_property -dict [list \
     CONFIG.axilite_master_scale {Kilobytes} \
     CONFIG.axilite_master_size {64} \
     CONFIG.axisten_freq {125} \
+    CONFIG.enable_lane_reversal {true} \
     CONFIG.mode_selection {Basic} \
     CONFIG.pcie_id_if {false} \
     CONFIG.pf0_device_id {7024} \
@@ -174,7 +177,8 @@ set rst_mig_ui [create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 r
 
 connect_bd_intf_net [get_bd_intf_ports pcie_ref] [get_bd_intf_pins util_ds_buf_0/CLK_IN_D]
 connect_bd_net [get_bd_pins util_ds_buf_0/IBUF_OUT] [get_bd_pins xdma_0/sys_clk]
-connect_bd_net [get_bd_ports pcie_rst_n] [get_bd_pins xdma_0/sys_rst_n] [get_bd_pins mig_7series_0/sys_rst]
+connect_bd_net [get_bd_ports pcie_rst_n] [get_bd_pins xdma_0/sys_rst_n]
+connect_bd_net [get_bd_pins mig_rst_hi/dout] [get_bd_pins mig_7series_0/sys_rst]
 connect_bd_intf_net [get_bd_intf_ports pcie_mgt] [get_bd_intf_pins xdma_0/pcie_mgt]
 
 connect_bd_intf_net [get_bd_intf_ports sys] [get_bd_intf_pins mig_7series_0/SYS_CLK]
