@@ -77,6 +77,47 @@ sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.buil
 The bounded golden gate must print `HLS_MANIFEST_START_PASS`,
 `HLS_MANIFEST_DONE_PASS`, and `HLS_MANIFEST_NUMERIC_PASS`.
 
+Stage 45 adds diagnostics for the current `frame_000001` n64 mismatch. It does
+not require a new bitstream. First rerun n64 with DDR image readback, controller
+register readback, raw output words, and normal-equation dump:
+
+```bash
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py \
+  --hls-manifest fpga/vivado/.build/host_golden_frame_000001_n64/manifest.json \
+  --ctrl-base 0x1000 \
+  --verify-image-readback \
+  --read-regs-after-config \
+  --dump-output-raw-words \
+  --dump-normal-equation
+```
+
+Expected diagnostic markers are `HOST_IMAGE_READBACK_PASS` and
+`SCAN_COUNT_READBACK=64`. If either one is missing, fix the host image/write or
+register configuration before changing HLS or Vivado.
+
+Then generate a per-point trace for the first 64 real golden points and three
+single-point manifests selected from the same active map:
+
+```bash
+python3 fpga/host/xdma_smoke/make_golden_trace_host_images.py \
+  --golden-dir fpga/golden/localization/frame_000001 \
+  --max-points 64 \
+  --out-dir fpga/vivado/.build/host_golden_trace_n64 \
+  --report-dir reports/fpga/host/xdma_smoke/golden_trace_n64
+```
+
+Run the real valid/reject/miss single-point probes:
+
+```bash
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_golden_trace_n64/real_valid_point/manifest.json --ctrl-base 0x1000 --verify-image-readback --read-regs-after-config --dump-output-raw-words --dump-normal-equation
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_golden_trace_n64/real_reject_point/manifest.json --ctrl-base 0x1000 --verify-image-readback --read-regs-after-config --dump-output-raw-words --dump-normal-equation
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_golden_trace_n64/real_miss_point/manifest.json --ctrl-base 0x1000 --verify-image-readback --read-regs-after-config --dump-output-raw-words --dump-normal-equation
+```
+
+All three single-point probes must print `HLS_MANIFEST_NUMERIC_PASS`. If the
+real miss point becomes valid on board, the next HLS fix should target real-map
+lookup/neighbor selection rather than output counters or PCIe/MIG.
+
 If bounded golden fails after start/done, run the Stage 41 multi-cell synthetic
 fixture before changing PCIe, XDMA, or MIG. It uses two active blocks, a nonzero
 `first_cell`, nonzero cell indices, and expected counts `1/1/1`:

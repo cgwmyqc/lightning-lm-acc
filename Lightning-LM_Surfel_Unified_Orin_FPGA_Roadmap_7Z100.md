@@ -3108,6 +3108,111 @@ FPGA_STATE=FPGA is configured
 
 The programmed image is `fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit`. Next action is Orin reboot and the Stage 44 residual probe gate.
 
+## 45. 2026-06-21 Golden 数据有效性复核与 n64 真实图定位
+
+### 当前判断
+
+- 暂不建议重录 `frame_000001`。现有 localization golden full frame metadata 为 `6963` scan points，full expected counts 为 `6050/911/2`，miss 只有 `2`，并且此前 Orin replay、Windows g++ CSim、Vivado HLS CSim full frame 均已 PASS。
+- Stage 44 后，Stage 42 residual probes 全部 PASS，Stage 41 multi-cell PASS，说明 output 写回、基本 lookup、非零 block/cell、valid/reject/miss 分类的小规模路径已经通。
+- 当前剩余失败集中在 real golden n64：expected `14/33/17`，actual `52/12/0`。该现象更像 n64 host image/readback、register 配置、真实 active map lookup/neighbor selection 或 HLS/CPU lookup 差异，不优先判定为录包坏。
+- 当前仓库只有 localization golden：`fpga/golden/localization/frame_000001`。Mapping golden 尚未建立，建图 FPGA observation/update 当前仍不作为本阶段 board gate。
+
+### 本次代码/工具变更
+
+- `fpga/host/xdma_smoke/xdma_smoke.py` 新增 Stage 45 诊断开关：
+  - `--verify-image-readback`：manifest 写入 PL DDR3 后逐段 C2H 读回并做 SHA-256/字节比对，覆盖大约 60 MB 的 `obs_cells.bin`。
+  - `--read-regs-after-config`：HLS start 前回读 `SCAN_COUNT` 和全部 buffer base/control registers，要求看到 `SCAN_COUNT_READBACK=64`。
+  - `--dump-output-raw-words`：读取 `OUTPUT_BASE` 后打印 40 个 64-bit raw words，用于确认 Stage 44 `output_words` 写回布局。
+- 新增 `fpga/host/xdma_smoke/make_golden_trace_host_images.py`：
+  - 读取 `fpga/golden/localization/frame_000001`。
+  - 生成 n64 per-point trace：`n64_trace.csv`、`n64_trace.json`。
+  - 自动挑选真实 valid/reject/miss 各 1 个 scan point，生成单点 manifest，仍使用完整真实 active map。
+- 更新 `fpga/host/xdma_smoke/README.md`，加入 Stage 45 Orin 命令。
+
+### Windows 本地验证结果
+
+命令：
+
+```powershell
+python fpga\host\xdma_smoke\make_golden_trace_host_images.py --golden-dir fpga\golden\localization\frame_000001 --max-points 64 --out-dir fpga\vivado\.build\host_golden_trace_n64 --report-dir reports\fpga\host\xdma_smoke\golden_trace_n64
+python -m py_compile fpga\host\xdma_smoke\address_map.py fpga\host\xdma_smoke\make_golden_host_image.py fpga\host\xdma_smoke\make_golden_trace_host_images.py fpga\host\xdma_smoke\xdma_smoke.py
+```
+
+结果：
+
+```text
+HOST_GOLDEN_TRACE_PASS
+trace_counts=14/33/17
+expected_counts=14/33/17
+valid_manifest=fpga\vivado\.build\host_golden_trace_n64\real_valid_point\manifest.json
+reject_manifest=fpga\vivado\.build\host_golden_trace_n64\real_reject_point\manifest.json
+miss_manifest=fpga\vivado\.build\host_golden_trace_n64\real_miss_point\manifest.json
+```
+
+选出的真实单点：
+
+| Case | Scan index | Expected | Reason |
+| --- | ---: | ---: | --- |
+| `real_valid_point` | 0 | `1/0/0` | inlier |
+| `real_reject_point` | 1 | `0/1/0` | residual_outlier |
+| `real_miss_point` | 19 | `0/0/1` | lookup_miss |
+
+报告：`reports/fpga/host/xdma_smoke/golden_trace_n64/golden_trace.md`。
+
+### Orin 下一步测试
+
+先复测 n64，并启用 image/readback/register/raw dump：
+
+```bash
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py \
+  --hls-manifest fpga/vivado/.build/host_golden_frame_000001_n64/manifest.json \
+  --ctrl-base 0x1000 \
+  --verify-image-readback \
+  --read-regs-after-config \
+  --dump-output-raw-words \
+  --dump-normal-equation
+```
+
+必须先确认：
+
+```text
+HOST_IMAGE_READBACK_PASS
+SCAN_COUNT_READBACK=64
+```
+
+然后生成 trace/单点 manifest：
+
+```bash
+python3 fpga/host/xdma_smoke/make_golden_trace_host_images.py \
+  --golden-dir fpga/golden/localization/frame_000001 \
+  --max-points 64 \
+  --out-dir fpga/vivado/.build/host_golden_trace_n64 \
+  --report-dir reports/fpga/host/xdma_smoke/golden_trace_n64
+```
+
+再分别跑真实单点：
+
+```bash
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_golden_trace_n64/real_valid_point/manifest.json --ctrl-base 0x1000 --verify-image-readback --read-regs-after-config --dump-output-raw-words --dump-normal-equation
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_golden_trace_n64/real_reject_point/manifest.json --ctrl-base 0x1000 --verify-image-readback --read-regs-after-config --dump-output-raw-words --dump-normal-equation
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_golden_trace_n64/real_miss_point/manifest.json --ctrl-base 0x1000 --verify-image-readback --read-regs-after-config --dump-output-raw-words --dump-normal-equation
+```
+
+验收标准：
+
+- n64 readback gate：`HOST_IMAGE_READBACK_PASS`。
+- register gate：`SCAN_COUNT_READBACK=64`，各 buffer base 与 PL DDR layout 一致。
+- real valid/reject/miss 单点全部输出 `HLS_MANIFEST_NUMERIC_PASS`。
+- 若 real miss point 在板上变成 valid，下一阶段优先修 HLS real-map lookup/neighbor selection。
+- 若单点全部 PASS 但 n64 仍 FAIL，下一阶段查多点连续运行时的 lookup 状态、AXI burst/address stride 或 HLS 循环内临时状态复用问题。
+
+### Build-time 规则
+
+- Stage 45 只改 host/diagnostic 工具，不重新综合、不重新 bitstream。
+- Host/Python 变更只跑 `py_compile` 和 Orin host 测试。
+- 只有确认需要修改 HLS/BD 后，才进入 HLS CSim/CSynth/IP export 与正式 implementation。
+- 当前 full board bitstream 30-60 分钟属于可预期范围：fresh Vivado project + XDMA + MIG + HLS floating-point IP 很重；Vivado 2018.3 即使外层 `-Jobs 18`，route/timing/bitgen 的部分内部步骤仍可能只用少量 CPU。
+
 ### Orin 验收结果 2026-06-21 09:48 CST
 
 XDMA/base gate 通过：

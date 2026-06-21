@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 import argparse
+import hashlib
 import json
 import os
 import struct
@@ -264,6 +265,30 @@ def write_manifest_with_fd(h2c, manifest, base_dir):
     print("HOST_IMAGE_WRITE_PASS")
 
 
+def verify_manifest_readback_with_fd(c2h, manifest, base_dir):
+    for segment in manifest["segments"]:
+        payload = (base_dir / segment["file"]).read_bytes()
+        readback = os.pread(c2h, len(payload), segment["base"])
+        if len(readback) != len(payload):
+            raise RuntimeError(
+                f"{segment['file']} short C2H readback: {len(readback)}/{len(payload)}"
+            )
+        if readback != payload:
+            for pos, (exp, got) in enumerate(zip(payload, readback)):
+                if exp != got:
+                    raise RuntimeError(
+                        f"{segment['file']} readback mismatch at +0x{pos:x}: "
+                        f"got 0x{got:02x}, expected 0x{exp:02x}"
+                    )
+            raise RuntimeError(f"{segment['file']} readback mismatch")
+        digest = hashlib.sha256(readback).hexdigest()
+        print(
+            f"IMAGE_READBACK_PASS {segment['file']} "
+            f"base=0x{segment['base']:08x} size={len(readback)} sha256={digest}"
+        )
+    print("HOST_IMAGE_READBACK_PASS")
+
+
 def configure_hls_tiny_registers(user_fd, ctrl_base, scan_count):
     write32(user_fd, ctrl_base + CTRL_CONTROL, 0x2)
     for offset, value in CTRL_WRITES:
@@ -271,7 +296,62 @@ def configure_hls_tiny_registers(user_fd, ctrl_base, scan_count):
     write32(user_fd, ctrl_base + CTRL_SCAN_COUNT, scan_count)
 
 
-def hls_manifest(user_path, h2c_path, c2h_path, manifest_path, ctrl_base, timeout_sec, label, dump_normal_equation):
+def read_configured_registers(user_fd, ctrl_base):
+    regs = {
+        "KERNEL_SEL": CTRL_KERNEL_SEL,
+        "MODE": CTRL_MODE,
+        "SCAN_ADDR_LO": CTRL_SCAN_ADDR_LO,
+        "SCAN_ADDR_HI": CTRL_SCAN_ADDR_HI,
+        "SCAN_COUNT": CTRL_SCAN_COUNT,
+        "POSE_ADDR_LO": CTRL_POSE_ADDR_LO,
+        "POSE_ADDR_HI": CTRL_POSE_ADDR_HI,
+        "MAP_HEADER_ADDR_LO": CTRL_MAP_HEADER_ADDR_LO,
+        "MAP_HEADER_ADDR_HI": CTRL_MAP_HEADER_ADDR_HI,
+        "ACTIVE_BLOCKS_ADDR_LO": CTRL_ACTIVE_BLOCKS_ADDR_LO,
+        "ACTIVE_BLOCKS_ADDR_HI": CTRL_ACTIVE_BLOCKS_ADDR_HI,
+        "OBS_CELLS_ADDR_LO": CTRL_OBS_CELLS_ADDR_LO,
+        "OBS_CELLS_ADDR_HI": CTRL_OBS_CELLS_ADDR_HI,
+        "OUT_ADDR_LO": CTRL_OUT_ADDR_LO,
+        "OUT_ADDR_HI": CTRL_OUT_ADDR_HI,
+        "STATUS": CTRL_STATUS,
+        "ERROR": CTRL_ERROR,
+        "RUN_COUNT": CTRL_RUN_COUNT,
+    }
+    values = {}
+    for name, offset in regs.items():
+        values[name] = read32(user_fd, ctrl_base + offset)
+    return values
+
+
+def print_configured_registers(values):
+    print("CONFIG_REGISTER_READBACK_BEGIN")
+    for name in sorted(values):
+        print(f"{name}_READBACK=0x{values[name]:08x}")
+    print(f"SCAN_COUNT_READBACK={values['SCAN_COUNT']}")
+    print("CONFIG_REGISTER_READBACK_END")
+
+
+def dump_raw_output_words(data):
+    words = struct.unpack_from("<40Q", data, 0)
+    print("OUTPUT_RAW_WORDS_BEGIN")
+    for idx, word in enumerate(words):
+        print(f"OUTPUT_WORD[{idx:02d}]=0x{word:016x}")
+    print("OUTPUT_RAW_WORDS_END")
+
+
+def hls_manifest(
+    user_path,
+    h2c_path,
+    c2h_path,
+    manifest_path,
+    ctrl_base,
+    timeout_sec,
+    label,
+    dump_normal_equation,
+    verify_image_readback,
+    read_regs_after_config,
+    dump_output_raw_words,
+):
     manifest_file = Path(manifest_path)
     manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
     expected = manifest["expected"]
@@ -284,7 +364,12 @@ def hls_manifest(user_path, h2c_path, c2h_path, manifest_path, ctrl_base, timeou
         h2c = os.open(h2c_path, os.O_WRONLY | os.O_SYNC)
         c2h = os.open(c2h_path, os.O_RDONLY | os.O_SYNC)
         write_manifest_with_fd(h2c, manifest, manifest_file.parent)
+        if verify_image_readback:
+            verify_manifest_readback_with_fd(c2h, manifest, manifest_file.parent)
         configure_hls_tiny_registers(user, ctrl_base, scan_count)
+        if read_regs_after_config:
+            regs = read_configured_registers(user, ctrl_base)
+            print_configured_registers(regs)
 
         run_count_before = read32(user, ctrl_base + CTRL_RUN_COUNT)
         write32(user, ctrl_base + CTRL_CONTROL, 0x1)
@@ -320,6 +405,8 @@ def hls_manifest(user_path, h2c_path, c2h_path, manifest_path, ctrl_base, timeou
         print(f"STATUS=0x{last_status:08x} ERROR=0x{last_error:08x} RUN_COUNT_AFTER={run_count_after}")
 
         output = os.pread(c2h, NORMAL_EQUATION_BYTES, OUTPUT_BASE)
+        if dump_output_raw_words:
+            dump_raw_output_words(output)
         actual = parse_normal_equation(output)
         try:
             worst_name, worst_abs, worst_rel = compare_normal_equation(actual, expected)
@@ -379,6 +466,9 @@ def main():
     parser.add_argument("--hls-manifest", default="", help="Write, start, and verify an HLS transaction manifest")
     parser.add_argument("--hls-tiny", default="", help="Write, start, and verify a tiny synthetic HLS transaction")
     parser.add_argument("--hls-timeout-sec", type=float, default=5.0)
+    parser.add_argument("--verify-image-readback", action="store_true", help="Read back all manifest segments and compare hashes before start")
+    parser.add_argument("--read-regs-after-config", action="store_true", help="Print controller register readback after HLS config")
+    parser.add_argument("--dump-output-raw-words", action="store_true", help="Print the 40 raw 64-bit output words read from DDR")
     parser.add_argument("--dump-normal-equation", action="store_true", help="Print H_upper and b after HLS readback")
     parser.add_argument("--start-zero", action="store_true", help="Optionally issue a zero-point accelerator start")
     args = parser.parse_args()
@@ -408,6 +498,9 @@ def main():
             args.hls_timeout_sec,
             "MANIFEST",
             args.dump_normal_equation,
+            args.verify_image_readback,
+            args.read_regs_after_config,
+            args.dump_output_raw_words,
         )
     if args.hls_tiny:
         hls_manifest(
@@ -419,6 +512,9 @@ def main():
             args.hls_timeout_sec,
             "TINY",
             args.dump_normal_equation,
+            args.verify_image_readback,
+            args.read_regs_after_config,
+            args.dump_output_raw_words,
         )
     if args.start_zero:
         start_zero(args.user, args.ctrl_base)
