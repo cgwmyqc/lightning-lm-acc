@@ -3634,3 +3634,86 @@ CPU legal neighbor probes 结果：center `(0,1,3)/23` 及 26 个邻居全部 `H
 - 当前问题不再指向 golden 录制、config、host DDR 写入或 output counter。
 - 下一阶段应优先修 HLS lookup/address/packed AXI 读取或综合后的 neighbor selection。
 - 暂不进入 full frame、online SLAM、mapping update、solve6x6 或 PCIe x4 性能修正。
+
+## 48. 2026-06-21 Full `frame_000001` Host Transaction 准备
+
+### 当前阶段状态
+
+- Stage 47 Orin 已 PASS：n64 bounded golden 修正后 `HLS_MANIFEST_NUMERIC_PASS`，counts 为 `52/12/0`。
+- 本阶段进入 full `frame_000001` 上板 transaction，使用完整 `6963` 个 scan points。
+- full-frame expected 固定来自 `fpga/golden/localization/frame_000001/loc_expected_obs.bin`，不使用 bounded Python recompute 覆盖。
+- 本阶段不改 HLS、不改 Vivado、不重新生成 bitstream；继续使用当前 Stage 44 `azmig_wrapper.bit`。
+- PCIe Gen2 x1 仍记录为性能风险，只影响运行时间，不阻塞 Stage 48 功能 gate。
+
+### 本次代码/报告更新
+
+- `make_golden_host_image.py --max-points 0` 已确认走 full-frame expected 路径。
+- 新增/更新 full-frame host image 报告目录：`reports/fpga/host/xdma_smoke/golden_frame_000001_full/`。
+- 更新 `fpga/host/xdma_smoke/README.md`，加入 Stage 48 Orin 命令和验收标准。
+
+### Windows/本地验证结果
+
+```text
+HOST_GOLDEN_IMAGE_PASS
+generated_dir=fpga/vivado/.build/host_golden_frame_000001_full
+manifest=fpga/vivado/.build/host_golden_frame_000001_full/manifest.json
+```
+
+full manifest 摘要：
+
+```text
+full_scan_count=6963
+scan_count=6963
+active_blocks=3719
+obs_cells=952064
+scan_points.bin=111408 bytes
+active_blocks.bin=119008 bytes
+obs_cells.bin=60932096 bytes
+output_zero.bin=320 bytes
+expected_counts=6050/911/2
+expected_residual_sum=-40.188595298682046
+```
+
+### Orin 侧测试命令
+
+```bash
+python3 fpga/host/xdma_smoke/make_golden_host_image.py \
+  --golden-dir fpga/golden/localization/frame_000001 \
+  --max-points 0 \
+  --out-dir fpga/vivado/.build/host_golden_frame_000001_full \
+  --report-dir reports/fpga/host/xdma_smoke/golden_frame_000001_full
+
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --ddr-smoke
+
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py \
+  --hls-manifest fpga/vivado/.build/host_golden_frame_000001_full/manifest.json \
+  --ctrl-base 0x1000 \
+  --hls-timeout-sec 120 \
+  --verify-image-readback \
+  --read-regs-after-config \
+  --dump-output-raw-words \
+  --dump-normal-equation \
+  --save-output-json reports/fpga/host/xdma_smoke/golden_frame_000001_full/full_frame_output.json
+```
+
+### 验收标准
+
+- `SHIM_SMOKE_PASS`、`REG_SMOKE_PASS`、`DDR_SMOKE_PASS` 继续通过。
+- `HOST_IMAGE_READBACK_PASS`。
+- `SCAN_COUNT_READBACK=6963`。
+- `HLS_MANIFEST_DONE_PASS`。
+- `HLS_MANIFEST_NUMERIC_PASS`。
+- counts 为 `6050/911/2`。
+- `STATUS.error=0` 且 `ERROR=0x00000000`。
+
+### 失败分支
+
+- 如果 120 秒 timeout，先保留 manifest/output JSON，并用 `--hls-timeout-sec 300` 重跑一次；若仍 timeout，再查 HLS AXI/MIG arbitration 或 full-frame loop progress。
+- 如果 counts mismatch，用 `full_frame_output.json` 做 per-point trace narrowing，不重新录数据。
+- 如果 counts 一致但 `H/b` mismatch，优先查浮点累计顺序、double packing 和 host expected parser。
+
+### 下一步
+
+- Stage 48 PASS 后进入 repeated full-frame stability gate。
+- repeated full-frame 稳定后，再考虑 PCIe Gen2 x4 链路修正、性能阶段或 Orin runtime 集成。

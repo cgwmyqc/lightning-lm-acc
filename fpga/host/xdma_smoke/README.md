@@ -148,6 +148,33 @@ golden `floor_div` handling of negative coordinates. After regenerating the n64
 manifest, the expected bounded counts are `52/12/0` and no real miss point is
 selected from the first 64 points.
 
+After Stage 47 n64 passes, run the full real golden frame gate. This uses all
+6963 scan points and takes expected values from `loc_expected_obs.bin`, not from
+bounded Python recompute:
+
+```bash
+python3 fpga/host/xdma_smoke/make_golden_host_image.py \
+  --golden-dir fpga/golden/localization/frame_000001 \
+  --max-points 0 \
+  --out-dir fpga/vivado/.build/host_golden_frame_000001_full \
+  --report-dir reports/fpga/host/xdma_smoke/golden_frame_000001_full
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --ddr-smoke
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py \
+  --hls-manifest fpga/vivado/.build/host_golden_frame_000001_full/manifest.json \
+  --ctrl-base 0x1000 \
+  --hls-timeout-sec 120 \
+  --verify-image-readback \
+  --read-regs-after-config \
+  --dump-output-raw-words \
+  --dump-normal-equation \
+  --save-output-json reports/fpga/host/xdma_smoke/golden_frame_000001_full/full_frame_output.json
+```
+
+The full golden gate must print `HOST_IMAGE_READBACK_PASS`,
+`SCAN_COUNT_READBACK=6963`, `HLS_MANIFEST_DONE_PASS`, and
+`HLS_MANIFEST_NUMERIC_PASS`. Expected counts are `6050/911/2`.
+
 If bounded golden fails after start/done, run the Stage 41 multi-cell synthetic
 fixture before changing PCIe, XDMA, or MIG. It uses two active blocks, a nonzero
 `first_cell`, nonzero cell indices, and expected counts `1/1/1`:

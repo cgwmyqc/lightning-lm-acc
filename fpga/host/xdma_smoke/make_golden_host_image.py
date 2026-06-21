@@ -108,14 +108,36 @@ def build_manifest(golden_dir, out_dir, max_points):
 
 
 def write_report(report_dir, out_dir, manifest):
+    frame_label = "full" if manifest["scan_count"] == manifest["full_scan_count"] else f"n{manifest['scan_count']}"
+    command_out_dir = (
+        "fpga/vivado/.build/host_golden_frame_000001_full"
+        if frame_label == "full"
+        else f"fpga/vivado/.build/host_golden_frame_000001_{frame_label}"
+    )
+    command_report_dir = (
+        "reports/fpga/host/xdma_smoke/golden_frame_000001_full"
+        if frame_label == "full"
+        else f"reports/fpga/host/xdma_smoke/golden_frame_000001_{frame_label}"
+    )
+    hls_command = (
+        "sudo python3 fpga/host/xdma_smoke/xdma_smoke.py "
+        f"--hls-manifest {command_out_dir}/manifest.json --ctrl-base 0x1000"
+    )
+    if frame_label == "full":
+        hls_command += (
+            " --hls-timeout-sec 120 --verify-image-readback --read-regs-after-config "
+            "--dump-output-raw-words --dump-normal-equation "
+            "--save-output-json reports/fpga/host/xdma_smoke/golden_frame_000001_full/full_frame_output.json"
+        )
     lines = [
-        "# Golden frame_000001 n64 Host Image",
+        f"# Golden frame_000001 {frame_label} Host Image",
         "",
         "- marker: `HOST_GOLDEN_IMAGE_PASS`",
         f"- golden_dir: `{manifest['golden_dir']}`",
         f"- generated_dir: `{out_dir}`",
         f"- full_scan_count: {manifest['full_scan_count']}",
         f"- scan_count: {manifest['scan_count']}",
+        f"- max_points_arg: {manifest['max_points']}",
         f"- active_blocks: {manifest['active_blocks']}",
         f"- obs_cells: {manifest['obs_cells']}",
         "",
@@ -136,8 +158,10 @@ def write_report(report_dir, out_dir, manifest):
             "## Orin command",
             "",
             "```bash",
-            "python3 fpga/host/xdma_smoke/make_golden_host_image.py --golden-dir fpga/golden/localization/frame_000001 --max-points 64 --out-dir fpga/vivado/.build/host_golden_frame_000001_n64 --report-dir reports/fpga/host/xdma_smoke/golden_frame_000001_n64",
-            "sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_golden_frame_000001_n64/manifest.json --ctrl-base 0x1000",
+            "python3 fpga/host/xdma_smoke/make_golden_host_image.py "
+            f"--golden-dir fpga/golden/localization/frame_000001 --max-points {manifest['max_points']} "
+            f"--out-dir {command_out_dir} --report-dir {command_report_dir}",
+            hls_command,
             "```",
             "",
             "Expected markers: `HLS_MANIFEST_START_PASS`, `HLS_MANIFEST_DONE_PASS`, `HLS_MANIFEST_NUMERIC_PASS`.",
