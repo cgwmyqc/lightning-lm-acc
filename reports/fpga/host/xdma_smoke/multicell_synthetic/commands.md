@@ -109,3 +109,45 @@ valid_only expected=1/0/0 actual=0/0/0 FAIL
 reject_z_only expected=0/1/0 actual=1/0/0 FAIL
 reject_x_only expected=0/1/0 actual=1/0/0 FAIL
 ```
+
+## Stage 44 Orin Retest 2026-06-21 09:48
+
+Stage 41 was rerun after all Stage 42 residual probes passed.
+
+Command sequence:
+
+```bash
+python3 fpga/host/xdma_smoke/make_multicell_synthetic_host_image.py --out-dir fpga/vivado/.build/host_synthetic_multicell --report-dir reports/fpga/host/xdma_smoke/multicell_synthetic
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_synthetic_multicell/manifest.json --ctrl-base 0x1000 --dump-normal-equation
+```
+
+Observed markers:
+
+```text
+HOST_MULTICELL_SYNTHETIC_IMAGE_PASS
+HLS_MANIFEST_START_PASS
+HLS_MANIFEST_DONE_PASS
+HLS_MANIFEST_NUMERIC_PASS
+```
+
+Result:
+
+```text
+STATUS=0x00000204
+ERROR=0x00000000
+RUN_COUNT=5 -> 6
+ACTUAL_COUNTS=1/1/1 FLAGS=0x00000000
+ACTUAL_RESIDUAL_SUM=0.04999995231628418
+ACTUAL_RESIDUAL_ABS_SUM=0.04999995231628418
+ACTUAL_RESIDUAL_MAX_ABS=0.04999995231628418
+WORST_FIELD=b[4] MAX_ABS=5.36442e-07 MAX_REL=9.53674e-07
+```
+
+Normal equation dump:
+
+```text
+ACTUAL_H_UPPER=[0,0,0,0,0,0,0,0,0,0,0,1,2.25,-11.25,0,5.0625,-25.3125,0,126.5625,0,0]
+ACTUAL_B=[0,0,0.04999995231628418,0.1124998927116394,-0.56249946355819702,0]
+```
+
+Conclusion: Stage 44 passes the multi-cell synthetic gate. The small fixture covers nonzero block, nonzero `first_cell`, nonzero cell index, valid/reject/miss classification, and H/b accumulation.

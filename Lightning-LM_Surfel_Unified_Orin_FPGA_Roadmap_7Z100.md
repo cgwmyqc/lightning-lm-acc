@@ -3107,3 +3107,80 @@ FPGA_STATE=FPGA is configured
 ```
 
 The programmed image is `fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit`. Next action is Orin reboot and the Stage 44 residual probe gate.
+
+### Orin 验收结果 2026-06-21 09:48 CST
+
+XDMA/base gate 通过：
+
+```text
+0005:01:00.0 [10ee:7024]
+Kernel driver in use: xdma
+/dev/xdma0_user
+/dev/xdma0_h2c_0
+/dev/xdma0_c2h_0
+/sys/bus/pci/devices/0005:01:00.0/enable = 1
+config bar 1, user 0
+SHIM_SMOKE_PASS
+REG_SMOKE_PASS
+DDR_SMOKE_PASS
+```
+
+当前 journal 窗口没有新的 `Failed to detect XDMA config BAR`、`CmpltTO` 或 AER recovery failure。
+
+Stage 42 residual probes 全部通过，说明 `output_words[27/28]` count 写回修复已在板上生效：
+
+| Case | Result | Expected | Actual | Run count |
+| --- | --- | ---: | ---: | --- |
+| `valid_only` | PASS | `1/0/0` | `1/0/0` | `0 -> 1` |
+| `reject_z_only` | PASS | `0/1/0` | `0/1/0` | `1 -> 2` |
+| `reject_x_only` | PASS | `0/1/0` | `0/1/0` | `2 -> 3` |
+| `miss_only` | PASS | `0/0/1` | `0/0/1` | `3 -> 4` |
+| `invalid_flag_only` | PASS | `0/0/1` | `0/0/1` | `4 -> 5` |
+
+Stage 41 multi-cell 通过：
+
+```text
+HOST_MULTICELL_SYNTHETIC_IMAGE_PASS
+HLS_MANIFEST_START_PASS
+HLS_MANIFEST_DONE_PASS
+HLS_MANIFEST_NUMERIC_PASS
+STATUS=0x00000204
+ERROR=0x00000000
+RUN_COUNT=5 -> 6
+COUNTS=1/1/1
+```
+
+Stage 40 n64 golden 仍未通过：
+
+```text
+HOST_GOLDEN_IMAGE_PASS
+HLS_MANIFEST_START_PASS
+HLS_MANIFEST_DONE_PASS
+STATUS=0x00000204
+ERROR=0x00000000
+RUN_COUNT=6 -> 7
+EXPECTED_COUNTS=14/33/17
+ACTUAL_COUNTS=52/12/0
+```
+
+n64 输出摘要：
+
+```text
+EXPECTED_RESIDUAL_SUM=0.87436966027431406
+EXPECTED_RESIDUAL_ABS_SUM=1.3874737319668577
+EXPECTED_RESIDUAL_MAX_ABS=0.29527878422266252
+ACTUAL_RESIDUAL_SUM=0.44294171614182876
+ACTUAL_RESIDUAL_ABS_SUM=2.2681722148352881
+ACTUAL_RESIDUAL_MAX_ABS=0.29527878422266252
+```
+
+结论：
+- Stage 44 修复了 Stage 43 的 output counter 写回问题；residual reject、miss、invalid flag 的 synthetic 单点路径已经全部对齐。
+- Stage 41 也通过，说明小规模 active block/cell stride、`first_cell`、非零 cell index 和 mixed counts 在板上成立。
+- 剩余阻塞点转为真实 `frame_000001` n64 golden 的 active-map/lookup/classification 差异：HLS 实际 `miss=0`，而 CPU expected `miss=17`，同时 valid 偏多、reject 偏少。
+- 暂不进入 full frame、online SLAM、mapping update、solve6x6 或 PCIe x4 性能修正。
+
+下一步建议：
+- Windows/HLS 侧增加 n64 per-point debug manifest 或 trace counter，逐点输出 lookup block/cell index、residual、classification。
+- 优先对比 CPU host expected recompute 与 HLS 的 neighbor lookup 顺序、active block hash/index 解码、cell flags/stride、residual threshold 入口。
+- 保留 Stage 44 bitstream 作为 synthetic PASS / n64 FAIL 的当前功能基线。

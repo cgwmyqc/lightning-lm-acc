@@ -181,3 +181,61 @@ ACTUAL_B=[0,0,0.04999995231628418,0.1124998927116394,-0.062499940395355225,0]
 ```
 
 Conclusion: reboot did not change the Stage 43 functional result. The counter writeback issue remains independent of the previous stale XDMA node.
+
+## Stage 44 Orin Retest 2026-06-21 09:48
+
+XDMA/base gates passed after the Stage 44 `output_words` bitstream was programmed and Orin rebooted:
+
+```text
+Kernel driver in use: xdma
+/dev/xdma0_user
+/dev/xdma0_h2c_0
+/dev/xdma0_c2h_0
+/sys/bus/pci/devices/0005:01:00.0/enable = 1
+config bar 1, user 0
+SHIM_SMOKE_PASS
+REG_SMOKE_PASS
+DDR_SMOKE_PASS
+```
+
+Command sequence:
+
+```bash
+python3 fpga/host/xdma_smoke/make_residual_probe_host_images.py --out-dir fpga/vivado/.build/host_residual_probe --report-dir reports/fpga/host/xdma_smoke/residual_probe
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_residual_probe/valid_only/manifest.json --ctrl-base 0x1000 --dump-normal-equation
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_residual_probe/reject_z_only/manifest.json --ctrl-base 0x1000 --dump-normal-equation
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_residual_probe/reject_x_only/manifest.json --ctrl-base 0x1000 --dump-normal-equation
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_residual_probe/miss_only/manifest.json --ctrl-base 0x1000 --dump-normal-equation
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_residual_probe/invalid_flag_only/manifest.json --ctrl-base 0x1000 --dump-normal-equation
+```
+
+Probe results:
+
+| Case | Result | Expected | Actual | Run count |
+| --- | --- | ---: | ---: | --- |
+| `valid_only` | PASS | `1/0/0` | `1/0/0` | `0 -> 1` |
+| `reject_z_only` | PASS | `0/1/0` | `0/1/0` | `1 -> 2` |
+| `reject_x_only` | PASS | `0/1/0` | `0/1/0` | `2 -> 3` |
+| `miss_only` | PASS | `0/0/1` | `0/0/1` | `3 -> 4` |
+| `invalid_flag_only` | PASS | `0/0/1` | `0/0/1` | `4 -> 5` |
+
+Every probe printed:
+
+```text
+HLS_MANIFEST_START_PASS
+HLS_MANIFEST_DONE_PASS
+HLS_MANIFEST_NUMERIC_PASS
+STATUS=0x00000204
+ERROR=0x00000000
+```
+
+Representative valid-only dump:
+
+```text
+ACTUAL_COUNTS=1/0/0 FLAGS=0x00000000
+ACTUAL_RESIDUAL_SUM=0.04999995231628418
+ACTUAL_H_UPPER=[0,0,0,0,0,0,0,0,0,0,0,1,2.25,-1.25,0,5.0625,-2.8125,0,1.5625,0,0]
+ACTUAL_B=[0,0,0.04999995231628418,0.1124998927116394,-0.062499940395355225,0]
+```
+
+Conclusion: Stage 44 fixes the Stage 43 output counter writeback failure for the residual probe gate. Proceeded to Stage 41 multi-cell and Stage 40 n64 golden.

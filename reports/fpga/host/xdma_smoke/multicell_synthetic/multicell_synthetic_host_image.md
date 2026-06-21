@@ -27,32 +27,27 @@ sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.buil
 
 Expected markers: `HLS_MANIFEST_START_PASS`, `HLS_MANIFEST_DONE_PASS`, `HLS_MANIFEST_NUMERIC_PASS`.
 
-## Orin Result 2026-06-20
+## Stage 44 Orin result 2026-06-21
 
-- XDMA gate: PASS.
-- Host image generation: PASS, marker `HOST_MULTICELL_SYNTHETIC_IMAGE_PASS`.
-- BAR shim/control register: PASS, markers `SHIM_SMOKE_PASS`, `REG_SMOKE_PASS`.
-- DDR path: PASS, marker `DDR_SMOKE_PASS`.
-- HLS start/done: PASS, markers `HLS_MANIFEST_START_PASS`, `HLS_MANIFEST_DONE_PASS`.
-- Numeric compare: FAIL, `valid_count mismatch: actual=2 expected=1`.
-
-Run status:
+Observed markers:
 
 ```text
-STATUS=0x00000204 ERROR=0x00000000 RUN_COUNT_AFTER=3
+HOST_MULTICELL_SYNTHETIC_IMAGE_PASS
+HLS_MANIFEST_START_PASS
+HLS_MANIFEST_DONE_PASS
+HLS_MANIFEST_NUMERIC_PASS
 ```
 
-Expected vs actual:
+Observed summary:
 
 ```text
-EXPECTED_COUNTS=1/1/1 FLAGS=0x00000000
-ACTUAL_COUNTS=2/0/1 FLAGS=0x00000000
-EXPECTED_RESIDUAL_SUM=0.050000000000000044
+STATUS=0x00000204
+ERROR=0x00000000
+RUN_COUNT=5 -> 6
+COUNTS=1/1/1
 ACTUAL_RESIDUAL_SUM=0.04999995231628418
-EXPECTED_RESIDUAL_ABS_SUM=0.050000000000000044
 ACTUAL_RESIDUAL_ABS_SUM=0.04999995231628418
-EXPECTED_RESIDUAL_MAX_ABS=0.050000000000000044
 ACTUAL_RESIDUAL_MAX_ABS=0.04999995231628418
 ```
 
-Stage 41 result: HLS transaction is alive and completes on multi-cell synthetic data, but `HLS_MANIFEST_NUMERIC_PASS` is blocked by residual reject handling.
+The Stage 44 `output_words` bitstream passes this mixed valid/reject/miss fixture.

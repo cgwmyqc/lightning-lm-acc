@@ -25,25 +25,26 @@ sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.buil
 
 Each probe must print `HLS_MANIFEST_NUMERIC_PASS`.
 
-## Stage 43 Orin Reboot Retest 2026-06-20 23:34
+## Stage 44 Orin result 2026-06-21
 
-- Rebooted Orin before retest; XDMA bound cleanly with `enable=1`.
-- Base setup passed: `SHIM_SMOKE_PASS`, `REG_SMOKE_PASS`, `DDR_SMOKE_PASS`.
-- No new `CmpltTO` or AER recovery failure was observed in the retest log window.
+The Stage 44 `output_words` bitstream passed all five residual probes:
 
-| Case | Expected | Actual | Result |
+| Case | Expected counts | Actual counts | Result |
 | --- | ---: | ---: | --- |
-| `valid_only` | `1/0/0` | `0/0/0` | FAIL |
-| `reject_z_only` | `0/1/0` | `1/0/0` | FAIL |
-| `reject_x_only` | `0/1/0` | `1/0/0` | FAIL |
+| `valid_only` | `1/0/0` | `1/0/0` | PASS |
+| `reject_z_only` | `0/1/0` | `0/1/0` | PASS |
+| `reject_x_only` | `0/1/0` | `0/1/0` | PASS |
 | `miss_only` | `0/0/1` | `0/0/1` | PASS |
 | `invalid_flag_only` | `0/0/1` | `0/0/1` | PASS |
 
-Key dump:
+All runs reached:
 
 ```text
-valid_only ACTUAL_H_UPPER=[0,0,0,0,0,0,0,0,0,0,0,1,2.25,-1.25,0,5.0625,-2.8125,0,1.5625,0,0]
-valid_only ACTUAL_B=[0,0,0.04999995231628418,0.1124998927116394,-0.062499940395355225,0]
+HLS_MANIFEST_START_PASS
+HLS_MANIFEST_DONE_PASS
+HLS_MANIFEST_NUMERIC_PASS
+STATUS=0x00000204
+ERROR=0x00000000
 ```
 
-Stage 43 reboot retest result: residual probes still fail on output count fields, so Stage 41 and Stage 40 were not rerun.
+This confirms the single `uint64_t* output_words` path correctly writes `valid_count`, `reject_count`, and `miss_count` for the single-point fixtures.

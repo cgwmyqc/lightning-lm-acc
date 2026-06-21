@@ -31,32 +31,37 @@ sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.buil
 
 Expected markers: `HLS_MANIFEST_START_PASS`, `HLS_MANIFEST_DONE_PASS`, `HLS_MANIFEST_NUMERIC_PASS`.
 
-## Orin Result 2026-06-20
+## Stage 44 Orin result 2026-06-21
 
-- XDMA gate: PASS.
-- Host image generation: PASS, marker `HOST_GOLDEN_IMAGE_PASS`.
-- BAR shim/control register: PASS, markers `SHIM_SMOKE_PASS`, `REG_SMOKE_PASS`.
-- DDR path: PASS, marker `DDR_SMOKE_PASS`.
-- HLS start/done: PASS, markers `HLS_MANIFEST_START_PASS`, `HLS_MANIFEST_DONE_PASS`.
-- Numeric compare: FAIL, `valid_count mismatch: actual=64 expected=14`.
-
-Run status:
+The Stage 44 bitstream reached HLS done but failed numeric comparison:
 
 ```text
-STATUS=0x00000204 ERROR=0x00000000 RUN_COUNT_AFTER=2
+HOST_GOLDEN_IMAGE_PASS
+HLS_MANIFEST_START_PASS
+HLS_MANIFEST_DONE_PASS
+STATUS=0x00000204
+ERROR=0x00000000
+RUN_COUNT=6 -> 7
 ```
 
-Expected vs actual:
+Counts:
 
 ```text
-EXPECTED_COUNTS=14/33/17 FLAGS=0x00000000
-ACTUAL_COUNTS=64/0/0 FLAGS=0x00000000
+EXPECTED_COUNTS=14/33/17
+ACTUAL_COUNTS=52/12/0
+```
+
+Residual summary:
+
+```text
 EXPECTED_RESIDUAL_SUM=0.87436966027431406
-ACTUAL_RESIDUAL_SUM=0.44294171614182876
 EXPECTED_RESIDUAL_ABS_SUM=1.3874737319668577
-ACTUAL_RESIDUAL_ABS_SUM=2.2681722148352881
 EXPECTED_RESIDUAL_MAX_ABS=0.29527878422266252
+ACTUAL_RESIDUAL_SUM=0.44294171614182876
+ACTUAL_RESIDUAL_ABS_SUM=2.2681722148352881
 ACTUAL_RESIDUAL_MAX_ABS=0.29527878422266252
 ```
 
-Stage 40 result: HLS transaction is alive and completes on real golden n64 data, but `HLS_MANIFEST_NUMERIC_PASS` is blocked by counts/H-b mismatch.
+Result: FAIL at `valid_count mismatch: actual=52 expected=14`.
+
+The residual probes and multi-cell synthetic gate passed before this run, so this failure is no longer attributed to Stage 43 counter writeback. The next debug target is the real golden active-map lookup/classification path.
