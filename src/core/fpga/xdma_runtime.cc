@@ -1,0 +1,415 @@
+// SPDX-License-Identifier: MIT
+
+#include "core/fpga/xdma_runtime.h"
+
+#include <fcntl.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#include <algorithm>
+#include <array>
+#include <chrono>
+#include <cstring>
+#include <sstream>
+#include <thread>
+
+#include "fpga/host/xdma_smoke/ax7z100_plddr_layout.h"
+
+namespace lightning::fpga {
+namespace {
+
+constexpr uint32_t kShimMagic = 0x58444D41u;
+constexpr uint32_t kShimVersion = 0x00010000u;
+constexpr uint32_t kShimMagicOffset = 0x000u;
+constexpr uint32_t kShimVersionOffset = 0x004u;
+constexpr uint32_t kShimScratch0Offset = 0x008u;
+constexpr uint32_t kShimScratch1Offset = 0x00Cu;
+
+constexpr uint32_t kStatusDone = 1u << 2u;
+constexpr uint32_t kStatusError = 1u << 3u;
+
+struct Region {
+    const char* name;
+    uint32_t base;
+    uint32_t size;
+};
+
+constexpr std::array<Region, 6> kRegions = {{
+    {"scan_points", LIGHTNING_SCAN_POINTS_BASE, 0x01000000u},
+    {"pose", LIGHTNING_POSE_BASE, 0x00001000u},
+    {"map_header", LIGHTNING_MAP_HEADER_BASE, 0x00001000u},
+    {"active_blocks", LIGHTNING_ACTIVE_BLOCKS_BASE, 0x01000000u},
+    {"obs_cells", LIGHTNING_OBS_CELLS_BASE, 0x20000000u},
+    {"output", LIGHTNING_OUTPUT_BASE, 0x00100000u},
+}};
+
+void SetError(std::string* error, const std::string& message) {
+    if (error != nullptr) {
+        *error = message;
+    }
+}
+
+class Fd {
+   public:
+    Fd() = default;
+    Fd(const std::string& path, int flags) { Open(path, flags); }
+    ~Fd() { Close(); }
+
+    Fd(const Fd&) = delete;
+    Fd& operator=(const Fd&) = delete;
+
+    bool Open(const std::string& path, int flags) {
+        Close();
+        fd_ = ::open(path.c_str(), flags | O_SYNC);
+        return fd_ >= 0;
+    }
+
+    void Close() {
+        if (fd_ >= 0) {
+            ::close(fd_);
+            fd_ = -1;
+        }
+    }
+
+    int get() const { return fd_; }
+    bool valid() const { return fd_ >= 0; }
+
+   private:
+    int fd_ = -1;
+};
+
+bool ReadExact(int fd, void* data, size_t size, uint64_t offset, std::string* error, const std::string& label) {
+    auto* out = static_cast<uint8_t*>(data);
+    size_t done = 0;
+    while (done < size) {
+        const ssize_t n = ::pread(fd, out + done, size - done, static_cast<off_t>(offset + done));
+        if (n <= 0) {
+            std::ostringstream ss;
+            ss << label << " short read at 0x" << std::hex << (offset + done) << ": " << std::dec << n;
+            SetError(error, ss.str());
+            return false;
+        }
+        done += static_cast<size_t>(n);
+    }
+    return true;
+}
+
+bool WriteExact(int fd, const void* data, size_t size, uint64_t offset, std::string* error, const std::string& label) {
+    const auto* in = static_cast<const uint8_t*>(data);
+    size_t done = 0;
+    while (done < size) {
+        const ssize_t n = ::pwrite(fd, in + done, size - done, static_cast<off_t>(offset + done));
+        if (n <= 0) {
+            std::ostringstream ss;
+            ss << label << " short write at 0x" << std::hex << (offset + done) << ": " << std::dec << n;
+            SetError(error, ss.str());
+            return false;
+        }
+        done += static_cast<size_t>(n);
+    }
+    return true;
+}
+
+bool Read32(int fd, uint32_t offset, uint32_t& value, std::string* error) {
+    return ReadExact(fd, &value, sizeof(value), offset, error, "reg32");
+}
+
+bool Write32(int fd, uint32_t offset, uint32_t value, std::string* error) {
+    return WriteExact(fd, &value, sizeof(value), offset, error, "reg32");
+}
+
+bool OpenFd(Fd& fd, const std::string& path, int flags, std::string* error) {
+    if (!fd.Open(path, flags)) {
+        SetError(error, "failed to open " + path + ": " + std::strerror(errno));
+        return false;
+    }
+    return true;
+}
+
+std::vector<uint8_t> Pattern(size_t size, uint8_t seed) {
+    std::vector<uint8_t> data(size);
+    for (size_t i = 0; i < size; ++i) {
+        data[i] = static_cast<uint8_t>((i * 37u + seed) & 0xFFu);
+    }
+    return data;
+}
+
+template <typename T>
+bool WriteObject(int fd, uint32_t base, const T& value, std::string* error, const std::string& label) {
+    return WriteExact(fd, &value, sizeof(T), base, error, label);
+}
+
+template <typename T>
+bool WriteVector(int fd, uint32_t base, const std::vector<T>& values, std::string* error, const std::string& label) {
+    if (values.empty()) {
+        return true;
+    }
+    return WriteExact(fd, values.data(), values.size() * sizeof(T), base, error, label);
+}
+
+bool VerifyBytes(int fd, uint32_t base, const void* expected, size_t size, std::string* error,
+                 const std::string& label) {
+    std::vector<uint8_t> actual(size);
+    if (!ReadExact(fd, actual.data(), actual.size(), base, error, label + " readback")) {
+        return false;
+    }
+    if (std::memcmp(actual.data(), expected, size) != 0) {
+        SetError(error, label + " readback mismatch");
+        return false;
+    }
+    return true;
+}
+
+bool ConfigureRegisters(int user_fd, uint32_t ctrl_base, uint32_t scan_count, std::string* error) {
+    const std::array<std::pair<uint32_t, uint32_t>, 14> writes = {{
+        {LIGHTNING_CTRL_KERNEL_SEL, LIGHTNING_KERNEL_UNIFIED_OBSERVATION},
+        {LIGHTNING_CTRL_MODE, LIGHTNING_MODE_LOCALIZATION},
+        {LIGHTNING_CTRL_SCAN_ADDR_LO, LIGHTNING_SCAN_POINTS_BASE},
+        {LIGHTNING_CTRL_SCAN_ADDR_HI, 0},
+        {LIGHTNING_CTRL_POSE_ADDR_LO, LIGHTNING_POSE_BASE},
+        {LIGHTNING_CTRL_POSE_ADDR_HI, 0},
+        {LIGHTNING_CTRL_MAP_HEADER_ADDR_LO, LIGHTNING_MAP_HEADER_BASE},
+        {LIGHTNING_CTRL_MAP_HEADER_ADDR_HI, 0},
+        {LIGHTNING_CTRL_ACTIVE_BLOCKS_ADDR_LO, LIGHTNING_ACTIVE_BLOCKS_BASE},
+        {LIGHTNING_CTRL_ACTIVE_BLOCKS_ADDR_HI, 0},
+        {LIGHTNING_CTRL_OBS_CELLS_ADDR_LO, LIGHTNING_OBS_CELLS_BASE},
+        {LIGHTNING_CTRL_OBS_CELLS_ADDR_HI, 0},
+        {LIGHTNING_CTRL_OUT_ADDR_LO, LIGHTNING_OUTPUT_BASE},
+        {LIGHTNING_CTRL_OUT_ADDR_HI, 0},
+    }};
+
+    if (!Write32(user_fd, ctrl_base + LIGHTNING_CTRL_CONTROL, 0x2u, error)) {
+        return false;
+    }
+    for (const auto& [offset, value] : writes) {
+        if (!Write32(user_fd, ctrl_base + offset, value, error)) {
+            return false;
+        }
+    }
+    return Write32(user_fd, ctrl_base + LIGHTNING_CTRL_SCAN_COUNT, scan_count, error);
+}
+
+}  // namespace
+
+XdmaRuntime::XdmaRuntime(Options options) : options_(std::move(options)) {}
+
+bool XdmaRuntime::ShimSmoke(std::string* error) const {
+    Fd user;
+    if (!OpenFd(user, options_.user_dev, O_RDWR, error)) {
+        return false;
+    }
+
+    uint32_t magic = 0;
+    uint32_t version = 0;
+    if (!Read32(user.get(), kShimMagicOffset, magic, error) || !Read32(user.get(), kShimVersionOffset, version, error)) {
+        return false;
+    }
+    if (magic != kShimMagic || version != kShimVersion) {
+        std::ostringstream ss;
+        ss << "bad shim identity magic=0x" << std::hex << magic << " version=0x" << version;
+        SetError(error, ss.str());
+        return false;
+    }
+
+    for (const auto& [offset, value] :
+         {std::pair<uint32_t, uint32_t>{kShimScratch0Offset, 0x13579BDFu},
+          std::pair<uint32_t, uint32_t>{kShimScratch1Offset, 0x2468ACE0u}}) {
+        uint32_t got = 0;
+        if (!Write32(user.get(), offset, value, error) || !Read32(user.get(), offset, got, error)) {
+            return false;
+        }
+        if (got != value) {
+            SetError(error, "shim scratch readback mismatch");
+            return false;
+        }
+    }
+    return true;
+}
+
+bool XdmaRuntime::RegSmoke(uint32_t scan_count, std::string* error) const {
+    Fd user;
+    if (!OpenFd(user, options_.user_dev, O_RDWR, error)) {
+        return false;
+    }
+
+    uint32_t version = 0;
+    if (!Read32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_VERSION, version, error)) {
+        return false;
+    }
+    if (version != LIGHTNING_CTRL_VERSION_VALUE) {
+        std::ostringstream ss;
+        ss << "bad ctrl version: got 0x" << std::hex << version << " expected 0x" << LIGHTNING_CTRL_VERSION_VALUE;
+        SetError(error, ss.str());
+        return false;
+    }
+    if (!ConfigureRegisters(user.get(), options_.ctrl_base, scan_count, error)) {
+        return false;
+    }
+
+    const std::array<std::pair<uint32_t, uint32_t>, 3> checks = {{
+        {LIGHTNING_CTRL_KERNEL_SEL, LIGHTNING_KERNEL_UNIFIED_OBSERVATION},
+        {LIGHTNING_CTRL_MODE, LIGHTNING_MODE_LOCALIZATION},
+        {LIGHTNING_CTRL_SCAN_COUNT, scan_count},
+    }};
+    for (const auto& [offset, expected] : checks) {
+        uint32_t got = 0;
+        if (!Read32(user.get(), options_.ctrl_base + offset, got, error)) {
+            return false;
+        }
+        if (got != expected) {
+            SetError(error, "control register readback mismatch");
+            return false;
+        }
+    }
+    return true;
+}
+
+bool XdmaRuntime::DdrSmoke(size_t pattern_size, std::string* error) const {
+    Fd h2c;
+    Fd c2h;
+    if (!OpenFd(h2c, options_.h2c_dev, O_WRONLY, error) || !OpenFd(c2h, options_.c2h_dev, O_RDONLY, error)) {
+        return false;
+    }
+
+    for (size_t i = 0; i < kRegions.size(); ++i) {
+        const Region& region = kRegions[i];
+        if (pattern_size > region.size) {
+            SetError(error, std::string(region.name) + " smoke pattern exceeds region");
+            return false;
+        }
+        const auto payload = Pattern(pattern_size, static_cast<uint8_t>(17u + i));
+        if (!WriteExact(h2c.get(), payload.data(), payload.size(), region.base, error, region.name) ||
+            !VerifyBytes(c2h.get(), region.base, payload.data(), payload.size(), error, region.name)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool XdmaRuntime::RunLocalizationObservation(const std::vector<SlamAccelScanPoint>& scan_points,
+                                             const SlamAccelPose& pose, const loc::ActiveMapBuffer& active_map,
+                                             bool write_full_image, bool verify_readback, RunResult& result,
+                                             std::string* error) const {
+    Fd user;
+    Fd h2c;
+    Fd c2h;
+    if (!OpenFd(user, options_.user_dev, O_RDWR, error) || !OpenFd(h2c, options_.h2c_dev, O_WRONLY, error) ||
+        !OpenFd(c2h, options_.c2h_dev, O_RDONLY, error)) {
+        return false;
+    }
+
+    const ActiveMapHeader map_header = MakeActiveMapHeader(active_map);
+    SlamNormalEquation output_zero;
+
+    if (write_full_image) {
+        if (!WriteVector(h2c.get(), LIGHTNING_SCAN_POINTS_BASE, scan_points, error, "scan_points") ||
+            !WriteObject(h2c.get(), LIGHTNING_POSE_BASE, pose, error, "pose") ||
+            !WriteObject(h2c.get(), LIGHTNING_MAP_HEADER_BASE, map_header, error, "map_header") ||
+            !WriteVector(h2c.get(), LIGHTNING_ACTIVE_BLOCKS_BASE, active_map.blocks, error, "active_blocks") ||
+            !WriteVector(h2c.get(), LIGHTNING_OBS_CELLS_BASE, active_map.cells, error, "obs_cells")) {
+            return false;
+        }
+        if (verify_readback) {
+            if (!VerifyBytes(c2h.get(), LIGHTNING_SCAN_POINTS_BASE, scan_points.data(),
+                             scan_points.size() * sizeof(SlamAccelScanPoint), error, "scan_points") ||
+                !VerifyBytes(c2h.get(), LIGHTNING_POSE_BASE, &pose, sizeof(pose), error, "pose") ||
+                !VerifyBytes(c2h.get(), LIGHTNING_MAP_HEADER_BASE, &map_header, sizeof(map_header), error,
+                             "map_header") ||
+                !VerifyBytes(c2h.get(), LIGHTNING_ACTIVE_BLOCKS_BASE, active_map.blocks.data(),
+                             active_map.blocks.size() * sizeof(ActiveBlockRecord), error, "active_blocks") ||
+                !VerifyBytes(c2h.get(), LIGHTNING_OBS_CELLS_BASE, active_map.cells.data(),
+                             active_map.cells.size() * sizeof(ObsCellFloat64), error, "obs_cells")) {
+                return false;
+            }
+        }
+    }
+
+    if (!WriteObject(h2c.get(), LIGHTNING_OUTPUT_BASE, output_zero, error, "output_zero")) {
+        return false;
+    }
+
+    if (!ConfigureRegisters(user.get(), options_.ctrl_base, static_cast<uint32_t>(scan_points.size()), error)) {
+        return false;
+    }
+    if (!Read32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_SCAN_COUNT, result.scan_count_readback, error) ||
+        !Read32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_RUN_COUNT, result.run_count_before, error)) {
+        return false;
+    }
+
+    const auto start = std::chrono::steady_clock::now();
+    if (!Write32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_CONTROL, 0x1u, error)) {
+        return false;
+    }
+
+    const auto deadline = start + std::chrono::duration<double>(options_.timeout_sec);
+    while (std::chrono::steady_clock::now() < deadline) {
+        if (!Read32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_STATUS, result.status, error) ||
+            !Read32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_ERROR, result.error, error)) {
+            return false;
+        }
+        if ((result.status & kStatusError) != 0 || result.error != 0) {
+            SetError(error, "HLS entered error status");
+            return false;
+        }
+        if ((result.status & kStatusDone) != 0) {
+            break;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    if ((result.status & kStatusDone) == 0) {
+        SetError(error, "HLS timeout");
+        return false;
+    }
+    const auto end = std::chrono::steady_clock::now();
+    result.elapsed_sec = std::chrono::duration<double>(end - start).count();
+
+    if (!Read32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_RUN_COUNT, result.run_count_after, error)) {
+        return false;
+    }
+    if (result.run_count_after <= result.run_count_before) {
+        SetError(error, "RUN_COUNT did not increment");
+        return false;
+    }
+
+    std::array<uint8_t, sizeof(SlamNormalEquation)> output_bytes = {};
+    if (!ReadExact(c2h.get(), output_bytes.data(), output_bytes.size(), LIGHTNING_OUTPUT_BASE, error, "output")) {
+        return false;
+    }
+    std::memcpy(&result.output, output_bytes.data(), sizeof(result.output));
+    std::memcpy(result.raw_output_words.data(), output_bytes.data(), sizeof(result.raw_output_words));
+    return true;
+}
+
+std::vector<SlamAccelScanPoint> ToAbiScanPoints(const CloudPtr& cloud) {
+    std::vector<SlamAccelScanPoint> out;
+    if (cloud == nullptr) {
+        return out;
+    }
+    out.reserve(cloud->size());
+    for (const auto& point : cloud->points) {
+        SlamAccelScanPoint abi_point;
+        abi_point.x = point.x;
+        abi_point.y = point.y;
+        abi_point.z = point.z;
+        abi_point.intensity = point.intensity;
+        out.emplace_back(abi_point);
+    }
+    return out;
+}
+
+ActiveMapHeader MakeActiveMapHeader(const loc::ActiveMapBuffer& active_map) {
+    ActiveMapHeader header;
+    header.mode = LOCALIZATION_OBSERVATION;
+    header.cells_per_block = active_map.cells_per_block;
+    header.cell_resolution = active_map.cell_resolution;
+    header.inv_cell_resolution = active_map.inv_cell_resolution;
+    header.window_id = active_map.window_id;
+    header.window_version = active_map.version;
+    header.num_blocks = static_cast<uint32_t>(active_map.blocks.size());
+    header.num_cells = static_cast<uint32_t>(active_map.cells.size());
+    header.lookup_nearby_type = active_map.lookup_nearby_type;
+    return header;
+}
+
+}  // namespace lightning::fpga

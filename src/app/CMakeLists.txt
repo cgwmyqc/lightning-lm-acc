@@ -88,6 +88,15 @@ target_link_libraries(run_surfel_loc_golden_replay
         ${third_party_libs}
 )
 
+add_executable(run_surfel_loc_xdma_golden
+        run_surfel_loc_xdma_golden.cc
+)
+
+target_link_libraries(run_surfel_loc_xdma_golden
+        ${PROJECT_NAME}.libs
+        ${third_party_libs}
+)
+
 install(TARGETS run_slam_offline run_slam_online run_loc_offline run_loc_online
-        export_loc_golden_frame build_surfel_loc_golden run_surfel_loc_golden_replay
+        export_loc_golden_frame build_surfel_loc_golden run_surfel_loc_golden_replay run_surfel_loc_xdma_golden
         DESTINATION lib/${PROJECT_NAME})

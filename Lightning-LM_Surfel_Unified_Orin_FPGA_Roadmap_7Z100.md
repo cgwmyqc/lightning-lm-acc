@@ -3906,3 +3906,134 @@ reports/fpga/host/xdma_smoke/golden_frame_000001_full_stability/full_frame_outpu
 ### 下一步
 
 - Stage 49 PASS 后进入 Orin runtime 最小集成：封装 XDMA host runtime，接 `SurfelLocBackend::ComputeObservation` 的 `SURFEL_FPGA_OBS` 路径，并保留 CPU_SIM fallback。
+
+## 50. 2026-06-21 Orin C++ XDMA Runtime Golden Replay
+
+### 当前阶段目标
+
+- Stage 49 已证明 Python host 工具连续 10 次 full-frame HLS transaction 稳定通过。
+- Stage 50 先不直接接在线定位，而是实现 C++ XDMA runtime 和 C++ localization golden replay app。
+- 本阶段目标是让 C++ runtime 跑完整 `frame_000001`，输出与 Stage 48/49 一致：`6050/911/2`，`H/b/residual` 满足 `abs <= 1e-4` 或 `rel <= 1e-3`。
+- Stage 50 PASS 后，Stage 51 再接入 `LidarLoc` 的 `SURFEL_FPGA_OBS` 路径，并保留 CPU_SIM/NDT fallback。
+
+### 本次代码/工具变更
+
+- 新增 C++ XDMA runtime：
+  - 默认设备：`/dev/xdma0_user`、`/dev/xdma0_h2c_0`、`/dev/xdma0_c2h_0`
+  - 默认 control base：`0x1000`
+  - 支持 register read/write、H2C/C2H `pread/pwrite`、shim/reg smoke、DDR smoke、HLS start/poll/readback
+  - 复用 `fpga/abi/slam_accel_abi.h` 和 PL DDR layout 常量
+- 新增 app：`run_surfel_loc_xdma_golden`
+  - 读取 `fpga/golden/localization/frame_000001`
+  - 写入 PL DDR 固定区域
+  - 启动 HLS 并读取 320B `SlamNormalEquation`
+  - 比较 counts、`H_upper[21]`、`b[6]`、residual
+- 保持在线定位主流程不变：Stage 50 不修改 `LidarLoc::Localize` 行为。
+- 新增报告目录：`reports/fpga/runtime/stage50_cpp_xdma_golden/`。
+
+### Orin 侧测试命令
+
+```bash
+colcon build --packages-select lightning
+
+lspci -nnk -s 0005:01:00.0
+ls -l /dev/xdma0_user /dev/xdma0_h2c_0 /dev/xdma0_c2h_0
+cat /sys/bus/pci/devices/0005:01:00.0/enable
+
+ros2 run lightning run_surfel_loc_xdma_golden \
+  --golden_dir fpga/golden/localization/frame_000001 \
+  --ctrl_base 0x1000 \
+  --shim_smoke \
+  --reg_smoke \
+  --ddr_smoke
+
+ros2 run lightning run_surfel_loc_xdma_golden \
+  --golden_dir fpga/golden/localization/frame_000001 \
+  --ctrl_base 0x1000 \
+  --timeout_sec 120 \
+  --verify_readback \
+  --repeat 3 \
+  --output_dir reports/fpga/runtime/stage50_cpp_xdma_golden
+```
+
+### 验收标准
+
+- `XDMA_CPP_SHIM_SMOKE_PASS`
+- `XDMA_CPP_REG_SMOKE_PASS`
+- `XDMA_CPP_DDR_SMOKE_PASS`
+- 每轮 `scan_count=6963`
+- 每轮 `STATUS=0x00000204`
+- 每轮 `ERROR=0x00000000`
+- 每轮 `RUN_COUNT` 递增
+- 每轮 counts 为 `6050/911/2`
+- 每轮输出 `XDMA_CPP_GOLDEN_NUMERIC_PASS`
+- 最终输出 `XDMA_CPP_GOLDEN_REPEAT_PASS`
+- kernel log 无新的 `Failed to detect XDMA config BAR`、`CmpltTO`、AER fatal、XDMA offline
+
+### Orin 实测结果
+
+2026-06-21 Orin 侧 C++ XDMA runtime golden replay 已 PASS。
+
+编译：
+
+```text
+colcon build --packages-select lightning
+PASS
+```
+
+基础 gate：
+
+```text
+0005:01:00.0 Serial controller [0700]: Xilinx Corporation Device [10ee:7024]
+Kernel driver in use: xdma
+/dev/xdma0_user /dev/xdma0_h2c_0 /dev/xdma0_c2h_0 present
+enable=1
+```
+
+C++ runtime smoke：
+
+```text
+XDMA_CPP_SHIM_SMOKE_PASS
+XDMA_CPP_REG_SMOKE_PASS
+CTRL_BASE=0x00001000
+XDMA_CPP_DDR_SMOKE_PASS
+```
+
+C++ full-frame replay：
+
+```text
+XDMA_CPP_GOLDEN_LOAD_PASS
+scan_count=6963
+active_blocks=3719
+active_cells=952064
+expected_counts=6050/911/2
+```
+
+3 轮结果：
+
+```text
+ITER=1/3 STATUS=0x00000204 ERROR=0x00000000 RUN_COUNT=24->25 SCAN_COUNT_READBACK=6963 COUNTS=6050/911/2
+ITER=2/3 STATUS=0x00000204 ERROR=0x00000000 RUN_COUNT=25->26 SCAN_COUNT_READBACK=6963 COUNTS=6050/911/2
+ITER=3/3 STATUS=0x00000204 ERROR=0x00000000 RUN_COUNT=26->27 SCAN_COUNT_READBACK=6963 COUNTS=6050/911/2
+OUTPUT_WORD[27]=0x0000038f000017a2
+OUTPUT_WORD[28]=0x0000000000000002
+XDMA_CPP_COMPARE counts_ok=1 values_ok=1 max_abs=0.0078906 max_rel=4.41926e-05 worst_field=b(4)
+XDMA_CPP_GOLDEN_REPEAT_PASS ITERATIONS=3 MAX_ELAPSED_SEC=1.52723
+```
+
+per-iteration JSON：
+
+```text
+reports/fpga/runtime/stage50_cpp_xdma_golden/cpp_full_frame_output_iter_01.json
+reports/fpga/runtime/stage50_cpp_xdma_golden/cpp_full_frame_output_iter_02.json
+reports/fpga/runtime/stage50_cpp_xdma_golden/cpp_full_frame_output_iter_03.json
+```
+
+本轮 journal 未出现新的 `Failed to detect XDMA config BAR`、`CmpltTO`、AER fatal 或 XDMA offline。Stage 50 通过，可进入 Stage 51 `SURFEL_FPGA_OBS` 在线接入。
+
+### 失败分支
+
+- 如果 C++ smoke 失败：先不接在线定位，回到 BAR shim、control register 或 DDR path。
+- 如果 C++ replay timeout：与 Stage 49 Python repeat JSON 对比，确认是否 C++ register/start/poll 流程差异。
+- 如果 counts/Hb mismatch：优先比较 C++ 写入 ABI buffer 与 Python host image 的分区内容、map header 和 output zero 清零。
+- 如果 C++ PASS：进入 Stage 51 `SURFEL_FPGA_OBS` 在线接入。
