@@ -265,6 +265,26 @@ def write_manifest_with_fd(h2c, manifest, base_dir):
     print("HOST_IMAGE_WRITE_PASS")
 
 
+def find_output_segment(manifest):
+    for segment in manifest["segments"]:
+        if segment["base"] == OUTPUT_BASE:
+            return segment
+    raise RuntimeError("manifest does not contain an output segment at OUTPUT_BASE")
+
+
+def write_output_zero_with_fd(h2c, manifest, base_dir):
+    segment = find_output_segment(manifest)
+    payload = (base_dir / segment["file"]).read_bytes()
+    if len(payload) != segment["size"]:
+        raise RuntimeError(f"{segment['file']} size mismatch")
+    if segment["size"] != NORMAL_EQUATION_BYTES:
+        raise RuntimeError(f"output segment size mismatch: {segment['size']}/{NORMAL_EQUATION_BYTES}")
+    written = os.pwrite(h2c, payload, segment["base"])
+    if written != len(payload):
+        raise RuntimeError(f"{segment['file']} short H2C write: {written}/{len(payload)}")
+    print(f"OUTPUT_ZERO_WRITE_PASS {segment['file']} base=0x{segment['base']:08x} size={len(payload)}")
+
+
 def verify_manifest_readback_with_fd(c2h, manifest, base_dir):
     for segment in manifest["segments"]:
         payload = (base_dir / segment["file"]).read_bytes()
@@ -380,6 +400,19 @@ def write_output_json(
     print(f"HLS_OUTPUT_JSON={out_path}")
 
 
+def output_json_path(save_output_json, repeat_output_dir, iteration, repeat_count):
+    if repeat_output_dir:
+        out_dir = Path(repeat_output_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        return str(out_dir / f"full_frame_output_iter_{iteration:02d}.json")
+    if not save_output_json:
+        return ""
+    if repeat_count <= 1:
+        return save_output_json
+    path = Path(save_output_json)
+    return str(path.with_name(f"{path.stem}_iter_{iteration:02d}{path.suffix}"))
+
+
 def hls_manifest(
     user_path,
     h2c_path,
@@ -393,13 +426,16 @@ def hls_manifest(
     read_regs_after_config,
     dump_output_raw_words,
     save_output_json,
+    repeat_count,
+    repeat_output_dir,
 ):
     manifest_file = Path(manifest_path)
     manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
     expected = manifest["expected"]
     scan_count = int(manifest["scan_count"])
     is_tiny = label == "TINY"
-    regs = {}
+    if repeat_count < 1:
+        raise RuntimeError("--hls-repeat must be >= 1")
 
     user = h2c = c2h = None
     try:
@@ -409,85 +445,122 @@ def hls_manifest(
         write_manifest_with_fd(h2c, manifest, manifest_file.parent)
         if verify_image_readback:
             verify_manifest_readback_with_fd(c2h, manifest, manifest_file.parent)
-        configure_hls_tiny_registers(user, ctrl_base, scan_count)
-        if read_regs_after_config:
-            regs = read_configured_registers(user, ctrl_base)
-            print_configured_registers(regs)
 
-        run_count_before = read32(user, ctrl_base + CTRL_RUN_COUNT)
-        write32(user, ctrl_base + CTRL_CONTROL, 0x1)
-        print(f"HLS_{label}_START_PASS")
-        if is_tiny:
-            print("HLS_TINY_START_PASS")
-        print(f"CTRL_BASE=0x{ctrl_base:08x} SCAN_COUNT={scan_count} RUN_COUNT_BEFORE={run_count_before}")
+        max_elapsed = 0.0
+        max_worst_abs = -1.0
+        max_worst_rel = 0.0
+        max_worst_name = ""
+        for iteration in range(1, repeat_count + 1):
+            if iteration > 1:
+                write_output_zero_with_fd(h2c, manifest, manifest_file.parent)
 
-        deadline = time.monotonic() + timeout_sec
-        last_status = 0
-        last_error = 0
-        while time.monotonic() < deadline:
-            last_status = read32(user, ctrl_base + CTRL_STATUS)
-            last_error = read32(user, ctrl_base + CTRL_ERROR)
-            if last_status & STATUS_ERROR or last_error != 0:
-                raise RuntimeError(f"HLS {label.lower()} entered error: STATUS=0x{last_status:08x} ERROR=0x{last_error:08x}")
-            if last_status & STATUS_DONE:
-                break
-            time.sleep(0.001)
-        else:
-            run_count_timeout = read32(user, ctrl_base + CTRL_RUN_COUNT)
-            raise RuntimeError(
-                f"HLS {label.lower()} timeout: "
-                f"STATUS=0x{last_status:08x} ERROR=0x{last_error:08x} RUN_COUNT={run_count_timeout}"
+            regs = {}
+            configure_hls_tiny_registers(user, ctrl_base, scan_count)
+            if read_regs_after_config:
+                regs = read_configured_registers(user, ctrl_base)
+                print_configured_registers(regs)
+
+            run_count_before = read32(user, ctrl_base + CTRL_RUN_COUNT)
+            start_time = time.monotonic()
+            write32(user, ctrl_base + CTRL_CONTROL, 0x1)
+            print(f"HLS_{label}_START_PASS")
+            if is_tiny:
+                print("HLS_TINY_START_PASS")
+            print(
+                f"CTRL_BASE=0x{ctrl_base:08x} SCAN_COUNT={scan_count} "
+                f"ITERATION={iteration}/{repeat_count} RUN_COUNT_BEFORE={run_count_before}"
             )
 
-        run_count_after = read32(user, ctrl_base + CTRL_RUN_COUNT)
-        if run_count_after <= run_count_before:
-            raise RuntimeError(f"RUN_COUNT did not increment: before={run_count_before} after={run_count_after}")
-        print(f"HLS_{label}_DONE_PASS")
-        if is_tiny:
-            print("HLS_TINY_DONE_PASS")
-        print(f"STATUS=0x{last_status:08x} ERROR=0x{last_error:08x} RUN_COUNT_AFTER={run_count_after}")
-
-        output = os.pread(c2h, NORMAL_EQUATION_BYTES, OUTPUT_BASE)
-        if dump_output_raw_words:
-            dump_raw_output_words(output)
-        actual = parse_normal_equation(output)
-        if save_output_json:
-            write_output_json(
-                save_output_json,
-                manifest_file,
-                manifest,
-                ctrl_base,
-                label,
-                scan_count,
-                last_status,
-                last_error,
-                run_count_before,
-                run_count_after,
-                regs,
-                output,
-                actual,
-            )
-        try:
-            worst_name, worst_abs, worst_rel = compare_normal_equation(actual, expected)
-        except RuntimeError:
-            if dump_normal_equation:
-                print_normal_equation_dump("EXPECTED", expected)
-                print_normal_equation_dump("ACTUAL", actual)
+            deadline = start_time + timeout_sec
+            last_status = 0
+            last_error = 0
+            while time.monotonic() < deadline:
+                last_status = read32(user, ctrl_base + CTRL_STATUS)
+                last_error = read32(user, ctrl_base + CTRL_ERROR)
+                if last_status & STATUS_ERROR or last_error != 0:
+                    raise RuntimeError(
+                        f"HLS {label.lower()} entered error on iteration {iteration}: "
+                        f"STATUS=0x{last_status:08x} ERROR=0x{last_error:08x}"
+                    )
+                if last_status & STATUS_DONE:
+                    break
+                time.sleep(0.001)
             else:
-                print_normal_equation_summary("EXPECTED", expected)
-                print_normal_equation_summary("ACTUAL", actual)
-            raise
-        print(f"HLS_{label}_NUMERIC_PASS")
-        if is_tiny:
-            print("HLS_TINY_NUMERIC_PASS")
-        if dump_normal_equation:
-            print_normal_equation_dump("ACTUAL", actual)
-        print(
-            "COUNTS="
-            f"{actual['valid_count']}/{actual['reject_count']}/{actual['miss_count']} "
-            f"FLAGS=0x{actual['flags']:08x}"
-        )
-        print(f"WORST_FIELD={worst_name} MAX_ABS={worst_abs:.6g} MAX_REL={worst_rel:.6g}")
+                run_count_timeout = read32(user, ctrl_base + CTRL_RUN_COUNT)
+                raise RuntimeError(
+                    f"HLS {label.lower()} timeout on iteration {iteration}: "
+                    f"STATUS=0x{last_status:08x} ERROR=0x{last_error:08x} RUN_COUNT={run_count_timeout}"
+                )
+
+            elapsed = time.monotonic() - start_time
+            max_elapsed = max(max_elapsed, elapsed)
+            run_count_after = read32(user, ctrl_base + CTRL_RUN_COUNT)
+            if run_count_after <= run_count_before:
+                raise RuntimeError(
+                    f"RUN_COUNT did not increment on iteration {iteration}: "
+                    f"before={run_count_before} after={run_count_after}"
+                )
+            print(f"HLS_{label}_DONE_PASS")
+            if is_tiny:
+                print("HLS_TINY_DONE_PASS")
+            print(
+                f"STATUS=0x{last_status:08x} ERROR=0x{last_error:08x} "
+                f"RUN_COUNT_AFTER={run_count_after} ELAPSED_SEC={elapsed:.6f}"
+            )
+
+            output = os.pread(c2h, NORMAL_EQUATION_BYTES, OUTPUT_BASE)
+            if dump_output_raw_words:
+                dump_raw_output_words(output)
+            actual = parse_normal_equation(output)
+            json_path = output_json_path(save_output_json, repeat_output_dir, iteration, repeat_count)
+            if json_path:
+                write_output_json(
+                    json_path,
+                    manifest_file,
+                    manifest,
+                    ctrl_base,
+                    label,
+                    scan_count,
+                    last_status,
+                    last_error,
+                    run_count_before,
+                    run_count_after,
+                    regs,
+                    output,
+                    actual,
+                )
+            try:
+                worst_name, worst_abs, worst_rel = compare_normal_equation(actual, expected)
+            except RuntimeError:
+                if dump_normal_equation:
+                    print_normal_equation_dump("EXPECTED", expected)
+                    print_normal_equation_dump("ACTUAL", actual)
+                else:
+                    print_normal_equation_summary("EXPECTED", expected)
+                    print_normal_equation_summary("ACTUAL", actual)
+                raise
+            print(f"HLS_{label}_NUMERIC_PASS")
+            if is_tiny:
+                print("HLS_TINY_NUMERIC_PASS")
+            if dump_normal_equation:
+                print_normal_equation_dump("ACTUAL", actual)
+            print(
+                "COUNTS="
+                f"{actual['valid_count']}/{actual['reject_count']}/{actual['miss_count']} "
+                f"FLAGS=0x{actual['flags']:08x}"
+            )
+            print(f"WORST_FIELD={worst_name} MAX_ABS={worst_abs:.6g} MAX_REL={worst_rel:.6g}")
+            if repeat_count > 1:
+                print(f"HLS_REPEAT_ITER_PASS {iteration}/{repeat_count}")
+            if worst_abs > max_worst_abs:
+                max_worst_name, max_worst_abs, max_worst_rel = worst_name, worst_abs, worst_rel
+
+        if repeat_count > 1:
+            print(
+                f"HLS_REPEAT_STABILITY_PASS ITERATIONS={repeat_count} "
+                f"MAX_ELAPSED_SEC={max_elapsed:.6f} "
+                f"WORST_FIELD={max_worst_name} MAX_ABS={max_worst_abs:.6g} MAX_REL={max_worst_rel:.6g}"
+            )
     finally:
         close_many(fd for fd in (user, h2c, c2h) if fd is not None)
 
@@ -530,6 +603,8 @@ def main():
     parser.add_argument("--dump-output-raw-words", action="store_true", help="Print the 40 raw 64-bit output words read from DDR")
     parser.add_argument("--dump-normal-equation", action="store_true", help="Print H_upper and b after HLS readback")
     parser.add_argument("--save-output-json", default="", help="Save actual/expected HLS output, raw words, and register readback as JSON")
+    parser.add_argument("--hls-repeat", type=int, default=1, help="Repeat the selected HLS manifest transaction")
+    parser.add_argument("--repeat-output-dir", default="", help="Save one HLS output JSON per repeat iteration")
     parser.add_argument("--start-zero", action="store_true", help="Optionally issue a zero-point accelerator start")
     args = parser.parse_args()
 
@@ -562,6 +637,8 @@ def main():
             args.read_regs_after_config,
             args.dump_output_raw_words,
             args.save_output_json,
+            args.hls_repeat,
+            args.repeat_output_dir,
         )
     if args.hls_tiny:
         hls_manifest(
@@ -577,6 +654,8 @@ def main():
             args.read_regs_after_config,
             args.dump_output_raw_words,
             args.save_output_json,
+            args.hls_repeat,
+            args.repeat_output_dir,
         )
     if args.start_zero:
         start_zero(args.user, args.ctrl_base)

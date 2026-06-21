@@ -175,6 +175,25 @@ The full golden gate must print `HOST_IMAGE_READBACK_PASS`,
 `SCAN_COUNT_READBACK=6963`, `HLS_MANIFEST_DONE_PASS`, and
 `HLS_MANIFEST_NUMERIC_PASS`. Expected counts are `6050/911/2`.
 
+After full frame passes once, run Stage 49 repeated stability. The first
+iteration writes and optionally reads back the full DDR image; later iterations
+only clear `output_zero.bin` before restarting HLS:
+
+```bash
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py \
+  --hls-manifest fpga/vivado/.build/host_golden_frame_000001_full/manifest.json \
+  --ctrl-base 0x1000 \
+  --hls-timeout-sec 120 \
+  --verify-image-readback \
+  --read-regs-after-config \
+  --dump-output-raw-words \
+  --hls-repeat 10 \
+  --repeat-output-dir reports/fpga/host/xdma_smoke/golden_frame_000001_full_stability
+```
+
+Stage 49 must print `HLS_REPEAT_ITER_PASS i/10` for every iteration and finish
+with `HLS_REPEAT_STABILITY_PASS`. Each iteration must keep counts `6050/911/2`.
+
 If bounded golden fails after start/done, run the Stage 41 multi-cell synthetic
 fixture before changing PCIe, XDMA, or MIG. It uses two active blocks, a nonzero
 `first_cell`, nonzero cell indices, and expected counts `1/1/1`:

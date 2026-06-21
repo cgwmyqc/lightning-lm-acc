@@ -3783,3 +3783,59 @@ reports/fpga/host/xdma_smoke/golden_frame_000001_full/full_frame_output.json
 
 - Stage 48 PASS 后进入 repeated full-frame stability gate。
 - repeated full-frame 稳定后，再考虑 PCIe Gen2 x4 链路修正、性能阶段或 Orin runtime 集成。
+
+## 49. 2026-06-21 Full `frame_000001` Repeated Stability Gate
+
+### 当前阶段状态
+
+- Stage 48 已单次 full-frame PASS：`SCAN_COUNT_READBACK=6963`，counts `6050/911/2`，`HLS_MANIFEST_NUMERIC_PASS`。
+- Stage 49 不改 HLS、不改 Vivado、不重新生成 bitstream；继续使用当前 Stage 44 `azmig_wrapper.bit`。
+- 本阶段只验证连续 full-frame transaction 稳定性，不进入 online SLAM、mapping/update、solve6x6 或 PCIe Gen2 x4 性能修正。
+
+### 本次代码/工具变更
+
+- `xdma_smoke.py` 新增 `--hls-repeat N`，默认 `1`。
+- `xdma_smoke.py` 新增 `--repeat-output-dir <dir>`，每轮保存 `full_frame_output_iter_XX.json`。
+- repeat 流程中第 1 轮写入并可选 readback 全部 manifest segments；第 2 轮起只重写 `output_zero.bin` 并重新触发 accelerator，避免每轮重复写 60MB `obs_cells`。
+- 每轮都会检查 `RUN_COUNT` 增加、`STATUS.error=0`、`ERROR=0`、counts/H/b/residual 容差，并输出 `HLS_REPEAT_ITER_PASS i/N`。
+- 全部轮次通过后输出 `HLS_REPEAT_STABILITY_PASS`。
+- 新增报告目录：`reports/fpga/host/xdma_smoke/golden_frame_000001_full_stability/`。
+
+### Orin 侧测试命令
+
+```bash
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --ddr-smoke
+
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py \
+  --hls-manifest fpga/vivado/.build/host_golden_frame_000001_full/manifest.json \
+  --ctrl-base 0x1000 \
+  --hls-timeout-sec 120 \
+  --verify-image-readback \
+  --read-regs-after-config \
+  --dump-output-raw-words \
+  --hls-repeat 10 \
+  --repeat-output-dir reports/fpga/host/xdma_smoke/golden_frame_000001_full_stability
+
+journalctl -k --no-pager | grep -Ei 'xdma|10ee|7024|0005:01:00|CmpltTO|BAR|probe|AER|link' | tail -n 160
+```
+
+### 验收标准
+
+- 10/10 轮均输出 `HLS_MANIFEST_NUMERIC_PASS`。
+- 10/10 轮均输出 `HLS_REPEAT_ITER_PASS i/10`。
+- 最终输出 `HLS_REPEAT_STABILITY_PASS`。
+- 每轮 counts 均为 `6050/911/2`。
+- 每轮 `RUN_COUNT` 单调递增。
+- kernel log 无新的 `Failed to detect XDMA config BAR`、`CmpltTO`、AER fatal 或 XDMA offline。
+- 最大数值误差仍满足当前容差：`abs <= 1e-4` 或 `rel <= 1e-3`。
+
+### 失败分支
+
+- 如果某轮 timeout：保留该轮 JSON 和 raw words，重跑 `--hls-repeat 3 --hls-timeout-sec 300`；若仍 timeout，优先查 HLS/MIG 长时间运行或 XDMA/PCIe 链路稳定性。
+- 如果某轮 counts/Hb mismatch：比较该轮 JSON 与 Stage 48 PASS JSON，先查 output 清零、RUN_COUNT、旧输出污染，再考虑 HLS 状态残留。
+- 如果出现 AER/CmpltTO：暂停 runtime 集成，转入 PCIe 链路稳定性排查。
+
+### 下一步
+
+- Stage 49 PASS 后进入 Orin runtime 最小集成：封装 XDMA host runtime，接 `SurfelLocBackend::ComputeObservation` 的 `SURFEL_FPGA_OBS` 路径，并保留 CPU_SIM fallback。
