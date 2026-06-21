@@ -121,3 +121,40 @@ python3 fpga/host/xdma_smoke/analyze_lookup_mismatch.py \
   --actual-json reports/fpga/host/xdma_smoke/golden_trace_n64/real_miss_point_output.json \
   --report-dir reports/fpga/host/xdma_smoke/lookup_mismatch_stage46
 ```
+
+## Stage 46 Orin result 2026-06-21 10:48
+
+The `real_miss_point` was rerun and the board output JSON was saved:
+
+```text
+HOST_IMAGE_READBACK_PASS
+SCAN_COUNT_READBACK=1
+HLS_MANIFEST_START_PASS
+HLS_MANIFEST_DONE_PASS
+HLS_OUTPUT_JSON=reports/fpga/host/xdma_smoke/golden_trace_n64/real_miss_point_output.json
+EXPECTED_COUNTS=0/0/1
+ACTUAL_COUNTS=1/0/0
+OUTPUT_WORD[27]=0x0000000000000001
+OUTPUT_WORD[28]=0x0000000000000000
+```
+
+Lookup mismatch analysis:
+
+```text
+LOOKUP_MISMATCH_ANALYSIS_PASS
+cpu_lookup_result=miss
+best_candidate=offset=459031 block=(-1,1,3)/23 legal_cpu_neighbor=False score=0
+```
+
+Best inferred HLS cell:
+
+```text
+offset=459031
+block=(-1,1,3)
+cell_idx=23
+legal_cpu_neighbor=False
+residual=-0.028110894923855767
+normal=[0.14008283615112305, 0.8049452900886536, 0.5765760540962219]
+```
+
+CPU legal neighbor probes for scan index `19` all reported `Hit=False`, including center `(0,1,3)/23` and every 26-neighbor probe. The inferred HLS cell is therefore outside the CPU legal lookup set.

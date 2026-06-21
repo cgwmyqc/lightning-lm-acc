@@ -3435,3 +3435,62 @@ ACTUAL_RESIDUAL_MAX_ABS=0.29527878422266252
 - Windows/HLS 侧增加 n64 per-point debug manifest 或 trace counter，逐点输出 lookup block/cell index、residual、classification。
 - 优先对比 CPU host expected recompute 与 HLS 的 neighbor lookup 顺序、active block hash/index 解码、cell flags/stride、residual threshold 入口。
 - 保留 Stage 44 bitstream 作为 synthetic PASS / n64 FAIL 的当前功能基线。
+
+### Stage 46 Orin 实测结果 2026-06-21 10:48 CST
+
+XDMA/base gate 通过：
+
+```text
+0005:01:00.0 [10ee:7024]
+Kernel driver in use: xdma
+/dev/xdma0_user
+/dev/xdma0_h2c_0
+/dev/xdma0_c2h_0
+/sys/bus/pci/devices/0005:01:00.0/enable = 1
+SHIM_SMOKE_PASS
+REG_SMOKE_PASS
+DDR_SMOKE_PASS
+```
+
+`real_miss_point` 重跑结果与 Stage 45 一致，并已保存板上 output JSON：
+
+```text
+HOST_IMAGE_READBACK_PASS
+SCAN_COUNT_READBACK=1
+HLS_MANIFEST_START_PASS
+HLS_MANIFEST_DONE_PASS
+STATUS=0x00000204
+ERROR=0x00000000
+HLS_OUTPUT_JSON=reports/fpga/host/xdma_smoke/golden_trace_n64/real_miss_point_output.json
+EXPECTED_COUNTS=0/0/1
+ACTUAL_COUNTS=1/0/0
+OUTPUT_WORD[27]=0x0000000000000001
+OUTPUT_WORD[28]=0x0000000000000000
+```
+
+Host-only 反推通过：
+
+```text
+LOOKUP_MISMATCH_ANALYSIS_PASS
+cpu_lookup_result=miss
+best_candidate=offset=459031 block=(-1,1,3)/23 legal_cpu_neighbor=False score=0
+```
+
+最佳候选 cell：
+
+```text
+offset=459031
+block=(-1,1,3)
+cell_idx=23
+legal_cpu_neighbor=False
+residual=-0.028110894923855767
+normal=[0.14008283615112305, 0.8049452900886536, 0.5765760540962219]
+```
+
+CPU legal neighbor probes 结果：center `(0,1,3)/23` 及 26 个邻居全部 `Hit=False`。
+
+结论：
+- HLS/board 实际使用的 best inferred cell 不属于 CPU 合法 26-neighbor lookup 集合。
+- 当前问题不再指向 golden 录制、config、host DDR 写入或 output counter。
+- 下一阶段应优先修 HLS lookup/address/packed AXI 读取或综合后的 neighbor selection。
+- 暂不进入 full frame、online SLAM、mapping update、solve6x6 或 PCIe x4 性能修正。
