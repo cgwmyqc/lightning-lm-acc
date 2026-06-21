@@ -3707,6 +3707,72 @@ sudo python3 fpga/host/xdma_smoke/xdma_smoke.py \
 - counts 为 `6050/911/2`。
 - `STATUS.error=0` 且 `ERROR=0x00000000`。
 
+### Orin 实测结果
+
+2026-06-21 Orin 侧 full `frame_000001` transaction 已 PASS。
+
+基础 gate：
+
+```text
+0005:01:00.0 Serial controller [0700]: Xilinx Corporation Device [10ee:7024]
+Kernel driver in use: xdma
+/dev/xdma0_user /dev/xdma0_h2c_0 /dev/xdma0_c2h_0 present
+enable=1
+```
+
+基础 smoke：
+
+```text
+SHIM_SMOKE_PASS
+REG_SMOKE_PASS
+DDR_SMOKE_PASS
+CTRL_BASE=0x00001000
+VERSION=0x00020002
+```
+
+full host image：
+
+```text
+HOST_GOLDEN_IMAGE_PASS
+scan_count=6963
+expected_counts=6050/911/2
+expected_residual_sum=-40.188595298682046
+```
+
+full HLS transaction：
+
+```text
+HOST_IMAGE_READBACK_PASS
+SCAN_COUNT_READBACK=6963
+HLS_MANIFEST_START_PASS
+HLS_MANIFEST_DONE_PASS
+HLS_MANIFEST_NUMERIC_PASS
+STATUS=0x00000204
+ERROR=0x00000000
+RUN_COUNT=13->14
+ACTUAL_COUNTS=6050/911/2
+COUNTS=6050/911/2
+OUTPUT_WORD[27]=0x0000038f000017a2
+OUTPUT_WORD[28]=0x0000000000000002
+WORST_FIELD=b[4] MAX_ABS=0.0078906 MAX_REL=3.3955e-05
+```
+
+残差摘要：
+
+```text
+ACTUAL_RESIDUAL_SUM=-40.188062779666957
+ACTUAL_RESIDUAL_ABS_SUM=387.50742023750286
+ACTUAL_RESIDUAL_MAX_ABS=0.29974957195769858
+```
+
+输出 JSON：
+
+```text
+reports/fpga/host/xdma_smoke/golden_frame_000001_full/full_frame_output.json
+```
+
+本轮 journal 未出现新的 `Failed to detect XDMA config BAR`、`CmpltTO` 或 AER recovery failure。120 秒 timeout 未触发，不需要 300 秒重试。
+
 ### 失败分支
 
 - 如果 120 秒 timeout，先保留 manifest/output JSON，并用 `--hls-timeout-sec 300` 重跑一次；若仍 timeout，再查 HLS AXI/MIG arbitration 或 full-frame loop progress。
