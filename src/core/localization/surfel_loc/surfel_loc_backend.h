@@ -18,7 +18,6 @@ class SurfelLocBackend {
     bool Align(const CloudPtr& scan_body, const SE3& init_pose, const ActiveMapBuffer& map, SE3& pose_out,
                LocQuality& quality_out) const;
 
-   private:
     struct EncodedCell {
         int32_t block_x = 0;
         int32_t block_y = 0;
@@ -30,6 +29,7 @@ class SurfelLocBackend {
     const ObsCellFloat64* LookupCell(const ActiveMapBuffer& map, const EncodedCell& encoded) const;
     bool TryLookupNearest(const ActiveMapBuffer& map, const Vec3d& point_world, const ObsCellFloat64*& cell) const;
 
+   private:
     SurfelLocOptions options_;
 };
 

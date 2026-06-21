@@ -286,19 +286,21 @@ bool XdmaRuntime::DdrSmoke(size_t pattern_size, std::string* error) const {
     return true;
 }
 
-bool XdmaRuntime::RunLocalizationObservation(const std::vector<SlamAccelScanPoint>& scan_points,
-                                             const SlamAccelPose& pose, const loc::ActiveMapBuffer& active_map,
-                                             bool write_full_image, bool verify_readback, RunResult& result,
-                                             std::string* error) const {
+namespace {
+
+bool RunObservationImpl(const XdmaRuntime::Options& options, uint32_t mode,
+                        const std::vector<SlamAccelScanPoint>& scan_points, const SlamAccelPose& pose,
+                        const loc::ActiveMapBuffer& active_map, bool write_full_image, bool verify_readback,
+                        XdmaRuntime::RunResult& result, std::string* error) {
     Fd user;
     Fd h2c;
     Fd c2h;
-    if (!OpenFd(user, options_.user_dev, O_RDWR, error) || !OpenFd(h2c, options_.h2c_dev, O_WRONLY, error) ||
-        !OpenFd(c2h, options_.c2h_dev, O_RDONLY, error)) {
+    if (!OpenFd(user, options.user_dev, O_RDWR, error) || !OpenFd(h2c, options.h2c_dev, O_WRONLY, error) ||
+        !OpenFd(c2h, options.c2h_dev, O_RDONLY, error)) {
         return false;
     }
 
-    const ActiveMapHeader map_header = MakeActiveMapHeader(active_map);
+    const ActiveMapHeader map_header = MakeActiveMapHeader(active_map, mode);
     SlamNormalEquation output_zero;
 
     if (write_full_image) {
@@ -328,23 +330,23 @@ bool XdmaRuntime::RunLocalizationObservation(const std::vector<SlamAccelScanPoin
         return false;
     }
 
-    if (!ConfigureRegisters(user.get(), options_.ctrl_base, static_cast<uint32_t>(scan_points.size()), error)) {
+    if (!ConfigureRegisters(user.get(), options.ctrl_base, static_cast<uint32_t>(scan_points.size()), error)) {
         return false;
     }
-    if (!Read32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_SCAN_COUNT, result.scan_count_readback, error) ||
-        !Read32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_RUN_COUNT, result.run_count_before, error)) {
+    if (!Read32(user.get(), options.ctrl_base + LIGHTNING_CTRL_SCAN_COUNT, result.scan_count_readback, error) ||
+        !Read32(user.get(), options.ctrl_base + LIGHTNING_CTRL_RUN_COUNT, result.run_count_before, error)) {
         return false;
     }
 
     const auto start = std::chrono::steady_clock::now();
-    if (!Write32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_CONTROL, 0x1u, error)) {
+    if (!Write32(user.get(), options.ctrl_base + LIGHTNING_CTRL_CONTROL, 0x1u, error)) {
         return false;
     }
 
-    const auto deadline = start + std::chrono::duration<double>(options_.timeout_sec);
+    const auto deadline = start + std::chrono::duration<double>(options.timeout_sec);
     while (std::chrono::steady_clock::now() < deadline) {
-        if (!Read32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_STATUS, result.status, error) ||
-            !Read32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_ERROR, result.error, error)) {
+        if (!Read32(user.get(), options.ctrl_base + LIGHTNING_CTRL_STATUS, result.status, error) ||
+            !Read32(user.get(), options.ctrl_base + LIGHTNING_CTRL_ERROR, result.error, error)) {
             return false;
         }
         if ((result.status & kStatusError) != 0 || result.error != 0) {
@@ -364,7 +366,7 @@ bool XdmaRuntime::RunLocalizationObservation(const std::vector<SlamAccelScanPoin
     const auto end = std::chrono::steady_clock::now();
     result.elapsed_sec = std::chrono::duration<double>(end - start).count();
 
-    if (!Read32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_RUN_COUNT, result.run_count_after, error)) {
+    if (!Read32(user.get(), options.ctrl_base + LIGHTNING_CTRL_RUN_COUNT, result.run_count_after, error)) {
         return false;
     }
     if (result.run_count_after <= result.run_count_before) {
@@ -379,6 +381,24 @@ bool XdmaRuntime::RunLocalizationObservation(const std::vector<SlamAccelScanPoin
     std::memcpy(&result.output, output_bytes.data(), sizeof(result.output));
     std::memcpy(result.raw_output_words.data(), output_bytes.data(), sizeof(result.raw_output_words));
     return true;
+}
+
+}  // namespace
+
+bool XdmaRuntime::RunLocalizationObservation(const std::vector<SlamAccelScanPoint>& scan_points,
+                                             const SlamAccelPose& pose, const loc::ActiveMapBuffer& active_map,
+                                             bool write_full_image, bool verify_readback, RunResult& result,
+                                             std::string* error) const {
+    return RunObservationImpl(options_, LOCALIZATION_OBSERVATION, scan_points, pose, active_map, write_full_image,
+                              verify_readback, result, error);
+}
+
+bool XdmaRuntime::RunMappingObservation(const std::vector<SlamAccelScanPoint>& scan_points,
+                                        const SlamAccelPose& pose, const loc::ActiveMapBuffer& active_map,
+                                        bool write_full_image, bool verify_readback, RunResult& result,
+                                        std::string* error) const {
+    return RunObservationImpl(options_, MAPPING_OBSERVATION, scan_points, pose, active_map, write_full_image,
+                              verify_readback, result, error);
 }
 
 std::vector<SlamAccelScanPoint> ToAbiScanPoints(const CloudPtr& cloud) {
@@ -398,9 +418,9 @@ std::vector<SlamAccelScanPoint> ToAbiScanPoints(const CloudPtr& cloud) {
     return out;
 }
 
-ActiveMapHeader MakeActiveMapHeader(const loc::ActiveMapBuffer& active_map) {
+ActiveMapHeader MakeActiveMapHeader(const loc::ActiveMapBuffer& active_map, uint32_t mode) {
     ActiveMapHeader header;
-    header.mode = LOCALIZATION_OBSERVATION;
+    header.mode = mode;
     header.cells_per_block = active_map.cells_per_block;
     header.cell_resolution = active_map.cell_resolution;
     header.inv_cell_resolution = active_map.inv_cell_resolution;

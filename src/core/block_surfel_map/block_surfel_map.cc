@@ -316,6 +316,68 @@ void BlockSurfelMap::RecomputeDirtySurfels() {
     });
 }
 
+bool BlockSurfelMap::ExportActiveMap(loc::ActiveMapBuffer& out) const {
+    out.Clear();
+    out.cell_resolution = options_.cell_resolution;
+    out.inv_cell_resolution = 1.0f / std::max(options_.cell_resolution, 1e-3f);
+    out.cells_per_block = BlockGeom::CELLS_PER_BLOCK;
+    out.lookup_nearby_type = static_cast<uint32_t>(options_.lookup_nearby_type);
+    out.window_id = current_frame_;
+    out.version = current_frame_;
+
+    std::vector<BlockKey> keys;
+    keys.reserve(blocks_.size());
+    for (const auto& item : blocks_) {
+        keys.emplace_back(item.first);
+    }
+    std::sort(keys.begin(), keys.end(), [](const BlockKey& lhs, const BlockKey& rhs) {
+        if (lhs.x != rhs.x) return lhs.x < rhs.x;
+        if (lhs.y != rhs.y) return lhs.y < rhs.y;
+        return lhs.z < rhs.z;
+    });
+
+    out.blocks.reserve(keys.size());
+    out.cells.reserve(keys.size() * BlockGeom::CELLS_PER_BLOCK);
+    for (const auto& key : keys) {
+        const auto iter = blocks_.find(key);
+        if (iter == blocks_.end() || !iter->second) {
+            continue;
+        }
+
+        const VoxelBlock& src_block = *iter->second;
+        fpga::ActiveBlockRecord block;
+        block.x = key.x;
+        block.y = key.y;
+        block.z = key.z;
+        block.first_cell = static_cast<uint32_t>(out.cells.size());
+
+        uint32_t valid_cells = 0;
+        for (int i = 0; i < BlockGeom::CELLS_PER_BLOCK; ++i) {
+            const VoxelCell& src_cell = src_block.cells[i];
+            loc::ObsCellFloat64 dst_cell;
+            if ((src_cell.flags & FLAG_VALID_SURFEL) != 0 && src_cell.count > 0) {
+                const float inv_count = 1.0f / static_cast<float>(src_cell.count);
+                dst_cell.centroid_x = src_cell.sum[0] * inv_count;
+                dst_cell.centroid_y = src_cell.sum[1] * inv_count;
+                dst_cell.centroid_z = src_cell.sum[2] * inv_count;
+                dst_cell.normal_x = src_cell.nx;
+                dst_cell.normal_y = src_cell.ny;
+                dst_cell.normal_z = src_cell.nz;
+                dst_cell.plane_d = src_cell.d;
+                dst_cell.quality = src_cell.quality;
+                dst_cell.count = src_cell.count;
+                dst_cell.flags = fpga::OBS_CELL_VALID;
+                ++valid_cells;
+            }
+            out.cells.emplace_back(dst_cell);
+        }
+        block.valid_cell_count = valid_cells;
+        out.blocks.emplace_back(block);
+    }
+
+    return !out.blocks.empty() && !out.cells.empty();
+}
+
 bool BlockSurfelMap::LookupSurfel(const PointType& pt_world, SurfelCorrespondence& out) const {
     int gx = 0, gy = 0, gz = 0;
     EncodeGrid(pt_world.getVector3fMap(), gx, gy, gz);

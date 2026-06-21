@@ -1,0 +1,12 @@
+bag: /home/hit/Cheng/FPGA_ACC/mid360_20260313_outdoor_30deg_up_quan_03_0.db3
+config: config/default_livox.yaml
+frame_index: 20
+timestamp: 1773380976.68870282
+scan_points: 782
+active_blocks: 73
+active_cells: 18688
+effect_feat_surf: 667
+plane_icp_weight: 300
+expected_counts: 611/0/171
+extrinsic_T: [0, 0, 0.280000000000000027]
+extrinsic_R: [1, 0, 0, 0, 1, 0, 0, 0, 1]

@@ -10,6 +10,7 @@
 
 #include "common/eigen_types.h"
 #include "common/point_def.h"
+#include "core/localization/surfel_loc/surfel_loc_types.h"
 
 namespace lightning {
 
@@ -127,6 +128,7 @@ class BlockSurfelMap {
     size_t NumValidSurfels() const;
     const BlockSurfelMapOptions& Options() const { return options_; }
     void ExportCentroidCloud(PointVector& out) const;
+    bool ExportActiveMap(loc::ActiveMapBuffer& out) const;
 
    private:
     void EncodeGrid(const Vec3f& p, int& gx, int& gy, int& gz) const noexcept;

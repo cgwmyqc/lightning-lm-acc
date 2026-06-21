@@ -3,6 +3,8 @@
 
 #include <pcl/filters/voxel_grid.h>
 #include <condition_variable>
+#include <functional>
+#include <limits>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <thread>
 
@@ -14,6 +16,7 @@
 #include "core/ivox3d/ivox3d.h"
 #include "core/lio/eskf.hpp"
 #include "core/lio/imu_processing.hpp"
+#include "core/localization/surfel_loc/surfel_loc_types.h"
 #include "pointcloud_preprocess.h"
 
 #include "livox_ros_driver2/msg/custom_msg.hpp"
@@ -67,6 +70,20 @@ class LaserMapping {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     using IVoxType = IVox<3, IVoxNodeType::DEFAULT, PointType>;
+    struct MappingGoldenFrameData {
+        int frame_index = 0;
+        double timestamp = 0.0;
+        CloudPtr scan_body;
+        NavState state;
+        Mat3d extrinsic_R = Mat3d::Identity();
+        Vec3d extrinsic_t = Vec3d::Zero();
+        loc::ActiveMapBuffer active_map;
+        loc::LocNormalEquation expected_obs;
+        int effect_feat_surf = 0;
+        int scan_points = 0;
+        double plane_icp_weight = 1.0;
+    };
+    using MappingGoldenFrameCaptureCallback = std::function<bool(const MappingGoldenFrameData&)>;
 
     LaserMapping(Options options = Options());
     ~LaserMapping() {
@@ -97,6 +114,8 @@ class LaserMapping {
     void SaveMap();
 
     void SetUI(std::shared_ptr<ui::PangolinWindow> ui) { ui_ = ui; }
+    void SetMappingGoldenFrameCapture(int target_frame_index, MappingGoldenFrameCaptureCallback callback);
+    bool MappingGoldenFrameCaptured() const { return mapping_golden_frame_captured_; }
 
     /// 获取关键帧
     Keyframe::Ptr GetKeyframe() const { return last_kf_; }
@@ -137,6 +156,7 @@ class LaserMapping {
     void ObsModel(NavState &s, ESKF::CustomObservationModel &obs);
     void ObsModelCpu(NavState &s, ESKF::CustomObservationModel &obs);
     void ObsModelFpgaObservation(NavState &s, ESKF::CustomObservationModel &obs);
+    void MaybeCaptureMappingGoldenFrame(const NavState& state, const ESKF::CustomObservationModel& obs);
 
     inline void PointBodyToWorld(const PointType &pi, PointType &po) {
         Vec3d p_global(state_point_.rot_ *
@@ -234,6 +254,12 @@ class LaserMapping {
     int surfel_hit_num_ = 0, surfel_fallback_num_ = 0;
     SurfelLookupStats surfel_lookup_stats_;
     bool mapping_backend_warning_logged_ = false;
+    int mapping_golden_target_frame_index_ = -1;
+    int mapping_golden_valid_frame_count_ = 0;
+    uint64_t mapping_golden_current_scan_serial_ = 0;
+    uint64_t mapping_golden_last_counted_scan_serial_ = std::numeric_limits<uint64_t>::max();
+    bool mapping_golden_frame_captured_ = false;
+    MappingGoldenFrameCaptureCallback mapping_golden_callback_;
 
     double last_lidar_time_ = 0;
 

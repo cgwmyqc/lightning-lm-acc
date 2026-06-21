@@ -4195,7 +4195,7 @@ reports/fpga/runtime/stage51_online_fpga_obs/
 - Stage 53：将 unified observation runtime 接入 mapping `FPGA_OBS`。
 - Stage 54：做 localization `CPU_SIM vs FPGA_OBS` 固定短 bag 轨迹、失败帧、残差、耗时对比报告。
 
-## 52. 2026-06-21 Mapping Observation Golden/Replay 准备
+## 52. 2026-06-21 Mapping Observation Golden/Replay
 
 ### 当前阶段目标
 
@@ -4273,7 +4273,8 @@ fpga/golden/mapping/frame_000001/
 5. 新增 mapping replay app，目标 marker：
 
 ```text
-MAPPING_GOLDEN_REPLAY_PASS
+MAPPING_CPU_REPLAY_PASS
+MAPPING_XDMA_REPLAY_PASS
 ```
 
 ### 报告目录
@@ -4282,6 +4283,27 @@ MAPPING_GOLDEN_REPLAY_PASS
 reports/fpga/runtime/stage52_mapping_golden_replay/
   commands.md
   summary.md
+```
+
+### 本次实现结果
+
+已新增 Orin 侧 mapping golden/replay 链路：
+
+```text
+BlockSurfelMap::ExportActiveMap()
+LaserMapping::SetMappingGoldenFrameCapture()
+export_mapping_golden_frame
+build_surfel_mapping_golden
+run_surfel_mapping_golden_replay
+run_surfel_mapping_xdma_golden
+```
+
+本阶段明确只导出 surfel-map plane observation：
+
+```text
+default_livox.yaml 中 surfel_fallback_mode=ivox
+完整 ObsModelCpu 会混入 iVox fallback plane terms
+Stage52 golden 只捕获 surfel_corr.valid && !fallback 的统一 surfel observation kernel 输入/输出
 ```
 
 ### 本次验证结果
@@ -4303,6 +4325,63 @@ colcon build --packages-select lightning
 PASS
 ```
 
+Mapping golden source：
+
+```text
+fpga/golden_src/mapping/frame_000001
+frame_index=20
+timestamp=1773380976.68870282
+scan_points=782
+active_blocks=73
+active_cells=18688
+effect_feat_surf=667
+plane_icp_weight=300
+surfel_only_expected_counts=611/0/171
+MAPPING_GOLDEN_EXPORT_PASS
+```
+
+Mapping golden ABI：
+
+```text
+fpga/golden/mapping/frame_000001
+MAPPING_GOLDEN_BUILD_PASS
+expected_counts=611/0/171
+```
+
+CPU replay：
+
+```text
+MAPPING_CPU_REPLAY_PASS
+counts actual=611/0/171 expected=611/0/171
+values_ok=1
+max_abs=0.0337705
+max_rel=2.21971e-05
+worst_field=b(3)
+```
+
+XDMA replay：
+
+```text
+MAPPING_XDMA_REPLAY_FAIL
+STATUS=0x204
+ERROR=0x0
+RUN_COUNT=145->146
+SCAN_COUNT_READBACK=782
+counts actual=585/68/129 expected=611/0/171
+values_ok=0
+max_abs=4.49101e+06
+max_rel=1.01612
+worst_field=H(3,3)
+```
+
+### 当前结论
+
+- Orin 侧 mapping golden 导出、ABI 构建、CPU replay 已通过。
+- XDMA 传输和 HLS start/done 正常，`STATUS=0x204`、`ERROR=0`、`RUN_COUNT` 递增。
+- 当前 FPGA/HLS 输出仍带 localization-style residual reject 行为：硬件 `reject_count=68`，而 mapping surfel-only golden 期望 `reject_count=0`。
+- 因此 Stage 52 不能标记为完整硬件 PASS，Stage 53 暂不能接在线 `mapping.mode=fpga_obs`。
+- 下一步应回 Windows/HLS 侧修正 `unified_surfel_observation_core` 的 mapping mode：使用 mapping plane observation 的有效点规则、`plane_icp_weight`、以及 mapping H/b 累计语义，然后用同一份 `fpga/golden/mapping/frame_000001` 复测到 `MAPPING_XDMA_REPLAY_PASS`。
+
 收尾检查：
 
 ```text
@@ -4321,4 +4400,5 @@ PASS
 
 - `mapping.mode=fpga_obs` 在 Stage 52 结束前仍不得作为在线 PASS 条件。
 - mapping golden 必须来自 `LaserMapping::ObsModelCpu` 的真实建图 observation。
-- host replay 通过后，Stage 53 才允许接入在线 mapping `FPGA_OBS`。
+- CPU host replay 已通过，但 XDMA replay 未通过。
+- XDMA replay 通过后，Stage 53 才允许接入在线 mapping `FPGA_OBS`。

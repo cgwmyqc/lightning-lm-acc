@@ -42,6 +42,9 @@ class XdmaRuntime {
     bool RunLocalizationObservation(const std::vector<SlamAccelScanPoint>& scan_points, const SlamAccelPose& pose,
                                     const loc::ActiveMapBuffer& active_map, bool write_full_image,
                                     bool verify_readback, RunResult& result, std::string* error = nullptr) const;
+    bool RunMappingObservation(const std::vector<SlamAccelScanPoint>& scan_points, const SlamAccelPose& pose,
+                               const loc::ActiveMapBuffer& active_map, bool write_full_image,
+                               bool verify_readback, RunResult& result, std::string* error = nullptr) const;
 
     const Options& GetOptions() const { return options_; }
 
@@ -50,6 +53,7 @@ class XdmaRuntime {
 };
 
 std::vector<SlamAccelScanPoint> ToAbiScanPoints(const CloudPtr& cloud);
-ActiveMapHeader MakeActiveMapHeader(const loc::ActiveMapBuffer& active_map);
+ActiveMapHeader MakeActiveMapHeader(const loc::ActiveMapBuffer& active_map,
+                                    uint32_t mode = LOCALIZATION_OBSERVATION);
 
 }  // namespace lightning::fpga

@@ -79,31 +79,96 @@ Expected startup marker:
 [LidarLoc] backend=NDT_OMP fpga_global_enable=0
 ```
 
-## Future Mapping Golden Commands
-
-These commands are placeholders for the Stage 52 code implementation. They should not be marked PASS until the capture/export/replay apps exist.
+## Mapping Golden Export
 
 ```bash
-ros2 run lightning export_mapping_golden_frame \
+source install/setup.bash
+./install/lightning/lib/lightning/export_mapping_golden_frame \
   --input_bag /home/hit/Cheng/FPGA_ACC/mid360_20260313_outdoor_30deg_up_quan_03_0.db3 \
   --config config/default_livox.yaml \
   --frame_index 20 \
   --output_dir fpga/golden_src/mapping/frame_000001
 ```
 
+Observed:
+
+```text
+MAPPING_GOLDEN_EXPORT_PASS
+frame_index=20
+timestamp=1773380976.68870282
+scan_points=782
+active_blocks=73
+active_cells=18688
+effect_feat_surf=667
+surfel_only_expected_counts=611/0/171
+plane_icp_weight=300
+```
+
+Note: default `surfel_fallback_mode=ivox` means full `ObsModelCpu()` has iVox fallback plane terms. Stage 52 golden intentionally captures only surfel-map plane observation terms for the unified FPGA observation kernel.
+
+## Mapping Golden Build
+
 ```bash
-ros2 run lightning build_surfel_mapping_golden \
+source install/setup.bash
+./install/lightning/lib/lightning/build_surfel_mapping_golden \
   --source_dir fpga/golden_src/mapping/frame_000001 \
   --output_dir fpga/golden/mapping/frame_000001
 ```
 
+Observed:
+
+```text
+MAPPING_GOLDEN_BUILD_PASS
+scan_points=782
+active_blocks=73
+active_cells=18688
+expected_counts=611/0/171
+```
+
+## CPU Replay
+
 ```bash
-ros2 run lightning run_surfel_mapping_golden_replay \
+source install/setup.bash
+./install/lightning/lib/lightning/run_surfel_mapping_golden_replay \
   --golden_dir fpga/golden/mapping/frame_000001
 ```
 
-Expected final marker after implementation:
+Observed:
 
 ```text
-MAPPING_GOLDEN_REPLAY_PASS
+counts actual=611/0/171 expected=611/0/171 values_ok=1 max_abs=0.0337705 max_rel=2.21971e-05 worst_field=b(3)
+MAPPING_CPU_REPLAY_PASS
+```
+
+## XDMA Replay
+
+```bash
+source install/setup.bash
+sudo -n env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" AMENT_PREFIX_PATH="$AMENT_PREFIX_PATH" PATH="$PATH" \
+  ./install/lightning/lib/lightning/run_surfel_mapping_xdma_golden \
+    --golden_dir fpga/golden/mapping/frame_000001 \
+    --ctrl_base 0x1000 \
+    --timeout_sec 120
+```
+
+Observed:
+
+```text
+STATUS=0x204
+ERROR=0x0
+RUN_COUNT=145->146
+SCAN_COUNT_READBACK=782
+counts actual=585/68/129 expected=611/0/171
+values_ok=0
+max_abs=4.49101e+06
+max_rel=1.01612
+worst_field=H(3,3)
+MAPPING_XDMA_REPLAY_FAIL
+```
+
+Interpretation:
+
+```text
+Orin/XDMA transport is healthy, but the current HLS mapping mode is not numerically aligned with Stage 52 mapping golden.
+The nonzero reject_count=68 strongly suggests the hardware path is still applying localization-style residual reject semantics instead of mapping surfel-only plane observation semantics.
 ```

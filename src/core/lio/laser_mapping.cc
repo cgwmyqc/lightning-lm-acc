@@ -211,6 +211,15 @@ LaserMapping::LaserMapping(Options options) : options_(options) {
     p_imu_.reset(new ImuProcess());
 }
 
+void LaserMapping::SetMappingGoldenFrameCapture(int target_frame_index, MappingGoldenFrameCaptureCallback callback) {
+    mapping_golden_target_frame_index_ = target_frame_index;
+    mapping_golden_callback_ = std::move(callback);
+    mapping_golden_valid_frame_count_ = 0;
+    mapping_golden_current_scan_serial_ = 0;
+    mapping_golden_last_counted_scan_serial_ = std::numeric_limits<uint64_t>::max();
+    mapping_golden_frame_captured_ = false;
+}
+
 void LaserMapping::ProcessIMU(const lightning::IMUPtr &imu) {
     publish_count_++;
 
@@ -299,6 +308,7 @@ bool LaserMapping::Run() {
     LOG(INFO) << "=============================";
     LOG(INFO) << "LIO get cloud at beg: " << std::setprecision(14) << measures_.lidar_begin_time_
               << ", end: " << measures_.lidar_end_time_;
+    ++mapping_golden_current_scan_serial_;
 
     if (last_lidar_time_ > 0 && (measures_.lidar_begin_time_ - last_lidar_time_) > 0.5) {
         LOG(ERROR) << "检测到雷达断流，时长：" << (measures_.lidar_begin_time_ - last_lidar_time_);
@@ -999,6 +1009,8 @@ void LaserMapping::ObsModelCpu(NavState &s, ESKF::CustomObservationModel &obs) {
         }
     }
 
+    MaybeCaptureMappingGoldenFrame(s, obs);
+
     if (!res_sq.empty()) {
         std::sort(res_sq.begin(), res_sq.end());
         obs.lidar_residual_mean_ = res_sq[res_sq.size() / 2];
@@ -1055,6 +1067,74 @@ void LaserMapping::ObsModelCpu(NavState &s, ESKF::CustomObservationModel &obs) {
             obs.HTH_ += JTJ[i] * options_.icp_weight_;
             obs.HTr_ += JTr[i] * options_.icp_weight_;
         }
+    }
+}
+
+void LaserMapping::MaybeCaptureMappingGoldenFrame(const NavState& state, const ESKF::CustomObservationModel& obs) {
+    if (mapping_golden_frame_captured_ || !mapping_golden_callback_) {
+        return;
+    }
+    if (!obs.valid_ || effect_feat_surf_ < 20 || scan_down_body_ == nullptr || scan_down_body_->empty() ||
+        surfel_map_ == nullptr) {
+        return;
+    }
+
+    if (mapping_golden_last_counted_scan_serial_ == mapping_golden_current_scan_serial_) {
+        return;
+    }
+    mapping_golden_last_counted_scan_serial_ = mapping_golden_current_scan_serial_;
+    const int capture_frame_index = mapping_golden_valid_frame_count_++;
+    if (capture_frame_index < mapping_golden_target_frame_index_) {
+        return;
+    }
+
+    MappingGoldenFrameData data;
+    data.frame_index = capture_frame_index;
+    data.timestamp = state.timestamp_;
+    data.scan_body.reset(new PointCloudType(*scan_down_body_));
+    data.state = state;
+    data.extrinsic_R = offset_R_lidar_fixed_;
+    data.extrinsic_t = offset_t_lidar_fixed_;
+    data.effect_feat_surf = effect_feat_surf_;
+    data.scan_points = static_cast<int>(scan_down_body_->size());
+    data.plane_icp_weight = options_.plane_icp_weight_;
+    if (!surfel_map_->ExportActiveMap(data.active_map)) {
+        LOG(WARNING) << "[LaserMapping] failed to export active surfel map for mapping golden";
+        return;
+    }
+    data.expected_obs.Reset();
+    const Mat3f off_R = offset_R_lidar_fixed_.cast<float>();
+    const Vec3f off_t = offset_t_lidar_fixed_.cast<float>();
+    const Mat3f Rt = state.rot_.matrix().transpose().cast<float>();
+    for (int i = 0; i < static_cast<int>(scan_down_body_->size()); ++i) {
+        if (!point_selected_surf_[i] || !surfel_corr_[i].valid || surfel_corr_[i].fallback) {
+            continue;
+        }
+        const Vec3f point_this_be = scan_down_body_->points[i].getVector3fMap();
+        const Vec3f point_this = off_R * point_this_be + off_t;
+        const Mat3f point_crossmat = math::SKEW_SYM_MATRIX(point_this);
+        const Vec3f norm_vec = plane_coef_[i].head<3>();
+        const Vec3f C = Rt * norm_vec;
+        const Vec3f A = point_crossmat * C;
+
+        Eigen::Matrix<double, 1, ESKF::pose_obs_dim_> J;
+        J.setZero();
+        J << norm_vec[0], norm_vec[1], norm_vec[2], A[0], A[1], A[2];
+        const double res = -static_cast<double>(residuals_[i]);
+        data.expected_obs.hessian.noalias() += (J.transpose() * J).eval() * options_.plane_icp_weight_;
+        data.expected_obs.gradient.noalias() += J.transpose() * res * options_.plane_icp_weight_;
+        ++data.expected_obs.valid_count;
+        data.expected_obs.residual_sum += residuals_[i];
+        data.expected_obs.residual_abs_sum += std::fabs(static_cast<double>(residuals_[i]));
+        data.expected_obs.residual_max_abs =
+            std::max(data.expected_obs.residual_max_abs, std::fabs(static_cast<double>(residuals_[i])));
+    }
+    data.expected_obs.reject_count = 0;
+    data.expected_obs.miss_count = static_cast<uint32_t>(
+        std::max(0, static_cast<int>(scan_down_body_->size()) - static_cast<int>(data.expected_obs.valid_count)));
+
+    if (mapping_golden_callback_(data)) {
+        mapping_golden_frame_captured_ = true;
     }
 }
 
