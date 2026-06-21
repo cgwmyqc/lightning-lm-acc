@@ -45,6 +45,9 @@ class LidarLoc {
         bool surfel_fallback_to_ndt_ = true;
         SurfelLocOptions surfel_options_;
         SurfelLocXdmaOptions surfel_xdma_options_;
+        bool surfel_fpga_profile_enable_ = false;
+        bool surfel_fpga_profile_csv_enable_ = false;
+        std::string surfel_fpga_profile_csv_path_ = "./data/profile/loc_fpga_obs_trace.csv";
         bool try_self_extrap_ = false;                 // 是否尝试自己的外推pose
         bool with_height_ = true;                      // 建图期间是否带有高度约束？
         bool force_2d_ = true;                         // 强制在2D空间
@@ -206,6 +209,12 @@ class LidarLoc {
     bool LocalizeSurfelFpgaObs(SE3& pose, double& confidence, CloudPtr input, CloudPtr output);
     bool RebuildSurfelWindow();
     void MaybeCaptureGoldenFrame(const CloudPtr& input, const SE3& pose_guess);
+    void AppendLocFpgaProfileCsv(uint64_t frame_id, uint32_t iter, uint64_t fpga_call_id, size_t scan_points,
+                                 size_t active_blocks, size_t active_cells, uint32_t window_id,
+                                 uint32_t window_version, double rebuild_window_sec, double pack_scan_sec,
+                                 double solve_sec, double pose_update_sec,
+                                 const fpga::XdmaRuntime::RunResult& result,
+                                 const LocNormalEquation& equation, const LocQuality& quality);
 
     // 成员变量  ==========================================================================
     Options options_;
@@ -224,6 +233,8 @@ class LidarLoc {
     std::shared_ptr<SurfelLocXdmaBackend> surfel_xdma_backend_ = nullptr;
     bool surfel_window_dirty_ = true;
     uint32_t last_surfel_window_version_ = 0;
+    uint64_t loc_fpga_call_count_ = 0;
+    uint64_t loc_fpga_frame_count_ = 0;
     int golden_frame_target_index_ = -1;
     int golden_frame_seen_count_ = 0;
     bool golden_frame_captured_ = false;

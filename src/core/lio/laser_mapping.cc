@@ -2,7 +2,10 @@
 #include <yaml-cpp/yaml.h>
 #include <array>
 #include <cstdint>
+#include <chrono>
+#include <filesystem>
 #include <fstream>
+#include <iomanip>
 
 #include "common/fpga_config.h"
 #include "common/options.h"
@@ -21,6 +24,8 @@
 
 namespace lightning {
 namespace {
+
+using Clock = std::chrono::steady_clock;
 
 const char* MappingBackendName(MappingBackendType backend) {
     switch (backend) {
@@ -60,6 +65,10 @@ uint32_t GetYamlUint32(const YAML::Node& node, const std::string& key, uint32_t 
     } catch (const std::exception&) {
     }
     return node[key].as<uint32_t>();
+}
+
+double SecondsSince(const Clock::time_point& start) {
+    return std::chrono::duration<double>(Clock::now() - start).count();
 }
 
 }  // namespace
@@ -171,6 +180,13 @@ bool LaserMapping::LoadParamsFromYAML(const std::string &yaml_file) {
             GetYamlValue(fpga_runtime, "timeout_sec", options_.mapping_xdma_options_.timeout_sec);
         options_.mapping_xdma_verify_readback_ =
             GetYamlValue(fpga_runtime, "verify_readback", options_.mapping_xdma_verify_readback_);
+        const YAML::Node profile_node = yaml["profile"];
+        options_.mapping_fpga_profile_enable_ =
+            GetYamlValue(profile_node, "fpga_obs_trace_enable", options_.mapping_fpga_profile_enable_);
+        options_.mapping_fpga_profile_csv_enable_ =
+            GetYamlValue(profile_node, "fpga_obs_trace_csv_enable", options_.mapping_fpga_profile_csv_enable_);
+        options_.mapping_fpga_profile_csv_path_ =
+            GetYamlValue(profile_node, "fpga_obs_trace_csv_path", options_.mapping_fpga_profile_csv_path_);
         options_.mapping_fallback_to_cpu_ = fpga_mapping.fallback == "cpu";
         options_.mapping_backend_type_ = MappingBackendType::CPU;
         if (fpga_mapping.effective_enable) {
@@ -194,7 +210,10 @@ bool LaserMapping::LoadParamsFromYAML(const std::string &yaml_file) {
                   << " fpga_mapping_enable=" << fpga_mapping.enable << " fpga_mapping_mode=" << fpga_mapping.mode
                   << " mapping_fallback_to_cpu=" << options_.mapping_fallback_to_cpu_
                   << " mapping_fpga_ctrl_base=0x" << std::hex << options_.mapping_xdma_options_.ctrl_base
-                  << std::dec << " mapping_fpga_timeout_sec=" << options_.mapping_xdma_options_.timeout_sec;
+                  << std::dec << " mapping_fpga_timeout_sec=" << options_.mapping_xdma_options_.timeout_sec
+                  << " fpga_obs_trace_enable=" << options_.mapping_fpga_profile_enable_
+                  << " fpga_obs_trace_csv_enable=" << options_.mapping_fpga_profile_csv_enable_
+                  << " fpga_obs_trace_csv_path=" << options_.mapping_fpga_profile_csv_path_;
 
         bool use_imu_filter = yaml["fasterlio"]["imu_filter"].as<bool>();
         p_imu_->SetUseIMUFilter(use_imu_filter);
@@ -805,6 +824,11 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
 }
 
 void LaserMapping::ObsModelFpgaObservation(NavState &s, ESKF::CustomObservationModel &obs) {
+    const uint64_t fpga_call_id = ++mapping_fpga_call_count_;
+    const int64_t frame_id = PerfMonitor::GetCurrentFrameId();
+    const uint64_t obs_call_index = PerfMonitor::GetCurrentObsModelCalls() + 1;
+    const auto obs_start = Clock::now();
+
     auto fallback_to_cpu = [&](const std::string& reason) {
         ++mapping_fpga_fallback_count_;
         if (options_.mapping_fallback_to_cpu_) {
@@ -831,10 +855,12 @@ void LaserMapping::ObsModelFpgaObservation(NavState &s, ESKF::CustomObservationM
     }
 
     loc::ActiveMapBuffer active_map;
+    auto stage_start = Clock::now();
     if (!surfel_map_->ExportActiveMap(active_map) || active_map.Empty()) {
         fallback_to_cpu("failed to export active surfel map");
         return;
     }
+    const double export_active_map_sec = SecondsSince(stage_start);
 
     std::array<float, 9> extrinsic_R{};
     std::array<float, 3> extrinsic_T{};
@@ -847,7 +873,9 @@ void LaserMapping::ObsModelFpgaObservation(NavState &s, ESKF::CustomObservationM
         extrinsic_T[static_cast<size_t>(r)] = extrinsic_T_f(r);
     }
 
+    stage_start = Clock::now();
     const auto scan_points = fpga::ToAbiScanPoints(scan_down_body_);
+    const double pack_scan_sec = SecondsSince(stage_start);
     const SE3 lidar_pose = mapping_golden::LidarPoseFromState(s, offset_R_lidar_fixed_, offset_t_lidar_fixed_);
     const auto pose = loc::golden::ToAbiPose(lidar_pose);
     const auto params = fpga::MakeMappingObservationParams(static_cast<float>(options_.plane_icp_weight_),
@@ -856,11 +884,13 @@ void LaserMapping::ObsModelFpgaObservation(NavState &s, ESKF::CustomObservationM
     fpga::XdmaRuntime runtime(options_.mapping_xdma_options_);
     fpga::XdmaRuntime::RunResult result;
     std::string error;
+    stage_start = Clock::now();
     if (!runtime.RunMappingObservation(scan_points, pose, active_map, params, true,
                                        options_.mapping_xdma_verify_readback_, result, &error)) {
         fallback_to_cpu(error);
         return;
     }
+    const double runtime_call_sec = SecondsSince(stage_start);
 
     const loc::LocNormalEquation equation = loc::golden::FromAbiNormalEquation(result.output);
     if (equation.valid_count < 20) {
@@ -881,8 +911,17 @@ void LaserMapping::ObsModelFpgaObservation(NavState &s, ESKF::CustomObservationM
     ++mapping_fpga_success_count_;
 
     PerfMonitor::SetEffectivePointStats(effect_feat_surf_, effect_feat_icp_);
+    if (options_.mapping_fpga_profile_enable_) {
+        AppendMappingFpgaProfileCsv(frame_id, obs_call_index, fpga_call_id, scan_points.size(),
+                                    active_map.blocks.size(), active_map.cells.size(), export_active_map_sec,
+                                    pack_scan_sec, result, equation);
+    }
+
     LOG(INFO) << "[LaserMapping] mapping FPGA_OBS success=1"
               << " success_count=" << mapping_fpga_success_count_
+              << " frame_id=" << frame_id
+              << " obs_call=" << obs_call_index
+              << " fpga_call=" << fpga_call_id
               << " scan_points=" << scan_points.size()
               << " active_blocks=" << active_map.blocks.size()
               << " active_cells=" << active_map.cells.size()
@@ -891,9 +930,69 @@ void LaserMapping::ObsModelFpgaObservation(NavState &s, ESKF::CustomObservationM
               << " residual_abs_sum=" << equation.residual_abs_sum
               << " residual_max_abs=" << equation.residual_max_abs
               << " xdma_elapsed_sec=" << result.elapsed_sec
+              << " profile_sec export_active_map=" << export_active_map_sec
+              << " pack_scan=" << pack_scan_sec
+              << " runtime_call=" << runtime_call_sec
+              << " obs_total=" << SecondsSince(obs_start)
+              << " timing_sec total=" << result.timing.total_sec
+              << " mutex_wait=" << result.timing.mutex_wait_sec
+              << " lock=" << result.timing.lock_sec
+              << " open=" << result.timing.open_sec
+              << " h2c_scan=" << result.timing.h2c_scan_sec
+              << " h2c_pose_header_params=" << result.timing.h2c_pose_header_params_sec
+              << " h2c_map=" << result.timing.h2c_map_sec
+              << " verify_readback=" << result.timing.verify_readback_sec
+              << " output_zero=" << result.timing.output_zero_sec
+              << " reg_config=" << result.timing.reg_config_sec
+              << " hls_wait=" << result.timing.hls_wait_sec
+              << " c2h_output=" << result.timing.c2h_output_sec
               << " status=0x" << std::hex << result.status
               << " error=0x" << result.error
               << std::dec << " run_count=" << result.run_count_before << "->" << result.run_count_after;
+}
+
+void LaserMapping::AppendMappingFpgaProfileCsv(int64_t frame_id, uint64_t obs_call_index, uint64_t fpga_call_id,
+                                               size_t scan_points, size_t active_blocks, size_t active_cells,
+                                               double export_active_map_sec, double pack_scan_sec,
+                                               const fpga::XdmaRuntime::RunResult& result,
+                                               const loc::LocNormalEquation& equation) {
+    if (!options_.mapping_fpga_profile_enable_ || !options_.mapping_fpga_profile_csv_enable_ ||
+        options_.mapping_fpga_profile_csv_path_.empty()) {
+        return;
+    }
+
+    const std::filesystem::path path(options_.mapping_fpga_profile_csv_path_);
+    std::error_code ec;
+    if (path.has_parent_path()) {
+        std::filesystem::create_directories(path.parent_path(), ec);
+    }
+    const bool needs_header = !std::filesystem::exists(path, ec) || std::filesystem::file_size(path, ec) == 0;
+    std::ofstream ofs(path, std::ios::app);
+    if (!ofs) {
+        LOG(WARNING) << "[LaserMapping] failed to open FPGA_OBS profile CSV: " << path;
+        return;
+    }
+    if (needs_header) {
+        ofs << "frame_id,obs_call,fpga_call,scan_points,active_blocks,active_cells,"
+               "valid_count,reject_count,miss_count,residual_abs_sum,residual_max_abs,"
+               "export_active_map_ms,pack_scan_ms,total_ms,mutex_wait_ms,lock_ms,open_ms,"
+               "h2c_scan_ms,h2c_pose_header_params_ms,h2c_map_ms,verify_readback_ms,output_zero_ms,"
+               "reg_config_ms,hls_wait_ms,c2h_output_ms,status,error,run_count_before,run_count_after,"
+               "scan_count_readback\n";
+    }
+    const auto ms = [](double sec) { return sec * 1000.0; };
+    ofs << std::fixed << std::setprecision(6)
+        << frame_id << "," << obs_call_index << "," << fpga_call_id << "," << scan_points << ","
+        << active_blocks << "," << active_cells << "," << equation.valid_count << "," << equation.reject_count
+        << "," << equation.miss_count << "," << equation.residual_abs_sum << "," << equation.residual_max_abs
+        << "," << ms(export_active_map_sec) << "," << ms(pack_scan_sec) << "," << ms(result.timing.total_sec)
+        << "," << ms(result.timing.mutex_wait_sec) << "," << ms(result.timing.lock_sec) << ","
+        << ms(result.timing.open_sec) << "," << ms(result.timing.h2c_scan_sec) << ","
+        << ms(result.timing.h2c_pose_header_params_sec) << "," << ms(result.timing.h2c_map_sec) << ","
+        << ms(result.timing.verify_readback_sec) << "," << ms(result.timing.output_zero_sec) << ","
+        << ms(result.timing.reg_config_sec) << "," << ms(result.timing.hls_wait_sec) << ","
+        << ms(result.timing.c2h_output_sec) << "," << result.status << "," << result.error << ","
+        << result.run_count_before << "," << result.run_count_after << "," << result.scan_count_readback << "\n";
 }
 
 void LaserMapping::ObsModelCpu(NavState &s, ESKF::CustomObservationModel &obs) {

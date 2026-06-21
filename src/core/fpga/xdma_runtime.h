@@ -23,12 +23,28 @@ class XdmaRuntime {
     };
 
     struct RunResult {
+        struct Timing {
+            double total_sec = 0.0;
+            double mutex_wait_sec = 0.0;
+            double lock_sec = 0.0;
+            double open_sec = 0.0;
+            double h2c_scan_sec = 0.0;
+            double h2c_pose_header_params_sec = 0.0;
+            double h2c_map_sec = 0.0;
+            double verify_readback_sec = 0.0;
+            double output_zero_sec = 0.0;
+            double reg_config_sec = 0.0;
+            double hls_wait_sec = 0.0;
+            double c2h_output_sec = 0.0;
+        };
+
         uint32_t status = 0;
         uint32_t error = 0;
         uint32_t run_count_before = 0;
         uint32_t run_count_after = 0;
         uint32_t scan_count_readback = 0;
         double elapsed_sec = 0.0;
+        Timing timing;
         SlamNormalEquation output;
         std::array<uint64_t, 40> raw_output_words = {};
     };

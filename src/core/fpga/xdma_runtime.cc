@@ -30,6 +30,7 @@ constexpr uint32_t kShimScratch1Offset = 0x00Cu;
 constexpr uint32_t kStatusDone = 1u << 2u;
 constexpr uint32_t kStatusError = 1u << 3u;
 std::mutex g_observation_transaction_mutex;
+using Clock = std::chrono::steady_clock;
 
 struct Region {
     const char* name;
@@ -51,6 +52,10 @@ void SetError(std::string* error, const std::string& message) {
     if (error != nullptr) {
         *error = message;
     }
+}
+
+double SecondsSince(const Clock::time_point& start) {
+    return std::chrono::duration<double>(Clock::now() - start).count();
 }
 
 class Fd {
@@ -338,33 +343,65 @@ bool RunObservationImpl(const XdmaRuntime::Options& options, uint32_t mode,
                         const loc::ActiveMapBuffer& active_map, const SlamAccelObservationParams& params,
                         bool write_full_image, bool verify_readback, XdmaRuntime::RunResult& result,
                         std::string* error) {
-    std::lock_guard<std::mutex> lock(g_observation_transaction_mutex);
+    const auto total_start = Clock::now();
+    const auto mutex_start = Clock::now();
+    std::unique_lock<std::mutex> lock(g_observation_transaction_mutex);
+    result.timing.mutex_wait_sec = SecondsSince(mutex_start);
+
     FileLock file_lock;
+    auto stage_start = Clock::now();
     if (!file_lock.Lock("/tmp/lightning_xdma_observation.lock", error)) {
+        result.timing.lock_sec = SecondsSince(stage_start);
+        result.timing.total_sec = SecondsSince(total_start);
         return false;
     }
+    result.timing.lock_sec = SecondsSince(stage_start);
 
     Fd user;
     Fd h2c;
     Fd c2h;
+    stage_start = Clock::now();
     if (!OpenFd(user, options.user_dev, O_RDWR, error) || !OpenFd(h2c, options.h2c_dev, O_WRONLY, error) ||
         !OpenFd(c2h, options.c2h_dev, O_RDONLY, error)) {
+        result.timing.open_sec = SecondsSince(stage_start);
+        result.timing.total_sec = SecondsSince(total_start);
         return false;
     }
+    result.timing.open_sec = SecondsSince(stage_start);
 
     const ActiveMapHeader map_header = MakeActiveMapHeader(active_map, mode);
     SlamNormalEquation output_zero;
 
     if (write_full_image) {
-        if (!WriteVector(h2c.get(), LIGHTNING_SCAN_POINTS_BASE, scan_points, error, "scan_points") ||
-            !WriteObject(h2c.get(), LIGHTNING_POSE_BASE, pose, error, "pose") ||
-            !WriteObject(h2c.get(), LIGHTNING_MAP_HEADER_BASE, map_header, error, "map_header") ||
-            !WriteObject(h2c.get(), LIGHTNING_PARAMS_BASE, params, error, "params") ||
-            !WriteVector(h2c.get(), LIGHTNING_ACTIVE_BLOCKS_BASE, active_map.blocks, error, "active_blocks") ||
-            !WriteVector(h2c.get(), LIGHTNING_OBS_CELLS_BASE, active_map.cells, error, "obs_cells")) {
+        stage_start = Clock::now();
+        if (!WriteVector(h2c.get(), LIGHTNING_SCAN_POINTS_BASE, scan_points, error, "scan_points")) {
+            result.timing.h2c_scan_sec = SecondsSince(stage_start);
+            result.timing.total_sec = SecondsSince(total_start);
             return false;
         }
+        result.timing.h2c_scan_sec = SecondsSince(stage_start);
+
+        stage_start = Clock::now();
+        if (!WriteObject(h2c.get(), LIGHTNING_POSE_BASE, pose, error, "pose") ||
+            !WriteObject(h2c.get(), LIGHTNING_MAP_HEADER_BASE, map_header, error, "map_header") ||
+            !WriteObject(h2c.get(), LIGHTNING_PARAMS_BASE, params, error, "params")) {
+            result.timing.h2c_pose_header_params_sec = SecondsSince(stage_start);
+            result.timing.total_sec = SecondsSince(total_start);
+            return false;
+        }
+        result.timing.h2c_pose_header_params_sec = SecondsSince(stage_start);
+
+        stage_start = Clock::now();
+        if (!WriteVector(h2c.get(), LIGHTNING_ACTIVE_BLOCKS_BASE, active_map.blocks, error, "active_blocks") ||
+            !WriteVector(h2c.get(), LIGHTNING_OBS_CELLS_BASE, active_map.cells, error, "obs_cells")) {
+            result.timing.h2c_map_sec = SecondsSince(stage_start);
+            result.timing.total_sec = SecondsSince(total_start);
+            return false;
+        }
+        result.timing.h2c_map_sec = SecondsSince(stage_start);
+
         if (verify_readback) {
+            stage_start = Clock::now();
             if (!VerifyBytes(c2h.get(), LIGHTNING_SCAN_POINTS_BASE, scan_points.data(),
                              scan_points.size() * sizeof(SlamAccelScanPoint), error, "scan_points") ||
                 !VerifyBytes(c2h.get(), LIGHTNING_POSE_BASE, &pose, sizeof(pose), error, "pose") ||
@@ -375,36 +412,55 @@ bool RunObservationImpl(const XdmaRuntime::Options& options, uint32_t mode,
                              active_map.blocks.size() * sizeof(ActiveBlockRecord), error, "active_blocks") ||
                 !VerifyBytes(c2h.get(), LIGHTNING_OBS_CELLS_BASE, active_map.cells.data(),
                              active_map.cells.size() * sizeof(ObsCellFloat64), error, "obs_cells")) {
+                result.timing.verify_readback_sec = SecondsSince(stage_start);
+                result.timing.total_sec = SecondsSince(total_start);
                 return false;
             }
+            result.timing.verify_readback_sec = SecondsSince(stage_start);
         }
     }
 
+    stage_start = Clock::now();
     if (!WriteObject(h2c.get(), LIGHTNING_OUTPUT_BASE, output_zero, error, "output_zero")) {
+        result.timing.output_zero_sec = SecondsSince(stage_start);
+        result.timing.total_sec = SecondsSince(total_start);
         return false;
     }
+    result.timing.output_zero_sec = SecondsSince(stage_start);
 
+    stage_start = Clock::now();
     if (!ConfigureRegisters(user.get(), options.ctrl_base, mode, static_cast<uint32_t>(scan_points.size()), error)) {
+        result.timing.reg_config_sec = SecondsSince(stage_start);
+        result.timing.total_sec = SecondsSince(total_start);
         return false;
     }
     if (!Read32(user.get(), options.ctrl_base + LIGHTNING_CTRL_SCAN_COUNT, result.scan_count_readback, error) ||
         !Read32(user.get(), options.ctrl_base + LIGHTNING_CTRL_RUN_COUNT, result.run_count_before, error)) {
+        result.timing.reg_config_sec = SecondsSince(stage_start);
+        result.timing.total_sec = SecondsSince(total_start);
         return false;
     }
+    result.timing.reg_config_sec = SecondsSince(stage_start);
 
-    const auto start = std::chrono::steady_clock::now();
+    const auto start = Clock::now();
     if (!Write32(user.get(), options.ctrl_base + LIGHTNING_CTRL_CONTROL, 0x1u, error)) {
+        result.timing.hls_wait_sec = SecondsSince(start);
+        result.timing.total_sec = SecondsSince(total_start);
         return false;
     }
 
     const auto deadline = start + std::chrono::duration<double>(options.timeout_sec);
-    while (std::chrono::steady_clock::now() < deadline) {
+    while (Clock::now() < deadline) {
         if (!Read32(user.get(), options.ctrl_base + LIGHTNING_CTRL_STATUS, result.status, error) ||
             !Read32(user.get(), options.ctrl_base + LIGHTNING_CTRL_ERROR, result.error, error)) {
+            result.timing.hls_wait_sec = SecondsSince(start);
+            result.timing.total_sec = SecondsSince(total_start);
             return false;
         }
         if ((result.status & kStatusError) != 0 || result.error != 0) {
             SetError(error, "HLS entered error status");
+            result.timing.hls_wait_sec = SecondsSince(start);
+            result.timing.total_sec = SecondsSince(total_start);
             return false;
         }
         if ((result.status & kStatusDone) != 0) {
@@ -415,25 +471,35 @@ bool RunObservationImpl(const XdmaRuntime::Options& options, uint32_t mode,
 
     if ((result.status & kStatusDone) == 0) {
         SetError(error, "HLS timeout");
+        result.timing.hls_wait_sec = SecondsSince(start);
+        result.timing.total_sec = SecondsSince(total_start);
         return false;
     }
-    const auto end = std::chrono::steady_clock::now();
+    const auto end = Clock::now();
     result.elapsed_sec = std::chrono::duration<double>(end - start).count();
+    result.timing.hls_wait_sec = result.elapsed_sec;
 
     if (!Read32(user.get(), options.ctrl_base + LIGHTNING_CTRL_RUN_COUNT, result.run_count_after, error)) {
+        result.timing.total_sec = SecondsSince(total_start);
         return false;
     }
     if (result.run_count_after <= result.run_count_before) {
         SetError(error, "RUN_COUNT did not increment");
+        result.timing.total_sec = SecondsSince(total_start);
         return false;
     }
 
     std::array<uint8_t, sizeof(SlamNormalEquation)> output_bytes = {};
+    stage_start = Clock::now();
     if (!ReadExact(c2h.get(), output_bytes.data(), output_bytes.size(), LIGHTNING_OUTPUT_BASE, error, "output")) {
+        result.timing.c2h_output_sec = SecondsSince(stage_start);
+        result.timing.total_sec = SecondsSince(total_start);
         return false;
     }
+    result.timing.c2h_output_sec = SecondsSince(stage_start);
     std::memcpy(&result.output, output_bytes.data(), sizeof(result.output));
     std::memcpy(result.raw_output_words.data(), output_bytes.data(), sizeof(result.raw_output_words));
+    result.timing.total_sec = SecondsSince(total_start);
     return true;
 }
 

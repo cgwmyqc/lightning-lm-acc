@@ -68,6 +68,9 @@ class LaserMapping {
         bool mapping_fallback_to_cpu_ = true;
         fpga::XdmaRuntime::Options mapping_xdma_options_;
         bool mapping_xdma_verify_readback_ = false;
+        bool mapping_fpga_profile_enable_ = false;
+        bool mapping_fpga_profile_csv_enable_ = false;
+        std::string mapping_fpga_profile_csv_path_ = "./data/profile/fpga_obs_trace.csv";
     };
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -159,6 +162,11 @@ class LaserMapping {
     void ObsModel(NavState &s, ESKF::CustomObservationModel &obs);
     void ObsModelCpu(NavState &s, ESKF::CustomObservationModel &obs);
     void ObsModelFpgaObservation(NavState &s, ESKF::CustomObservationModel &obs);
+    void AppendMappingFpgaProfileCsv(int64_t frame_id, uint64_t obs_call_index, uint64_t fpga_call_id,
+                                     size_t scan_points, size_t active_blocks, size_t active_cells,
+                                     double export_active_map_sec, double pack_scan_sec,
+                                     const fpga::XdmaRuntime::RunResult& result,
+                                     const loc::LocNormalEquation& equation);
     void MaybeCaptureMappingGoldenFrame(const NavState& state, const ESKF::CustomObservationModel& obs);
 
     inline void PointBodyToWorld(const PointType &pi, PointType &po) {
@@ -259,6 +267,7 @@ class LaserMapping {
     bool mapping_backend_warning_logged_ = false;
     uint64_t mapping_fpga_success_count_ = 0;
     uint64_t mapping_fpga_fallback_count_ = 0;
+    uint64_t mapping_fpga_call_count_ = 0;
     int mapping_golden_target_frame_index_ = -1;
     int mapping_golden_valid_frame_count_ = 0;
     uint64_t mapping_golden_current_scan_serial_ = 0;

@@ -57,6 +57,10 @@ profile:
   csv_enable: true
   csv_path: ./data/profile/slam_perf.csv
   log_every_n_frames: 10
+  fpga_obs_trace_enable: false      # Online FPGA_OBS investigation only; true prints detailed XDMA/HLS timing.
+  fpga_obs_trace_csv_enable: false  # Writes one CSV row per FPGA observation call when enabled.
+  fpga_obs_trace_csv_path: ./data/profile/fpga_obs_trace.csv
+  loc_fpga_obs_trace_csv_path: ./data/profile/loc_fpga_obs_trace.csv
 
 # FPGA backend switches.
 # Quick switch guide:

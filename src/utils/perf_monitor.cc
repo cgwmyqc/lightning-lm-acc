@@ -192,6 +192,16 @@ PerfSnapshot PerfMonitor::GetLatestSnapshot() {
     return latest_;
 }
 
+int64_t PerfMonitor::GetCurrentFrameId() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return current_.active ? current_.frame_id : latest_.frame_id;
+}
+
+uint64_t PerfMonitor::GetCurrentObsModelCalls() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return current_.active ? current_.snapshot.obs_model_calls : latest_.obs_model_calls;
+}
+
 void PerfMonitor::DumpCsv() {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!config_.enable || !config_.csv_enable || latest_.frame_id == 0) {

@@ -93,6 +93,8 @@ class PerfMonitor {
     static void RecordStage(const std::string& name, double ms, int points = 0, int effective_points = 0,
                             const std::string& backend = "");
     static PerfSnapshot GetLatestSnapshot();
+    static int64_t GetCurrentFrameId();
+    static uint64_t GetCurrentObsModelCalls();
     static void DumpCsv();
 
    private:
