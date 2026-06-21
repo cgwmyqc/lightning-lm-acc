@@ -4402,3 +4402,231 @@ PASS
 - mapping golden 必须来自 `LaserMapping::ObsModelCpu` 的真实建图 observation。
 - CPU host replay 已通过，但 XDMA replay 未通过。
 - XDMA replay 通过后，Stage 53 才允许接入在线 mapping `FPGA_OBS`。
+## Stage 53 修正版：Mapping 参数 ABI 与 HLS Mapping Observation 语义修复
+
+### 目标
+
+Stage 52 的失败根因已经从 PCIe/XDMA/DDR 收敛到 HLS mapping mode 语义：
+硬件链路可 start/done，但 HLS 仍按 localization observation 的 residual
+reject 规则和 Jacobian 累计方式处理 mapping golden。配置文件中的外参和
+`plane_icp_weight` 不会被 FPGA 自动读取，必须由 Orin runtime 显式写入 DDR
+并通过控制器 direct address 传给 HLS。
+
+### 本次代码变更
+
+- 新增 128B ABI：`SlamAccelObservationParams`。
+- 新增 PL DDR segment：`PARAMS_BASE = 0x01002000`。
+- 新增控制寄存器：
+
+```text
+0x054 PARAMS_ADDR_LO
+0x058 PARAMS_ADDR_HI
+```
+
+- `slam_accel_ctrl` 新增 `unified_obs_params_addr[31:0]` direct output。
+- `unified_surfel_observation_core` 新增 `params` m_axi direct pointer。
+- `RunLocalizationObservation()` 写 localization params。
+- `RunMappingObservation()` 写 mapping params，包含 mode、`plane_icp_weight`、`residual_outlier_th`、`mapping_gate_scale`、`extrinsic_R[9]`、`extrinsic_T[3]`。
+
+### HLS 语义
+
+Localization 保持 Stage 48/49 已验证逻辑：
+
+```text
+lookup miss -> miss_count
+nonfinite scan/residual -> reject_count
+abs(residual) > residual_outlier_th -> reject_count
+H += J^T J
+b += J^T residual
+```
+
+Mapping 改为 CPU surfel-map observation 语义：
+
+```text
+lookup miss -> miss_count
+nonfinite scan/residual -> reject_count
+point_body.norm() <= mapping_gate_scale * residual^2 -> miss_count
+res = -residual
+H += J^T J * plane_icp_weight
+b += J^T res * plane_icp_weight
+```
+
+Mapping Jacobian 使用 `extrinsic_R/extrinsic_T`，并从 lidar pose 与外参恢复
+body/world 旋转关系。当前默认配置虽然 `extrinsic_R=identity`，但 ABI 已按
+非 identity rotation 预留并实现，不再把外参假设写死在 HLS 中。
+
+### 当前验证结果
+
+Windows g++ CSim：
+
+```text
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\unified_surfel_observation_core\run_gpp_csim.ps1
+PASS
+localization counts actual=6050/911/2 expected=6050/911/2
+reject_probe counts=0/1/0
+max_abs=0.0078906
+max_rel=4.41926e-05
+```
+
+Vivado HLS 2018.3 CSim：
+
+```text
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\unified_surfel_observation_core\run_vivado_hls_csim.ps1
+PASS
+CSim done with 0 errors
+localization counts actual=6050/911/2 expected=6050/911/2
+reject_probe counts=0/1/0
+```
+
+Vivado HLS 2018.3 C Synthesis / IP export:
+
+```text
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\unified_surfel_observation_core\run_vivado_hls_csynth.ps1
+PASS
+target clock: 10.00 ns
+estimated clock: 9.307 ns
+BRAM_18K=36 DSP48E=256 FF=27475 LUT=41633
+
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\unified_surfel_observation_core\run_vivado_hls_export_ip.ps1
+PASS
+component.xml: %TEMP%\lightning_hls_unified_obs\solution1\impl\ip\component.xml
+generated RTL: single direct params port confirmed
+```
+
+Tool note: do not use `DATA_PACK` on the 128B params struct. Vivado HLS 2018.3
+packs it into a 1024-bit object and can crash during C Synthesis. The final
+implementation keeps the external `SlamAccelObservationParams` ABI but exposes
+the HLS input as `uint64_t* params` with 16 words and decodes it inside the core.
+
+Windows 当前仓库没有本地 `fpga/golden/mapping/frame_000001`，mapping CSim
+需要在 Orin 同步 mapping golden 后执行。
+
+### 下一步
+
+Windows 侧继续：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\unified_surfel_observation_core\run_vivado_hls_csynth.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\unified_surfel_observation_core\run_vivado_hls_export_ip.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_bd_validate.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_project_synth.ps1 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_impl_bitstream.ps1 -Jobs 18
+```
+
+JTAG 下载新 `azmig_wrapper.bit` 后，Orin 侧回归：
+
+```bash
+./install/lightning/lib/lightning/run_surfel_loc_xdma_golden \
+  --golden_dir fpga/golden/localization/frame_000001 \
+  --ctrl_base 0x1000 \
+  --timeout_sec 120
+
+./install/lightning/lib/lightning/run_surfel_mapping_xdma_golden \
+  --golden_dir fpga/golden/mapping/frame_000001 \
+  --ctrl_base 0x1000 \
+  --timeout_sec 120
+```
+
+验收标准：
+
+```text
+localization PASS, counts 6050/911/2
+mapping PASS, counts 611/0/171
+no Failed to detect XDMA config BAR / CmpltTO / AER fatal
+```
+
+在 mapping XDMA replay 通过前，online `mapping.mode=fpga_obs` 仍保持禁用。
+
+## Stage 53 Windows board-level result: Mapping Params ABI + HLS IP bitstream
+
+### Current status
+
+Stage 53 Windows-side code, HLS, BD validation, synthesis, implementation, and bitstream generation are complete. The key change is the new 128-byte `SlamAccelObservationParams` ABI. Orin runtime now writes `plane_icp_weight`, `residual_outlier_th`, `mapping_gate_scale`, `extrinsic_R[9]`, and `extrinsic_T[3]` into PL DDR at `PARAMS_BASE=0x01002000`, then passes that address through `PARAMS_ADDR_LO/HI=0x054/0x058`.
+
+The FPGA does not read YAML configuration files. Every localization or mapping observation must explicitly write the active params block before starting HLS.
+
+### Windows verification
+
+```text
+run_gpp_csim.ps1: PASS
+run_vivado_hls_csim.ps1: PASS
+run_vivado_hls_csynth.ps1: PASS
+run_vivado_hls_export_ip.ps1: PASS
+localization counts: 6050/911/2
+reject_probe counts: 0/1/0
+HLS target clock: 10.00 ns
+HLS estimated clock: 9.307 ns
+HLS resources: BRAM_18K=36 DSP48E=256 FF=27475 LUT=41633
+```
+
+```text
+run_vivado_bd_validate.ps1: PASS
+run_vivado_project_synth.ps1 -Jobs 18: PASS
+run_vivado_impl_bitstream.ps1 -Jobs 18: PASS
+bitstream: fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit
+```
+
+Post-implementation timing:
+
+```text
+WNS=0.046 ns
+TNS=0.000 ns
+WHS=0.045 ns
+THS=0.000 ns
+All user specified timing constraints are met.
+```
+
+Post-implementation utilization:
+
+```text
+Slice LUTs:      65329 / 277400 = 23.55%
+Slice Registers: 71135 / 554800 = 12.82%
+Block RAM Tile: 53.5 / 755 = 7.09%
+DSPs:           373 / 2020 = 18.47%
+Bonded IOB:     74 / 362 = 20.44%
+```
+
+DRC result:
+
+```text
+0 errors
+0 critical warnings
+748 warnings
+456 advisories
+```
+
+### Toolchain note
+
+Do not use HLS `DATA_PACK` directly on the 128-byte `SlamAccelObservationParams` struct. Vivado HLS 2018.3 packs it into a 1024-bit object and can crash during C Synthesis. The final implementation keeps the external 128-byte ABI but exposes HLS `params` as `uint64_t* params`, then decodes 16 words inside the core.
+
+### Next Orin acceptance
+
+Windows JTAG download:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\program_bitstream_jtag.ps1 -Bitstream .\fpga\vivado\.build\azmig_impl\azmig.runs\impl_1\azmig_wrapper.bit
+```
+
+Orin regression:
+
+```bash
+./install/lightning/lib/lightning/run_surfel_loc_xdma_golden \
+  --golden_dir fpga/golden/localization/frame_000001 \
+  --ctrl_base 0x1000 \
+  --timeout_sec 120
+
+./install/lightning/lib/lightning/run_surfel_mapping_xdma_golden \
+  --golden_dir fpga/golden/mapping/frame_000001 \
+  --ctrl_base 0x1000 \
+  --timeout_sec 120
+```
+
+Acceptance:
+
+```text
+localization XDMA replay PASS, counts 6050/911/2
+mapping XDMA replay PASS, counts 611/0/171
+no Failed to detect XDMA config BAR / CmpltTO / AER fatal
+```
+
+Before mapping XDMA replay passes, keep online `mapping.mode=fpga_obs` disabled.

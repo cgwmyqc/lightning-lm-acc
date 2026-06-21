@@ -40,6 +40,8 @@ It does not instantiate XDMA, block design, DDR interconnect, or the HLS IP. Tho
 | `0x048` | `OBS_CELLS_ADDR_HI` | RW | must be zero in this 32-bit address phase |
 | `0x04c` | `OUT_ADDR_LO` | RW | low 32 bits of output normal-equation buffer base |
 | `0x050` | `OUT_ADDR_HI` | RW | must be zero in this 32-bit address phase |
+| `0x054` | `PARAMS_ADDR_LO` | RW | low 32 bits of `SlamAccelObservationParams` buffer base |
+| `0x058` | `PARAMS_ADDR_HI` | RW | must be zero in this 32-bit address phase |
 
 ## HLS Direct Ports
 
@@ -51,10 +53,17 @@ unified_obs_num_points[31:0]
 unified_obs_scan_points_addr[31:0]
 unified_obs_pose_addr[31:0]
 unified_obs_map_header_addr[31:0]
+unified_obs_params_addr[31:0]
 unified_obs_active_blocks_addr[31:0]
 unified_obs_obs_cells_addr[31:0]
 unified_obs_output_addr[31:0]
 ```
+
+Stage 53 adds `unified_obs_params_addr` for the 128-byte
+`SlamAccelObservationParams` ABI block. Orin runtime writes mapping/localization
+mode, residual threshold, mapping gate scale, `plane_icp_weight`,
+`extrinsic_R[9]`, and `extrinsic_T[3]` to PL DDR and passes its base address
+through this direct port.
 
 Stage 44 HLS uses `unified_obs_output_addr` as the single base address for a
 64-bit `output_words` buffer. The host-visible `SlamNormalEquation` ABI remains

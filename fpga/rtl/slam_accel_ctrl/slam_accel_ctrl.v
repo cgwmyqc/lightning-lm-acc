@@ -42,6 +42,7 @@ module slam_accel_ctrl #(
     output wire [31:0]                   unified_obs_scan_points_addr,
     output wire [31:0]                   unified_obs_pose_addr,
     output wire [31:0]                   unified_obs_map_header_addr,
+    output wire [31:0]                   unified_obs_params_addr,
     output wire [31:0]                   unified_obs_active_blocks_addr,
     output wire [31:0]                   unified_obs_obs_cells_addr,
     output wire [31:0]                   unified_obs_output_addr,
@@ -83,6 +84,8 @@ localparam [11:0] REG_OBS_CELLS_ADDR_LO = 12'h044;
 localparam [11:0] REG_OBS_CELLS_ADDR_HI = 12'h048;
 localparam [11:0] REG_OUT_ADDR_LO       = 12'h04c;
 localparam [11:0] REG_OUT_ADDR_HI       = 12'h050;
+localparam [11:0] REG_PARAMS_ADDR_LO    = 12'h054;
+localparam [11:0] REG_PARAMS_ADDR_HI    = 12'h058;
 
 localparam [31:0] KERNEL_UNIFIED_OBSERVATION = 32'd4;
 
@@ -114,6 +117,8 @@ reg [31:0] obs_cells_addr_lo_reg;
 reg [31:0] obs_cells_addr_hi_reg;
 reg [31:0] out_addr_lo_reg;
 reg [31:0] out_addr_hi_reg;
+reg [31:0] params_addr_lo_reg;
+reg [31:0] params_addr_hi_reg;
 
 reg cmd_start;
 
@@ -123,6 +128,7 @@ assign unified_obs_num_points = scan_count_reg;
 assign unified_obs_scan_points_addr = scan_addr_lo_reg;
 assign unified_obs_pose_addr = pose_addr_lo_reg;
 assign unified_obs_map_header_addr = map_header_addr_lo_reg;
+assign unified_obs_params_addr = params_addr_lo_reg;
 assign unified_obs_active_blocks_addr = active_blocks_addr_lo_reg;
 assign unified_obs_obs_cells_addr = obs_cells_addr_lo_reg;
 assign unified_obs_output_addr = out_addr_lo_reg;
@@ -165,7 +171,8 @@ wire any_addr_hi_nonzero = (scan_addr_hi_reg != 32'd0) ||
                            (map_header_addr_hi_reg != 32'd0) ||
                            (active_blocks_addr_hi_reg != 32'd0) ||
                            (obs_cells_addr_hi_reg != 32'd0) ||
-                           (out_addr_hi_reg != 32'd0);
+                           (out_addr_hi_reg != 32'd0) ||
+                           (params_addr_hi_reg != 32'd0);
 
 always @(posedge aclk) begin
     if (!aresetn) begin
@@ -198,6 +205,8 @@ always @(posedge aclk) begin
         obs_cells_addr_hi_reg <= 32'd0;
         out_addr_lo_reg <= 32'd0;
         out_addr_hi_reg <= 32'd0;
+        params_addr_lo_reg <= 32'd0;
+        params_addr_hi_reg <= 32'd0;
         cmd_start <= 1'b0;
     end else begin
         s_axi_awready <= write_fire;
@@ -250,6 +259,8 @@ always @(posedge aclk) begin
                     obs_cells_addr_hi_reg <= apply_wstrb(obs_cells_addr_hi_reg, s_axi_wdata, s_axi_wstrb);
                 REG_OUT_ADDR_LO: out_addr_lo_reg <= apply_wstrb(out_addr_lo_reg, s_axi_wdata, s_axi_wstrb);
                 REG_OUT_ADDR_HI: out_addr_hi_reg <= apply_wstrb(out_addr_hi_reg, s_axi_wdata, s_axi_wstrb);
+                REG_PARAMS_ADDR_LO: params_addr_lo_reg <= apply_wstrb(params_addr_lo_reg, s_axi_wdata, s_axi_wstrb);
+                REG_PARAMS_ADDR_HI: params_addr_hi_reg <= apply_wstrb(params_addr_hi_reg, s_axi_wdata, s_axi_wstrb);
                 default: begin
                     s_axi_bresp <= 2'b10;
                 end
@@ -282,6 +293,8 @@ always @(posedge aclk) begin
                 REG_OBS_CELLS_ADDR_HI: s_axi_rdata <= obs_cells_addr_hi_reg;
                 REG_OUT_ADDR_LO: s_axi_rdata <= out_addr_lo_reg;
                 REG_OUT_ADDR_HI: s_axi_rdata <= out_addr_hi_reg;
+                REG_PARAMS_ADDR_LO: s_axi_rdata <= params_addr_lo_reg;
+                REG_PARAMS_ADDR_HI: s_axi_rdata <= params_addr_hi_reg;
                 default: begin
                     s_axi_rdata <= 32'd0;
                     s_axi_rresp <= 2'b10;

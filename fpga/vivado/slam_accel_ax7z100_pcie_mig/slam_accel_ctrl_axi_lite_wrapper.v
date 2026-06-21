@@ -57,6 +57,7 @@ module slam_accel_ctrl_axi_lite_wrapper (
     output wire [31:0] unified_obs_scan_points_addr,
     output wire [31:0] unified_obs_pose_addr,
     output wire [31:0] unified_obs_map_header_addr,
+    output wire [31:0] unified_obs_params_addr,
     output wire [31:0] unified_obs_active_blocks_addr,
     output wire [31:0] unified_obs_obs_cells_addr,
     output wire [31:0] unified_obs_output_addr,
@@ -104,6 +105,7 @@ slam_accel_ctrl u_ctrl (
     .unified_obs_scan_points_addr(unified_obs_scan_points_addr),
     .unified_obs_pose_addr(unified_obs_pose_addr),
     .unified_obs_map_header_addr(unified_obs_map_header_addr),
+    .unified_obs_params_addr(unified_obs_params_addr),
     .unified_obs_active_blocks_addr(unified_obs_active_blocks_addr),
     .unified_obs_obs_cells_addr(unified_obs_obs_cells_addr),
     .unified_obs_output_addr(unified_obs_output_addr),
@@ -122,4 +124,3 @@ slam_accel_ctrl u_ctrl (
 );
 
 endmodule
-

@@ -1,15 +1,14 @@
-﻿#-----------------------------------------------------------
+#-----------------------------------------------------------
 # Vivado v2018.3 (64-bit)
 # SW Build 2405991 on Thu Dec  6 23:38:27 MST 2018
 # IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
-# Start of session at: Sun Jun 21 00:01:51 2026
-# Process ID: 67548
+# Start of session at: Sun Jun 21 15:15:27 2026
+# Process ID: 22276
 # Current directory: F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc
 # Command line: vivado.exe -mode batch -source F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\slam_accel_ax7z100_pcie_mig\create_bd.tcl -journal V:\azmig_bd\vivado_bd_validate.jou -log V:\azmig_bd\vivado_bd_validate.log -tclargs V:\azmig_bd xc7z100ffg900-2 F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\.build\hls_unified_obs\solution1\impl\ip F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc
 # Log file: V:/azmig_bd/vivado_bd_validate.log
 # Journal file: V:\azmig_bd\vivado_bd_validate.jou
 #-----------------------------------------------------------
-CRITICAL WARNING: [Common 17-741] No write access right to the local Tcl store at 'C'. XilinxTclStore is reverted to the installation area. If you want to use local Tcl Store, please change the access right and relaunch Vivado.
 source {F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\slam_accel_ax7z100_pcie_mig\create_bd.tcl}
 # set script_dir [file dirname [file normalize [info script]]]
 # set repo_root [file normalize [file join $script_dir ".." ".." ".."]]
@@ -171,7 +170,7 @@ INFO: [IP_Flow 19-1700] Loaded user IP repository 'f:/Project_HITZRI/26-06-06_Li
 #     CONFIG.XML_INPUT_FILE $mig_prj_name \
 # ] $mig_7series_0
 INFO: [Device 21-403] Loading part xc7z100ffg900-2
-create_bd_cell: Time (s): cpu = 00:00:07 ; elapsed = 00:00:08 . Memory (MB): peak = 907.324 ; gain = 215.934
+create_bd_cell: Time (s): cpu = 00:00:06 ; elapsed = 00:00:08 . Memory (MB): peak = 906.836 ; gain = 214.832
 # set xdma_0 [create_bd_cell -type ip -vlnv xilinx.com:ip:xdma:4.1 xdma_0]
 # set_property -dict [list \
 #     CONFIG.axi_data_width {128_bit} \
@@ -215,6 +214,7 @@ WARNING: [BD 41-1306] The connection to interface pin /unified_obs_0/ap_ready is
 # connect_bd_net [get_bd_pins ctrl_0/unified_obs_scan_points_addr] [get_bd_pins unified_obs_0/scan_points]
 # connect_bd_net [get_bd_pins ctrl_0/unified_obs_pose_addr] [get_bd_pins unified_obs_0/pose]
 # connect_bd_net [get_bd_pins ctrl_0/unified_obs_map_header_addr] [get_bd_pins unified_obs_0/map_header]
+# connect_bd_net [get_bd_pins ctrl_0/unified_obs_params_addr] [get_bd_pins unified_obs_0/params]
 # connect_bd_net [get_bd_pins ctrl_0/unified_obs_active_blocks_addr] [get_bd_pins unified_obs_0/active_blocks]
 # connect_bd_net [get_bd_pins ctrl_0/unified_obs_obs_cells_addr] [get_bd_pins unified_obs_0/obs_cells]
 # connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_addr] [get_bd_pins unified_obs_0/output_words]
@@ -257,7 +257,7 @@ WARNING: [BD 41-927] Following properties on pin /ctrl_0/aclk have been updated 
 	CLK_DOMAIN=azmig_xdma_0_0_axi_aclk
 WARNING: [BD 41-927] Following properties on pin /unified_obs_0/ap_clk have been updated from connected ip. They may not be synchronized with cell properties. You can set property on pin directly to confirm the value and resolve the warning.
 	CLK_DOMAIN=azmig_xdma_0_0_axi_aclk
-validate_bd_design: Time (s): cpu = 00:00:06 ; elapsed = 00:00:09 . Memory (MB): peak = 958.594 ; gain = 22.418
+validate_bd_design: Time (s): cpu = 00:00:06 ; elapsed = 00:00:07 . Memory (MB): peak = 958.461 ; gain = 22.770
 # save_bd_design
 Wrote  : <V:\azmig_bd\azmig.srcs\sources_1\bd\azmig\azmig.bd>
 # set bd_file [get_files -of_objects [get_filesets sources_1] *${design_name}.bd]
@@ -311,7 +311,7 @@ INFO: [BD 41-1029] Generation completed for the IP Integrator block rst_mig_ui .
 Exporting to file V:/azmig_bd/azmig.srcs/sources_1/bd/azmig/hw_handoff/azmig.hwh
 Generated Block Design Tcl file V:/azmig_bd/azmig.srcs/sources_1/bd/azmig/hw_handoff/azmig_bd.tcl
 Generated Hardware Definition File V:/azmig_bd/azmig.srcs/sources_1/bd/azmig/synth/azmig.hwdef
-generate_target: Time (s): cpu = 00:00:29 ; elapsed = 00:00:38 . Memory (MB): peak = 1326.781 ; gain = 342.383
+generate_target: Time (s): cpu = 00:00:25 ; elapsed = 00:00:35 . Memory (MB): peak = 1325.539 ; gain = 340.684
 # make_wrapper -files $bd_file -top -import
 WARNING: [Vivado 12-3482] The generated wrapper file has already been imported into the project, the imported file is:
 'V:/azmig_bd/azmig.srcs/sources_1/imports/hdl/azmig_wrapper.v'
@@ -343,4 +343,4 @@ MIG source: F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/12_ddr3_pl/mig_a.prj
 MIG derived AXI prj: v:/azmig_bd/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/mig_ax7z100_pl_ddr3_axi.prj
 # puts "Wrapper: $wrapper_file"
 Wrapper: V:/azmig_bd/azmig.srcs/sources_1/imports/hdl/azmig_wrapper.v
-INFO: [Common 17-206] Exiting Vivado at Sun Jun 21 00:03:19 2026...
+INFO: [Common 17-206] Exiting Vivado at Sun Jun 21 15:16:49 2026...

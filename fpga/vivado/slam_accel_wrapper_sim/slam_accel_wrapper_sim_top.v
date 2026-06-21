@@ -46,6 +46,7 @@ wire [31:0] unified_obs_num_points;
 wire [31:0] unified_obs_scan_points_addr;
 wire [31:0] unified_obs_pose_addr;
 wire [31:0] unified_obs_map_header_addr;
+wire [31:0] unified_obs_params_addr;
 wire [31:0] unified_obs_active_blocks_addr;
 wire [31:0] unified_obs_obs_cells_addr;
 wire [31:0] unified_obs_output_addr;
@@ -99,6 +100,7 @@ slam_accel_ctrl #(
     .unified_obs_scan_points_addr(unified_obs_scan_points_addr),
     .unified_obs_pose_addr(unified_obs_pose_addr),
     .unified_obs_map_header_addr(unified_obs_map_header_addr),
+    .unified_obs_params_addr(unified_obs_params_addr),
     .unified_obs_active_blocks_addr(unified_obs_active_blocks_addr),
     .unified_obs_obs_cells_addr(unified_obs_obs_cells_addr),
     .unified_obs_output_addr(unified_obs_output_addr),
@@ -127,6 +129,7 @@ unified_surfel_observation_core_ctrl_mock hls_ctrl_mock_i (
     .scan_points(unified_obs_scan_points_addr),
     .pose(unified_obs_pose_addr),
     .map_header(unified_obs_map_header_addr),
+    .params(unified_obs_params_addr),
     .active_blocks(unified_obs_active_blocks_addr),
     .obs_cells(unified_obs_obs_cells_addr),
     .output_h_upper(unified_obs_output_h_upper_addr),

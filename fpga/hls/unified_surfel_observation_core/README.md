@@ -173,6 +173,7 @@ control: ap_ctrl_hs
 scan_points:   m_axi offset=direct, DATA_PACK, direct scalar base address
 pose:          m_axi offset=direct, DATA_PACK, direct scalar base address
 map_header:    m_axi offset=direct, DATA_PACK, direct scalar base address
+params:        m_axi offset=direct, 16x64-bit words containing `SlamAccelObservationParams`
 active_blocks: m_axi offset=direct, DATA_PACK, direct scalar base address
 obs_cells:     m_axi offset=direct, DATA_PACK, direct scalar base address
 output_words:  m_axi offset=direct, single 64-bit word buffer
@@ -187,6 +188,13 @@ Vivado HLS generated those direct offsets on a 64-bit AXI word boundary. That
 made adjacent 32-bit counters such as `valid_count` and `reject_count` alias on
 the board. The external ABI remains the same 320-byte `SlamNormalEquation`; only
 the HLS port contract changed.
+
+Stage 53 adds the independent 128-byte `SlamAccelObservationParams` input.
+FPGA does not read YAML/config files directly; Orin runtime must write this ABI
+block to PL DDR before start. Localization keeps the existing residual reject
+rule. Mapping uses `plane_icp_weight`, `extrinsic_R`, `extrinsic_T`, and the
+mapping gate rule from the CPU surfel-map observation path instead of
+localization's `abs(residual) > 0.3` reject rule.
 
 Current output word layout:
 
@@ -212,6 +220,7 @@ num_points <- unified_obs_num_points
 scan_points <- unified_obs_scan_points_addr
 pose <- unified_obs_pose_addr
 map_header <- unified_obs_map_header_addr
+params <- unified_obs_params_addr
 active_blocks <- unified_obs_active_blocks_addr
 obs_cells <- unified_obs_obs_cells_addr
 output_words <- unified_obs_output_addr

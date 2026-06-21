@@ -3,6 +3,8 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
+#include <array>
+
 #include "core/fpga/xdma_runtime.h"
 #include "core/lio/mapping_golden.h"
 #include "core/localization/surfel_loc/surfel_loc_golden.h"
@@ -36,10 +38,20 @@ int main(int argc, char** argv) {
     const auto lidar_pose = lightning::mapping_golden::LidarPoseFromState(frame.state, frame.extrinsic_R,
                                                                           frame.extrinsic_t);
     const auto pose = lightning::loc::golden::ToAbiPose(lidar_pose);
+    std::array<float, 9> extrinsic_R{};
+    std::array<float, 3> extrinsic_T{};
+    for (int r = 0; r < 3; ++r) {
+        for (int c = 0; c < 3; ++c) {
+            extrinsic_R[static_cast<size_t>(r * 3 + c)] = static_cast<float>(frame.extrinsic_R(r, c));
+        }
+        extrinsic_T[static_cast<size_t>(r)] = static_cast<float>(frame.extrinsic_t[r]);
+    }
+    const auto params = lightning::fpga::MakeMappingObservationParams(static_cast<float>(frame.plane_icp_weight),
+                                                                      extrinsic_R, extrinsic_T);
 
     lightning::fpga::XdmaRuntime::RunResult result;
-    if (!runtime.RunMappingObservation(scan_points, pose, frame.active_map, true, FLAGS_verify_readback, result,
-                                       &error)) {
+    if (!runtime.RunMappingObservation(scan_points, pose, frame.active_map, params, true, FLAGS_verify_readback,
+                                       result, &error)) {
         LOG(ERROR) << error;
         return 1;
     }

@@ -86,6 +86,21 @@ struct alignas(64) ActiveMapHeader {
 };
 static_assert(sizeof(ActiveMapHeader) == 64, "ActiveMapHeader must be exactly 64B");
 
+struct alignas(64) SlamAccelObservationParams {
+    uint32_t magic = SLAM_ACCEL_ABI_MAGIC;
+    uint32_t version = SLAM_ACCEL_GOLDEN_VERSION;
+    uint32_t mode = LOCALIZATION_OBSERVATION;
+    uint32_t flags = 0;
+    float plane_icp_weight = 1.0f;
+    float residual_outlier_th = 0.3f;
+    float mapping_gate_scale = 81.0f;
+    float reserved_scalar = 0.0f;
+    float extrinsic_R[9] = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+    float extrinsic_T[3] = {0.0f, 0.0f, 0.0f};
+    uint32_t reserved[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+};
+static_assert(sizeof(SlamAccelObservationParams) == 128, "SlamAccelObservationParams must be exactly 128B");
+
 struct alignas(64) SlamNormalEquation {
     double h_upper[21] = {0.0};
     double b[6] = {0.0};

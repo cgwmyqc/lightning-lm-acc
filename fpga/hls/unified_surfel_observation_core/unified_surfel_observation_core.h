@@ -11,8 +11,8 @@ namespace hls {
 
 void unified_surfel_observation_core(const SlamAccelScanPoint* scan_points, uint32_t num_points,
                                      const SlamAccelPose* pose, const ActiveMapHeader* map_header,
-                                     const ActiveBlockRecord* active_blocks, const ObsCellFloat64* obs_cells,
-                                     uint64_t* output_words);
+                                     const uint64_t* params, const ActiveBlockRecord* active_blocks,
+                                     const ObsCellFloat64* obs_cells, uint64_t* output_words);
 
 }  // namespace hls
 }  // namespace fpga

@@ -220,7 +220,10 @@ bool RunRejectProbe(std::string& report) {
     FillRejectProbe(scan, pose, map_header, block, cells);
 
     uint64_t actual_words[kNormalEquationWords] = {};
-    unified_surfel_observation_core(&scan, 1, &pose, &map_header, &block, cells.data(), actual_words);
+    SlamAccelObservationParams params;
+    params.mode = LOCALIZATION_OBSERVATION;
+    unified_surfel_observation_core(&scan, 1, &pose, &map_header, reinterpret_cast<const uint64_t*>(&params), &block,
+                                    cells.data(), actual_words);
     const SlamNormalEquation actual = DecodeOutputWords(actual_words);
 
     const bool counts_ok = actual.valid_count == 0 && actual.reject_count == 1 && actual.miss_count == 0;
@@ -254,8 +257,11 @@ int main(int argc, char** argv) {
     }
 
     uint64_t actual_words[kNormalEquationWords] = {};
-    unified_surfel_observation_core(scan.data(), static_cast<uint32_t>(scan.size()), &pose, &map_header, blocks.data(),
-                                    cells.data(), actual_words);
+    SlamAccelObservationParams params;
+    params.mode = LOCALIZATION_OBSERVATION;
+    unified_surfel_observation_core(scan.data(), static_cast<uint32_t>(scan.size()), &pose, &map_header,
+                                    reinterpret_cast<const uint64_t*>(&params), blocks.data(), cells.data(),
+                                    actual_words);
     const SlamNormalEquation actual = DecodeOutputWords(actual_words);
 
     std::string report;

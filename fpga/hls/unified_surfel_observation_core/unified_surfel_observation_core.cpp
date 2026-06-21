@@ -58,6 +58,49 @@ uint64_t DoubleToBits(double value) {
     return word.u;
 }
 
+float BitsToFloat(uint32_t value) {
+    union FloatWord {
+        uint32_t u;
+        float f;
+    } word;
+    word.u = value;
+    return word.f;
+}
+
+uint32_t Low32(uint64_t value) { return static_cast<uint32_t>(value & 0xFFFFffffULL); }
+
+uint32_t High32(uint64_t value) { return static_cast<uint32_t>(value >> 32); }
+
+SlamAccelObservationParams LoadParams(const uint64_t* params_words) {
+    SlamAccelObservationParams params;
+    const uint64_t w0 = params_words[0];
+    const uint64_t w1 = params_words[1];
+    const uint64_t w2 = params_words[2];
+    const uint64_t w3 = params_words[3];
+    params.magic = Low32(w0);
+    params.version = High32(w0);
+    params.mode = Low32(w1);
+    params.flags = High32(w1);
+    params.plane_icp_weight = BitsToFloat(Low32(w2));
+    params.residual_outlier_th = BitsToFloat(High32(w2));
+    params.mapping_gate_scale = BitsToFloat(Low32(w3));
+    params.reserved_scalar = BitsToFloat(High32(w3));
+
+    for (int i = 0; i < 4; ++i) {
+#pragma HLS UNROLL
+        const uint64_t word = params_words[4 + i];
+        params.extrinsic_R[2 * i] = BitsToFloat(Low32(word));
+        params.extrinsic_R[2 * i + 1] = BitsToFloat(High32(word));
+    }
+    const uint64_t w8 = params_words[8];
+    const uint64_t w9 = params_words[9];
+    params.extrinsic_R[8] = BitsToFloat(Low32(w8));
+    params.extrinsic_T[0] = BitsToFloat(High32(w8));
+    params.extrinsic_T[1] = BitsToFloat(Low32(w9));
+    params.extrinsic_T[2] = BitsToFloat(High32(w9));
+    return params;
+}
+
 void CopyCell(const ObsCellFloat64& src, ObsCellFloat64& dst) {
     dst.centroid_x = src.centroid_x;
     dst.centroid_y = src.centroid_y;
@@ -91,6 +134,26 @@ Vec3 RotatePoint(const SlamAccelPose& pose, const SlamAccelScanPoint& point) {
     out.x = x + qw * tx + (qy * tz - qz * ty) + pose.tx;
     out.y = y + qw * ty + (qz * tx - qx * tz) + pose.ty;
     out.z = z + qw * tz + (qx * ty - qy * tx) + pose.tz;
+    return out;
+}
+
+Vec3 RotateVectorInverse(const SlamAccelPose& pose, const Vec3& vector) {
+    const double qx = -pose.qx;
+    const double qy = -pose.qy;
+    const double qz = -pose.qz;
+    const double qw = pose.qw;
+    const double x = vector.x;
+    const double y = vector.y;
+    const double z = vector.z;
+
+    const double tx = 2.0 * (qy * z - qz * y);
+    const double ty = 2.0 * (qz * x - qx * z);
+    const double tz = 2.0 * (qx * y - qy * x);
+
+    Vec3 out;
+    out.x = x + qw * tx + (qy * tz - qz * ty);
+    out.y = y + qw * ty + (qz * tx - qx * tz);
+    out.z = z + qw * tz + (qx * ty - qy * tx);
     return out;
 }
 
@@ -235,11 +298,11 @@ bool LookupNearest(const ActiveMapHeader& map_header, const ActiveBlockRecord* a
     return found;
 }
 
-void AccumulateUpper(double h[6][6], double b[6], const double j[6], double residual) {
+void AccumulateUpper(double h[6][6], double b[6], const double j[6], double residual, double weight) {
     for (int r = 0; r < 6; ++r) {
-        b[r] += j[r] * residual;
+        b[r] += j[r] * residual * weight;
         for (int c = r; c < 6; ++c) {
-            h[r][c] += j[r] * j[c];
+            h[r][c] += j[r] * j[c] * weight;
         }
     }
 }
@@ -273,6 +336,7 @@ void StoreOutputWords(const double h[6][6], const double b[6], uint32_t valid_co
 
 void unified_surfel_observation_core(const SlamAccelScanPoint* scan_points, uint32_t num_points,
                                      const SlamAccelPose* pose, const ActiveMapHeader* map_header,
+                                     const uint64_t* params,
                                      const ActiveBlockRecord* active_blocks, const ObsCellFloat64* obs_cells,
                                      uint64_t* output_words) {
     double h[6][6] = {{0.0}};
@@ -283,6 +347,15 @@ void unified_surfel_observation_core(const SlamAccelScanPoint* scan_points, uint
     double residual_sum = 0.0;
     double residual_abs_sum = 0.0;
     double residual_max_abs = 0.0;
+
+    const SlamAccelObservationParams obs_params = LoadParams(params);
+    const bool params_valid =
+        obs_params.magic == SLAM_ACCEL_ABI_MAGIC && obs_params.version == SLAM_ACCEL_GOLDEN_VERSION;
+    const uint32_t obs_mode = params_valid ? obs_params.mode : map_header->mode;
+    const double residual_outlier_th = params_valid ? obs_params.residual_outlier_th : 0.3;
+    const double mapping_gate_scale = params_valid ? obs_params.mapping_gate_scale : 81.0;
+    const double plane_icp_weight = params_valid ? obs_params.plane_icp_weight : 1.0;
+
     for (uint32_t i = 0; i < num_points; ++i) {
 #pragma HLS LOOP_TRIPCOUNT min = 1 max = 8192 avg = 4096
         const SlamAccelScanPoint& scan = scan_points[i];
@@ -303,19 +376,73 @@ void unified_surfel_observation_core(const SlamAccelScanPoint* scan_points, uint
         const double nz = cell.normal_z;
         const double residual = nx * p.x + ny * p.y + nz * p.z + cell.plane_d;
         const double abs_residual = std::fabs(residual);
-        if (!std::isfinite(residual) || abs_residual > 0.3) {
+        if (!std::isfinite(residual)) {
             ++reject_count;
             continue;
         }
 
         double j[6];
-        j[0] = nx;
-        j[1] = ny;
-        j[2] = nz;
-        j[3] = nz * p.y - ny * p.z;
-        j[4] = nx * p.z - nz * p.x;
-        j[5] = ny * p.x - nx * p.y;
-        AccumulateUpper(h, b, j, residual);
+        double solve_residual = residual;
+        double weight = 1.0;
+        if (obs_mode == MAPPING_OBSERVATION) {
+            const double body_norm =
+                std::sqrt(static_cast<double>(scan.x) * static_cast<double>(scan.x) +
+                          static_cast<double>(scan.y) * static_cast<double>(scan.y) +
+                          static_cast<double>(scan.z) * static_cast<double>(scan.z));
+            if (body_norm <= mapping_gate_scale * residual * residual) {
+                ++miss_count;
+                continue;
+            }
+
+            Vec3 normal_world;
+            normal_world.x = nx;
+            normal_world.y = ny;
+            normal_world.z = nz;
+            const Vec3 pose_rt_normal = RotateVectorInverse(*pose, normal_world);
+            const double cx = obs_params.extrinsic_R[0] * pose_rt_normal.x +
+                              obs_params.extrinsic_R[1] * pose_rt_normal.y +
+                              obs_params.extrinsic_R[2] * pose_rt_normal.z;
+            const double cy = obs_params.extrinsic_R[3] * pose_rt_normal.x +
+                              obs_params.extrinsic_R[4] * pose_rt_normal.y +
+                              obs_params.extrinsic_R[5] * pose_rt_normal.z;
+            const double cz = obs_params.extrinsic_R[6] * pose_rt_normal.x +
+                              obs_params.extrinsic_R[7] * pose_rt_normal.y +
+                              obs_params.extrinsic_R[8] * pose_rt_normal.z;
+
+            const double point_this_x = obs_params.extrinsic_R[0] * static_cast<double>(scan.x) +
+                                        obs_params.extrinsic_R[1] * static_cast<double>(scan.y) +
+                                        obs_params.extrinsic_R[2] * static_cast<double>(scan.z) +
+                                        obs_params.extrinsic_T[0];
+            const double point_this_y = obs_params.extrinsic_R[3] * static_cast<double>(scan.x) +
+                                        obs_params.extrinsic_R[4] * static_cast<double>(scan.y) +
+                                        obs_params.extrinsic_R[5] * static_cast<double>(scan.z) +
+                                        obs_params.extrinsic_T[1];
+            const double point_this_z = obs_params.extrinsic_R[6] * static_cast<double>(scan.x) +
+                                        obs_params.extrinsic_R[7] * static_cast<double>(scan.y) +
+                                        obs_params.extrinsic_R[8] * static_cast<double>(scan.z) +
+                                        obs_params.extrinsic_T[2];
+
+            j[0] = nx;
+            j[1] = ny;
+            j[2] = nz;
+            j[3] = point_this_y * cz - point_this_z * cy;
+            j[4] = point_this_z * cx - point_this_x * cz;
+            j[5] = point_this_x * cy - point_this_y * cx;
+            solve_residual = -residual;
+            weight = plane_icp_weight;
+        } else {
+            if (abs_residual > residual_outlier_th) {
+                ++reject_count;
+                continue;
+            }
+            j[0] = nx;
+            j[1] = ny;
+            j[2] = nz;
+            j[3] = nz * p.y - ny * p.z;
+            j[4] = nx * p.z - nz * p.x;
+            j[5] = ny * p.x - nx * p.y;
+        }
+        AccumulateUpper(h, b, j, solve_residual, weight);
 
         ++valid_count;
         residual_sum += residual;
@@ -335,6 +462,7 @@ void unified_surfel_observation_core(const SlamAccelScanPoint* scan_points, uint
 void unified_surfel_observation_core(const lightning::fpga::SlamAccelScanPoint* scan_points, uint32_t num_points,
                                      const lightning::fpga::SlamAccelPose* pose,
                                      const lightning::fpga::ActiveMapHeader* map_header,
+                                     const uint64_t* params,
                                      const lightning::fpga::ActiveBlockRecord* active_blocks,
                                      const lightning::fpga::ObsCellFloat64* obs_cells,
                                      uint64_t* output_words) {
@@ -342,6 +470,7 @@ void unified_surfel_observation_core(const lightning::fpga::SlamAccelScanPoint* 
 #pragma HLS INTERFACE m_axi port = scan_points offset = direct bundle = gmem0 depth = 8192
 #pragma HLS INTERFACE m_axi port = pose offset = direct bundle = gmem1 depth = 1
 #pragma HLS INTERFACE m_axi port = map_header offset = direct bundle = gmem1 depth = 1
+#pragma HLS INTERFACE m_axi port = params offset = direct bundle = gmem1 depth = 16
 #pragma HLS INTERFACE m_axi port = active_blocks offset = direct bundle = gmem2 depth = 8192
 #pragma HLS INTERFACE m_axi port = obs_cells offset = direct bundle = gmem3 depth = 1048576
 #pragma HLS INTERFACE m_axi port = output_words offset = direct bundle = gmem4 depth = 40
@@ -350,6 +479,6 @@ void unified_surfel_observation_core(const lightning::fpga::SlamAccelScanPoint* 
 #pragma HLS DATA_PACK variable = map_header
 #pragma HLS DATA_PACK variable = active_blocks
 #pragma HLS DATA_PACK variable = obs_cells
-    lightning::fpga::hls::unified_surfel_observation_core(scan_points, num_points, pose, map_header, active_blocks,
-                                                          obs_cells, output_words);
+    lightning::fpga::hls::unified_surfel_observation_core(scan_points, num_points, pose, map_header, params,
+                                                          active_blocks, obs_cells, output_words);
 }

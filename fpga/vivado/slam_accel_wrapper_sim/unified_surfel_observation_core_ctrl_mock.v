@@ -19,6 +19,7 @@ module unified_surfel_observation_core_ctrl_mock #(
     input  wire [31:0] scan_points,
     input  wire [31:0] pose,
     input  wire [31:0] map_header,
+    input  wire [31:0] params,
     input  wire [31:0] active_blocks,
     input  wire [31:0] obs_cells,
     input  wire [31:0] output_h_upper,
@@ -41,6 +42,7 @@ reg [31:0] captured_num_points;
 reg [31:0] captured_scan_points;
 reg [31:0] captured_pose;
 reg [31:0] captured_map_header;
+reg [31:0] captured_params;
 reg [31:0] captured_active_blocks;
 reg [31:0] captured_obs_cells;
 reg [31:0] captured_output_h_upper;
@@ -60,6 +62,7 @@ assign activity_sink = captured_num_points ^
                        captured_scan_points ^
                        captured_pose ^
                        captured_map_header ^
+                       captured_params ^
                        captured_active_blocks ^
                        captured_obs_cells ^
                        captured_output_h_upper ^
@@ -82,6 +85,7 @@ always @(posedge ap_clk) begin
         captured_scan_points <= 32'd0;
         captured_pose <= 32'd0;
         captured_map_header <= 32'd0;
+        captured_params <= 32'd0;
         captured_active_blocks <= 32'd0;
         captured_obs_cells <= 32'd0;
         captured_output_h_upper <= 32'd0;
@@ -103,6 +107,7 @@ always @(posedge ap_clk) begin
             captured_scan_points <= scan_points;
             captured_pose <= pose;
             captured_map_header <= map_header;
+            captured_params <= params;
             captured_active_blocks <= active_blocks;
             captured_obs_cells <= obs_cells;
             captured_output_h_upper <= output_h_upper;

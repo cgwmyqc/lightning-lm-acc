@@ -34,10 +34,11 @@ struct Region {
     uint32_t size;
 };
 
-constexpr std::array<Region, 6> kRegions = {{
+constexpr std::array<Region, 7> kRegions = {{
     {"scan_points", LIGHTNING_SCAN_POINTS_BASE, 0x01000000u},
     {"pose", LIGHTNING_POSE_BASE, 0x00001000u},
     {"map_header", LIGHTNING_MAP_HEADER_BASE, 0x00001000u},
+    {"params", LIGHTNING_PARAMS_BASE, 0x00001000u},
     {"active_blocks", LIGHTNING_ACTIVE_BLOCKS_BASE, 0x01000000u},
     {"obs_cells", LIGHTNING_OBS_CELLS_BASE, 0x20000000u},
     {"output", LIGHTNING_OUTPUT_BASE, 0x00100000u},
@@ -160,16 +161,18 @@ bool VerifyBytes(int fd, uint32_t base, const void* expected, size_t size, std::
     return true;
 }
 
-bool ConfigureRegisters(int user_fd, uint32_t ctrl_base, uint32_t scan_count, std::string* error) {
-    const std::array<std::pair<uint32_t, uint32_t>, 14> writes = {{
+bool ConfigureRegisters(int user_fd, uint32_t ctrl_base, uint32_t mode, uint32_t scan_count, std::string* error) {
+    const std::array<std::pair<uint32_t, uint32_t>, 16> writes = {{
         {LIGHTNING_CTRL_KERNEL_SEL, LIGHTNING_KERNEL_UNIFIED_OBSERVATION},
-        {LIGHTNING_CTRL_MODE, LIGHTNING_MODE_LOCALIZATION},
+        {LIGHTNING_CTRL_MODE, mode},
         {LIGHTNING_CTRL_SCAN_ADDR_LO, LIGHTNING_SCAN_POINTS_BASE},
         {LIGHTNING_CTRL_SCAN_ADDR_HI, 0},
         {LIGHTNING_CTRL_POSE_ADDR_LO, LIGHTNING_POSE_BASE},
         {LIGHTNING_CTRL_POSE_ADDR_HI, 0},
         {LIGHTNING_CTRL_MAP_HEADER_ADDR_LO, LIGHTNING_MAP_HEADER_BASE},
         {LIGHTNING_CTRL_MAP_HEADER_ADDR_HI, 0},
+        {LIGHTNING_CTRL_PARAMS_ADDR_LO, LIGHTNING_PARAMS_BASE},
+        {LIGHTNING_CTRL_PARAMS_ADDR_HI, 0},
         {LIGHTNING_CTRL_ACTIVE_BLOCKS_ADDR_LO, LIGHTNING_ACTIVE_BLOCKS_BASE},
         {LIGHTNING_CTRL_ACTIVE_BLOCKS_ADDR_HI, 0},
         {LIGHTNING_CTRL_OBS_CELLS_ADDR_LO, LIGHTNING_OBS_CELLS_BASE},
@@ -242,7 +245,7 @@ bool XdmaRuntime::RegSmoke(uint32_t scan_count, std::string* error) const {
         SetError(error, ss.str());
         return false;
     }
-    if (!ConfigureRegisters(user.get(), options_.ctrl_base, scan_count, error)) {
+    if (!ConfigureRegisters(user.get(), options_.ctrl_base, LIGHTNING_MODE_LOCALIZATION, scan_count, error)) {
         return false;
     }
 
@@ -290,8 +293,9 @@ namespace {
 
 bool RunObservationImpl(const XdmaRuntime::Options& options, uint32_t mode,
                         const std::vector<SlamAccelScanPoint>& scan_points, const SlamAccelPose& pose,
-                        const loc::ActiveMapBuffer& active_map, bool write_full_image, bool verify_readback,
-                        XdmaRuntime::RunResult& result, std::string* error) {
+                        const loc::ActiveMapBuffer& active_map, const SlamAccelObservationParams& params,
+                        bool write_full_image, bool verify_readback, XdmaRuntime::RunResult& result,
+                        std::string* error) {
     Fd user;
     Fd h2c;
     Fd c2h;
@@ -307,6 +311,7 @@ bool RunObservationImpl(const XdmaRuntime::Options& options, uint32_t mode,
         if (!WriteVector(h2c.get(), LIGHTNING_SCAN_POINTS_BASE, scan_points, error, "scan_points") ||
             !WriteObject(h2c.get(), LIGHTNING_POSE_BASE, pose, error, "pose") ||
             !WriteObject(h2c.get(), LIGHTNING_MAP_HEADER_BASE, map_header, error, "map_header") ||
+            !WriteObject(h2c.get(), LIGHTNING_PARAMS_BASE, params, error, "params") ||
             !WriteVector(h2c.get(), LIGHTNING_ACTIVE_BLOCKS_BASE, active_map.blocks, error, "active_blocks") ||
             !WriteVector(h2c.get(), LIGHTNING_OBS_CELLS_BASE, active_map.cells, error, "obs_cells")) {
             return false;
@@ -317,6 +322,7 @@ bool RunObservationImpl(const XdmaRuntime::Options& options, uint32_t mode,
                 !VerifyBytes(c2h.get(), LIGHTNING_POSE_BASE, &pose, sizeof(pose), error, "pose") ||
                 !VerifyBytes(c2h.get(), LIGHTNING_MAP_HEADER_BASE, &map_header, sizeof(map_header), error,
                              "map_header") ||
+                !VerifyBytes(c2h.get(), LIGHTNING_PARAMS_BASE, &params, sizeof(params), error, "params") ||
                 !VerifyBytes(c2h.get(), LIGHTNING_ACTIVE_BLOCKS_BASE, active_map.blocks.data(),
                              active_map.blocks.size() * sizeof(ActiveBlockRecord), error, "active_blocks") ||
                 !VerifyBytes(c2h.get(), LIGHTNING_OBS_CELLS_BASE, active_map.cells.data(),
@@ -330,7 +336,7 @@ bool RunObservationImpl(const XdmaRuntime::Options& options, uint32_t mode,
         return false;
     }
 
-    if (!ConfigureRegisters(user.get(), options.ctrl_base, static_cast<uint32_t>(scan_points.size()), error)) {
+    if (!ConfigureRegisters(user.get(), options.ctrl_base, mode, static_cast<uint32_t>(scan_points.size()), error)) {
         return false;
     }
     if (!Read32(user.get(), options.ctrl_base + LIGHTNING_CTRL_SCAN_COUNT, result.scan_count_readback, error) ||
@@ -389,15 +395,16 @@ bool XdmaRuntime::RunLocalizationObservation(const std::vector<SlamAccelScanPoin
                                              const SlamAccelPose& pose, const loc::ActiveMapBuffer& active_map,
                                              bool write_full_image, bool verify_readback, RunResult& result,
                                              std::string* error) const {
-    return RunObservationImpl(options_, LOCALIZATION_OBSERVATION, scan_points, pose, active_map, write_full_image,
-                              verify_readback, result, error);
+    const SlamAccelObservationParams params = MakeLocalizationObservationParams();
+    return RunObservationImpl(options_, LOCALIZATION_OBSERVATION, scan_points, pose, active_map, params,
+                              write_full_image, verify_readback, result, error);
 }
 
 bool XdmaRuntime::RunMappingObservation(const std::vector<SlamAccelScanPoint>& scan_points,
                                         const SlamAccelPose& pose, const loc::ActiveMapBuffer& active_map,
-                                        bool write_full_image, bool verify_readback, RunResult& result,
-                                        std::string* error) const {
-    return RunObservationImpl(options_, MAPPING_OBSERVATION, scan_points, pose, active_map, write_full_image,
+                                        const SlamAccelObservationParams& params, bool write_full_image,
+                                        bool verify_readback, RunResult& result, std::string* error) const {
+    return RunObservationImpl(options_, MAPPING_OBSERVATION, scan_points, pose, active_map, params, write_full_image,
                               verify_readback, result, error);
 }
 
@@ -430,6 +437,28 @@ ActiveMapHeader MakeActiveMapHeader(const loc::ActiveMapBuffer& active_map, uint
     header.num_cells = static_cast<uint32_t>(active_map.cells.size());
     header.lookup_nearby_type = active_map.lookup_nearby_type;
     return header;
+}
+
+SlamAccelObservationParams MakeLocalizationObservationParams() {
+    SlamAccelObservationParams params;
+    params.mode = LOCALIZATION_OBSERVATION;
+    params.plane_icp_weight = 1.0f;
+    params.residual_outlier_th = 0.3f;
+    params.mapping_gate_scale = 81.0f;
+    return params;
+}
+
+SlamAccelObservationParams MakeMappingObservationParams(float plane_icp_weight,
+                                                        const std::array<float, 9>& extrinsic_R,
+                                                        const std::array<float, 3>& extrinsic_T) {
+    SlamAccelObservationParams params;
+    params.mode = MAPPING_OBSERVATION;
+    params.plane_icp_weight = plane_icp_weight;
+    params.residual_outlier_th = 0.3f;
+    params.mapping_gate_scale = 81.0f;
+    std::copy(extrinsic_R.begin(), extrinsic_R.end(), params.extrinsic_R);
+    std::copy(extrinsic_T.begin(), extrinsic_T.end(), params.extrinsic_T);
+    return params;
 }
 
 }  // namespace lightning::fpga
