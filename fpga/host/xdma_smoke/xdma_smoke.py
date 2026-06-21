@@ -339,6 +339,47 @@ def dump_raw_output_words(data):
     print("OUTPUT_RAW_WORDS_END")
 
 
+def normal_equation_raw_words(data):
+    return list(struct.unpack_from("<40Q", data, 0))
+
+
+def write_output_json(
+    path,
+    manifest_path,
+    manifest,
+    ctrl_base,
+    label,
+    scan_count,
+    status,
+    error,
+    run_count_before,
+    run_count_after,
+    regs_after_config,
+    output,
+    actual,
+):
+    out_path = Path(path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "label": label,
+        "manifest_path": str(manifest_path),
+        "manifest_name": manifest.get("name", ""),
+        "source_point_index": manifest.get("source_point_index"),
+        "ctrl_base": ctrl_base,
+        "scan_count": scan_count,
+        "status": status,
+        "error": error,
+        "run_count_before": run_count_before,
+        "run_count_after": run_count_after,
+        "registers_after_config": regs_after_config or {},
+        "raw_output_words": [f"0x{word:016x}" for word in normal_equation_raw_words(output)],
+        "actual": actual,
+        "expected": manifest["expected"],
+    }
+    out_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    print(f"HLS_OUTPUT_JSON={out_path}")
+
+
 def hls_manifest(
     user_path,
     h2c_path,
@@ -351,12 +392,14 @@ def hls_manifest(
     verify_image_readback,
     read_regs_after_config,
     dump_output_raw_words,
+    save_output_json,
 ):
     manifest_file = Path(manifest_path)
     manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
     expected = manifest["expected"]
     scan_count = int(manifest["scan_count"])
     is_tiny = label == "TINY"
+    regs = {}
 
     user = h2c = c2h = None
     try:
@@ -408,6 +451,22 @@ def hls_manifest(
         if dump_output_raw_words:
             dump_raw_output_words(output)
         actual = parse_normal_equation(output)
+        if save_output_json:
+            write_output_json(
+                save_output_json,
+                manifest_file,
+                manifest,
+                ctrl_base,
+                label,
+                scan_count,
+                last_status,
+                last_error,
+                run_count_before,
+                run_count_after,
+                regs,
+                output,
+                actual,
+            )
         try:
             worst_name, worst_abs, worst_rel = compare_normal_equation(actual, expected)
         except RuntimeError:
@@ -470,6 +529,7 @@ def main():
     parser.add_argument("--read-regs-after-config", action="store_true", help="Print controller register readback after HLS config")
     parser.add_argument("--dump-output-raw-words", action="store_true", help="Print the 40 raw 64-bit output words read from DDR")
     parser.add_argument("--dump-normal-equation", action="store_true", help="Print H_upper and b after HLS readback")
+    parser.add_argument("--save-output-json", default="", help="Save actual/expected HLS output, raw words, and register readback as JSON")
     parser.add_argument("--start-zero", action="store_true", help="Optionally issue a zero-point accelerator start")
     args = parser.parse_args()
 
@@ -501,6 +561,7 @@ def main():
             args.verify_image_readback,
             args.read_regs_after_config,
             args.dump_output_raw_words,
+            args.save_output_json,
         )
     if args.hls_tiny:
         hls_manifest(
@@ -515,6 +576,7 @@ def main():
             args.verify_image_readback,
             args.read_regs_after_config,
             args.dump_output_raw_words,
+            args.save_output_json,
         )
     if args.start_zero:
         start_zero(args.user, args.ctrl_base)

@@ -118,6 +118,35 @@ All three single-point probes must print `HLS_MANIFEST_NUMERIC_PASS`. If the
 real miss point becomes valid on board, the next HLS fix should target real-map
 lookup/neighbor selection rather than output counters or PCIe/MIG.
 
+Stage 46 narrows that case further by saving the board output as JSON and
+running a host-only lookup mismatch analyzer. First rerun the failing real miss
+point on Orin:
+
+```bash
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py \
+  --hls-manifest fpga/vivado/.build/host_golden_trace_n64/real_miss_point/manifest.json \
+  --ctrl-base 0x1000 \
+  --verify-image-readback \
+  --read-regs-after-config \
+  --dump-output-raw-words \
+  --dump-normal-equation \
+  --save-output-json reports/fpga/host/xdma_smoke/golden_trace_n64/real_miss_point_output.json
+```
+
+Then run the analyzer:
+
+```bash
+python3 fpga/host/xdma_smoke/analyze_lookup_mismatch.py \
+  --golden-dir fpga/golden/localization/frame_000001 \
+  --point-index 19 \
+  --actual-json reports/fpga/host/xdma_smoke/golden_trace_n64/real_miss_point_output.json \
+  --report-dir reports/fpga/host/xdma_smoke/lookup_mismatch_stage46
+```
+
+If the best inferred HLS candidate is outside the CPU legal neighbor set, fix
+the HLS lookup/address path. If it is inside that set, recheck the CPU/Python
+trace before changing HLS.
+
 If bounded golden fails after start/done, run the Stage 41 multi-cell synthetic
 fixture before changing PCIe, XDMA, or MIG. It uses two active blocks, a nonzero
 `first_cell`, nonzero cell indices, and expected counts `1/1/1`:

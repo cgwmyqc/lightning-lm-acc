@@ -96,3 +96,28 @@ ACTUAL_B=[-0.0039378538876799242,-0.022627732469134739,-0.016208068872310272,0.0
 ```
 
 Conclusion: the real valid and real reject paths pass, but a CPU lookup miss at scan index `19`, center `(0,1,3)/23`, is classified as valid on the board. The next debug target is HLS real-map lookup/neighbor selection for this point.
+
+## Stage 46 next command
+
+Rerun the failing real miss point and save the HLS output JSON:
+
+```bash
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py \
+  --hls-manifest fpga/vivado/.build/host_golden_trace_n64/real_miss_point/manifest.json \
+  --ctrl-base 0x1000 \
+  --verify-image-readback \
+  --read-regs-after-config \
+  --dump-output-raw-words \
+  --dump-normal-equation \
+  --save-output-json reports/fpga/host/xdma_smoke/golden_trace_n64/real_miss_point_output.json
+```
+
+Then run the host-only analyzer:
+
+```bash
+python3 fpga/host/xdma_smoke/analyze_lookup_mismatch.py \
+  --golden-dir fpga/golden/localization/frame_000001 \
+  --point-index 19 \
+  --actual-json reports/fpga/host/xdma_smoke/golden_trace_n64/real_miss_point_output.json \
+  --report-dir reports/fpga/host/xdma_smoke/lookup_mismatch_stage46
+```

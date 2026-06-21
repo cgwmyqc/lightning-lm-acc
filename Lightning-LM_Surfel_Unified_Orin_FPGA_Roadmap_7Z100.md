@@ -3303,6 +3303,62 @@ ACTUAL_RESIDUAL_ABS_SUM=0.028110894923855767
 - 复核 `lookup_nearby_type=26` 时 HLS 是否访问了 CPU expected 没有访问或应跳过的 neighbor/cell。
 - 修复 lookup/neighbor selection 后，先 rerun `real_miss_point`，再 rerun n64 golden。
 
+## 46. 2026-06-21 Lookup mismatch host-only 反推
+
+### 目标
+
+- 不重新综合、不重新 bitstream。
+- 基于 Stage 45 的 `real_miss_point` 板上输出，反推 HLS 实际使用了哪个真实 map cell。
+- 判断该 cell 是否属于 CPU 合法 26-neighbor lookup 集合，从而决定下一步是修 HLS lookup/address/packed AXI 读取，还是回查 CPU/Python trace。
+
+### 代码/工具变更
+
+- `fpga/host/xdma_smoke/xdma_smoke.py` 新增 `--save-output-json <path>`：
+  - 保存 actual/expected normal equation。
+  - 保存 raw output words。
+  - 保存 register readback、status/error、run count、manifest path/source point index。
+  - 即使 numeric compare 失败，也会先写 JSON。
+- 新增 `fpga/host/xdma_smoke/analyze_lookup_mismatch.py`：
+  - 输入 `frame_000001` golden、`point-index=19` 和 Orin 保存的 actual JSON。
+  - 从 actual `b/residual` 反推 HLS jacobian/normal。
+  - 扫描真实 `obs_cells`，输出最接近 HLS actual 的候选 cell offset/block/cell/normal/plane_d/residual。
+  - 同时输出 CPU 合法 neighbor probes，用于判断 HLS 命中是否越界。
+- 新增报告入口：`reports/fpga/host/xdma_smoke/lookup_mismatch_stage46/commands.md`。
+
+### Orin 命令
+
+```bash
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py \
+  --hls-manifest fpga/vivado/.build/host_golden_trace_n64/real_miss_point/manifest.json \
+  --ctrl-base 0x1000 \
+  --verify-image-readback \
+  --read-regs-after-config \
+  --dump-output-raw-words \
+  --dump-normal-equation \
+  --save-output-json reports/fpga/host/xdma_smoke/golden_trace_n64/real_miss_point_output.json
+```
+
+预期仍会 numeric FAIL，但必须先看到：
+
+```text
+HOST_IMAGE_READBACK_PASS
+SCAN_COUNT_READBACK=1
+HLS_OUTPUT_JSON=reports/fpga/host/xdma_smoke/golden_trace_n64/real_miss_point_output.json
+```
+
+### Windows / host-only analyzer
+
+```powershell
+python fpga\host\xdma_smoke\analyze_lookup_mismatch.py --golden-dir fpga\golden\localization\frame_000001 --point-index 19 --actual-json reports\fpga\host\xdma_smoke\golden_trace_n64\real_miss_point_output.json --report-dir reports\fpga\host\xdma_smoke\lookup_mismatch_stage46
+python -m py_compile fpga\host\xdma_smoke\analyze_lookup_mismatch.py fpga\host\xdma_smoke\xdma_smoke.py
+```
+
+### 判断规则
+
+- 若 best inferred HLS candidate 不在 CPU legal neighbor set：下一阶段修 HLS lookup/address/packed AXI 读取。
+- 若 best inferred HLS candidate 在 CPU legal neighbor set：回查 CPU/Python expected 和 `SurfelLocBackend` trace。
+- 若无法唯一反推：生成 Stage 46 debug bitstream，把 selected block/cell/offset/debug residual 写入 reserved output words `32..39`。
+
 ### Orin 验收结果 2026-06-21 09:48 CST
 
 XDMA/base gate 通过：
