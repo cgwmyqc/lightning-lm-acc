@@ -3830,6 +3830,73 @@ journalctl -k --no-pager | grep -Ei 'xdma|10ee|7024|0005:01:00|CmpltTO|BAR|probe
 - kernel log 无新的 `Failed to detect XDMA config BAR`、`CmpltTO`、AER fatal 或 XDMA offline。
 - 最大数值误差仍满足当前容差：`abs <= 1e-4` 或 `rel <= 1e-3`。
 
+### Orin 实测结果
+
+2026-06-21 Orin 侧 10 轮 full-frame repeated stability 已 PASS。
+
+基础 gate：
+
+```text
+0005:01:00.0 Serial controller [0700]: Xilinx Corporation Device [10ee:7024]
+Kernel driver in use: xdma
+/dev/xdma0_user /dev/xdma0_h2c_0 /dev/xdma0_c2h_0 present
+enable=1
+```
+
+基础 smoke：
+
+```text
+SHIM_SMOKE_PASS
+REG_SMOKE_PASS
+DDR_SMOKE_PASS
+CTRL_BASE=0x00001000
+VERSION=0x00020002
+```
+
+repeat 输出：
+
+```text
+HOST_IMAGE_WRITE_PASS
+HOST_IMAGE_READBACK_PASS
+SCAN_COUNT_READBACK=6963
+HLS_REPEAT_ITER_PASS 1/10
+HLS_REPEAT_ITER_PASS 2/10
+HLS_REPEAT_ITER_PASS 3/10
+HLS_REPEAT_ITER_PASS 4/10
+HLS_REPEAT_ITER_PASS 5/10
+HLS_REPEAT_ITER_PASS 6/10
+HLS_REPEAT_ITER_PASS 7/10
+HLS_REPEAT_ITER_PASS 8/10
+HLS_REPEAT_ITER_PASS 9/10
+HLS_REPEAT_ITER_PASS 10/10
+HLS_REPEAT_STABILITY_PASS ITERATIONS=10 MAX_ELAPSED_SEC=1.527302 WORST_FIELD=b[4] MAX_ABS=0.0078906 MAX_REL=3.3955e-05
+```
+
+每轮稳定性：
+
+```text
+ITER 01 RUN_COUNT=14->15 COUNTS=6050/911/2 STATUS=0x00000204 ERROR=0x00000000
+ITER 02 RUN_COUNT=15->16 COUNTS=6050/911/2 STATUS=0x00000204 ERROR=0x00000000
+ITER 03 RUN_COUNT=16->17 COUNTS=6050/911/2 STATUS=0x00000204 ERROR=0x00000000
+ITER 04 RUN_COUNT=17->18 COUNTS=6050/911/2 STATUS=0x00000204 ERROR=0x00000000
+ITER 05 RUN_COUNT=18->19 COUNTS=6050/911/2 STATUS=0x00000204 ERROR=0x00000000
+ITER 06 RUN_COUNT=19->20 COUNTS=6050/911/2 STATUS=0x00000204 ERROR=0x00000000
+ITER 07 RUN_COUNT=20->21 COUNTS=6050/911/2 STATUS=0x00000204 ERROR=0x00000000
+ITER 08 RUN_COUNT=21->22 COUNTS=6050/911/2 STATUS=0x00000204 ERROR=0x00000000
+ITER 09 RUN_COUNT=22->23 COUNTS=6050/911/2 STATUS=0x00000204 ERROR=0x00000000
+ITER 10 RUN_COUNT=23->24 COUNTS=6050/911/2 STATUS=0x00000204 ERROR=0x00000000
+```
+
+per-iteration JSON 已保存：
+
+```text
+reports/fpga/host/xdma_smoke/golden_frame_000001_full_stability/full_frame_output_iter_01.json
+...
+reports/fpga/host/xdma_smoke/golden_frame_000001_full_stability/full_frame_output_iter_10.json
+```
+
+本轮 journal 未出现新的 `Failed to detect XDMA config BAR`、`CmpltTO`、AER fatal 或 XDMA offline。Stage 49 功能稳定性 gate 通过，可进入 Orin runtime 最小集成。
+
 ### 失败分支
 
 - 如果某轮 timeout：保留该轮 JSON 和 raw words，重跑 `--hls-repeat 3 --hls-timeout-sec 300`；若仍 timeout，优先查 HLS/MIG 长时间运行或 XDMA/PCIe 链路稳定性。

@@ -46,3 +46,60 @@ journalctl -k --no-pager | grep -Ei 'xdma|10ee|7024|0005:01:00|CmpltTO|BAR|probe
 - Timeout: keep the per-iteration JSON and rerun `--hls-repeat 3 --hls-timeout-sec 300`.
 - Numeric mismatch: compare the failing `full_frame_output_iter_XX.json` with the Stage 48 PASS JSON.
 - AER/CmpltTO: stop runtime integration and debug PCIe link stability first.
+
+## Orin Result 2026-06-21
+
+Base gate:
+
+```text
+Kernel driver in use: xdma
+/dev/xdma0_user /dev/xdma0_h2c_0 /dev/xdma0_c2h_0 present
+enable=1
+SHIM_SMOKE_PASS
+REG_SMOKE_PASS
+DDR_SMOKE_PASS
+```
+
+Repeat result:
+
+```text
+HOST_IMAGE_WRITE_PASS
+HOST_IMAGE_READBACK_PASS
+SCAN_COUNT_READBACK=6963
+HLS_REPEAT_ITER_PASS 1/10
+HLS_REPEAT_ITER_PASS 2/10
+HLS_REPEAT_ITER_PASS 3/10
+HLS_REPEAT_ITER_PASS 4/10
+HLS_REPEAT_ITER_PASS 5/10
+HLS_REPEAT_ITER_PASS 6/10
+HLS_REPEAT_ITER_PASS 7/10
+HLS_REPEAT_ITER_PASS 8/10
+HLS_REPEAT_ITER_PASS 9/10
+HLS_REPEAT_ITER_PASS 10/10
+HLS_REPEAT_STABILITY_PASS ITERATIONS=10 MAX_ELAPSED_SEC=1.527302 WORST_FIELD=b[4] MAX_ABS=0.0078906 MAX_REL=3.3955e-05
+```
+
+Per-iteration summary:
+
+| Iter | Run Count | Counts | Status | Error |
+| ---: | --- | --- | --- | --- |
+| 1 | `14 -> 15` | `6050/911/2` | `0x00000204` | `0x00000000` |
+| 2 | `15 -> 16` | `6050/911/2` | `0x00000204` | `0x00000000` |
+| 3 | `16 -> 17` | `6050/911/2` | `0x00000204` | `0x00000000` |
+| 4 | `17 -> 18` | `6050/911/2` | `0x00000204` | `0x00000000` |
+| 5 | `18 -> 19` | `6050/911/2` | `0x00000204` | `0x00000000` |
+| 6 | `19 -> 20` | `6050/911/2` | `0x00000204` | `0x00000000` |
+| 7 | `20 -> 21` | `6050/911/2` | `0x00000204` | `0x00000000` |
+| 8 | `21 -> 22` | `6050/911/2` | `0x00000204` | `0x00000000` |
+| 9 | `22 -> 23` | `6050/911/2` | `0x00000204` | `0x00000000` |
+| 10 | `23 -> 24` | `6050/911/2` | `0x00000204` | `0x00000000` |
+
+Saved JSON files:
+
+```text
+reports/fpga/host/xdma_smoke/golden_frame_000001_full_stability/full_frame_output_iter_01.json
+...
+reports/fpga/host/xdma_smoke/golden_frame_000001_full_stability/full_frame_output_iter_10.json
+```
+
+Kernel log check found no new `Failed to detect XDMA config BAR`, `CmpltTO`, AER fatal, or XDMA offline entry.
