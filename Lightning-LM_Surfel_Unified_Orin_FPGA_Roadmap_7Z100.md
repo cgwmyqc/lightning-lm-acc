@@ -3359,6 +3359,85 @@ python -m py_compile fpga\host\xdma_smoke\analyze_lookup_mismatch.py fpga\host\x
 - 若 best inferred HLS candidate 在 CPU legal neighbor set：回查 CPU/Python expected 和 `SurfelLocBackend` trace。
 - 若无法唯一反推：生成 Stage 46 debug bitstream，把 selected block/cell/offset/debug residual 写入 reserved output words `32..39`。
 
+## 47. 2026-06-21 Python bounded golden 负坐标编码修正
+
+### 根因修正
+
+Stage 46 的两个 JSON 已复核：
+
+```text
+real_miss_point_output.json:
+source_point_index=19
+actual_counts=1/0/0
+actual_residual=-0.028110894923855767
+raw27=0x0000000000000001
+
+lookup_mismatch_analysis.json:
+point_world=[-0.7580843194753806, 8.47669783546894, 9.978598542972026]
+best_candidate=offset=459031 block=(-1,1,3)/23 score=0
+```
+
+该结果不是 HLS 乱读。真正根因是 Python bounded expected/trace 的 `floor_div` 对负 grid 坐标处理错：
+
+```text
+old Python encode: (0,1,3)/23
+C++/HLS encode:   (-1,1,3)/23
+```
+
+修正 `fpga/vivado/slam_accel_hls_mem_harness/make_golden_mem_images.py` 后，Python 使用整数 floor division，匹配 C++/HLS 行为。
+
+### Windows 本地结果
+
+重新生成 n64 host image 和 trace：
+
+```powershell
+python fpga\host\xdma_smoke\make_golden_host_image.py --golden-dir fpga\golden\localization\frame_000001 --max-points 64 --out-dir fpga\vivado\.build\host_golden_frame_000001_n64 --report-dir reports\fpga\host\xdma_smoke\golden_frame_000001_n64
+python fpga\host\xdma_smoke\make_golden_trace_host_images.py --golden-dir fpga\golden\localization\frame_000001 --max-points 64 --out-dir fpga\vivado\.build\host_golden_trace_n64 --report-dir reports\fpga\host\xdma_smoke\golden_trace_n64
+```
+
+结果：
+
+```text
+HOST_GOLDEN_IMAGE_PASS
+HOST_GOLDEN_TRACE_PASS
+expected_counts=52/12/0
+trace_counts=52/12/0
+```
+
+scan index `19` 修正后：
+
+```text
+class=valid
+reason=inlier
+center=(-1,1,3)/23
+cell_offset=459031
+residual=-0.028110894923855767
+```
+
+### Orin 下一步
+
+不需要重新 bitstream，继续使用当前 Stage 44 `azmig_wrapper.bit`：
+
+```bash
+python3 fpga/host/xdma_smoke/make_golden_host_image.py --golden-dir fpga/golden/localization/frame_000001 --max-points 64 --out-dir fpga/vivado/.build/host_golden_frame_000001_n64 --report-dir reports/fpga/host/xdma_smoke/golden_frame_000001_n64
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_golden_frame_000001_n64/manifest.json --ctrl-base 0x1000 --verify-image-readback --read-regs-after-config --dump-output-raw-words --dump-normal-equation
+```
+
+验收：
+
+```text
+HOST_IMAGE_READBACK_PASS
+SCAN_COUNT_READBACK=64
+HLS_MANIFEST_DONE_PASS
+HLS_MANIFEST_NUMERIC_PASS
+COUNTS=52/12/0
+```
+
+### 下一步
+
+- n64 Orin PASS 后，进入 full `frame_000001` host transaction。
+- full frame expected 继续使用 `loc_expected_obs.bin`，不使用 bounded recompute 覆盖 full expected。
+
 ### Orin 验收结果 2026-06-21 09:48 CST
 
 XDMA/base gate 通过：

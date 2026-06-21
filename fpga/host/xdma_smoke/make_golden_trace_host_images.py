@@ -417,15 +417,24 @@ def build(golden_dir, out_dir, report_dir, max_points):
                 f"{row.get('center_cell_idx')}, residual={row.get('residual')}"
             )
             lines.append(f"  manifest: `{probe_manifests[cls]}`")
+        else:
+            lines.append(f"- {cls}: not present in this bounded trace")
+    command_lines = []
+    for cls in ("valid", "reject", "miss"):
+        if cls in probe_manifests:
+            command_lines.append(
+                "sudo python3 fpga/host/xdma_smoke/xdma_smoke.py "
+                f"--hls-manifest fpga/vivado/.build/host_golden_trace_n64/real_{cls}_point/manifest.json "
+                "--ctrl-base 0x1000 --verify-image-readback --read-regs-after-config "
+                "--dump-output-raw-words --dump-normal-equation"
+            )
     lines.extend(
         [
             "",
             "## Orin commands",
             "",
             "```bash",
-            "sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_golden_trace_n64/real_valid_point/manifest.json --ctrl-base 0x1000 --verify-image-readback --read-regs-after-config --dump-output-raw-words --dump-normal-equation",
-            "sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_golden_trace_n64/real_reject_point/manifest.json --ctrl-base 0x1000 --verify-image-readback --read-regs-after-config --dump-output-raw-words --dump-normal-equation",
-            "sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_golden_trace_n64/real_miss_point/manifest.json --ctrl-base 0x1000 --verify-image-readback --read-regs-after-config --dump-output-raw-words --dump-normal-equation",
+            *command_lines,
             "```",
         ]
     )

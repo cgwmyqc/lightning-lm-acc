@@ -143,9 +143,10 @@ python3 fpga/host/xdma_smoke/analyze_lookup_mismatch.py \
   --report-dir reports/fpga/host/xdma_smoke/lookup_mismatch_stage46
 ```
 
-If the best inferred HLS candidate is outside the CPU legal neighbor set, fix
-the HLS lookup/address path. If it is inside that set, recheck the CPU/Python
-trace before changing HLS.
+Stage 47 note: the old `real_miss_point` failure was traced to Python bounded
+golden `floor_div` handling of negative coordinates. After regenerating the n64
+manifest, the expected bounded counts are `52/12/0` and no real miss point is
+selected from the first 64 points.
 
 If bounded golden fails after start/done, run the Stage 41 multi-cell synthetic
 fixture before changing PCIe, XDMA, or MIG. It uses two active blocks, a nonzero

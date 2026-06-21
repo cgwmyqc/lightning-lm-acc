@@ -146,11 +146,7 @@ def parse_obs_cells(payload, count):
 
 
 def floor_div(value, divisor):
-    q = int(value / divisor)
-    r = value % divisor
-    if r != 0 and ((r < 0) != (divisor < 0)):
-        q -= 1
-    return q
+    return value // divisor
 
 
 def positive_mod(value, divisor):
