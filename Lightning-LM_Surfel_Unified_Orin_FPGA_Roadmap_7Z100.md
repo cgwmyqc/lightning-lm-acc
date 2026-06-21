@@ -3012,3 +3012,98 @@ invalid_flag_only ACTUAL_COUNTS=0/0/1
 - 该结果排除了上一次 stale `/dev/xdma0_*` 对 Stage 43 验收的影响。
 - Stage 43 仍失败在 output count fields：H/b 与 residual datapath 正常，`miss_count` 正常，但 `valid_count/reject_count` 写回仍不符合 expected。
 - 按 failure branch，Stage 41 multi-cell 和 Stage 40 n64 golden 未执行。
+
+## 44. 2026-06-21 HLS output_words 写回修复
+
+### 路线复核结论
+- 已回看 `src/` 路线：当前 FPGA 验证目标对应定位侧 `SurfelLocBackend::ComputeObservation` 与 golden replay。
+- 建图侧 `LaserMapping` 的 FPGA observation/update 当前仍按 guarded fallback 到 CPU 处理，本阶段不扩大到建图更新、online SLAM、solve6x6 或 runtime 接入。
+- Stage 43 失败继续定位在 HLS output counter 写回，不是 PCIe、XDMA、BAR shim、MIG、DDR 或 Orin driver 问题。
+
+### 根因判断
+- 旧 HLS IP 将 `SlamNormalEquation` output 拆成多个 direct field ports。
+- `valid_count` offset `216` 与 `reject_count` offset `220` 位于同一个 64-bit AXI beat 内。
+- Vivado HLS 2018.3 generated RTL 对 direct output offset 按 64-bit word 对齐后，板上无法可靠区分这两个 32-bit 字段，导致 Stage 43 中 `valid/reject` count 写回异常。
+
+### 本次代码/接口变更
+- HLS top output 从 per-field direct ports 改为单一 `uint64_t* output_words`。
+- host 可见 ABI 不变：`SlamNormalEquation` 仍为 320B，`valid/reject/miss/flags` 仍在 offsets `216/220/224/228`。
+- HLS 写回 word layout：
+  - `0..20`: `H_upper[21]`
+  - `21..26`: `b[6]`
+  - `27`: low32=`valid_count`，high32=`reject_count`
+  - `28`: low32=`miss_count`，high32=`flags`
+  - `29..31`: residual summary
+  - `32..39`: reserved/padding 清零
+- 正式 BD 连接改为 `ctrl_0/unified_obs_output_addr -> unified_obs_0/output_words`。
+- `slam_accel_ctrl` 旧 output field address 输出暂保留为兼容信号，但 Stage 44 正式 HLS IP/BD 不再连接这些端口。
+- BAR shim、`slam_accel_ctrl@0x1000`、PL DDR3 layout、MIG、XDMA、lane reversal、host parser 均保持不变。
+
+### Windows 验证命令与结果
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\unified_surfel_observation_core\run_gpp_csim.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\unified_surfel_observation_core\run_vivado_hls_csim.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\unified_surfel_observation_core\run_vivado_hls_csynth.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\unified_surfel_observation_core\run_vivado_hls_export_ip.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_bd_validate.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_project_synth.ps1 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_impl_bitstream.ps1 -Jobs 18
+```
+
+结果：
+- g++ CSim PASS，包含 golden replay 与 residual reject 单点。
+- Vivado HLS CSim PASS，`CSim done with 0 errors`。
+- Vivado HLS C Synthesis PASS。
+- HLS IP export PASS；repo-local IP 中存在 `output_words`，不存在旧 `output_valid_count/output_reject_count/output_miss_count` ports。
+- board BD validate PASS。
+- project synthesis PASS。
+- implementation/bitstream PASS。
+- 新 bitstream 路径：`fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit`。
+- bitstream size：`7237579` bytes。
+- route status：0 routing errors。
+- post-implementation timing：WNS `-0.132 ns`，WHS `0.045 ns`。该 bitstream 可用于功能验证，但仍不是最终 timing-clean 版本。
+- DRC：0 errors；warnings/advisories 继续记录，包含已知 clock-route override 与 HLS DSP pipeline advisories。
+
+### Orin 下一步验收
+先 JTAG 下载新 bitstream：
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\program_bitstream_jtag.ps1 -Bitstream .\fpga\vivado\.build\azmig_impl\azmig.runs\impl_1\azmig_wrapper.bit
+```
+
+然后 Orin 侧执行：
+```bash
+sudo reboot
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --ddr-smoke
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_residual_probe/valid_only/manifest.json --ctrl-base 0x1000 --dump-normal-equation
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_residual_probe/reject_z_only/manifest.json --ctrl-base 0x1000 --dump-normal-equation
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_residual_probe/reject_x_only/manifest.json --ctrl-base 0x1000 --dump-normal-equation
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_residual_probe/miss_only/manifest.json --ctrl-base 0x1000 --dump-normal-equation
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_residual_probe/invalid_flag_only/manifest.json --ctrl-base 0x1000 --dump-normal-equation
+```
+
+验收标准：
+- `SHIM_SMOKE_PASS`、`REG_SMOKE_PASS`、`DDR_SMOKE_PASS`。
+- `valid_only` counts `1/0/0`。
+- `reject_z_only` counts `0/1/0`。
+- `reject_x_only` counts `0/1/0`。
+- `miss_only` counts `0/0/1`。
+- `invalid_flag_only` counts `0/0/1`。
+
+通过后继续：
+- Stage 41 multi-cell：counts 必须 `1/1/1`，输出 `HLS_MANIFEST_NUMERIC_PASS`。
+- Stage 40 n64 golden：counts 必须回到 `14/33/17`，输出 `HLS_MANIFEST_NUMERIC_PASS`。
+
+如果 residual probes 仍失败：
+- 优先检查 Orin 侧是否确实下载了 Stage 44 新 bitstream。
+- 再检查 host 读回的 word27/word28 原始 64-bit 值，确认 HLS output_words 是否按预期写到 `OUTPUT_BASE`。
+- 暂不进入 full golden、online SLAM 或 PCIe x4 性能修正。
+
+Stage 44 JTAG result 2026-06-21:
+
+```text
+JTAG_PROGRAM_PASS
+FPGA_STATE=FPGA is configured
+```
+
+The programmed image is `fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit`. Next action is Orin reboot and the Stage 44 residual probe gate.

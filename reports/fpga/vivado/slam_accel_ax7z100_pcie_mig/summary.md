@@ -1,4 +1,4 @@
-# AX7Z100 PCIe/XDMA + PL DDR3/MIG Board Skeleton
+﻿# AX7Z100 PCIe/XDMA + PL DDR3/MIG Board Skeleton
 
 ## Status
 
@@ -154,3 +154,36 @@ Observed Orin result:
 
 Next step: move to the HLS tiny synthetic host transaction. Do not run full
 online SLAM as the first HLS board test.
+
+## Stage 44 Output Words Fix 2026-06-21
+
+Formal board image regenerated with the Stage 44 HLS IP. The BD now connects `ctrl_0/unified_obs_output_addr` to `unified_obs_0/output_words`; old per-field output direct ports are not connected.
+
+Commands:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_bd_validate.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_project_synth.ps1 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_impl_bitstream.ps1 -Jobs 18
+```
+
+Results:
+
+- BD validate: PASS.
+- Project synthesis: PASS.
+- Implementation/bitstream: PASS.
+- Bitstream: `fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit`.
+- Timing: WNS `-0.132 ns`, WHS `0.045 ns`; use as function-validation bitstream only.
+- Route status: 0 routing errors.
+- DRC: 0 errors; warnings/advisories remain.
+
+Next Orin gate: JTAG program the new bitstream, reboot Orin, run shim/reg, DDR, Stage 42 residual probes, then Stage 41 multi-cell and Stage 40 n64 golden if probes pass.
+
+Stage 44 JTAG result 2026-06-21:
+
+```text
+JTAG_PROGRAM_PASS
+FPGA_STATE=FPGA is configured
+```
+
+The programmed image is `fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit`. Next action is Orin reboot and the Stage 44 residual probe gate.

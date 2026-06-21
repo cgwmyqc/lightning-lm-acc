@@ -18,6 +18,12 @@ state as the source of truth.
   is reached through XDMA AXI-Lite at offset `0x1000`
 - Compute: true HLS IP `unified_surfel_observation_core`
 
+Stage 44 HLS output contract: the board-level BD connects
+`slam_accel_ctrl.unified_obs_output_addr` directly to the HLS `output_words`
+direct port. Older per-field output direct ports are no longer used in this
+formal board image because adjacent 32-bit counters alias on a 64-bit HLS AXI
+word boundary.
+
 The current scripted flow can also run implementation and generate a bitstream.
 Board programming remains a separate manual Windows JTAG step.
 
@@ -34,7 +40,7 @@ address contract.
 | `MAP_HEADER_BASE` | `0x01001000` | HLS `map_header` |
 | `ACTIVE_BLOCKS_BASE` | `0x02000000` | HLS `active_blocks` |
 | `OBS_CELLS_BASE` | `0x10000000` | HLS `obs_cells` |
-| `OUTPUT_BASE` | `0x30000000` | HLS output field base |
+| `OUTPUT_BASE` | `0x30000000` | HLS `output_words` base, host ABI is 320-byte `SlamNormalEquation` |
 
 The matching host-side constants live in
 `fpga/host/xdma_smoke/ax7z100_plddr_layout.h` and

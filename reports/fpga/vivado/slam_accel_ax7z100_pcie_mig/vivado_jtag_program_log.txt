@@ -5,20 +5,18 @@ BITSTREAM_PATH=F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/
 
 initializing
   0%    0MB   0.0MB/s  ??:?? ETA
- 10%    0MB   1.4MB/s  ??:?? ETA
- 17%    1MB   1.3MB/s  ??:?? ETA
- 24%    1MB   1.2MB/s  ??:?? ETA
- 32%    2MB   1.2MB/s  ??:?? ETA
- 39%    2MB   1.1MB/s  ??:?? ETA
- 46%    3MB   1.1MB/s  00:03 ETA
- 53%    4MB   1.1MB/s  00:03 ETA
- 61%    4MB   1.1MB/s  00:02 ETA
- 68%    5MB   1.1MB/s  00:02 ETA
- 76%    5MB   1.1MB/s  00:01 ETA
- 84%    6MB   1.1MB/s  00:01 ETA
- 90%    6MB   1.1MB/s  00:00 ETA
- 96%    7MB   1.1MB/s  00:00 ETA
-100%    7MB   1.0MB/s  00:07
+ 11%    0MB   1.6MB/s  ??:?? ETA
+ 20%    1MB   1.4MB/s  ??:?? ETA
+ 28%    1MB   1.3MB/s  ??:?? ETA
+ 37%    2MB   1.3MB/s  ??:?? ETA
+ 44%    3MB   1.2MB/s  ??:?? ETA
+ 54%    3MB   1.2MB/s  00:02 ETA
+ 62%    4MB   1.2MB/s  00:02 ETA
+ 72%    5MB   1.2MB/s  00:01 ETA
+ 80%    5MB   1.2MB/s  00:01 ETA
+ 90%    6MB   1.2MB/s  00:00 ETA
+ 98%    6MB   1.2MB/s  00:00 ETA
+100%    6MB   1.2MB/s  00:05    
 FPGA_STATE=FPGA is configured
 FPGA_CONFIG_STATUS=CONFIG STATUS: 1175486460
                                CRC ERROR (Bits [0]): 0

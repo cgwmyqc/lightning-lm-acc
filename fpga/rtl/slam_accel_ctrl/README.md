@@ -11,7 +11,7 @@ This version contains:
 - status, error, cycle, and run counters
 - direct `ap_ctrl_hs` wiring for `unified_surfel_observation_core`
 - direct 32-bit base-address outputs for the HLS `m_axi offset=direct` ports
-- derived direct output-field addresses for the unpacked `SlamNormalEquation` HLS output ports
+- a direct output base address for the HLS `output_words` port
 
 It does not instantiate XDMA, block design, DDR interconnect, or the HLS IP. Those are later integration tasks after the register and HLS IP contracts are stable.
 
@@ -54,6 +54,17 @@ unified_obs_map_header_addr[31:0]
 unified_obs_active_blocks_addr[31:0]
 unified_obs_obs_cells_addr[31:0]
 unified_obs_output_addr[31:0]
+```
+
+Stage 44 HLS uses `unified_obs_output_addr` as the single base address for a
+64-bit `output_words` buffer. The host-visible `SlamNormalEquation` ABI remains
+unchanged: 320 bytes with counters at offsets `216/220/224/228`.
+
+The following legacy derived output-field ports remain in `slam_accel_ctrl` for
+source compatibility with older wrapper experiments, but the formal Stage 44
+HLS IP and board BD do not connect them:
+
+```text
 unified_obs_output_h_upper_addr[31:0]
 unified_obs_output_b_addr[31:0]
 unified_obs_output_valid_count_addr[31:0]
@@ -66,7 +77,7 @@ unified_obs_output_residual_max_abs_addr[31:0]
 unified_obs_output_reserved_addr[31:0]
 ```
 
-Vivado HLS 2018.3 can `DATA_PACK` the input structs, so their direct offset ports are single base-address inputs. It cannot `DATA_PACK` `SlamNormalEquation` because the packed width is not a power of two, so the output direct offset ports remain field-based. The derived output addresses use the shared ABI layout:
+Legacy derived output-field layout:
 
 ```text
 output_h_upper:          OUT_ADDR + 0

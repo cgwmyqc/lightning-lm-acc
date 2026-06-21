@@ -47,6 +47,17 @@ bool KeyLess(int32_t x, int32_t y, int32_t z, const ActiveBlockRecord& rhs) {
 
 bool CellValid(const ObsCellFloat64& cell) { return (cell.flags & OBS_CELL_VALID) != 0; }
 
+constexpr int kNormalEquationWords = sizeof(SlamNormalEquation) / sizeof(uint64_t);
+
+uint64_t DoubleToBits(double value) {
+    union DoubleWord {
+        double d;
+        uint64_t u;
+    } word;
+    word.d = value;
+    return word.u;
+}
+
 void CopyCell(const ObsCellFloat64& src, ObsCellFloat64& dst) {
     dst.centroid_x = src.centroid_x;
     dst.centroid_y = src.centroid_y;
@@ -60,25 +71,6 @@ void CopyCell(const ObsCellFloat64& src, ObsCellFloat64& dst) {
     dst.flags = src.flags;
     for (int i = 0; i < 6; ++i) {
         dst.reserved[i] = src.reserved[i];
-    }
-}
-
-void ResetOutput(SlamNormalEquation* output) {
-    for (int i = 0; i < 21; ++i) {
-        output->h_upper[i] = 0.0;
-    }
-    for (int i = 0; i < 6; ++i) {
-        output->b[i] = 0.0;
-    }
-    output->valid_count = 0;
-    output->reject_count = 0;
-    output->miss_count = 0;
-    output->flags = 0;
-    output->residual_sum = 0.0;
-    output->residual_abs_sum = 0.0;
-    output->residual_max_abs = 0.0;
-    for (int i = 0; i < 4; ++i) {
-        output->reserved[i] = 0;
     }
 }
 
@@ -252,14 +244,29 @@ void AccumulateUpper(double h[6][6], double b[6], const double j[6], double resi
     }
 }
 
-void StoreOutput(const double h[6][6], const double b[6], SlamNormalEquation* output) {
+void StoreOutputWords(const double h[6][6], const double b[6], uint32_t valid_count, uint32_t reject_count,
+                      uint32_t miss_count, double residual_sum, double residual_abs_sum, double residual_max_abs,
+                      uint64_t* output_words) {
+    for (int i = 0; i < kNormalEquationWords; ++i) {
+#pragma HLS UNROLL
+        output_words[i] = 0;
+    }
+
     int idx = 0;
     for (int r = 0; r < 6; ++r) {
         for (int c = r; c < 6; ++c) {
-            output->h_upper[idx++] = h[r][c];
+            output_words[idx++] = DoubleToBits(h[r][c]);
         }
-        output->b[r] = b[r];
     }
+    for (int r = 0; r < 6; ++r) {
+        output_words[21 + r] = DoubleToBits(b[r]);
+    }
+
+    output_words[27] = (static_cast<uint64_t>(reject_count) << 32) | static_cast<uint64_t>(valid_count);
+    output_words[28] = static_cast<uint64_t>(miss_count);
+    output_words[29] = DoubleToBits(residual_sum);
+    output_words[30] = DoubleToBits(residual_abs_sum);
+    output_words[31] = DoubleToBits(residual_max_abs);
 }
 
 }  // namespace
@@ -267,9 +274,7 @@ void StoreOutput(const double h[6][6], const double b[6], SlamNormalEquation* ou
 void unified_surfel_observation_core(const SlamAccelScanPoint* scan_points, uint32_t num_points,
                                      const SlamAccelPose* pose, const ActiveMapHeader* map_header,
                                      const ActiveBlockRecord* active_blocks, const ObsCellFloat64* obs_cells,
-                                     SlamNormalEquation* output) {
-    ResetOutput(output);
-
+                                     uint64_t* output_words) {
     double h[6][6] = {{0.0}};
     double b[6] = {0.0};
     uint32_t valid_count = 0;
@@ -319,13 +324,8 @@ void unified_surfel_observation_core(const SlamAccelScanPoint* scan_points, uint
             residual_max_abs = abs_residual;
         }
     }
-    StoreOutput(h, b, output);
-    output->valid_count = valid_count;
-    output->reject_count = reject_count;
-    output->miss_count = miss_count;
-    output->residual_sum = residual_sum;
-    output->residual_abs_sum = residual_abs_sum;
-    output->residual_max_abs = residual_max_abs;
+    StoreOutputWords(h, b, valid_count, reject_count, miss_count, residual_sum, residual_abs_sum, residual_max_abs,
+                     output_words);
 }
 
 }  // namespace hls
@@ -337,19 +337,19 @@ void unified_surfel_observation_core(const lightning::fpga::SlamAccelScanPoint* 
                                      const lightning::fpga::ActiveMapHeader* map_header,
                                      const lightning::fpga::ActiveBlockRecord* active_blocks,
                                      const lightning::fpga::ObsCellFloat64* obs_cells,
-                                     lightning::fpga::SlamNormalEquation* output) {
+                                     uint64_t* output_words) {
 #pragma HLS INTERFACE ap_ctrl_hs port = return
 #pragma HLS INTERFACE m_axi port = scan_points offset = direct bundle = gmem0 depth = 8192
 #pragma HLS INTERFACE m_axi port = pose offset = direct bundle = gmem1 depth = 1
 #pragma HLS INTERFACE m_axi port = map_header offset = direct bundle = gmem1 depth = 1
 #pragma HLS INTERFACE m_axi port = active_blocks offset = direct bundle = gmem2 depth = 8192
 #pragma HLS INTERFACE m_axi port = obs_cells offset = direct bundle = gmem3 depth = 1048576
-#pragma HLS INTERFACE m_axi port = output offset = direct bundle = gmem4 depth = 1
+#pragma HLS INTERFACE m_axi port = output_words offset = direct bundle = gmem4 depth = 40
 #pragma HLS DATA_PACK variable = scan_points
 #pragma HLS DATA_PACK variable = pose
 #pragma HLS DATA_PACK variable = map_header
 #pragma HLS DATA_PACK variable = active_blocks
 #pragma HLS DATA_PACK variable = obs_cells
     lightning::fpga::hls::unified_surfel_observation_core(scan_points, num_points, pose, map_header, active_blocks,
-                                                          obs_cells, output);
+                                                          obs_cells, output_words);
 }

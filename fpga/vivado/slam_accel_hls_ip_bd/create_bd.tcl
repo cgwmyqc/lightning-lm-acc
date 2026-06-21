@@ -2,7 +2,7 @@ set script_dir [file dirname [file normalize [info script]]]
 set repo_root [file normalize [file join $script_dir ".." ".." ".."]]
 set project_dir [file normalize [file join $::env(TEMP) "lightning_slam_accel_hls_ip_bd"]]
 set target_part "xc7z100ffg900-2"
-set hls_ip_dir [file normalize [file join $::env(TEMP) "lightning_hls_unified_obs" "solution1" "impl" "ip"]]
+set hls_ip_dir [file normalize [file join $repo_root "fpga" "vivado" ".build" "hls_unified_obs" "solution1" "impl" "ip"]]
 
 set user_args $argv
 if {[llength $user_args] >= 1 && [string length [lindex $user_args 0]] > 0} {
@@ -57,16 +57,7 @@ connect_bd_net [get_bd_pins ctrl_0/unified_obs_pose_addr] [get_bd_pins unified_o
 connect_bd_net [get_bd_pins ctrl_0/unified_obs_map_header_addr] [get_bd_pins unified_obs_0/map_header]
 connect_bd_net [get_bd_pins ctrl_0/unified_obs_active_blocks_addr] [get_bd_pins unified_obs_0/active_blocks]
 connect_bd_net [get_bd_pins ctrl_0/unified_obs_obs_cells_addr] [get_bd_pins unified_obs_0/obs_cells]
-connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_h_upper_addr] [get_bd_pins unified_obs_0/output_h_upper]
-connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_b_addr] [get_bd_pins unified_obs_0/output_b]
-connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_valid_count_addr] [get_bd_pins unified_obs_0/output_valid_count]
-connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_reject_count_addr] [get_bd_pins unified_obs_0/output_reject_count]
-connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_miss_count_addr] [get_bd_pins unified_obs_0/output_miss_count]
-connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_flags_addr] [get_bd_pins unified_obs_0/output_flags]
-connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_residual_sum_addr] [get_bd_pins unified_obs_0/output_residual_sum]
-connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_residual_abs_sum_addr] [get_bd_pins unified_obs_0/output_residual_abs_sum]
-connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_residual_max_abs_addr] [get_bd_pins unified_obs_0/output_residual_max_abs]
-connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_reserved_addr] [get_bd_pins unified_obs_0/output_reserved]
+connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_addr] [get_bd_pins unified_obs_0/output_words]
 
 foreach pin {
     s_axi_awaddr s_axi_awvalid s_axi_awready s_axi_wdata s_axi_wstrb s_axi_wvalid

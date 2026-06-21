@@ -175,13 +175,31 @@ pose:          m_axi offset=direct, DATA_PACK, direct scalar base address
 map_header:    m_axi offset=direct, DATA_PACK, direct scalar base address
 active_blocks: m_axi offset=direct, DATA_PACK, direct scalar base address
 obs_cells:     m_axi offset=direct, DATA_PACK, direct scalar base address
-output:        m_axi offset=direct, unpacked direct field addresses
+output_words:  m_axi offset=direct, single 64-bit word buffer
 num_points:    direct scalar input
 ```
 
 `slam_accel_ctrl` owns the register bank, validates address high words, drives `ap_start`, and supplies the direct base-address inputs and `num_points`. HLS C++ behavior and the ABI structures stay unchanged.
 
-Vivado HLS 2018.3 cannot `DATA_PACK` `SlamNormalEquation` because the packed width is not a power of two. Therefore the output direct ports are field offsets derived from one `OUT_ADDR` register in `slam_accel_ctrl`.
+Stage 44 changes the output path to a single 64-bit word buffer. Earlier HLS
+exports exposed separate direct field ports for `SlamNormalEquation`, but
+Vivado HLS generated those direct offsets on a 64-bit AXI word boundary. That
+made adjacent 32-bit counters such as `valid_count` and `reject_count` alias on
+the board. The external ABI remains the same 320-byte `SlamNormalEquation`; only
+the HLS port contract changed.
+
+Current output word layout:
+
+```text
+output_words[0..20]:  H_upper[21] as IEEE-754 double bit patterns
+output_words[21..26]: b[6] as IEEE-754 double bit patterns
+output_words[27]:     low32=valid_count, high32=reject_count
+output_words[28]:     low32=miss_count, high32=flags
+output_words[29]:     residual_sum as IEEE-754 double bit pattern
+output_words[30]:     residual_abs_sum as IEEE-754 double bit pattern
+output_words[31]:     residual_max_abs as IEEE-754 double bit pattern
+output_words[32..39]: reserved/padding, zero
+```
 
 Generated RTL direct mapping:
 
@@ -196,16 +214,7 @@ pose <- unified_obs_pose_addr
 map_header <- unified_obs_map_header_addr
 active_blocks <- unified_obs_active_blocks_addr
 obs_cells <- unified_obs_obs_cells_addr
-output_h_upper <- unified_obs_output_h_upper_addr
-output_b <- unified_obs_output_b_addr
-output_valid_count <- unified_obs_output_valid_count_addr
-output_reject_count <- unified_obs_output_reject_count_addr
-output_miss_count <- unified_obs_output_miss_count_addr
-output_flags <- unified_obs_output_flags_addr
-output_residual_sum <- unified_obs_output_residual_sum_addr
-output_residual_abs_sum <- unified_obs_output_residual_abs_sum_addr
-output_residual_max_abs <- unified_obs_output_residual_max_abs_addr
-output_reserved <- unified_obs_output_reserved_addr
+output_words <- unified_obs_output_addr
 ```
 
 The current HLS core has no error output. Until a real error/status channel is added, wrapper/BD integration must tie `unified_obs_error` to `32'd0`.

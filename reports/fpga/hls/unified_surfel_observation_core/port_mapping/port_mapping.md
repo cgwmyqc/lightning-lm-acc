@@ -6,6 +6,11 @@ Date: 2026-06-16
 
 PASS. Generated RTL has the expected `ap_ctrl_hs` control pins and 32-bit direct scalar address inputs. No `s_axi_control` or other `s_axi` system-control entry was found.
 
+Stage 44 update: this 2026-06-16 mapping is historical for the old per-field
+output direct-port IP. The current formal HLS IP uses a single
+`output_words <- unified_obs_output_addr` direct port. Do not use the old
+`output_valid_count/output_reject_count/...` mapping for new board images.
+
 ## Controller to HLS top mapping
 
 ```text
@@ -59,4 +64,3 @@ input  [31:0] output_reserved;
 ```
 
 The generated direct ports are single scalar ports, not AXI-Lite register ports. The memory interfaces remain `m_axi_gmem0..m_axi_gmem4`.
-

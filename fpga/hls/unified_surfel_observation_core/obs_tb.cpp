@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -15,6 +16,8 @@ namespace {
 
 using namespace lightning::fpga;
 using namespace lightning::fpga::hls;
+
+constexpr size_t kNormalEquationWords = sizeof(SlamNormalEquation) / sizeof(uint64_t);
 
 std::string JoinPath(const std::string& dir, const std::string& name) {
     const char last = dir.empty() ? '/' : dir[dir.size() - 1];
@@ -108,6 +111,12 @@ bool ReadActiveMap(const std::string& dir, ActiveMapHeader& map_header, std::vec
         return false;
     }
     return true;
+}
+
+SlamNormalEquation DecodeOutputWords(const uint64_t words[kNormalEquationWords]) {
+    SlamNormalEquation out;
+    std::memcpy(&out, words, sizeof(out));
+    return out;
 }
 
 bool CompareEquation(const SlamNormalEquation& actual, const SlamNormalEquation& expected, double abs_tol,
@@ -210,8 +219,9 @@ bool RunRejectProbe(std::string& report) {
     std::vector<ObsCellFloat64> cells;
     FillRejectProbe(scan, pose, map_header, block, cells);
 
-    SlamNormalEquation actual;
-    unified_surfel_observation_core(&scan, 1, &pose, &map_header, &block, cells.data(), &actual);
+    uint64_t actual_words[kNormalEquationWords] = {};
+    unified_surfel_observation_core(&scan, 1, &pose, &map_header, &block, cells.data(), actual_words);
+    const SlamNormalEquation actual = DecodeOutputWords(actual_words);
 
     const bool counts_ok = actual.valid_count == 0 && actual.reject_count == 1 && actual.miss_count == 0;
     const bool values_ok = actual.h_upper[0] == 0.0 && actual.b[0] == 0.0 && actual.residual_sum == 0.0 &&
@@ -243,9 +253,10 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    SlamNormalEquation actual;
+    uint64_t actual_words[kNormalEquationWords] = {};
     unified_surfel_observation_core(scan.data(), static_cast<uint32_t>(scan.size()), &pose, &map_header, blocks.data(),
-                                    cells.data(), &actual);
+                                    cells.data(), actual_words);
+    const SlamNormalEquation actual = DecodeOutputWords(actual_words);
 
     std::string report;
     const bool pass = CompareEquation(actual, expected, 1e-4, 1e-3, report);
