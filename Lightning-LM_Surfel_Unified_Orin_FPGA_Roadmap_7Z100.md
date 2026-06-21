@@ -4962,3 +4962,233 @@ runtime lock:     concurrent access serializes through /tmp/lightning_xdma_obser
 Stage 57 acceptance should compare a fixed short bag against CPU baseline and
 record trajectory drift, failed frames, fallback frames, observation counts, and
 XDMA elapsed time.
+
+## Stage 57 Result: Joint FPGA_OBS Online Performance Evidence (2026-06-21)
+
+The correct online localization command is:
+
+```bash
+ros2 run lightning run_loc_online --config ./config/default_livox.yaml
+```
+
+With the temporary joint FPGA configuration, logs confirm that both online paths
+really entered FPGA_OBS:
+
+```text
+[LaserMapping] mapping_backend=FPGA_OBS
+[LidarLoc] backend=SURFEL_FPGA_OBS
+```
+
+Therefore the current online slowdown is not caused by a missing config switch.
+The observed issue is performance, not golden correctness.
+
+Profiling inputs:
+
+```text
+data/profile/fpga_obs_trace.csv
+data/profile/loc_fpga_obs_trace.csv
+```
+
+Observed mapping FPGA_OBS profile:
+
+```text
+scan_points mean ~= 840
+active_cells mean ~= 36,597
+h2c_map mean ~= 6 ms
+hls_wait mean ~= 178 ms
+total mean ~= 344 ms
+mutex_wait p95 ~= 1610 ms
+```
+
+Observed localization FPGA_OBS profile:
+
+```text
+scan_points mean ~= 5,756
+active_blocks = 3,719
+active_cells = 952,064
+h2c_map mean ~= 147 ms
+hls_wait mean ~= 1536 ms
+total mean ~= 1852 ms
+first rebuild_window ~= 213 ms
+```
+
+Correlation summary:
+
+```text
+Mapping hls_wait vs scan_points corr ~= 0.775
+Mapping hls_wait vs miss_count corr ~= 0.876
+Localization hls_wait vs scan_points corr ~= 0.908
+Localization hls_wait vs miss_count corr ~= 0.771
+```
+
+Current diagnosis:
+
+```text
+Primary bottleneck: HLS observation lookup / PL DDR random access.
+Secondary bottleneck: PCIe Gen2 x1, mainly visible in H2C map transfer.
+Runtime contention: mapping and localization share one XDMA/HLS runtime lock.
+Backlog symptoms: abnormal dt, lidar stream stall, and unstable trajectory happen after slow processing accumulates.
+```
+
+PCIe x1 still needs to be fixed later, but it is not the first-order cause of
+the current 1Hz-class behavior. For localization, `h2c_map` is about `147 ms`,
+while `hls_wait` is about `1536 ms`; even a large H2C improvement alone cannot
+reach a 30Hz target.
+
+Stage 57 is therefore not accepted as a real joint online bring-up. It is
+accepted only as evidence that the online switches work and that the next work
+must focus on unified observation performance.
+
+## Stage 58: Windows/HLS Unified Observation Performance Optimization (Next)
+
+Stage 58 should be performed on the Windows/Vitis HLS side before continuing
+longer online joint tests.
+
+Goals:
+
+```text
+Keep mapping golden counts at 611/0/171.
+Keep localization golden counts at 6050/911/2.
+Keep H/b within abs <= 1e-4 or rel <= 1e-3.
+Reduce full localization hls_wait by at least 5x, preferably 20x+.
+```
+
+Required HLS performance cases:
+
+```text
+mapping golden frame_000001
+localization golden frame_000001
+synthetic sweep:
+  scan_points = 256/512/1024/2048/4096/6963
+  active_cells = 16k/32k/64k/128k/256k/512k/952k
+```
+
+Add debug counters in reserved output words or a debug build:
+
+```text
+point_count
+neighbor_probe_count
+block_lookup_count
+obs_cell_read_count
+exact_hit / neighbor_hit / miss
+max_probe_per_point
+```
+
+Optimization priorities:
+
+```text
+1. Cache active_blocks in BRAM/URAM.
+2. Reduce 26-neighbor binary searches per point.
+3. Add hash/direct-index assist for block lookup.
+4. Improve obs cell locality and burst behavior.
+5. Check point-loop II, latency, cycles, and resource usage.
+```
+
+If the current lookup ABI cannot reach the required scale, move to ABI v2:
+
+```text
+Orin precomputes candidate block/cell indices.
+FPGA performs only residual, Jacobian, HTH, HTr accumulation.
+```
+
+Stage 58 acceptance requires both mapping and localization XDMA golden replay to
+remain numeric PASS after optimization.
+
+## Stage 59: Orin Online Invocation and Active Window Optimization (Next)
+
+Stage 59 should run in parallel with Stage 58, but it must not hide the HLS
+kernel bottleneck.
+
+Testing rules:
+
+```yaml
+# Mapping-only performance test
+fpga:
+  enable: true
+  mapping:
+    enable: true
+    mode: fpga_obs
+  localization:
+    enable: false
+
+# Localization-only performance test
+fpga:
+  enable: true
+  mapping:
+    enable: false
+  localization:
+    enable: true
+    mode: fpga_obs
+```
+
+Do not use joint mapping + localization FPGA_OBS as the default performance
+test, because it measures XDMA lock contention in addition to kernel time.
+
+Localization active window should be bounded for FPGA_OBS:
+
+```yaml
+lidar_loc:
+  surfel_fpga_max_active_blocks: 256
+  surfel_fpga_max_active_cells: 65536
+  surfel_fpga_window_radius_m: 30.0
+```
+
+These limits should only affect FPGA_OBS. NDT and CPU_SIM defaults should remain
+unchanged.
+
+Online invocation changes to evaluate:
+
+```text
+1. Smoke with max_iterations=1 for both mapping and localization FPGA_OBS.
+2. Reuse one XdmaRuntime instance instead of reconstructing per observation.
+3. Split PrepareFrame(scan/map upload) from RunPoseObservation(pose/output/control only).
+4. Add active map cache so unchanged windows are not rewritten every iteration.
+5. Later evaluate correspondence reuse / one-shot observation.
+```
+
+Stage 59 acceptance:
+
+```text
+mapping-only FPGA_OBS has no second-level mutex_wait tail.
+localization-only FPGA_OBS has no mapping contention.
+active_cells and h2c_map drop substantially.
+hls_wait decreases with active_cells/scan_points.
+No continuous abnormal dt or lidar stream stall.
+```
+
+## Stage 60: Joint Mapping + Localization FPGA_OBS Re-entry Gate
+
+Only re-enter true joint Orin/FPGA mapping + localization bring-up after:
+
+```text
+Stage58 HLS golden replay performance improves substantially.
+Stage59 mapping-only online smoke is stable.
+Stage59 localization-only online smoke is stable.
+No XDMA timeout / CmpltTO / AER fatal in either single-path test.
+```
+
+Joint configuration:
+
+```yaml
+fpga:
+  enable: true
+  mapping:
+    enable: true
+    mode: fpga_obs
+    fallback: cpu
+  localization:
+    enable: true
+    mode: fpga_obs
+    fallback: ndt_omp
+```
+
+Stage 60 acceptance:
+
+```text
+mapping_backend=FPGA_OBS
+localization backend=SURFEL_FPGA_OBS
+XDMA mutex_wait no longer has second-level waits
+Proc Lidar stays below the lidar frame period
+No sustained abnormal dt / lidar stream stall
+CPU baseline vs FPGA_OBS trajectory difference, failed frames, and fallback counts are recorded
+```

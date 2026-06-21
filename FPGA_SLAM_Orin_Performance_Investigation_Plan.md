@@ -1449,4 +1449,274 @@ data/profile/fpga_slam_trace_report.md
 
 ---
 
+## 18. 2026-06-21 正确 `--config` 后 Mapping + Localization FPGA_OBS 在线证据
+
+### 18.1 本轮命令与状态确认
+
+本轮定位在线测试使用了正确参数形式：
+
+```bash
+ros2 run lightning run_loc_online --config ./config/default_livox.yaml
+```
+
+日志确认 mapping 与 localization 都真实进入 FPGA_OBS：
+
+```text
+[LaserMapping] mapping_backend=FPGA_OBS
+[LidarLoc] backend=SURFEL_FPGA_OBS
+```
+
+因此，本轮卡顿不是 `config` 参数未生效，也不是单纯 ROS2 命令写法问题。
+
+本轮主要证据来自：
+
+```text
+data/profile/fpga_obs_trace.csv
+data/profile/loc_fpga_obs_trace.csv
+```
+
+### 18.2 关键统计
+
+Mapping FPGA_OBS：
+
+```text
+rows: 315
+scan_points mean ~= 840
+active_cells mean ~= 36,597
+h2c_map mean ~= 6 ms
+hls_wait mean ~= 178 ms
+total mean ~= 344 ms
+mutex_wait p95 ~= 1610 ms
+```
+
+Localization FPGA_OBS：
+
+```text
+rows: 36
+scan_points mean ~= 5,756
+active_blocks = 3,719
+active_cells = 952,064
+h2c_map mean ~= 147 ms
+hls_wait mean ~= 1536 ms
+total mean ~= 1852 ms
+first rebuild_window ~= 213 ms
+```
+
+相关性：
+
+```text
+Mapping hls_wait vs scan_points corr ~= 0.775
+Mapping hls_wait vs miss_count corr ~= 0.876
+Localization hls_wait vs scan_points corr ~= 0.908
+Localization hls_wait vs miss_count corr ~= 0.771
+```
+
+典型现象：
+
+```text
+localization 一次迭代 hls_wait 可达 0.7~2.2s
+localization 一帧多次迭代后 xdma_total_sum 可达数秒
+mapping 在 localization 持有 XDMA lock 时 mutex_wait 可达 1s+
+随后出现 lidar/imu backlog、abnormal dt、雷达断流
+```
+
+### 18.3 当前结论
+
+当前第一瓶颈是：
+
+```text
+HLS observation kernel 的 lookup / PL DDR 随机访问太慢。
+```
+
+PCIe Gen2 x1 是次级瓶颈：
+
+```text
+localization h2c_map mean ~= 147 ms
+localization hls_wait mean ~= 1536 ms
+```
+
+即使 PCIe 从 x1 修到 x4，只降低 H2C 传输，也无法单独把定位 FPGA_OBS 从秒级降到 30Hz 所需的 33ms 以内。
+
+ROS2 backlog、雷达断流、轨迹发散更像是慢处理导致的结果，不是本轮第一根因。
+
+另外，`run_loc_online` 内部仍运行 LIO front-end；当配置里 mapping 与 localization 同时打开 FPGA_OBS 时，两者会竞争同一 XDMA/HLS runtime lock。此时 mapping 的秒级 `mutex_wait` 不是 mapping kernel 本身变慢，而是排队等待 localization 大任务完成。
+
+### 18.4 整改路线选择
+
+本轮调查优先选择：
+
+```text
+R3: HLS lookup / PL DDR 访问结构优化
+R2/R5: Orin 侧减少重复传输、缩小 active map、减少在线调用次数
+```
+
+暂不把 PCIe x1 作为第一整改项。PCIe x4 后续仍要修，但它不是当前 1Hz/卡顿的主因。
+
+---
+
+## 19. Stage58：Windows/HLS 侧 Unified Observation Kernel 性能整改
+
+Stage58 的目标不是改在线 ROS2 流程，而是先让 golden/replay 上的 HLS kernel 本身显著降耗。
+
+### 19.1 必须新增的 HLS 性能报告
+
+分别覆盖：
+
+```text
+mapping golden frame_000001
+localization golden frame_000001
+synthetic sweep:
+  scan_points = 256/512/1024/2048/4096/6963
+  active_cells = 16k/32k/64k/128k/256k/512k/952k
+```
+
+建议在 HLS output reserved words 或 debug build 中增加 counters：
+
+```text
+point_count
+neighbor_probe_count
+block_lookup_count
+obs_cell_read_count
+exact_hit / neighbor_hit / miss
+max_probe_per_point
+```
+
+### 19.2 优先优化点
+
+1. 将 `active_blocks` 缓存到 BRAM/URAM，避免每点 26-neighbor 都对 DDR 做 block lookup。
+2. 减少每点 26 邻域的二分查找次数。
+3. 对 block lookup 建立 hash/direct-index 辅助结构。
+4. 将 obs cell 访问尽量改成顺序/局部 burst，减少随机 DDR 读。
+5. 检查 point loop pipeline II、cycle、latency、resource。
+
+如果这些仍不能把 full localization observation 降到目标量级，则进入 ABI v2：
+
+```text
+Host/Orin 预计算候选 cell/block 索引
+FPGA 只做 residual / Jacobian / HTH / HTr accumulation
+```
+
+### 19.3 Stage58 验收
+
+```text
+mapping XDMA golden counts 仍为 611/0/171
+localization XDMA golden counts 仍为 6050/911/2
+H/b 仍满足 abs <= 1e-4 或 rel <= 1e-3
+mapping sweep latency 显著下降
+localization full-frame hls_wait 至少下降 5x，最好 20x+
+```
+
+---
+
+## 20. Stage59：Orin 侧在线调用方式整改
+
+Stage59 与 Stage58 并行推进，但不应掩盖 HLS 主瓶颈。
+
+### 20.1 配置规则
+
+测试 mapping 性能：
+
+```yaml
+fpga:
+  enable: true
+  mapping:
+    enable: true
+    mode: fpga_obs
+  localization:
+    enable: false
+```
+
+测试 localization 性能：
+
+```yaml
+fpga:
+  enable: true
+  mapping:
+    enable: false
+  localization:
+    enable: true
+    mode: fpga_obs
+```
+
+不再默认同时打开两者，除非专门测试 XDMA 竞争。
+
+### 20.2 定位 active map 缩小
+
+当前 localization `active_cells = 952064`，不适合在线每帧全量传给 FPGA。建议新增 FPGA_OBS 专用限制：
+
+```yaml
+lidar_loc:
+  surfel_fpga_max_active_blocks: 256
+  surfel_fpga_max_active_cells: 65536
+  surfel_fpga_window_radius_m: 30.0
+```
+
+第一版只影响 FPGA_OBS，不改变 NDT/CPU_SIM 默认路径。
+
+### 20.3 减少重复调用
+
+1. mapping/localization 第一版在线 FPGA_OBS smoke 只允许 `max_iterations=1`。
+2. 后续再做 correspondence reuse / one-shot observation。
+3. 不在每次 ObsModel 中重新构造 runtime。
+4. 将在线流程拆成：
+
+```text
+PrepareFrame(): 写 scan/map
+RunPoseObservation(): 只更新 pose/output/control 并启动 HLS
+```
+
+### 20.4 Stage59 验收
+
+```text
+mapping-only FPGA_OBS 无 XDMA mutex_wait 长尾
+localization-only FPGA_OBS 无 mapping 竞争
+active_cells 明显下降
+h2c_map 明显下降
+hls_wait 随 active_cells/scan_points 下降
+无持续 abnormal dt / 雷达断流
+```
+
+---
+
+## 21. Stage60：重新进入联合建图定位联调
+
+进入条件：
+
+```text
+Stage58 Windows/HLS golden replay 性能明显改善
+Stage59 mapping-only 在线 smoke 稳定
+Stage59 localization-only 在线 smoke 稳定
+两者单独运行时都没有 XDMA timeout / CmpltTO / AER fatal
+```
+
+联合配置：
+
+```yaml
+fpga:
+  enable: true
+  mapping:
+    enable: true
+    mode: fpga_obs
+    fallback: cpu
+  localization:
+    enable: true
+    mode: fpga_obs
+    fallback: ndt_omp
+```
+
+联合验收：
+
+```text
+mapping_backend=FPGA_OBS
+localization backend=SURFEL_FPGA_OBS
+XDMA mutex_wait 不再出现秒级等待
+Proc Lidar 不超过 lidar 周期
+无持续 abnormal dt / 雷达断流
+CPU baseline vs FPGA_OBS 轨迹差异、失败帧、fallback 次数写入 report
+```
+
+在 Stage58/59 之前，不建议继续做 mapping + localization 同时 FPGA_OBS 的在线联调，因为现在测到的主要是 XDMA/HLS 串行竞争和队列积压。
+
+---
+
 # End
