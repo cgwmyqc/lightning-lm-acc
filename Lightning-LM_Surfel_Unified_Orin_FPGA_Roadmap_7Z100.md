@@ -4774,5 +4774,50 @@ mapping XDMA replay PASS, counts 611/0/171
 no Failed to detect XDMA config BAR / CmpltTO / AER fatal
 ```
 
-Online `mapping.mode=fpga_obs` remains disabled until Stage 54 Orin mapping
-XDMA replay passes.
+Orin result:
+
+```text
+XDMA gate: PASS
+  0005:01:00.0 [10ee:7024]
+  Kernel driver in use: xdma
+  /dev/xdma0_user, /dev/xdma0_h2c_0, /dev/xdma0_c2h_0 present
+  enable=1
+  config bar 1, user 0
+  no new Failed to detect XDMA config BAR / CmpltTO / AER fatal
+
+C++ runtime smoke: PASS
+  XDMA_CPP_SHIM_SMOKE_PASS
+  XDMA_CPP_REG_SMOKE_PASS
+  XDMA_CPP_DDR_SMOKE_PASS
+
+localization XDMA replay: PASS
+  scan_count=6963
+  STATUS=0x00000204
+  ERROR=0x00000000
+  RUN_COUNT=0->1
+  SCAN_COUNT_READBACK=6963
+  counts actual=6050/911/2 expected=6050/911/2
+  values_ok=1
+  max_abs=0.0078906
+  max_rel=4.41926e-05
+
+mapping CPU replay: PASS
+  counts actual=611/0/171 expected=611/0/171
+  values_ok=1
+
+mapping XDMA replay: PASS
+  STATUS=0x204
+  ERROR=0x0
+  RUN_COUNT=1->2
+  SCAN_COUNT_READBACK=782
+  counts actual=611/0/171 expected=611/0/171
+  values_ok=1
+  max_abs=0.268571
+  max_rel=1.99295e-05
+  worst_field=H(3,3)
+  MAPPING_XDMA_REPLAY_PASS
+```
+
+Stage 54 hardware replay is complete. Online `mapping.mode=fpga_obs` remains a
+separate integration stage because `LaserMapping::ObsModelFpgaObservation()`
+still falls back to CPU in the current Orin code.

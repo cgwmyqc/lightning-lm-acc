@@ -89,4 +89,66 @@ mapping XDMA replay PASS, counts 611/0/171
 no Failed to detect XDMA config BAR / CmpltTO / AER fatal
 ```
 
-Keep online `mapping.mode=fpga_obs` disabled until mapping XDMA replay passes.
+## Orin Result
+
+Stage 54 Orin validation passed on the current board image.
+
+XDMA gate:
+
+```text
+0005:01:00.0 [10ee:7024]
+Kernel driver in use: xdma
+/dev/xdma0_user present
+/dev/xdma0_h2c_0 present
+/dev/xdma0_c2h_0 present
+enable=1
+config bar 1, user 0
+no new Failed to detect XDMA config BAR / CmpltTO / AER fatal
+```
+
+C++ runtime smoke:
+
+```text
+XDMA_CPP_SHIM_SMOKE_PASS
+XDMA_CPP_REG_SMOKE_PASS
+XDMA_CPP_DDR_SMOKE_PASS
+```
+
+Localization XDMA replay remained aligned:
+
+```text
+scan_count=6963
+expected_counts=6050/911/2
+STATUS=0x00000204
+ERROR=0x00000000
+RUN_COUNT=0->1
+SCAN_COUNT_READBACK=6963
+COUNTS=6050/911/2
+XDMA_CPP_GOLDEN_NUMERIC_PASS
+```
+
+Mapping CPU replay remained aligned:
+
+```text
+counts actual=611/0/171 expected=611/0/171
+MAPPING_CPU_REPLAY_PASS
+```
+
+Mapping XDMA replay now passes with the Stage 54 lookup selection fix:
+
+```text
+STATUS=0x204
+ERROR=0x0
+RUN_COUNT=1->2
+SCAN_COUNT_READBACK=782
+counts actual=611/0/171 expected=611/0/171
+values_ok=1
+max_abs=0.268571
+max_rel=1.99295e-05
+worst_field=H(3,3)
+MAPPING_XDMA_REPLAY_PASS
+```
+
+Stage 54 hardware replay is PASS. Online `mapping.mode=fpga_obs` is still not
+enabled here because `LaserMapping::ObsModelFpgaObservation()` currently falls
+back to CPU; the online mapping integration remains the next separate stage.
