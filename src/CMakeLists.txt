@@ -27,6 +27,7 @@ add_library(${PROJECT_NAME}.libs SHARED
         core/localization/lidar_loc/lidar_loc.cc
         core/localization/surfel_loc/surfel_map_window.cc
         core/localization/surfel_loc/surfel_loc_backend.cc
+        core/localization/surfel_loc/surfel_loc_xdma_backend.cc
         core/localization/surfel_loc/surfel_loc_golden.cc
         core/localization/lidar_loc/pclomp/ndt_omp.cpp
         core/localization/lidar_loc/pclomp/voxel_grid_covariance_omp.cpp

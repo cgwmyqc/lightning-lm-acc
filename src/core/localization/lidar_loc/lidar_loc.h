@@ -12,6 +12,7 @@
 #include "common/timed_pose.h"
 #include "core/localization/localization_result.h"
 #include "core/localization/surfel_loc/surfel_loc_backend.h"
+#include "core/localization/surfel_loc/surfel_loc_xdma_backend.h"
 #include "core/localization/surfel_loc/surfel_map_window.h"
 #include "core/maps/tiled_map.h"
 
@@ -43,6 +44,7 @@ class LidarLoc {
         LocBackendType backend_type_ = LocBackendType::NDT_OMP;
         bool surfel_fallback_to_ndt_ = true;
         SurfelLocOptions surfel_options_;
+        SurfelLocXdmaOptions surfel_xdma_options_;
         bool try_self_extrap_ = false;                 // 是否尝试自己的外推pose
         bool with_height_ = true;                      // 建图期间是否带有高度约束？
         bool force_2d_ = true;                         // 强制在2D空间
@@ -201,6 +203,7 @@ class LidarLoc {
     bool CheckLidarOdomValid(const SE3& current_pose_esti, double& delta_posi);
     bool LocalizeNdt(SE3& pose, double& confidence, CloudPtr input, CloudPtr output, bool use_rough_res);
     bool LocalizeSurfelCpuSim(SE3& pose, double& confidence, CloudPtr input, CloudPtr output);
+    bool LocalizeSurfelFpgaObs(SE3& pose, double& confidence, CloudPtr input, CloudPtr output);
     bool RebuildSurfelWindow();
     void MaybeCaptureGoldenFrame(const CloudPtr& input, const SE3& pose_guess);
 
@@ -218,6 +221,7 @@ class LidarLoc {
 
     std::shared_ptr<SurfelMapWindow> surfel_window_ = nullptr;
     std::shared_ptr<SurfelLocBackend> surfel_backend_ = nullptr;
+    std::shared_ptr<SurfelLocXdmaBackend> surfel_xdma_backend_ = nullptr;
     bool surfel_window_dirty_ = true;
     uint32_t last_surfel_window_version_ = 0;
     int golden_frame_target_index_ = -1;

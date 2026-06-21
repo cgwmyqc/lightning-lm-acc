@@ -59,17 +59,23 @@ profile:
   csv_path: ./data/profile/slam_perf.csv
   log_every_n_frames: 10
 
+# FPGA backend switches.
+# Quick switch guide:
+# - Default CPU/NDT: keep fpga.enable=false.
+# - Localization CPU_SIM: fpga.enable=true, localization.enable=true, localization.mode=cpu_sim.
+# - Localization FPGA observation: fpga.enable=true, localization.enable=true, localization.mode=fpga_obs.
+# - Mapping fpga_obs* modes are reserved until mapping golden/replay and online mapping FPGA_OBS are complete.
 fpga:
-  enable: false
-  mode: cpu
+  enable: false        # Master switch. false forces mapping and localization to CPU paths.
+  mode: cpu            # Global default mode if a subsystem mode is omitted: cpu/cpu_sim/fpga_obs/fpga_full.
   mapping:
-    enable: false
-    mode: cpu_sim
-    fallback: cpu
+    enable: false      # Effective only when fpga.enable=true.
+    mode: cpu_sim      # cpu/cpu_sim are safe today. fpga_obs/fpga_obs_update/fpga_full are future mapping stages.
+    fallback: cpu      # Mapping FPGA failure fallback target.
   localization:
-    enable: false
-    mode: cpu_sim
-    fallback: ndt_omp
+    enable: false      # Effective only when fpga.enable=true.
+    mode: cpu_sim      # cpu_sim: surfel CPU_SIM. fpga_obs: FPGA/HLS observation with CPU iteration/solve.
+    fallback: ndt_omp  # Final localization fallback if surfel CPU_SIM/FPGA_OBS fails.
 
 g2p5:
   esti_floor: false   # 是否动态估计地面
@@ -124,13 +130,19 @@ lidar_loc:
   update_kf_dis: 2.0
   update_lidar_loc_score: 2.5
   loc_on_kf: true
-  surfel_cell_resolution: 0.8
-  surfel_min_support: 3
-  surfel_quality_max: 0.05
-  surfel_lookup_nearby_type: 26
-  surfel_max_iterations: 4
-  surfel_min_valid_count: 300
-  surfel_max_mean_residual: 0.2
+  surfel_cell_resolution: 0.8      # Shared by localization CPU_SIM and FPGA_OBS active map.
+  surfel_min_support: 3            # Minimum points/cell support for surfel validity.
+  surfel_quality_max: 0.05         # Max surfel plane quality accepted by lookup.
+  surfel_lookup_nearby_type: 26    # 26-neighbor lookup; must match FPGA/HLS ABI expectation.
+  surfel_max_iterations: 4         # CPU pose update iterations for CPU_SIM/FPGA_OBS.
+  surfel_min_valid_count: 300      # Quality gate before accepting surfel localization.
+  surfel_max_mean_residual: 0.2    # Quality gate before accepting surfel localization.
+  surfel_fpga_user_dev: /dev/xdma0_user   # Used only by localization mode=fpga_obs.
+  surfel_fpga_h2c_dev: /dev/xdma0_h2c_0
+  surfel_fpga_c2h_dev: /dev/xdma0_c2h_0
+  surfel_fpga_ctrl_base: 0x1000
+  surfel_fpga_timeout_sec: 120.0
+  surfel_fpga_verify_readback: false
   try_self_extrap: false
 maps:
   delete_when_unload: false

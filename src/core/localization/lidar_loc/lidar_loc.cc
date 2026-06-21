@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <execution>
+#include <cstdint>
 #include <string>
 
 #include <pcl/common/transforms.h>
@@ -32,6 +33,22 @@ T GetYamlValue(const YAML::Node& node, const std::string& key, const T& default_
         return node[key].as<T>();
     }
     return default_value;
+}
+
+uint32_t GetYamlUint32(const YAML::Node& node, const std::string& key, uint32_t default_value) {
+    if (!node || !node[key]) {
+        return default_value;
+    }
+    try {
+        const std::string text = node[key].as<std::string>();
+        size_t pos = 0;
+        const unsigned long value = std::stoul(text, &pos, 0);
+        if (pos == text.size() && value <= 0xFFFFFFFFul) {
+            return static_cast<uint32_t>(value);
+        }
+    } catch (const std::exception&) {
+    }
+    return node[key].as<uint32_t>();
 }
 
 const char* BackendName(LocBackendType backend) {
@@ -75,6 +92,7 @@ LidarLoc::LidarLoc(LidarLoc::Options options) : options_(options) {
 
     surfel_window_ = std::make_shared<SurfelMapWindow>(options_.surfel_options_);
     surfel_backend_ = std::make_shared<SurfelLocBackend>(options_.surfel_options_);
+    surfel_xdma_backend_ = std::make_shared<SurfelLocXdmaBackend>(options_.surfel_xdma_options_);
 
     LOG(INFO) << "match name is NDT_OMP"
               << ", MaximumIterations is: " << pcl_ndt_->getMaximumIterations();
@@ -138,6 +156,18 @@ bool LidarLoc::Init(const std::string& config_path) {
         GetYamlValue(lidar_loc_node, "surfel_min_valid_count", options_.surfel_options_.min_valid_count);
     options_.surfel_options_.max_mean_residual =
         GetYamlValue(lidar_loc_node, "surfel_max_mean_residual", options_.surfel_options_.max_mean_residual);
+    options_.surfel_xdma_options_.user_dev =
+        GetYamlValue(lidar_loc_node, "surfel_fpga_user_dev", options_.surfel_xdma_options_.user_dev);
+    options_.surfel_xdma_options_.h2c_dev =
+        GetYamlValue(lidar_loc_node, "surfel_fpga_h2c_dev", options_.surfel_xdma_options_.h2c_dev);
+    options_.surfel_xdma_options_.c2h_dev =
+        GetYamlValue(lidar_loc_node, "surfel_fpga_c2h_dev", options_.surfel_xdma_options_.c2h_dev);
+    options_.surfel_xdma_options_.ctrl_base =
+        GetYamlUint32(lidar_loc_node, "surfel_fpga_ctrl_base", options_.surfel_xdma_options_.ctrl_base);
+    options_.surfel_xdma_options_.timeout_sec =
+        GetYamlValue(lidar_loc_node, "surfel_fpga_timeout_sec", options_.surfel_xdma_options_.timeout_sec);
+    options_.surfel_xdma_options_.verify_readback =
+        GetYamlValue(lidar_loc_node, "surfel_fpga_verify_readback", options_.surfel_xdma_options_.verify_readback);
 
     options_.backend_type_ = LocBackendType::NDT_OMP;
     if (fpga_loc.used_legacy_flat) {
@@ -147,12 +177,14 @@ bool LidarLoc::Init(const std::string& config_path) {
         if (fpga_loc.mode == "cpu_sim" || fpga_loc.mode == "surfel_cpu_sim") {
             options_.backend_type_ = LocBackendType::SURFEL_CPU_SIM;
         } else if (fpga_loc.mode == "fpga_obs" || fpga_loc.mode == "fpga_observation" ||
-                   fpga_loc.mode == "fpga_obs_solve" || fpga_loc.mode == "fpga_solve" ||
                    fpga_loc.mode == "fpga_with_ndt_fallback") {
+            options_.backend_type_ = LocBackendType::SURFEL_FPGA_OBS;
+        } else if (fpga_loc.mode == "fpga_obs_solve" || fpga_loc.mode == "fpga_solve" ||
+                   fpga_loc.mode == "fpga_full") {
             LOG(WARNING) << "[LidarLoc] FPGA localization mode '" << fpga_loc.mode
-                         << "' requested, but XDMA/HLS backend is not implemented in this CPU_SIM milestone. "
-                         << "Falling back to SURFEL_CPU_SIM.";
-            options_.backend_type_ = LocBackendType::SURFEL_CPU_SIM;
+                         << "' requested, but Stage 51 only supports FPGA observation. "
+                         << "Using SURFEL_FPGA_OBS with CPU solve.";
+            options_.backend_type_ = LocBackendType::SURFEL_FPGA_OBS;
         } else if (fpga_loc.mode == "cpu" || fpga_loc.mode == "ndt_omp") {
             options_.backend_type_ = LocBackendType::NDT_OMP;
         } else {
@@ -163,6 +195,7 @@ bool LidarLoc::Init(const std::string& config_path) {
 
     surfel_window_->SetOptions(options_.surfel_options_);
     surfel_backend_->SetOptions(options_.surfel_options_);
+    surfel_xdma_backend_->SetOptions(options_.surfel_xdma_options_);
     surfel_window_dirty_ = true;
 
     lidar_loc::grid_search_angle_step = yaml.GetValue<double>("lidar_loc", "grid_search_angle_step");
@@ -175,7 +208,9 @@ bool LidarLoc::Init(const std::string& config_path) {
               << " surfel_fallback_to_ndt=" << options_.surfel_fallback_to_ndt_
               << " surfel_cell_resolution=" << options_.surfel_options_.cell_resolution
               << " surfel_min_support=" << options_.surfel_options_.min_support
-              << " surfel_lookup_nearby_type=" << options_.surfel_options_.lookup_nearby_type;
+              << " surfel_lookup_nearby_type=" << options_.surfel_options_.lookup_nearby_type
+              << " surfel_fpga_ctrl_base=0x" << std::hex << options_.surfel_xdma_options_.ctrl_base << std::dec
+              << " surfel_fpga_timeout_sec=" << options_.surfel_xdma_options_.timeout_sec;
 
     std::string map_policy = yaml.GetValue<std::string>("maps", "dyn_cloud_policy");
     if (map_policy == "short") {
@@ -919,6 +954,19 @@ bool LidarLoc::Localize(SE3& pose, double& confidence, CloudPtr input, CloudPtr 
         return LocalizeNdt(pose, confidence, input, output, use_rough_res);
     }
 
+    if (options_.backend_type_ == LocBackendType::SURFEL_FPGA_OBS) {
+        SE3 fpga_pose = pose;
+        double fpga_confidence = 0.0;
+        const bool fpga_success = LocalizeSurfelFpgaObs(fpga_pose, fpga_confidence, input, output);
+        if (fpga_success) {
+            pose = fpga_pose;
+            confidence = fpga_confidence;
+            return true;
+        }
+
+        LOG(WARNING) << "[LidarLoc] SURFEL_FPGA_OBS failed, fallback to SURFEL_CPU_SIM";
+    }
+
     SE3 surfel_pose = pose;
     double surfel_confidence = 0.0;
     const bool surfel_success = LocalizeSurfelCpuSim(surfel_pose, surfel_confidence, input, output);
@@ -1022,6 +1070,109 @@ bool LidarLoc::LocalizeSurfelCpuSim(SE3& pose, double& confidence, CloudPtr inpu
               << " max_abs_residual=" << quality.max_abs_residual << " iterations=" << quality.iterations
               << " window=" << quality.active_window_id << ":" << quality.active_window_version
               << " matrix_ok=" << quality.matrix_ok;
+
+    return success;
+}
+
+bool LidarLoc::LocalizeSurfelFpgaObs(SE3& pose, double& confidence, CloudPtr input, CloudPtr output) {
+    if (!surfel_xdma_backend_ || !surfel_window_) {
+        return false;
+    }
+
+    map_->LoadOnPose(pose);
+    if (map_->MapUpdated() || map_->DynamicMapUpdated()) {
+        surfel_window_dirty_ = true;
+    }
+
+    if (surfel_window_dirty_ || surfel_window_->Buffer().Empty()) {
+        if (!RebuildSurfelWindow()) {
+            LOG(WARNING) << "[LidarLoc] failed to build surfel active window for FPGA_OBS";
+            return false;
+        }
+    }
+
+    SE3 pose_out = pose;
+    LocQuality quality;
+    quality.active_window_id = surfel_window_->Buffer().window_id;
+    quality.active_window_version = surfel_window_->Buffer().version;
+    bool matrix_ok = false;
+    double xdma_elapsed_sum = 0.0;
+    double xdma_elapsed_max = 0.0;
+    std::string last_error;
+
+    for (int iter = 0; iter < options_.surfel_options_.max_iterations; ++iter) {
+        LocNormalEquation equation;
+        double elapsed_sec = 0.0;
+        std::string error;
+        if (!surfel_xdma_backend_->ComputeObservation(input, pose_out, surfel_window_->Buffer(), equation, &elapsed_sec,
+                                                      &error)) {
+            last_error = error;
+            LOG(WARNING) << "[LidarLoc] FPGA_OBS ComputeObservation failed at iter=" << iter << ": " << error;
+            break;
+        }
+        xdma_elapsed_sum += elapsed_sec;
+        xdma_elapsed_max = std::max(xdma_elapsed_max, elapsed_sec);
+
+        quality.iterations = iter + 1;
+        quality.valid_count = equation.valid_count;
+        quality.reject_count = equation.reject_count;
+        quality.miss_count = equation.miss_count;
+        quality.mean_residual =
+            equation.valid_count > 0 ? equation.residual_sum / static_cast<double>(equation.valid_count) : 0.0;
+        quality.mean_abs_residual =
+            equation.valid_count > 0 ? equation.residual_abs_sum / static_cast<double>(equation.valid_count) : 0.0;
+        quality.max_abs_residual = equation.residual_max_abs;
+
+        Mat6d hessian = equation.hessian;
+        hessian.diagonal().array() += 1e-6;
+        Eigen::LDLT<Mat6d> ldlt(hessian);
+        if (ldlt.info() != Eigen::Success) {
+            matrix_ok = false;
+            last_error = "LDLT failed";
+            break;
+        }
+
+        const Vec6d dx = ldlt.solve(-equation.gradient);
+        if (!dx.allFinite()) {
+            matrix_ok = false;
+            last_error = "non-finite solve result";
+            break;
+        }
+
+        matrix_ok = true;
+        pose_out = SE3::exp(dx) * pose_out;
+
+        const double trans_step = dx.head<3>().norm();
+        const double rot_step = dx.tail<3>().norm();
+        if (trans_step < options_.surfel_options_.convergence_translation &&
+            rot_step < options_.surfel_options_.convergence_rotation) {
+            quality.converged = true;
+            break;
+        }
+    }
+
+    quality.matrix_ok = matrix_ok;
+    const double inlier_ratio =
+        input && !input->empty() ? static_cast<double>(quality.valid_count) / static_cast<double>(input->size()) : 0.0;
+    quality.score = 4.0 * inlier_ratio / (1.0 + 10.0 * quality.mean_abs_residual);
+
+    const bool success = quality.matrix_ok &&
+                         quality.valid_count >= static_cast<uint32_t>(options_.surfel_options_.min_valid_count) &&
+                         quality.mean_abs_residual <= options_.surfel_options_.max_mean_residual;
+    pose = pose_out;
+    confidence = quality.score;
+
+    if (output != nullptr) {
+        pcl::transformPointCloud(*input, *output, pose.matrix().cast<float>());
+    }
+
+    LOG(INFO) << "[LidarLoc] surfel FPGA_OBS success=" << success << " score=" << quality.score
+              << " valid=" << quality.valid_count << " reject=" << quality.reject_count
+              << " miss=" << quality.miss_count << " mean_abs_residual=" << quality.mean_abs_residual
+              << " max_abs_residual=" << quality.max_abs_residual << " iterations=" << quality.iterations
+              << " window=" << quality.active_window_id << ":" << quality.active_window_version
+              << " matrix_ok=" << quality.matrix_ok << " xdma_elapsed_sum=" << xdma_elapsed_sum
+              << " xdma_elapsed_max=" << xdma_elapsed_max << " last_error=" << last_error;
 
     return success;
 }

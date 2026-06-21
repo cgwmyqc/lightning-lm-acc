@@ -4037,3 +4037,288 @@ reports/fpga/runtime/stage50_cpp_xdma_golden/cpp_full_frame_output_iter_03.json
 - 如果 C++ replay timeout：与 Stage 49 Python repeat JSON 对比，确认是否 C++ register/start/poll 流程差异。
 - 如果 counts/Hb mismatch：优先比较 C++ 写入 ABI buffer 与 Python host image 的分区内容、map header 和 output zero 清零。
 - 如果 C++ PASS：进入 Stage 51 `SURFEL_FPGA_OBS` 在线接入。
+
+## 51. 2026-06-21 Unified Observation Runtime v1 接入 Localization
+
+### 当前阶段目标
+
+- Stage 51 不是“只做定位”的孤立路线，而是统一 observation runtime 的第一条在线接入路径先落到 localization。
+- 复用 Stage 50 已验证的 C++ XDMA runtime，把 `LidarLoc` 中 `SURFEL_CPU_SIM` 的 observation 计算替换为 FPGA/HLS observation。
+- CPU 仍负责迭代、LDLT solve、位姿更新和 fallback。
+- 本阶段不做 mapping 接入、不做 solve6x6、不做 active map cache 优化。
+- Stage 51 PASS 后，再进入 mapping observation golden 和 mapping `FPGA_OBS` 接入。
+
+### 本次代码变更
+
+- 新增 localization FPGA observation backend：
+  - `src/core/localization/surfel_loc/surfel_loc_xdma_backend.h`
+  - `src/core/localization/surfel_loc/surfel_loc_xdma_backend.cc`
+- 新 backend 接口与 CPU_SIM observation 对齐：
+
+```cpp
+bool ComputeObservation(
+  CloudPtr scan_body,
+  const SE3& pose_guess,
+  const ActiveMapBuffer& active_map,
+  LocNormalEquation& out);
+```
+
+- `SurfelLocXdmaBackend` 内部复用 Stage 50 的 `fpga::XdmaRuntime::RunLocalizationObservation`。
+- FPGA 输出的 `SlamNormalEquation` 通过已有 ABI helper 转回 `LocNormalEquation`。
+- `LidarLoc` 后端选择已接入：
+  - `fpga.localization.enable=false`：默认仍为 `NDT_OMP`
+  - `mode=cpu_sim`：仍为 `SURFEL_CPU_SIM`
+  - `mode=fpga_obs`：启用 `SURFEL_FPGA_OBS`
+  - `mode=fpga_obs_solve/fpga_full`：本阶段 warning 后降级到 `SURFEL_FPGA_OBS`
+- FPGA_OBS 失败时按链路 fallback：
+
+```text
+SURFEL_FPGA_OBS -> SURFEL_CPU_SIM -> NDT_OMP
+```
+
+- 所有默认 YAML 增加 XDMA runtime 配置，默认仍不启用 FPGA：
+
+```yaml
+lidar_loc:
+  surfel_fpga_user_dev: /dev/xdma0_user
+  surfel_fpga_h2c_dev: /dev/xdma0_h2c_0
+  surfel_fpga_c2h_dev: /dev/xdma0_c2h_0
+  surfel_fpga_ctrl_base: 0x1000
+  surfel_fpga_timeout_sec: 120.0
+  surfel_fpga_verify_readback: false
+```
+
+### Orin 侧测试命令
+
+Stage 50 C++ golden regression：
+
+```bash
+bash -lc 'source install/setup.bash && sudo -n env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" AMENT_PREFIX_PATH="$AMENT_PREFIX_PATH" PATH="$PATH" ./install/lightning/lib/lightning/run_surfel_loc_xdma_golden \
+  --golden_dir fpga/golden/localization/frame_000001 \
+  --ctrl_base 0x1000 \
+  --timeout_sec 120 \
+  --repeat 1'
+```
+
+FPGA_OBS online/offline smoke：
+
+```bash
+timeout --signal=SIGKILL 60s bash -lc 'source install/setup.bash && sudo -n env LD_LIBRARY_PATH="$LD_LIBRARY_PATH" AMENT_PREFIX_PATH="$AMENT_PREFIX_PATH" PATH="$PATH" ./install/lightning/lib/lightning/run_loc_offline \
+  --input_bag /home/hit/Cheng/FPGA_ACC/mid360_20260313_outdoor_30deg_up_quan_03_0.db3 \
+  --config /tmp/lightning_stage51_fpga_obs.yaml \
+  --map_path /home/hit/Cheng/FPGA_ACC/lightning-lm-acc/data/new_map/ 2>&1' | tee /tmp/lightning_stage51_fpga_obs.log
+```
+
+`/tmp/lightning_stage51_fpga_obs.yaml` 使用：
+
+```yaml
+fpga:
+  enable: true
+  localization:
+    enable: true
+    mode: fpga_obs
+    fallback: ndt_omp
+```
+
+### Orin 实测结果
+
+编译：
+
+```text
+colcon build --packages-select lightning
+PASS
+```
+
+Stage 50 C++ golden regression：
+
+```text
+XDMA_CPP_GOLDEN_NUMERIC_PASS
+scan_count=6963
+COUNTS=6050/911/2
+STATUS=0x00000204
+ERROR=0x00000000
+RUN_COUNT=27->28
+```
+
+默认配置启动检查：
+
+```text
+[LidarLoc] backend=NDT_OMP
+fpga_global_enable=0
+fpga_localization_enable=0
+```
+
+说明：`run_loc_offline` 在打印 `done` 后出现已有的 headless GLX/EGL teardown 断言；该检查已经完成 backend 验证，且未产生受 git 跟踪的地图文件修改。
+
+在线 smoke 确认真实启用 FPGA_OBS：
+
+```text
+[LidarLoc] backend=SURFEL_FPGA_OBS
+```
+
+本次 smoke 统计：
+
+```text
+surfel FPGA_OBS success=1 frames: 35
+localization FPGA_OBS failure/fallback markers: 0
+avg_valid=5866.14
+avg_reject=733.94
+avg_miss=2.17
+avg_mean_abs_residual=0.061855
+avg_xdma_elapsed_sum=4.395882
+max_xdma_elapsed=1.483520
+```
+
+首帧和末帧代表值：
+
+```text
+valid=2613 reject=259 miss=2 mean_abs_residual=0.0689565 xdma_elapsed_sum=2.36148 xdma_elapsed_max=0.594914
+valid=6199 reject=755 miss=1 mean_abs_residual=0.0560587 xdma_elapsed_sum=4.1079 xdma_elapsed_max=1.37255
+```
+
+报告目录：
+
+```text
+reports/fpga/runtime/stage51_online_fpga_obs/
+```
+
+### 当前结论
+
+- Stage 51 第一版在线接入已证明 `mode=fpga_obs` 会真实调用 FPGA/HLS observation，而不是 warning fallback。
+- 默认配置仍保持 CPU/NDT，不改变原定位流程。
+- 当前版本每次 observation 都重写 scan、pose、active map、output buffer；这是 correctness-first 实现，后续再做 active-map cache 和性能优化。
+- 本阶段只接入 localization observation；mapping observation 仍需要先补 golden/replay，再进入 Stage 52。
+
+### 下一步
+
+- Stage 52：补 mapping observation golden 和 host replay。
+- Stage 53：将 unified observation runtime 接入 mapping `FPGA_OBS`。
+- Stage 54：做 localization `CPU_SIM vs FPGA_OBS` 固定短 bag 轨迹、失败帧、残差、耗时对比报告。
+
+## 52. 2026-06-21 Mapping Observation Golden/Replay 准备
+
+### 当前阶段目标
+
+- Stage 52 不直接打开在线 `mapping.mode=fpga_obs`。
+- 先补 mapping observation golden 和 host replay，确认建图侧 observation ABI 与当前 HLS/unified runtime 可以对齐。
+- golden 来源必须是 `LaserMapping::ObsModelCpu` 当前真实建图前端，而不是复用 localization golden 假装通过。
+
+### 本次配置注释更新
+
+所有 `config/default*.yaml` 已补充 FPGA/surfel 切换说明：
+
+```yaml
+fpga:
+  enable: false        # Master switch. false forces mapping and localization to CPU paths.
+  mode: cpu            # Global default mode if a subsystem mode is omitted.
+  mapping:
+    enable: true       # Effective only when fpga.enable=true.
+    mode: cpu_sim      # cpu/cpu_sim are safe today. fpga_obs* modes are future mapping stages.
+    fallback: cpu
+  localization:
+    enable: false
+    mode: cpu_sim      # cpu_sim or fpga_obs.
+    fallback: ndt_omp
+```
+
+`lidar_loc` 下的 surfel 注释也已说明：
+
+```text
+surfel_cell_resolution/min_support/quality_max/lookup_nearby_type
+  Shared by localization CPU_SIM and FPGA_OBS active map.
+
+surfel_max_iterations/min_valid_count/max_mean_residual
+  CPU pose update and quality gates for surfel localization.
+
+surfel_fpga_*
+  Used only by localization mode=fpga_obs.
+```
+
+### Stage 52 需要补的代码入口
+
+当前代码状态：
+
+```text
+LaserMapping::ObsModelFpgaObservation()
+  -> warning
+  -> ObsModelCpu()
+```
+
+因此 Stage 52 的正确顺序是：
+
+1. 新增 `BlockSurfelMap -> ActiveMapBuffer` 导出工具，保持 floor-div/block/cell 编码与 FPGA ABI 一致。
+2. 在 `LaserMapping::ObsModelCpu()` 中增加一次性 capture hook。
+3. 导出 mapping golden source：
+
+```text
+fpga/golden_src/mapping/frame_000001/
+  scan_body_downsampled.pcd
+  mapping_pose.txt
+  active_map.bin
+  expected_mapping_obs.bin
+  frame_meta.yaml
+```
+
+4. 生成 replay golden：
+
+```text
+fpga/golden/mapping/frame_000001/
+  map_scan.bin
+  map_pose.bin
+  map_active_map.bin
+  map_expected_obs.bin
+  map_meta.yaml
+```
+
+5. 新增 mapping replay app，目标 marker：
+
+```text
+MAPPING_GOLDEN_REPLAY_PASS
+```
+
+### 报告目录
+
+```text
+reports/fpga/runtime/stage52_mapping_golden_replay/
+  commands.md
+  summary.md
+```
+
+### 本次验证结果
+
+YAML 解析检查：
+
+```text
+config/default*.yaml parse PASS
+fpga.enable=false for all default configs
+mapping.mode=cpu_sim for all default configs
+localization.mode=cpu_sim for all default configs
+surfel_fpga_ctrl_base=4096
+```
+
+编译：
+
+```text
+colcon build --packages-select lightning
+PASS
+```
+
+收尾检查：
+
+```text
+git diff --check
+PASS
+```
+
+### 验收标准
+
+- 默认配置仍显示：
+
+```text
+[LaserMapping] mapping_backend=CPU fpga_global_enable=0
+[LidarLoc] backend=NDT_OMP fpga_global_enable=0
+```
+
+- `mapping.mode=fpga_obs` 在 Stage 52 结束前仍不得作为在线 PASS 条件。
+- mapping golden 必须来自 `LaserMapping::ObsModelCpu` 的真实建图 observation。
+- host replay 通过后，Stage 53 才允许接入在线 mapping `FPGA_OBS`。
