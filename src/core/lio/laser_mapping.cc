@@ -1,10 +1,14 @@
 #include <pcl/common/transforms.h>
 #include <yaml-cpp/yaml.h>
+#include <array>
+#include <cstdint>
 #include <fstream>
 
 #include "common/fpga_config.h"
 #include "common/options.h"
 #include "core/lightning_math.hpp"
+#include "core/lio/mapping_golden.h"
+#include "core/localization/surfel_loc/surfel_loc_golden.h"
 #include "laser_mapping.h"
 
 #include <opencv2/core/mat.hpp>
@@ -32,6 +36,30 @@ const char* MappingBackendName(MappingBackendType backend) {
             return "FPGA_FULL";
     }
     return "UNKNOWN";
+}
+
+template <typename T>
+T GetYamlValue(const YAML::Node& node, const std::string& key, const T& default_value) {
+    if (node && node[key]) {
+        return node[key].as<T>();
+    }
+    return default_value;
+}
+
+uint32_t GetYamlUint32(const YAML::Node& node, const std::string& key, uint32_t default_value) {
+    if (!node || !node[key]) {
+        return default_value;
+    }
+    try {
+        const std::string text = node[key].as<std::string>();
+        size_t pos = 0;
+        const unsigned long value = std::stoul(text, &pos, 0);
+        if (pos == text.size() && value <= 0xFFFFFFFFul) {
+            return static_cast<uint32_t>(value);
+        }
+    } catch (const std::exception&) {
+    }
+    return node[key].as<uint32_t>();
 }
 
 }  // namespace
@@ -130,6 +158,19 @@ bool LaserMapping::LoadParamsFromYAML(const std::string &yaml_file) {
         }
 
         const FpgaSubsystemConfig fpga_mapping = LoadFpgaSubsystemConfig(yaml, "mapping", "cpu_sim", "cpu");
+        const YAML::Node fpga_runtime = yaml["fpga"] ? yaml["fpga"]["runtime"] : YAML::Node();
+        options_.mapping_xdma_options_.user_dev =
+            GetYamlValue(fpga_runtime, "user_dev", options_.mapping_xdma_options_.user_dev);
+        options_.mapping_xdma_options_.h2c_dev =
+            GetYamlValue(fpga_runtime, "h2c_dev", options_.mapping_xdma_options_.h2c_dev);
+        options_.mapping_xdma_options_.c2h_dev =
+            GetYamlValue(fpga_runtime, "c2h_dev", options_.mapping_xdma_options_.c2h_dev);
+        options_.mapping_xdma_options_.ctrl_base =
+            GetYamlUint32(fpga_runtime, "ctrl_base", options_.mapping_xdma_options_.ctrl_base);
+        options_.mapping_xdma_options_.timeout_sec =
+            GetYamlValue(fpga_runtime, "timeout_sec", options_.mapping_xdma_options_.timeout_sec);
+        options_.mapping_xdma_verify_readback_ =
+            GetYamlValue(fpga_runtime, "verify_readback", options_.mapping_xdma_verify_readback_);
         options_.mapping_fallback_to_cpu_ = fpga_mapping.fallback == "cpu";
         options_.mapping_backend_type_ = MappingBackendType::CPU;
         if (fpga_mapping.effective_enable) {
@@ -151,7 +192,9 @@ bool LaserMapping::LoadParamsFromYAML(const std::string &yaml_file) {
         LOG(INFO) << "[LaserMapping] mapping_backend=" << MappingBackendName(options_.mapping_backend_type_)
                   << " fpga_global_enable=" << fpga_mapping.global_enable
                   << " fpga_mapping_enable=" << fpga_mapping.enable << " fpga_mapping_mode=" << fpga_mapping.mode
-                  << " mapping_fallback_to_cpu=" << options_.mapping_fallback_to_cpu_;
+                  << " mapping_fallback_to_cpu=" << options_.mapping_fallback_to_cpu_
+                  << " mapping_fpga_ctrl_base=0x" << std::hex << options_.mapping_xdma_options_.ctrl_base
+                  << std::dec << " mapping_fpga_timeout_sec=" << options_.mapping_xdma_options_.timeout_sec;
 
         bool use_imu_filter = yaml["fasterlio"]["imu_filter"].as<bool>();
         p_imu_->SetUseIMUFilter(use_imu_filter);
@@ -762,12 +805,95 @@ void LaserMapping::ObsModel(NavState &s, ESKF::CustomObservationModel &obs) {
 }
 
 void LaserMapping::ObsModelFpgaObservation(NavState &s, ESKF::CustomObservationModel &obs) {
-    if (!mapping_backend_warning_logged_) {
-        LOG(WARNING) << "[LaserMapping] FPGA mapping observation backend requested but XDMA/HLS is not implemented yet; "
-                     << "fallback to CPU ObsModel.";
-        mapping_backend_warning_logged_ = true;
+    auto fallback_to_cpu = [&](const std::string& reason) {
+        ++mapping_fpga_fallback_count_;
+        if (options_.mapping_fallback_to_cpu_) {
+            LOG(WARNING) << "[LaserMapping] mapping FPGA_OBS failed -> CPU fallback: " << reason
+                         << " fallback_count=" << mapping_fpga_fallback_count_;
+            ObsModelCpu(s, obs);
+        } else {
+            LOG(ERROR) << "[LaserMapping] mapping FPGA_OBS failed and CPU fallback is disabled: " << reason;
+            obs.valid_ = false;
+        }
+    };
+
+    if (options_.enable_icp_part_) {
+        fallback_to_cpu("enable_icp_part=true but Stage55 FPGA_OBS only supports surfel plane observation");
+        return;
     }
-    ObsModelCpu(s, obs);
+    if (!surfel_map_) {
+        fallback_to_cpu("surfel_map is disabled");
+        return;
+    }
+    if (scan_down_body_ == nullptr || scan_down_body_->empty()) {
+        fallback_to_cpu("empty scan_down_body");
+        return;
+    }
+
+    loc::ActiveMapBuffer active_map;
+    if (!surfel_map_->ExportActiveMap(active_map) || active_map.Empty()) {
+        fallback_to_cpu("failed to export active surfel map");
+        return;
+    }
+
+    std::array<float, 9> extrinsic_R{};
+    std::array<float, 3> extrinsic_T{};
+    const Mat3f extrinsic_R_f = offset_R_lidar_fixed_.cast<float>();
+    const Vec3f extrinsic_T_f = offset_t_lidar_fixed_.cast<float>();
+    for (int r = 0; r < 3; ++r) {
+        for (int c = 0; c < 3; ++c) {
+            extrinsic_R[static_cast<size_t>(r * 3 + c)] = extrinsic_R_f(r, c);
+        }
+        extrinsic_T[static_cast<size_t>(r)] = extrinsic_T_f(r);
+    }
+
+    const auto scan_points = fpga::ToAbiScanPoints(scan_down_body_);
+    const SE3 lidar_pose = mapping_golden::LidarPoseFromState(s, offset_R_lidar_fixed_, offset_t_lidar_fixed_);
+    const auto pose = loc::golden::ToAbiPose(lidar_pose);
+    const auto params = fpga::MakeMappingObservationParams(static_cast<float>(options_.plane_icp_weight_),
+                                                           extrinsic_R, extrinsic_T);
+
+    fpga::XdmaRuntime runtime(options_.mapping_xdma_options_);
+    fpga::XdmaRuntime::RunResult result;
+    std::string error;
+    if (!runtime.RunMappingObservation(scan_points, pose, active_map, params, true,
+                                       options_.mapping_xdma_verify_readback_, result, &error)) {
+        fallback_to_cpu(error);
+        return;
+    }
+
+    const loc::LocNormalEquation equation = loc::golden::FromAbiNormalEquation(result.output);
+    if (equation.valid_count < 20) {
+        fallback_to_cpu("not enough FPGA effective surface points: " + std::to_string(equation.valid_count));
+        return;
+    }
+
+    obs.valid_ = true;
+    obs.HTH_ = equation.hessian;
+    obs.HTr_ = equation.gradient;
+    obs.lidar_residual_mean_ =
+        equation.valid_count > 0 ? equation.residual_abs_sum / static_cast<double>(equation.valid_count) : 0.0;
+    obs.lidar_residual_max_ = equation.residual_max_abs;
+    effect_feat_surf_ = static_cast<int>(equation.valid_count);
+    effect_feat_icp_ = 0;
+    surfel_hit_num_ = static_cast<int>(equation.valid_count);
+    surfel_fallback_num_ = static_cast<int>(equation.miss_count);
+    ++mapping_fpga_success_count_;
+
+    PerfMonitor::SetEffectivePointStats(effect_feat_surf_, effect_feat_icp_);
+    LOG(INFO) << "[LaserMapping] mapping FPGA_OBS success=1"
+              << " success_count=" << mapping_fpga_success_count_
+              << " scan_points=" << scan_points.size()
+              << " active_blocks=" << active_map.blocks.size()
+              << " active_cells=" << active_map.cells.size()
+              << " valid/reject/miss=" << equation.valid_count << "/" << equation.reject_count << "/"
+              << equation.miss_count
+              << " residual_abs_sum=" << equation.residual_abs_sum
+              << " residual_max_abs=" << equation.residual_max_abs
+              << " xdma_elapsed_sec=" << result.elapsed_sec
+              << " status=0x" << std::hex << result.status
+              << " error=0x" << result.error
+              << std::dec << " run_count=" << result.run_count_before << "->" << result.run_count_after;
 }
 
 void LaserMapping::ObsModelCpu(NavState &s, ESKF::CustomObservationModel &obs) {

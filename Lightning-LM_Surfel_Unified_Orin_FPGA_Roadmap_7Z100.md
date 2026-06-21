@@ -4821,3 +4821,144 @@ mapping XDMA replay: PASS
 Stage 54 hardware replay is complete. Online `mapping.mode=fpga_obs` remains a
 separate integration stage because `LaserMapping::ObsModelFpgaObservation()`
 still falls back to CPU in the current Orin code.
+
+## Stage 55: Online Mapping FPGA_OBS Integration (2026-06-21)
+
+Stage 55 connects the already validated mapping XDMA runtime to the online
+`LaserMapping` observation path.
+
+Implementation:
+
+```text
+LaserMapping::ObsModelFpgaObservation()
+  -> scan_down_body_
+  -> BlockSurfelMap::ExportActiveMap()
+  -> XdmaRuntime::RunMappingObservation()
+  -> SlamNormalEquation -> ESKF HTH/HTr
+  -> CPU EKF update
+```
+
+The first online version only covers surfel plane observation. If
+`enable_icp_part=true`, or if active-map export / XDMA / HLS fails, the code logs
+`mapping FPGA_OBS failed -> CPU fallback` and falls back to `ObsModelCpu()` when
+`fpga.mapping.fallback=cpu`.
+
+Configuration was unified with a shared runtime block:
+
+```yaml
+fpga:
+  runtime:
+    user_dev: /dev/xdma0_user
+    h2c_dev: /dev/xdma0_h2c_0
+    c2h_dev: /dev/xdma0_c2h_0
+    ctrl_base: 0x1000
+    timeout_sec: 120.0
+    verify_readback: false
+```
+
+`fpga.runtime.*` is now used by both localization and mapping FPGA_OBS paths.
+The old `lidar_loc.surfel_fpga_*` keys remain as localization compatibility
+defaults.
+
+Stage 55 also adds XDMA observation transaction locking:
+
+```text
+process-local mutex
+cross-process file lock: /tmp/lightning_xdma_observation.lock
+```
+
+This is required because localization and mapping share the same PL DDR layout
+and control registers. Concurrent two-process golden replay now serializes and
+passes:
+
+```text
+localization XDMA replay: PASS, counts 6050/911/2, RUN_COUNT=681->682
+mapping XDMA replay: PASS, counts 611/0/171, RUN_COUNT=682->683
+```
+
+Build:
+
+```text
+colcon build --packages-select lightning: PASS
+```
+
+## Stage 56: Mapping FPGA_OBS Online Smoke (2026-06-21)
+
+Stage 56 runs a mapping-only online smoke using a temporary config:
+
+```yaml
+fpga:
+  enable: true
+  mapping:
+    enable: true
+    mode: fpga_obs
+    fallback: cpu
+  localization:
+    enable: false
+fasterlio:
+  enable_icp_part: false
+```
+
+Observed:
+
+```text
+[LaserMapping] mapping_backend=FPGA_OBS
+mapping FPGA_OBS success frames: 672
+mapping FPGA_OBS fallback frames: 0
+error markers: 0
+xdma_elapsed_sec_min=0.073607
+xdma_elapsed_sec_mean=0.110806
+xdma_elapsed_sec_max=0.140664
+run_count_first=5->6
+run_count_last=676->677
+```
+
+Representative frames:
+
+```text
+success_count=1   scan_points=812 active_blocks=66  active_cells=16896 valid/reject/miss=533/0/279 status=0x204 error=0x0
+success_count=672 scan_points=734 active_blocks=120 active_cells=30720 valid/reject/miss=656/0/78  status=0x204 error=0x0
+```
+
+The process was manually interrupted after sufficient smoke coverage to avoid
+running the full bag. No new XDMA config BAR / CmpltTO / AER fatal markers were
+observed.
+
+Stage 56 clears the gate for Stage 57 joint mapping + localization FPGA_OBS
+testing.
+
+## Stage 57: Joint Mapping + Localization FPGA_OBS Bring-up (Next)
+
+Stage 57 is now allowed to start, but it should remain a short-bag bring-up
+stage, not a long-run production test.
+
+Temporary joint config:
+
+```yaml
+fpga:
+  enable: true
+  mapping:
+    enable: true
+    mode: fpga_obs
+    fallback: cpu
+  localization:
+    enable: true
+    mode: fpga_obs
+    fallback: ndt_omp
+fasterlio:
+  enable_icp_part: false
+```
+
+Required checks:
+
+```text
+mapping log:      mapping_backend=FPGA_OBS and mapping FPGA_OBS success=1
+localization log: backend=SURFEL_FPGA_OBS and surfel FPGA_OBS success=1
+fallback counts:  recorded separately for mapping and localization
+XDMA health:      no /dev/xdma* loss, no Failed to detect XDMA config BAR, no CmpltTO, no AER fatal
+runtime lock:     concurrent access serializes through /tmp/lightning_xdma_observation.lock
+```
+
+Stage 57 acceptance should compare a fixed short bag against CPU baseline and
+record trajectory drift, failed frames, fallback frames, observation counts, and
+XDMA elapsed time.

@@ -168,6 +168,19 @@ bool LidarLoc::Init(const std::string& config_path) {
         GetYamlValue(lidar_loc_node, "surfel_fpga_timeout_sec", options_.surfel_xdma_options_.timeout_sec);
     options_.surfel_xdma_options_.verify_readback =
         GetYamlValue(lidar_loc_node, "surfel_fpga_verify_readback", options_.surfel_xdma_options_.verify_readback);
+    const YAML::Node fpga_runtime = yaml_node["fpga"] ? yaml_node["fpga"]["runtime"] : YAML::Node();
+    options_.surfel_xdma_options_.user_dev =
+        GetYamlValue(fpga_runtime, "user_dev", options_.surfel_xdma_options_.user_dev);
+    options_.surfel_xdma_options_.h2c_dev =
+        GetYamlValue(fpga_runtime, "h2c_dev", options_.surfel_xdma_options_.h2c_dev);
+    options_.surfel_xdma_options_.c2h_dev =
+        GetYamlValue(fpga_runtime, "c2h_dev", options_.surfel_xdma_options_.c2h_dev);
+    options_.surfel_xdma_options_.ctrl_base =
+        GetYamlUint32(fpga_runtime, "ctrl_base", options_.surfel_xdma_options_.ctrl_base);
+    options_.surfel_xdma_options_.timeout_sec =
+        GetYamlValue(fpga_runtime, "timeout_sec", options_.surfel_xdma_options_.timeout_sec);
+    options_.surfel_xdma_options_.verify_readback =
+        GetYamlValue(fpga_runtime, "verify_readback", options_.surfel_xdma_options_.verify_readback);
 
     options_.backend_type_ = LocBackendType::NDT_OMP;
     if (fpga_loc.used_legacy_flat) {

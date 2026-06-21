@@ -12,6 +12,7 @@
 #include "common/imu.h"
 #include "common/keyframe.h"
 #include "common/options.h"
+#include "core/fpga/xdma_runtime.h"
 #include "core/block_surfel_map/block_surfel_map.h"
 #include "core/ivox3d/ivox3d.h"
 #include "core/lio/eskf.hpp"
@@ -65,6 +66,8 @@ class LaserMapping {
         double surfel_fallback_warn_ratio_ = 0.05;
         MappingBackendType mapping_backend_type_ = MappingBackendType::CPU;
         bool mapping_fallback_to_cpu_ = true;
+        fpga::XdmaRuntime::Options mapping_xdma_options_;
+        bool mapping_xdma_verify_readback_ = false;
     };
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -254,6 +257,8 @@ class LaserMapping {
     int surfel_hit_num_ = 0, surfel_fallback_num_ = 0;
     SurfelLookupStats surfel_lookup_stats_;
     bool mapping_backend_warning_logged_ = false;
+    uint64_t mapping_fpga_success_count_ = 0;
+    uint64_t mapping_fpga_fallback_count_ = 0;
     int mapping_golden_target_frame_index_ = -1;
     int mapping_golden_valid_frame_count_ = 0;
     uint64_t mapping_golden_current_scan_serial_ = 0;

@@ -3,6 +3,7 @@
 #include "core/fpga/xdma_runtime.h"
 
 #include <fcntl.h>
+#include <sys/file.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -10,6 +11,7 @@
 #include <array>
 #include <chrono>
 #include <cstring>
+#include <mutex>
 #include <sstream>
 #include <thread>
 
@@ -27,6 +29,7 @@ constexpr uint32_t kShimScratch1Offset = 0x00Cu;
 
 constexpr uint32_t kStatusDone = 1u << 2u;
 constexpr uint32_t kStatusError = 1u << 3u;
+std::mutex g_observation_transaction_mutex;
 
 struct Region {
     const char* name;
@@ -77,6 +80,45 @@ class Fd {
 
    private:
     int fd_ = -1;
+};
+
+class FileLock {
+   public:
+    FileLock() = default;
+    ~FileLock() { Unlock(); }
+
+    FileLock(const FileLock&) = delete;
+    FileLock& operator=(const FileLock&) = delete;
+
+    bool Lock(const char* path, std::string* error) {
+        fd_ = ::open(path, O_CREAT | O_RDWR | O_CLOEXEC, 0666);
+        if (fd_ < 0) {
+            SetError(error, std::string("failed to open XDMA lock file ") + path + ": " + std::strerror(errno));
+            return false;
+        }
+        if (::flock(fd_, LOCK_EX) != 0) {
+            SetError(error, std::string("failed to lock XDMA lock file ") + path + ": " + std::strerror(errno));
+            Unlock();
+            return false;
+        }
+        locked_ = true;
+        return true;
+    }
+
+    void Unlock() {
+        if (fd_ >= 0) {
+            if (locked_) {
+                ::flock(fd_, LOCK_UN);
+                locked_ = false;
+            }
+            ::close(fd_);
+            fd_ = -1;
+        }
+    }
+
+   private:
+    int fd_ = -1;
+    bool locked_ = false;
 };
 
 bool ReadExact(int fd, void* data, size_t size, uint64_t offset, std::string* error, const std::string& label) {
@@ -296,6 +338,12 @@ bool RunObservationImpl(const XdmaRuntime::Options& options, uint32_t mode,
                         const loc::ActiveMapBuffer& active_map, const SlamAccelObservationParams& params,
                         bool write_full_image, bool verify_readback, XdmaRuntime::RunResult& result,
                         std::string* error) {
+    std::lock_guard<std::mutex> lock(g_observation_transaction_mutex);
+    FileLock file_lock;
+    if (!file_lock.Lock("/tmp/lightning_xdma_observation.lock", error)) {
+        return false;
+    }
+
     Fd user;
     Fd h2c;
     Fd c2h;

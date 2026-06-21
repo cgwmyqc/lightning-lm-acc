@@ -64,13 +64,21 @@ profile:
 # - Default CPU/NDT: keep fpga.enable=false.
 # - Localization CPU_SIM: fpga.enable=true, localization.enable=true, localization.mode=cpu_sim.
 # - Localization FPGA observation: fpga.enable=true, localization.enable=true, localization.mode=fpga_obs.
-# - Mapping fpga_obs* modes are reserved until mapping golden/replay and online mapping FPGA_OBS are complete.
+# - Mapping FPGA observation: fpga.enable=true, mapping.enable=true, mapping.mode=fpga_obs.
+# - fpga.runtime is shared by localization and mapping FPGA_OBS paths.
 fpga:
   enable: false        # Master switch. false forces mapping and localization to CPU paths.
   mode: cpu            # Global default mode if a subsystem mode is omitted: cpu/cpu_sim/fpga_obs/fpga_full.
+  runtime:
+    user_dev: /dev/xdma0_user
+    h2c_dev: /dev/xdma0_h2c_0
+    c2h_dev: /dev/xdma0_c2h_0
+    ctrl_base: 0x1000
+    timeout_sec: 120.0
+    verify_readback: false
   mapping:
     enable: false      # Effective only when fpga.enable=true.
-    mode: cpu_sim      # cpu/cpu_sim are safe today. fpga_obs/fpga_obs_update/fpga_full are future mapping stages.
+    mode: cpu_sim      # cpu/cpu_sim use CPU. fpga_obs uses FPGA/HLS observation with CPU EKF update.
     fallback: cpu      # Mapping FPGA failure fallback target.
   localization:
     enable: false      # Effective only when fpga.enable=true.
