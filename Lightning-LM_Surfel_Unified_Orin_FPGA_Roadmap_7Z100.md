@@ -3213,6 +3213,96 @@ sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.buil
 - 只有确认需要修改 HLS/BD 后，才进入 HLS CSim/CSynth/IP export 与正式 implementation。
 - 当前 full board bitstream 30-60 分钟属于可预期范围：fresh Vivado project + XDMA + MIG + HLS floating-point IP 很重；Vivado 2018.3 即使外层 `-Jobs 18`，route/timing/bitgen 的部分内部步骤仍可能只用少量 CPU。
 
+### Orin 验收结果 2026-06-21 10:19 CST
+
+XDMA/base gate 通过：
+
+```text
+0005:01:00.0 [10ee:7024]
+Kernel driver in use: xdma
+/dev/xdma0_user
+/dev/xdma0_h2c_0
+/dev/xdma0_c2h_0
+/sys/bus/pci/devices/0005:01:00.0/enable = 1
+SHIM_SMOKE_PASS
+REG_SMOKE_PASS
+DDR_SMOKE_PASS
+```
+
+当前 journal 窗口没有新的 `Failed to detect XDMA config BAR`、`CmpltTO` 或 AER recovery failure。
+
+n64 diagnostic 结果：
+
+```text
+HOST_IMAGE_READBACK_PASS
+SCAN_COUNT_READBACK=64
+HLS_MANIFEST_START_PASS
+HLS_MANIFEST_DONE_PASS
+STATUS=0x00000204
+ERROR=0x00000000
+EXPECTED_COUNTS=14/33/17
+ACTUAL_COUNTS=52/12/0
+```
+
+关键 register readback：
+
+```text
+SCAN_ADDR_LO_READBACK=0x00000000
+POSE_ADDR_LO_READBACK=0x01000000
+MAP_HEADER_ADDR_LO_READBACK=0x01001000
+ACTIVE_BLOCKS_ADDR_LO_READBACK=0x02000000
+OBS_CELLS_ADDR_LO_READBACK=0x10000000
+OUT_ADDR_LO_READBACK=0x30000000
+SCAN_COUNT_READBACK=0x00000040
+```
+
+raw output words 中 count layout 与 Stage 44 ABI 一致：
+
+```text
+OUTPUT_WORD[27]=0x0000000c00000034  # valid=52, reject=12
+OUTPUT_WORD[28]=0x0000000000000000  # miss=0, flags=0
+```
+
+trace generation 通过：
+
+```text
+HOST_GOLDEN_TRACE_PASS
+trace_counts=14/33/17
+expected_counts=14/33/17
+```
+
+真实单点结果：
+
+| Case | Scan index | Expected | Actual | Result |
+| --- | ---: | ---: | ---: | --- |
+| `real_valid_point` | 0 | `1/0/0` | `1/0/0` | PASS |
+| `real_reject_point` | 1 | `0/1/0` | `0/1/0` | PASS |
+| `real_miss_point` | 19 | `0/0/1` | `1/0/0` | FAIL |
+
+`real_miss_point` 失败摘要：
+
+```text
+center=(0,1,3)/23
+reason=lookup_miss
+HOST_IMAGE_READBACK_PASS
+SCAN_COUNT_READBACK=1
+OUTPUT_WORD[27]=0x0000000000000001
+OUTPUT_WORD[28]=0x0000000000000000
+ACTUAL_RESIDUAL_SUM=-0.028110894923855767
+ACTUAL_RESIDUAL_ABS_SUM=0.028110894923855767
+```
+
+结论：
+- Stage 45 排除了 n64 host image 写坏、PL DDR3 readback、register base 配置和 `SCAN_COUNT=64` 写错。
+- 真实 valid/reject 单点均 PASS，说明真实 active map 的基本读路径、residual threshold 和 Stage 44 output count 写回仍正常。
+- 真实 miss 单点在板上变成 valid，说明当前阻塞点是 HLS real-map lookup/neighbor selection 与 CPU expected 不一致。
+- 暂不进入 full frame、online SLAM、mapping update、solve6x6、PCIe x4 性能修正或重新综合。
+
+下一步建议：
+- Windows/HLS 侧优先为 scan index `19` 增加 lookup trace，对比 CPU 与 HLS 的 center block/cell、26-neighbor 遍历顺序、cell index 解码、block valid 判断和 flags 判断。
+- 复核 `lookup_nearby_type=26` 时 HLS 是否访问了 CPU expected 没有访问或应跳过的 neighbor/cell。
+- 修复 lookup/neighbor selection 后，先 rerun `real_miss_point`，再 rerun n64 golden。
+
 ### Orin 验收结果 2026-06-21 09:48 CST
 
 XDMA/base gate 通过：

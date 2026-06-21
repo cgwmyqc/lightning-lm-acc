@@ -174,3 +174,66 @@ ACTUAL_B=[-0.70513185009762902,-0.42457526330019862,-0.079899540579997208,2.0415
 ```
 
 Conclusion: Stage 44 fixes the synthetic output counter issue, but n64 real golden still fails. The remaining issue is now focused on real active-map lookup/classification or expected-vs-HLS lookup logic: HLS returns no misses (`miss=0`) while CPU expected has `miss=17`, and HLS counts too many valid points.
+
+## Stage 45 Orin Diagnostic 2026-06-21 10:19
+
+The n64 transaction was rerun with image readback, register readback, raw output words, and normal-equation dump:
+
+```bash
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_golden_frame_000001_n64/manifest.json --ctrl-base 0x1000 --verify-image-readback --read-regs-after-config --dump-output-raw-words --dump-normal-equation
+```
+
+Image readback passed for every segment, including the full `obs_cells.bin` payload:
+
+```text
+HOST_IMAGE_READBACK_PASS
+scan_points.bin sha256=be192efd2fdfc6e98eb7bee8d54fba79f109aba21bfb87e93bcb1e594828eae2
+pose.bin sha256=be72a104b86c7ff877c0b1b0991b92478781c5c72373532375a77b11ca9ab2d8
+map_header.bin sha256=b3278cff43a3137f61d306e7224bfa833aa907aa78fa52e8ad86fb34ab6e7fbe
+active_blocks.bin sha256=6fb2ba1ea213840cacc6e710ddd2a6bc83d3af80887cde1c131fb57eff7f05aa
+obs_cells.bin sha256=6e4dcbbdebd851e86f62cde58d6c8959803966dbcec60c80e1fb5699544f34f8
+output_zero.bin sha256=7b6436b0c98f62380866d9432c2af0ee08ce16a171bda6951aecd95ee1307d61
+```
+
+Controller register readback matched the expected PL DDR layout:
+
+```text
+SCAN_ADDR_LO_READBACK=0x00000000
+POSE_ADDR_LO_READBACK=0x01000000
+MAP_HEADER_ADDR_LO_READBACK=0x01001000
+ACTIVE_BLOCKS_ADDR_LO_READBACK=0x02000000
+OBS_CELLS_ADDR_LO_READBACK=0x10000000
+OUT_ADDR_LO_READBACK=0x30000000
+SCAN_COUNT_READBACK=64
+STATUS_READBACK=0x00000201
+```
+
+HLS still completed but failed numeric comparison:
+
+```text
+HLS_MANIFEST_START_PASS
+HLS_MANIFEST_DONE_PASS
+STATUS=0x00000204
+ERROR=0x00000000
+RUN_COUNT=7 -> 8
+EXPECTED_COUNTS=14/33/17
+ACTUAL_COUNTS=52/12/0
+```
+
+Raw output count words:
+
+```text
+OUTPUT_WORD[27]=0x0000000c00000034
+OUTPUT_WORD[28]=0x0000000000000000
+```
+
+Actual normal-equation summary:
+
+```text
+ACTUAL_RESIDUAL_SUM=0.44294171614182876
+ACTUAL_RESIDUAL_ABS_SUM=2.2681722148352881
+ACTUAL_RESIDUAL_MAX_ABS=0.29527878422266252
+ACTUAL_B=[-0.70513185009762902,-0.42457526330019862,-0.079899540579997208,2.0415549834711988,-5.1626863669195044,2.7286869496388286]
+```
+
+Conclusion: Stage 45 rules out host image corruption and register misconfiguration for the n64 mismatch. The remaining failure is in real active-map lookup/classification.
