@@ -3438,6 +3438,67 @@ COUNTS=52/12/0
 - n64 Orin PASS 后，进入 full `frame_000001` host transaction。
 - full frame expected 继续使用 `loc_expected_obs.bin`，不使用 bounded recompute 覆盖 full expected。
 
+### Stage 47 Orin 实测结果 2026-06-21
+
+XDMA/base gate 通过：
+
+```text
+0005:01:00.0 [10ee:7024]
+Kernel driver in use: xdma
+/dev/xdma0_user
+/dev/xdma0_h2c_0
+/dev/xdma0_c2h_0
+/sys/bus/pci/devices/0005:01:00.0/enable = 1
+SHIM_SMOKE_PASS
+REG_SMOKE_PASS
+DDR_SMOKE_PASS
+```
+
+重新生成 n64 host image 和 trace：
+
+```text
+HOST_GOLDEN_IMAGE_PASS
+expected_counts=52/12/0
+HOST_GOLDEN_TRACE_PASS
+trace_counts=52/12/0
+expected_counts=52/12/0
+```
+
+Orin n64 transaction 通过：
+
+```text
+HOST_IMAGE_READBACK_PASS
+SCAN_COUNT_READBACK=64
+HLS_MANIFEST_START_PASS
+HLS_MANIFEST_DONE_PASS
+HLS_MANIFEST_NUMERIC_PASS
+STATUS=0x00000204
+ERROR=0x00000000
+RUN_COUNT=12 -> 13
+COUNTS=52/12/0
+```
+
+raw output count words：
+
+```text
+OUTPUT_WORD[27]=0x0000000c00000034  # valid=52, reject=12
+OUTPUT_WORD[28]=0x0000000000000000  # miss=0, flags=0
+```
+
+actual summary：
+
+```text
+ACTUAL_RESIDUAL_SUM=0.44294171614182876
+ACTUAL_RESIDUAL_ABS_SUM=2.2681722148352881
+ACTUAL_RESIDUAL_MAX_ABS=0.29527878422266252
+ACTUAL_B=[-0.70513185009762902,-0.42457526330019862,-0.079899540579997208,2.0415549834711988,-5.1626863669195044,2.7286869496388286]
+```
+
+结论：
+- Stage 47 n64 bounded golden 在 Orin 板上 PASS。
+- Stage 40/44/45 的 n64 mismatch 根因确认为 Python bounded expected/trace 的负坐标 floor division 错误，不是 HLS lookup 乱读。
+- 下一阶段进入 full `frame_000001` host transaction；full frame expected 继续使用 `loc_expected_obs.bin`。
+
 ### Orin 验收结果 2026-06-21 09:48 CST
 
 XDMA/base gate 通过：

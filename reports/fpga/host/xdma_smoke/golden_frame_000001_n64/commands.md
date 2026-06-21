@@ -237,3 +237,59 @@ ACTUAL_B=[-0.70513185009762902,-0.42457526330019862,-0.079899540579997208,2.0415
 ```
 
 Conclusion: Stage 45 rules out host image corruption and register misconfiguration for the n64 mismatch. The remaining failure is in real active-map lookup/classification.
+
+## Stage 47 Orin Retest 2026-06-21
+
+Stage 47 fixed the Python bounded expected/trace negative-coordinate `floor_div` behavior and regenerated the n64 host image.
+
+Command sequence:
+
+```bash
+python3 fpga/host/xdma_smoke/make_golden_host_image.py --golden-dir fpga/golden/localization/frame_000001 --max-points 64 --out-dir fpga/vivado/.build/host_golden_frame_000001_n64 --report-dir reports/fpga/host/xdma_smoke/golden_frame_000001_n64
+python3 fpga/host/xdma_smoke/make_golden_trace_host_images.py --golden-dir fpga/golden/localization/frame_000001 --max-points 64 --out-dir fpga/vivado/.build/host_golden_trace_n64 --report-dir reports/fpga/host/xdma_smoke/golden_trace_n64
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --hls-manifest fpga/vivado/.build/host_golden_frame_000001_n64/manifest.json --ctrl-base 0x1000 --verify-image-readback --read-regs-after-config --dump-output-raw-words --dump-normal-equation
+```
+
+Regeneration markers:
+
+```text
+HOST_GOLDEN_IMAGE_PASS
+expected_counts=52/12/0
+HOST_GOLDEN_TRACE_PASS
+trace_counts=52/12/0
+expected_counts=52/12/0
+```
+
+Board transaction markers:
+
+```text
+HOST_IMAGE_READBACK_PASS
+SCAN_COUNT_READBACK=64
+HLS_MANIFEST_START_PASS
+HLS_MANIFEST_DONE_PASS
+HLS_MANIFEST_NUMERIC_PASS
+STATUS=0x00000204
+ERROR=0x00000000
+RUN_COUNT=12 -> 13
+COUNTS=52/12/0
+```
+
+Raw output count words:
+
+```text
+OUTPUT_WORD[27]=0x0000000c00000034
+OUTPUT_WORD[28]=0x0000000000000000
+```
+
+Actual normal-equation summary:
+
+```text
+ACTUAL_COUNTS=52/12/0 FLAGS=0x00000000
+ACTUAL_RESIDUAL_SUM=0.44294171614182876
+ACTUAL_RESIDUAL_ABS_SUM=2.2681722148352881
+ACTUAL_RESIDUAL_MAX_ABS=0.29527878422266252
+ACTUAL_H_UPPER=[22.308839796978894,-0.99128400979866615,-13.275552831385616,-3.4098071411650048,155.48506130137977,-44.920637163007697,12.662832448417323,3.9792651883529979,-89.965664521418461,-8.9334766051646479,7.2901425436713687,17.028327752175187,14.789327132602782,-102.95922140370193,12.343283746329648,899.31166650661078,-70.981223553152176,-2.7401610172118964,1129.7830234766566,-325.2047832840538,387.06256730310366]
+ACTUAL_B=[-0.70513185009762902,-0.42457526330019862,-0.079899540579997208,2.0415549834711988,-5.1626863669195044,2.7286869496388286]
+```
+
+Conclusion: Stage 47 n64 bounded golden passes on Orin. The earlier n64 mismatch was caused by Python bounded expected/trace encoding of negative grid coordinates, not by HLS lookup corruption.

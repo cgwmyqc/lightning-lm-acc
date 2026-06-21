@@ -1,8 +1,8 @@
 # Golden frame_000001 n64 Host Image
 
 - marker: `HOST_GOLDEN_IMAGE_PASS`
-- golden_dir: `fpga\golden\localization\frame_000001`
-- generated_dir: `fpga\vivado\.build\host_golden_frame_000001_n64`
+- golden_dir: `fpga/golden/localization/frame_000001`
+- generated_dir: `fpga/vivado/.build/host_golden_frame_000001_n64`
 - full_scan_count: 6963
 - scan_count: 64
 - active_blocks: 3719

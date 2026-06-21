@@ -70,3 +70,60 @@ COUNTS=52/12/0
 
 After n64 passes on Orin, proceed to full `frame_000001` host transaction.
 Full-frame expected should continue to use `loc_expected_obs.bin`.
+
+## Orin result 2026-06-21
+
+XDMA/base gate:
+
+```text
+Kernel driver in use: xdma
+/dev/xdma0_user
+/dev/xdma0_h2c_0
+/dev/xdma0_c2h_0
+/sys/bus/pci/devices/0005:01:00.0/enable = 1
+SHIM_SMOKE_PASS
+REG_SMOKE_PASS
+DDR_SMOKE_PASS
+```
+
+Regenerated host artifacts:
+
+```text
+HOST_GOLDEN_IMAGE_PASS
+expected_counts=52/12/0
+HOST_GOLDEN_TRACE_PASS
+trace_counts=52/12/0
+expected_counts=52/12/0
+```
+
+n64 board transaction:
+
+```text
+HOST_IMAGE_READBACK_PASS
+SCAN_COUNT_READBACK=64
+HLS_MANIFEST_START_PASS
+HLS_MANIFEST_DONE_PASS
+HLS_MANIFEST_NUMERIC_PASS
+STATUS=0x00000204
+ERROR=0x00000000
+RUN_COUNT=12 -> 13
+COUNTS=52/12/0
+```
+
+Raw count words:
+
+```text
+OUTPUT_WORD[27]=0x0000000c00000034
+OUTPUT_WORD[28]=0x0000000000000000
+```
+
+Actual summary:
+
+```text
+ACTUAL_RESIDUAL_SUM=0.44294171614182876
+ACTUAL_RESIDUAL_ABS_SUM=2.2681722148352881
+ACTUAL_RESIDUAL_MAX_ABS=0.29527878422266252
+ACTUAL_B=[-0.70513185009762902,-0.42457526330019862,-0.079899540579997208,2.0415549834711988,-5.1626863669195044,2.7286869496388286]
+```
+
+Conclusion: Stage 47 n64 bounded golden passes on Orin. The next gate is full `frame_000001` host transaction using `loc_expected_obs.bin`.
