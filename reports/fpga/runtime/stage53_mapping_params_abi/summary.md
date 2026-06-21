@@ -130,3 +130,76 @@ Then run Orin acceptance:
 Localization XDMA golden PASS: 6050/911/2
 Mapping XDMA golden PASS: 611/0/171
 ```
+
+## Orin Acceptance, 2026-06-21
+
+XDMA gate:
+
+```text
+PASS
+0005:01:00.0 [10ee:7024]
+Kernel driver in use: xdma
+/dev/xdma0_user, /dev/xdma0_h2c_0, /dev/xdma0_c2h_0 present
+enable=1
+no new Failed to detect XDMA config BAR / CmpltTO / AER fatal
+```
+
+Build:
+
+```text
+colcon build --packages-select lightning
+PASS
+```
+
+C++ runtime smoke:
+
+```text
+XDMA_CPP_SHIM_SMOKE_PASS
+XDMA_CPP_REG_SMOKE_PASS
+XDMA_CPP_DDR_SMOKE_PASS
+```
+
+Mapping CPU replay:
+
+```text
+MAPPING_CPU_REPLAY_PASS
+counts actual=611/0/171 expected=611/0/171
+max_abs=0.0337705
+max_rel=2.21971e-05
+worst_field=b(3)
+```
+
+Mapping XDMA replay:
+
+```text
+MAPPING_XDMA_REPLAY_FAIL
+STATUS=0x204
+ERROR=0x0
+RUN_COUNT=0->1, retry 1->2
+SCAN_COUNT_READBACK=782
+counts actual=600/0/182 expected=611/0/171
+max_abs=270562
+max_rel=6.38949
+worst_field=H(3,3)
+```
+
+## Interpretation
+
+Stage 53 partially fixed the Stage 52 failure:
+
+```text
+Stage 52 actual: 585/68/129
+Stage 53 actual: 600/0/182
+Expected:        611/0/171
+```
+
+The residual reject semantics are now fixed for mapping mode because `reject_count`
+is zero as expected. The remaining mismatch is 11 points: hardware classifies
+them as `miss` while CPU mapping replay classifies them as `valid`. This points
+away from XDMA, BAR, DDR, and output counter writeback, and toward HLS
+mapping-mode lookup or mapping gate details.
+
+Do not enable online `mapping.mode=fpga_obs` yet. Next Windows/HLS step should
+debug the 11 valid-to-miss differences using the same
+`fpga/golden/mapping/frame_000001` fixture, preferably by adding per-point or
+selected-cell debug output for mapping mode before attempting online mapping.

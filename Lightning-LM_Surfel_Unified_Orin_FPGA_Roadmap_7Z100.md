@@ -4630,3 +4630,67 @@ no Failed to detect XDMA config BAR / CmpltTO / AER fatal
 ```
 
 Before mapping XDMA replay passes, keep online `mapping.mode=fpga_obs` disabled.
+
+### Orin acceptance result, 2026-06-21
+
+XDMA gate:
+
+```text
+PASS
+0005:01:00.0 [10ee:7024]
+Kernel driver in use: xdma
+/dev/xdma0_user, /dev/xdma0_h2c_0, /dev/xdma0_c2h_0 present
+enable=1
+no new Failed to detect XDMA config BAR / CmpltTO / AER fatal
+```
+
+Build and smoke:
+
+```text
+colcon build --packages-select lightning: PASS
+XDMA_CPP_SHIM_SMOKE_PASS
+XDMA_CPP_REG_SMOKE_PASS
+XDMA_CPP_DDR_SMOKE_PASS
+```
+
+Mapping CPU replay:
+
+```text
+MAPPING_CPU_REPLAY_PASS
+counts actual=611/0/171 expected=611/0/171
+max_abs=0.0337705
+max_rel=2.21971e-05
+worst_field=b(3)
+```
+
+Mapping XDMA replay:
+
+```text
+MAPPING_XDMA_REPLAY_FAIL
+STATUS=0x204
+ERROR=0x0
+RUN_COUNT=0->1, retry 1->2
+SCAN_COUNT_READBACK=782
+counts actual=600/0/182 expected=611/0/171
+max_abs=270562
+max_rel=6.38949
+worst_field=H(3,3)
+```
+
+Interpretation:
+
+```text
+Stage 52 actual: 585/68/129
+Stage 53 actual: 600/0/182
+Expected:        611/0/171
+```
+
+Stage 53 fixed the mapping residual-reject semantics: `reject_count` is now `0`
+as expected. The remaining mismatch is 11 points that HLS reports as `miss`
+while CPU mapping replay reports as `valid`. The next debug target is therefore
+mapping-mode lookup / candidate selection / mapping gate behavior, not XDMA,
+BAR, DDR, output counter packing, or the params ABI transport.
+
+Online `mapping.mode=fpga_obs` smoke was skipped because mapping XDMA replay did
+not pass. Keep online mapping FPGA disabled until this same fixture reaches
+`MAPPING_XDMA_REPLAY_PASS`.
