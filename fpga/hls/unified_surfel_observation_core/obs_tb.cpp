@@ -236,6 +236,97 @@ bool RunRejectProbe(std::string& report) {
     return counts_ok && values_ok;
 }
 
+void FillMappingLookupProbe(SlamAccelScanPoint& scan, SlamAccelPose& pose, ActiveMapHeader& map_header,
+                            ActiveBlockRecord& block, std::vector<ObsCellFloat64>& cells) {
+    scan.x = 1.20f;
+    scan.y = 1.20f;
+    scan.z = 1.20f;
+    scan.intensity = 1.0f;
+
+    pose.qx = 0.0f;
+    pose.qy = 0.0f;
+    pose.qz = 0.0f;
+    pose.qw = 1.0f;
+    pose.tx = 0.0f;
+    pose.ty = 0.0f;
+    pose.tz = 0.0f;
+    pose.flags = 0;
+
+    map_header.magic = SLAM_ACCEL_ABI_MAGIC;
+    map_header.version = SLAM_ACCEL_GOLDEN_VERSION;
+    map_header.mode = MAPPING_OBSERVATION;
+    map_header.cells_per_block = SLAM_ACCEL_CELLS_PER_BLOCK;
+    map_header.cell_resolution = 1.0f;
+    map_header.inv_cell_resolution = 1.0f;
+    map_header.window_id = 1;
+    map_header.window_version = 1;
+    map_header.num_blocks = 1;
+    map_header.num_cells = SLAM_ACCEL_CELLS_PER_BLOCK;
+    map_header.lookup_nearby_type = 26;
+    map_header.flags = 0;
+
+    block.x = 0;
+    block.y = 0;
+    block.z = 0;
+    block.first_cell = 0;
+    block.valid_cell_count = 2;
+    block.flags = 0;
+
+    cells.assign(SLAM_ACCEL_CELLS_PER_BLOCK, ObsCellFloat64());
+    const uint32_t near_bad_idx = (1u * SLAM_ACCEL_BLOCK_DIM_Y + 1u) * SLAM_ACCEL_BLOCK_DIM_X + 2u;
+    ObsCellFloat64& near_bad = cells[near_bad_idx];
+    near_bad.centroid_x = 1.21f;
+    near_bad.centroid_y = 1.20f;
+    near_bad.centroid_z = 1.20f;
+    near_bad.normal_x = 0.0f;
+    near_bad.normal_y = 0.0f;
+    near_bad.normal_z = 1.0f;
+    near_bad.plane_d = -0.20f;
+    near_bad.quality = 0.01f;
+    near_bad.count = 8;
+    near_bad.flags = OBS_CELL_VALID;
+
+    const uint32_t far_good_idx = (1u * SLAM_ACCEL_BLOCK_DIM_Y + 1u) * SLAM_ACCEL_BLOCK_DIM_X + 0u;
+    ObsCellFloat64& far_good = cells[far_good_idx];
+    far_good.centroid_x = 5.0f;
+    far_good.centroid_y = 5.0f;
+    far_good.centroid_z = 5.0f;
+    far_good.normal_x = 0.0f;
+    far_good.normal_y = 0.0f;
+    far_good.normal_z = 1.0f;
+    far_good.plane_d = -1.19f;
+    far_good.quality = 1.0f;
+    far_good.count = 8;
+    far_good.flags = OBS_CELL_VALID;
+}
+
+bool RunMappingLookupProbe(std::string& report) {
+    SlamAccelScanPoint scan;
+    SlamAccelPose pose;
+    ActiveMapHeader map_header;
+    ActiveBlockRecord block;
+    std::vector<ObsCellFloat64> cells;
+    FillMappingLookupProbe(scan, pose, map_header, block, cells);
+
+    uint64_t actual_words[kNormalEquationWords] = {};
+    SlamAccelObservationParams params;
+    params.mode = MAPPING_OBSERVATION;
+    params.plane_icp_weight = 1.0f;
+    params.mapping_gate_scale = 81.0f;
+    unified_surfel_observation_core(&scan, 1, &pose, &map_header, reinterpret_cast<const uint64_t*>(&params), &block,
+                                    cells.data(), actual_words);
+    const SlamNormalEquation actual = DecodeOutputWords(actual_words);
+
+    const bool counts_ok = actual.valid_count == 1 && actual.reject_count == 0 && actual.miss_count == 0;
+    const bool residual_ok = std::fabs(actual.residual_sum - 0.01000004768371582) < 1e-5 &&
+                             std::fabs(actual.residual_abs_sum - 0.01000004768371582) < 1e-5;
+    std::ostringstream ss;
+    ss << "mapping_lookup_probe counts=" << actual.valid_count << "/" << actual.reject_count << "/"
+       << actual.miss_count << " residual_sum=" << actual.residual_sum;
+    report = ss.str();
+    return counts_ok && residual_ok;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -276,6 +367,12 @@ int main(int argc, char** argv) {
         return 3;
     }
     std::cout << "[obs_tb] " << reject_report << std::endl;
+    std::string mapping_lookup_report;
+    if (!RunMappingLookupProbe(mapping_lookup_report)) {
+        std::cerr << "[obs_tb] " << mapping_lookup_report << std::endl;
+        return 4;
+    }
+    std::cout << "[obs_tb] " << mapping_lookup_report << std::endl;
     std::cout << "[obs_tb] PASS " << golden_dir << std::endl;
     return 0;
 }

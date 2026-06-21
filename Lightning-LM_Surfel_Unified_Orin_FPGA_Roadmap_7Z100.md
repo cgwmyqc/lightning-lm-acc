@@ -4694,3 +4694,85 @@ BAR, DDR, output counter packing, or the params ABI transport.
 Online `mapping.mode=fpga_obs` smoke was skipped because mapping XDMA replay did
 not pass. Keep online mapping FPGA disabled until this same fixture reaches
 `MAPPING_XDMA_REPLAY_PASS`.
+
+## Stage 54: Mapping Lookup Selection Fix (2026-06-21)
+
+Stage 53 narrowed the remaining mapping failure to lookup/candidate selection:
+
+```text
+expected mapping counts: 611/0/171
+Stage 53 XDMA counts:    600/0/182
+```
+
+The fix is mode-specific neighbor selection inside
+`unified_surfel_observation_core`:
+
+- localization keeps centroid-distance-first lookup, preserving Stage 48/49
+  localization behavior.
+- mapping now matches CPU `mapping_golden::BetterMappingCell()`: compare
+  absolute plane residual first using `1e-4` tolerance, then centroid squared
+  distance using `1e-4` tolerance, then lower `quality`.
+
+No XDMA, MIG, BAR shim, PL DDR layout, params ABI, Orin runtime register map, or
+HLS mapping residual/gate semantics were changed.
+
+Windows verification:
+
+```text
+g++ CSim: PASS
+Vivado HLS CSim: PASS
+Vivado HLS C Synthesis: PASS
+Vivado HLS IP export: PASS
+BD validate: PASS
+project synthesis: PASS
+implementation/bitstream: PASS
+```
+
+Observed CSim markers:
+
+```text
+localization golden counts: 6050/911/2
+reject_probe counts: 0/1/0
+mapping_lookup_probe counts: 1/0/0
+[obs_tb] PASS
+```
+
+Implementation summary:
+
+```text
+WNS=0.084 ns, TNS=0.000 ns
+WHS=0.033 ns, THS=0.000 ns
+All user specified timing constraints are met.
+Bitgen Completed Successfully, 0 Critical Warnings, 0 Errors.
+```
+
+New bitstream:
+
+```text
+fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit
+```
+
+Required Orin gate after JTAG:
+
+```bash
+./install/lightning/lib/lightning/run_surfel_loc_xdma_golden \
+  --golden_dir fpga/golden/localization/frame_000001 \
+  --ctrl_base 0x1000 \
+  --timeout_sec 120
+
+./install/lightning/lib/lightning/run_surfel_mapping_xdma_golden \
+  --golden_dir fpga/golden/mapping/frame_000001 \
+  --ctrl_base 0x1000 \
+  --timeout_sec 120
+```
+
+Acceptance:
+
+```text
+localization XDMA replay PASS, counts 6050/911/2
+mapping XDMA replay PASS, counts 611/0/171
+no Failed to detect XDMA config BAR / CmpltTO / AER fatal
+```
+
+Online `mapping.mode=fpga_obs` remains disabled until Stage 54 Orin mapping
+XDMA replay passes.

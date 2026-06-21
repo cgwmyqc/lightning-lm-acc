@@ -196,6 +196,13 @@ rule. Mapping uses `plane_icp_weight`, `extrinsic_R`, `extrinsic_T`, and the
 mapping gate rule from the CPU surfel-map observation path instead of
 localization's `abs(residual) > 0.3` reject rule.
 
+Stage 54 makes neighbor candidate selection mode-specific. Localization keeps
+the historical centroid-distance-first lookup. Mapping now matches
+`mapping_golden::BetterMappingCell()`: compare absolute plane residual first
+with `1e-4` tolerance, then centroid squared distance with `1e-4` tolerance,
+then lower `quality`. This prevents mapping from choosing a geometrically closer
+cell that later fails the mapping gate when a lower-residual neighbor exists.
+
 Current output word layout:
 
 ```text

@@ -202,7 +202,7 @@ bool LookupCell(const ActiveMapHeader& map_header, const ActiveBlockRecord* acti
 }
 
 bool LookupNearest(const ActiveMapHeader& map_header, const ActiveBlockRecord* active_blocks,
-                   const ObsCellFloat64* obs_cells, const Vec3& point, ObsCellFloat64& out_cell) {
+                   const ObsCellFloat64* obs_cells, const Vec3& point, bool mapping_mode, ObsCellFloat64& out_cell) {
     int32_t center_bx = 0;
     int32_t center_by = 0;
     int32_t center_bz = 0;
@@ -231,6 +231,7 @@ bool LookupNearest(const ActiveMapHeader& map_header, const ActiveBlockRecord* a
     ObsCellFloat64 best;
     bool found = false;
     double best_dist2 = 1.0e100;
+    double best_abs_residual = 1.0e100;
     for (int dz = -1; dz <= 1; ++dz) {
         for (int dy = -1; dy <= 1; ++dy) {
             for (int dx = -1; dx <= 1; ++dx) {
@@ -284,8 +285,32 @@ bool LookupNearest(const ActiveMapHeader& map_header, const ActiveBlockRecord* a
                 const double ddy = point.y - candidate.centroid_y;
                 const double ddz = point.z - candidate.centroid_z;
                 const double dist2 = ddx * ddx + ddy * ddy + ddz * ddz;
-                if (!found || dist2 < best_dist2) {
+                const double candidate_residual = candidate.normal_x * point.x + candidate.normal_y * point.y +
+                                                  candidate.normal_z * point.z + candidate.plane_d;
+                const double abs_candidate_residual = std::fabs(candidate_residual);
+
+                bool better = false;
+                if (!found) {
+                    better = true;
+                } else if (mapping_mode) {
+                    const double residual_delta = abs_candidate_residual - best_abs_residual;
+                    if (residual_delta < -1.0e-4) {
+                        better = true;
+                    } else if (std::fabs(residual_delta) <= 1.0e-4) {
+                        const double dist_delta = dist2 - best_dist2;
+                        if (dist_delta < -1.0e-4) {
+                            better = true;
+                        } else if (std::fabs(dist_delta) <= 1.0e-4 && candidate.quality < best.quality) {
+                            better = true;
+                        }
+                    }
+                } else if (dist2 < best_dist2) {
+                    better = true;
+                }
+
+                if (better) {
                     best_dist2 = dist2;
+                    best_abs_residual = abs_candidate_residual;
                     CopyCell(candidate, best);
                     found = true;
                 }
@@ -366,7 +391,7 @@ void unified_surfel_observation_core(const SlamAccelScanPoint* scan_points, uint
 
         const Vec3 p = RotatePoint(*pose, scan);
         ObsCellFloat64 cell;
-        if (!LookupNearest(*map_header, active_blocks, obs_cells, p, cell)) {
+        if (!LookupNearest(*map_header, active_blocks, obs_cells, p, obs_mode == MAPPING_OBSERVATION, cell)) {
             ++miss_count;
             continue;
         }
