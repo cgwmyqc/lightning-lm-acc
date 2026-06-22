@@ -5536,3 +5536,111 @@ If both V2 golden replays pass and the performance gate is met, enable
 `fpga.runtime.candidate_abi_v2: true` first in mapping-only or
 localization-only online smoke with `max_iterations=1`; do not immediately run
 joint mapping + localization online.
+
+## Stage 61 Orin Result: ABI V2 Candidate Golden PASS
+
+Stage 61 Orin-side validation was run on 2026-06-22.
+
+Report:
+
+```text
+reports/fpga/runtime/stage61_abi_v2_orin/
+```
+
+XDMA / PCIe gate:
+
+```text
+0005:01:00.0 [10ee:7024]
+Kernel driver in use: xdma
+/dev/xdma0_user present
+/dev/xdma0_h2c_0 present
+/dev/xdma0_c2h_0 present
+enable=1
+LnkCap: Speed 5GT/s, Width x4
+LnkSta: Speed 5GT/s, Width x1 (downgraded)
+```
+
+Smoke:
+
+```text
+XDMA_CPP_SHIM_SMOKE_PASS
+XDMA_CPP_REG_SMOKE_PASS
+XDMA_CPP_DDR_SMOKE_PASS
+```
+
+V1 regression remains valid:
+
+```text
+abi_v2_candidates=0
+elapsed=0.373969s
+counts=6050/911/2
+XDMA_CPP_GOLDEN_NUMERIC_PASS
+```
+
+V2 localization golden replay:
+
+```text
+candidate_count=6963
+candidate_valid=6961
+candidate_miss=2
+candidate_bytes=445632
+iter 1: elapsed=0.120245s counts=6050/911/2 PASS
+iter 2: elapsed=0.120295s counts=6050/911/2 PASS
+iter 3: elapsed=0.120330s counts=6050/911/2 PASS
+XDMA_CPP_GOLDEN_REPEAT_PASS ITERATIONS=3 ABI_V2_CANDIDATES=1
+```
+
+V2 mapping golden replay:
+
+```text
+iter 1: MAPPING_XDMA_REPLAY_PASS, counts actual=611/0/171 expected=611/0/171, hls_wait_sec=0.0150208
+iter 2: MAPPING_XDMA_REPLAY_PASS, counts actual=611/0/171 expected=611/0/171, hls_wait_sec=0.0149113
+iter 3: MAPPING_XDMA_REPLAY_PASS, counts actual=611/0/171 expected=611/0/171, hls_wait_sec=0.0149318
+candidate_count=782
+candidate_valid=653
+candidate_miss=129
+candidate_bytes=50048
+```
+
+V2 debug counters confirmed the candidate path:
+
+```text
+debug_magic=0x53543631
+point_count=6963
+exact_hit=6961
+neighbor_hit=0
+lookup_miss=2
+neighbor_probe_count=0
+block_lookup_count=0
+block_search_steps=0
+obs_cell_read_count=0
+valid_candidate_count=6961
+invalid_candidate_count=2
+debug_flags=0x00000001
+```
+
+Performance:
+
+```text
+Stage57 localization baseline = 1.536000s
+Stage58 localization mean     = 0.350090s
+Stage61 V2 localization mean  = 0.120290s
+Speedup vs Stage57            = 12.77x
+Speedup vs Stage58            = 2.91x
+5x gate threshold             = <= 0.307s
+Stage61 performance gate      = PASS
+```
+
+Conclusion:
+
+```text
+Correctness: PASS
+V2 candidate path: PASS
+Performance gate: PASS
+PCIe link: still Gen2 x1, but Stage61 golden gate passes at x1
+Next stage: Stage62 mapping-only and localization-only online V2 smoke
+```
+
+Stage62 should enable `fpga.runtime.candidate_abi_v2: true` only in controlled
+single-path online tests first. Keep `max_iterations=1` for the first smoke and
+do not immediately resume joint mapping + localization online.

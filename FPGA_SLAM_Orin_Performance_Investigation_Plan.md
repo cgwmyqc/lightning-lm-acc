@@ -1912,6 +1912,100 @@ was a stale user-owned file that sudo could not write on this system. It was rem
 This was not an FPGA/HLS failure.
 ```
 
+## 25. Stage61 Orin Result: Candidate ABI V2 PASS
+
+Stage61 Orin-side ABI V2 candidate golden replay was executed on 2026-06-22.
+
+Report:
+
+```text
+reports/fpga/runtime/stage61_abi_v2_orin/
+```
+
+XDMA / PCIe gate:
+
+```text
+0005:01:00.0 [10ee:7024]
+Kernel driver in use: xdma
+/dev/xdma0_user present
+/dev/xdma0_h2c_0 present
+/dev/xdma0_c2h_0 present
+enable=1
+LnkCap: Speed 5GT/s, Width x4
+LnkSta: Speed 5GT/s, Width x1 (downgraded)
+```
+
+Smoke:
+
+```text
+XDMA_CPP_SHIM_SMOKE_PASS
+XDMA_CPP_REG_SMOKE_PASS
+XDMA_CPP_DDR_SMOKE_PASS
+```
+
+V1 regression:
+
+```text
+abi_v2_candidates=0
+elapsed=0.373969s
+counts=6050/911/2
+XDMA_CPP_GOLDEN_NUMERIC_PASS
+```
+
+V2 localization full-frame golden replay:
+
+```text
+candidate_count=6963
+candidate_valid=6961
+candidate_miss=2
+candidate_bytes=445632
+iter 1 elapsed=0.120245s counts=6050/911/2 PASS
+iter 2 elapsed=0.120295s counts=6050/911/2 PASS
+iter 3 elapsed=0.120330s counts=6050/911/2 PASS
+```
+
+V2 mapping full-frame golden replay:
+
+```text
+iter 1: counts actual=611/0/171 expected=611/0/171, hls_wait_sec=0.0150208 PASS
+iter 2: counts actual=611/0/171 expected=611/0/171, hls_wait_sec=0.0149113 PASS
+iter 3: counts actual=611/0/171 expected=611/0/171, hls_wait_sec=0.0149318 PASS
+candidate_count=782
+candidate_valid=653
+candidate_miss=129
+candidate_bytes=50048
+```
+
+V2 debug counters confirmed the intended path:
+
+```text
+debug_magic=0x53543631
+point_count=6963
+exact_hit=6961
+lookup_miss=2
+neighbor_probe_count=0
+block_lookup_count=0
+block_search_steps=0
+obs_cell_read_count=0
+valid_candidate_count=6961
+invalid_candidate_count=2
+debug_flags=0x00000001
+```
+
+Performance conclusion:
+
+```text
+Stage57 localization baseline = 1.536000s
+Stage58 localization mean     = 0.350090s
+Stage61 V2 localization mean  = 0.120290s
+Speedup vs Stage57            = 12.77x
+Speedup vs Stage58            = 2.91x
+5x gate threshold             = <= 0.307s
+Stage61 performance gate      = PASS
+```
+
+Stage61 is the first Orin-side hardware result that clears the agreed localization full-frame performance gate. The next step is Stage62: enable `fpga.runtime.candidate_abi_v2=true` for mapping-only and localization-only online smoke with `max_iterations=1`. Do not jump directly to joint mapping + localization online.
+
 ## 24. Stage61 Windows/HLS Result: Candidate ABI V2
 
 Stage61 implements the ABI V2 direction selected after Stage58 missed the 5x
