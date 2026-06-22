@@ -233,6 +233,46 @@ and each point reuses block-index lookups across its 27 center/neighbor probes.
 `obs_cells` still remains in PL DDR because the full localization map can be
 about 60 MB and is too large for first-round BRAM caching.
 
+Stage 61 adds an opt-in Candidate ABI V2 path for performance. When
+`SlamAccelObservationParams.flags` contains
+`SLAM_ACCEL_OBS_FLAG_CANDIDATE_ABI_V2`, the HLS kernel treats `obs_cells` as a
+per-point candidate buffer instead of the full active-map cell array.
+
+V2 behavior:
+
+- `OBS_CELLS_BASE` is reused as `candidate_cells[scan_count]`.
+- Orin precomputes the final candidate surfel using the CPU/golden lookup
+  policy for localization or mapping.
+- Missing candidates are encoded as `ObsCellFloat64.flags = 0`.
+- FPGA reads `scan_points[i]` and `candidate_cells[i]` sequentially, then runs
+  residual/Jacobian/H/b accumulation.
+- V1 lookup remains available when the flag is not set.
+- The normal-equation ABI in `output_words[0..31]` is unchanged.
+- `output_words[32..39]` use Stage 61 debug magic `0x53543631` (`ST61`) and
+  report V2 counters; expected V2 `block_lookup` and `obs_cell_read` are zero.
+
+Current Stage 61 Windows checkpoint:
+
+```text
+g++ CSim:               PASS
+Vivado HLS CSim:        PASS
+Vivado HLS C Synthesis: PASS
+Vivado HLS IP export:   PASS
+V2 localization:        6050/911/2 PASS
+V2 mapping:             611/0/171 PASS
+```
+
+Stage 61 HLS C Synthesis summary:
+
+```text
+target clock:    10.00 ns
+estimated clock: 9.307 ns
+BRAM_18K:        184 / 1510 = 12%
+DSP48E:          348 / 2020 = 17%
+FF:              66007 / 554800 = 11%
+LUT:             105315 / 277400 = 37%
+```
+
 Generated RTL direct mapping:
 
 ```text

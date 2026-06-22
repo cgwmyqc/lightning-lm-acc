@@ -1,7 +1,7 @@
 Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.
 ------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2018.3 (win64) Build 2405991 Thu Dec  6 23:38:27 MST 2018
-| Date         : Mon Jun 22 00:18:35 2026
+| Date         : Mon Jun 22 20:35:46 2026
 | Host         : DESKTOP-QEQDV5I running 64-bit major release  (build 9200)
 | Command      : report_utilization -file V:/azmig_syn/ax7z100_pcie_mig_util.rpt
 | Design       : azmig_wrapper
@@ -30,15 +30,15 @@ Table of Contents
 +----------------------------+-------+-------+-----------+-------+
 |          Site Type         |  Used | Fixed | Available | Util% |
 +----------------------------+-------+-------+-----------+-------+
-| Slice LUTs*                | 82624 |     0 |    277400 | 29.79 |
-|   LUT as Logic             | 77654 |     0 |    277400 | 27.99 |
-|   LUT as Memory            |  4970 |     0 |    108200 |  4.59 |
+| Slice LUTs*                | 83905 |     0 |    277400 | 30.25 |
+|   LUT as Logic             | 78933 |     0 |    277400 | 28.45 |
+|   LUT as Memory            |  4972 |     0 |    108200 |  4.60 |
 |     LUT as Distributed RAM |  3917 |     0 |           |       |
-|     LUT as Shift Register  |  1053 |     0 |           |       |
-| Slice Registers            | 97729 |     0 |    554800 | 17.62 |
-|   Register as Flip Flop    | 97729 |     0 |    554800 | 17.62 |
+|     LUT as Shift Register  |  1055 |     0 |           |       |
+| Slice Registers            | 98763 |     0 |    554800 | 17.80 |
+|   Register as Flip Flop    | 98763 |     0 |    554800 | 17.80 |
 |   Register as Latch        |     0 |     0 |    554800 |  0.00 |
-| F7 Muxes                   |  1321 |     0 |    138700 |  0.95 |
+| F7 Muxes                   |  1328 |     0 |    138700 |  0.96 |
 | F8 Muxes                   |   107 |     0 |     69350 |  0.15 |
 +----------------------------+-------+-------+-----------+-------+
 * Warning! The Final LUT count, after physical optimizations and full implementation, is typically lower. Run opt_design after synthesis, if not already completed, for a more realistic count.
@@ -58,8 +58,8 @@ Table of Contents
 | 0     |          Yes |           - |            - |
 | 314   |          Yes |           - |          Set |
 | 263   |          Yes |           - |        Reset |
-| 684   |          Yes |         Set |            - |
-| 96468 |          Yes |       Reset |            - |
+| 686   |          Yes |         Set |            - |
+| 97500 |          Yes |       Reset |            - |
 +-------+--------------+-------------+--------------+
 
 
@@ -167,20 +167,20 @@ Table of Contents
 +------------------------+-------+----------------------+
 |        Ref Name        |  Used |  Functional Category |
 +------------------------+-------+----------------------+
-| FDRE                   | 96468 |         Flop & Latch |
-| LUT6                   | 24814 |                  LUT |
-| LUT3                   | 24599 |                  LUT |
-| LUT5                   | 20952 |                  LUT |
-| LUT4                   | 15058 |                  LUT |
-| LUT2                   | 11238 |                  LUT |
+| FDRE                   | 97500 |         Flop & Latch |
+| LUT6                   | 25098 |                  LUT |
+| LUT3                   | 24484 |                  LUT |
+| LUT5                   | 21328 |                  LUT |
+| LUT4                   | 15352 |                  LUT |
+| LUT2                   | 11738 |                  LUT |
 | RAMD32                 |  5734 |   Distributed Memory |
-| CARRY4                 |  3698 |           CarryLogic |
-| LUT1                   |  2063 |                  LUT |
+| CARRY4                 |  3889 |           CarryLogic |
+| LUT1                   |  2073 |                  LUT |
 | RAMS32                 |  1954 |   Distributed Memory |
-| MUXF7                  |  1321 |                MuxFx |
-| FDSE                   |   684 |         Flop & Latch |
+| MUXF7                  |  1328 |                MuxFx |
+| FDSE                   |   686 |         Flop & Latch |
 | SRLC32E                |   671 |   Distributed Memory |
-| SRL16E                 |   382 |   Distributed Memory |
+| SRL16E                 |   384 |   Distributed Memory |
 | DSP48E1                |   348 |     Block Arithmetic |
 | FDPE                   |   314 |         Flop & Latch |
 | FDCE                   |   263 |         Flop & Latch |

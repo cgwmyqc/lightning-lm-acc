@@ -23,6 +23,10 @@ enum SlamAccelCellFlag : uint32_t {
     OBS_CELL_VALID = 1u << 0,
 };
 
+enum SlamAccelObservationFlag : uint32_t {
+    SLAM_ACCEL_OBS_FLAG_CANDIDATE_ABI_V2 = 1u << 0,
+};
+
 struct alignas(16) SlamAccelScanPoint {
     float x = 0.0f;
     float y = 0.0f;

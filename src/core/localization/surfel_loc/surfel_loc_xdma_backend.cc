@@ -57,7 +57,13 @@ bool SurfelLocXdmaBackend::ComputeObservation(const CloudPtr& scan_body, const S
     }
     const auto pose = golden::ToAbiPose(pose_guess);
     fpga::XdmaRuntime::RunResult result;
-    if (!runtime_->RunLocalizationObservation(scan_points, pose, map, true, options_.verify_readback, result, error)) {
+    const bool run_ok =
+        options_.candidate_abi_v2
+            ? runtime_->RunLocalizationObservationV2(scan_points, pose, map, true, options_.verify_readback, result,
+                                                     error)
+            : runtime_->RunLocalizationObservation(scan_points, pose, map, true, options_.verify_readback, result,
+                                                   error);
+    if (!run_ok) {
         return false;
     }
 

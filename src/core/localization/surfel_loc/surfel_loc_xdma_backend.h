@@ -16,6 +16,7 @@ struct SurfelLocXdmaOptions {
     uint32_t ctrl_base = 0x1000;
     double timeout_sec = 120.0;
     bool verify_readback = false;
+    bool candidate_abi_v2 = false;
 };
 
 class SurfelLocXdmaBackend {

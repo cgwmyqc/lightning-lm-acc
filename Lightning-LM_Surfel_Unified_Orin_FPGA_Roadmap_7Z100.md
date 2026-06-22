@@ -5427,3 +5427,112 @@ Host-state note: the first localization replay attempt failed before HLS start
 because `/tmp/lightning_xdma_observation.lock` was a stale user-owned file that
 sudo could not write on this system. Recreating the lock file as root fixed the
 host-state issue; this was not an FPGA/HLS failure.
+
+## Stage 61 Windows/HLS Result: ABI V2 Candidate Observation
+
+Stage61 implements the ABI V2 optimization after Stage58 improved correctness
+and performance but missed the agreed 5x localization full-frame gate.
+
+Current implementation:
+
+- V1 fallback remains available when `SLAM_ACCEL_OBS_FLAG_CANDIDATE_ABI_V2` is
+  not set.
+- V2 reuses `OBS_CELLS_BASE` as `candidate_cells[scan_count]`.
+- Orin precomputes the final candidate `ObsCellFloat64` per scan point using
+  the CPU/golden lookup policy.
+- Orin writes `flags=0` for lookup miss candidates.
+- FPGA reads `scan_points[i]` and `candidate_cells[i]` sequentially and only
+  computes residual/Jacobian/H/b accumulation.
+- BAR shim, XDMA/MIG, AXI-Lite register map, PL DDR base layout, and
+  `SlamNormalEquation` output ABI remain unchanged.
+
+Windows validation on 2026-06-22:
+
+```text
+g++ CSim:                 PASS
+Vivado HLS CSim:          PASS
+Vivado HLS C Synthesis:   PASS
+Vivado HLS IP export:     PASS
+Vivado BD validate:       PASS
+Vivado project synthesis: PASS
+Vivado implementation:    PASS
+Bitstream generation:     PASS
+Windows JTAG program:     PASS
+```
+
+Correctness:
+
+```text
+V1 localization: 6050/911/2 PASS
+V1 mapping:      611/0/171 PASS
+V2 localization: 6050/911/2 PASS
+V2 mapping:      611/0/171 PASS
+reject_probe:    PASS
+mapping_probe:   PASS
+```
+
+Stage61 V2 debug counters confirm the lookup bottlenecks are bypassed:
+
+```text
+debug_magic=0x53543631 ("ST61")
+localization V2: point_count=6963, candidate_valid=6961, candidate_miss=2,
+                 block_lookup=0, block_search_steps=0, obs_cell_read=0
+mapping V2:      point_count=782, candidate_valid=653, candidate_miss=129,
+                 block_lookup=0, block_search_steps=0, obs_cell_read=0
+```
+
+Vivado HLS C Synthesis:
+
+```text
+target clock:    10.00 ns
+estimated clock: 9.307 ns
+BRAM_18K:        184 / 1510 = 12%
+DSP48E:          348 / 2020 = 17%
+FF:              66007 / 554800 = 11%
+LUT:             105315 / 277400 = 37%
+```
+
+Board bitstream:
+
+```text
+bitstream: fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit
+post-route WNS: 0.071 ns
+post-route WHS: 0.009 ns
+timing: all user timing constraints met
+DRC: 0 errors, 0 critical warnings
+Slice LUTs: 76854 / 277400 = 27.71%
+Slice Registers: 89411 / 554800 = 16.12%
+Block RAM Tile: 85.5 / 755 = 11.32%
+DSPs: 348 / 2020 = 17.23%
+JTAG: JTAG_PROGRAM_PASS, FPGA_STATE=FPGA is configured, DONE pin 1
+```
+
+Next Orin gate:
+
+```bash
+./install/lightning/lib/lightning/run_surfel_loc_xdma_golden \
+  --golden_dir fpga/golden/localization/frame_000001 \
+  --ctrl_base 0x1000 \
+  --timeout_sec 120 \
+  --abi_v2_candidates
+
+./install/lightning/lib/lightning/run_surfel_mapping_xdma_golden \
+  --golden_dir fpga/golden/mapping/frame_000001 \
+  --ctrl_base 0x1000 \
+  --timeout_sec 120 \
+  --abi_v2_candidates
+```
+
+Acceptance:
+
+- localization V2 PASS: `6050/911/2`
+- mapping V2 PASS: `611/0/171`
+- Stage61 debug magic `0x53543631`
+- V2 counters keep `block_lookup=0` and `obs_cell_read=0`
+- localization full-frame `hls_wait <= 0.307s`
+- no XDMA config BAR failure, `CmpltTO`, or AER fatal
+
+If both V2 golden replays pass and the performance gate is met, enable
+`fpga.runtime.candidate_abi_v2: true` first in mapping-only or
+localization-only online smoke with `max_iterations=1`; do not immediately run
+joint mapping + localization online.

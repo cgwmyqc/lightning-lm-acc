@@ -310,6 +310,212 @@ std::string FormatDebugCounters(const uint64_t words[kNormalEquationWords]) {
     return ss.str();
 }
 
+struct EncodedCell {
+    int32_t block_x = 0;
+    int32_t block_y = 0;
+    int32_t block_z = 0;
+    int32_t cell_idx = 0;
+};
+
+int FloorDivHost(int value, int divisor) {
+    int q = value / divisor;
+    int r = value % divisor;
+    if (r != 0 && ((r < 0) != (divisor < 0))) {
+        --q;
+    }
+    return q;
+}
+
+int ModFloorHost(int value, int divisor) {
+    int r = value % divisor;
+    return r < 0 ? r + divisor : r;
+}
+
+void RotatePointHost(const SlamAccelPose& pose, const SlamAccelScanPoint& point, double& x, double& y, double& z) {
+    const double qx = pose.qx;
+    const double qy = pose.qy;
+    const double qz = pose.qz;
+    const double qw = pose.qw;
+    const double px = point.x;
+    const double py = point.y;
+    const double pz = point.z;
+    const double tx = 2.0 * (qy * pz - qz * py);
+    const double ty = 2.0 * (qz * px - qx * pz);
+    const double tz = 2.0 * (qx * py - qy * px);
+    x = px + qw * tx + (qy * tz - qz * ty) + pose.tx;
+    y = py + qw * ty + (qz * tx - qx * tz) + pose.ty;
+    z = pz + qw * tz + (qx * ty - qy * tx) + pose.tz;
+}
+
+EncodedCell EncodeHost(double x, double y, double z, const ActiveMapHeader& map_header) {
+    const int gx = static_cast<int>(std::floor(x * map_header.inv_cell_resolution));
+    const int gy = static_cast<int>(std::floor(y * map_header.inv_cell_resolution));
+    const int gz = static_cast<int>(std::floor(z * map_header.inv_cell_resolution));
+    EncodedCell encoded;
+    encoded.block_x = FloorDivHost(gx, static_cast<int>(SLAM_ACCEL_BLOCK_DIM_X));
+    encoded.block_y = FloorDivHost(gy, static_cast<int>(SLAM_ACCEL_BLOCK_DIM_Y));
+    encoded.block_z = FloorDivHost(gz, static_cast<int>(SLAM_ACCEL_BLOCK_DIM_Z));
+    const int lx = ModFloorHost(gx, static_cast<int>(SLAM_ACCEL_BLOCK_DIM_X));
+    const int ly = ModFloorHost(gy, static_cast<int>(SLAM_ACCEL_BLOCK_DIM_Y));
+    const int lz = ModFloorHost(gz, static_cast<int>(SLAM_ACCEL_BLOCK_DIM_Z));
+    encoded.cell_idx = (lz * static_cast<int>(SLAM_ACCEL_BLOCK_DIM_Y) + ly) *
+                           static_cast<int>(SLAM_ACCEL_BLOCK_DIM_X) +
+                       lx;
+    return encoded;
+}
+
+bool BlockLessHost(const ActiveBlockRecord& lhs, const EncodedCell& rhs) {
+    if (lhs.x != rhs.block_x) return lhs.x < rhs.block_x;
+    if (lhs.y != rhs.block_y) return lhs.y < rhs.block_y;
+    return lhs.z < rhs.block_z;
+}
+
+bool KeyLessHost(const EncodedCell& lhs, const ActiveBlockRecord& rhs) {
+    if (lhs.block_x != rhs.x) return lhs.block_x < rhs.x;
+    if (lhs.block_y != rhs.y) return lhs.block_y < rhs.y;
+    return lhs.block_z < rhs.z;
+}
+
+const ObsCellFloat64* LookupCellHost(const GoldenCase& golden, const EncodedCell& encoded) {
+    const auto iter = std::lower_bound(
+        golden.blocks.begin(), golden.blocks.end(), encoded,
+        [](const ActiveBlockRecord& lhs, const EncodedCell& rhs) { return BlockLessHost(lhs, rhs); });
+    if (iter == golden.blocks.end() || KeyLessHost(encoded, *iter)) {
+        return nullptr;
+    }
+    const size_t offset = static_cast<size_t>(iter->first_cell) + static_cast<size_t>(encoded.cell_idx);
+    if (offset >= golden.cells.size()) {
+        return nullptr;
+    }
+    const ObsCellFloat64& cell = golden.cells[offset];
+    return (cell.flags & OBS_CELL_VALID) != 0 ? &cell : nullptr;
+}
+
+double CandidateResidualHost(const ObsCellFloat64& cell, double x, double y, double z) {
+    return static_cast<double>(cell.normal_x) * x + static_cast<double>(cell.normal_y) * y +
+           static_cast<double>(cell.normal_z) * z + static_cast<double>(cell.plane_d);
+}
+
+bool BetterMappingCandidateHost(const ObsCellFloat64& lhs, const ObsCellFloat64& rhs, double x, double y, double z) {
+    const double lhs_res = std::fabs(CandidateResidualHost(lhs, x, y, z));
+    const double rhs_res = std::fabs(CandidateResidualHost(rhs, x, y, z));
+    if (std::fabs(lhs_res - rhs_res) > 1.0e-4) {
+        return lhs_res < rhs_res;
+    }
+    const double lhs_dx = x - lhs.centroid_x;
+    const double lhs_dy = y - lhs.centroid_y;
+    const double lhs_dz = z - lhs.centroid_z;
+    const double rhs_dx = x - rhs.centroid_x;
+    const double rhs_dy = y - rhs.centroid_y;
+    const double rhs_dz = z - rhs.centroid_z;
+    const double lhs_dist = lhs_dx * lhs_dx + lhs_dy * lhs_dy + lhs_dz * lhs_dz;
+    const double rhs_dist = rhs_dx * rhs_dx + rhs_dy * rhs_dy + rhs_dz * rhs_dz;
+    if (std::fabs(lhs_dist - rhs_dist) > 1.0e-4) {
+        return lhs_dist < rhs_dist;
+    }
+    return lhs.quality < rhs.quality;
+}
+
+bool LookupCandidateHost(const GoldenCase& golden, double x, double y, double z, ObsCellFloat64& out) {
+    const EncodedCell center = EncodeHost(x, y, z, golden.map_header);
+    const ObsCellFloat64* center_cell = LookupCellHost(golden, center);
+    if (center_cell != nullptr) {
+        out = *center_cell;
+        return true;
+    }
+    if (golden.map_header.lookup_nearby_type == 0) {
+        return false;
+    }
+    const int bx_dim = static_cast<int>(SLAM_ACCEL_BLOCK_DIM_X);
+    const int by_dim = static_cast<int>(SLAM_ACCEL_BLOCK_DIM_Y);
+    const int bz_dim = static_cast<int>(SLAM_ACCEL_BLOCK_DIM_Z);
+    const int base_lz = center.cell_idx / (bx_dim * by_dim);
+    const int rem = center.cell_idx - base_lz * bx_dim * by_dim;
+    const int base_ly = rem / bx_dim;
+    const int base_lx = rem - base_ly * bx_dim;
+    const int gx = center.block_x * bx_dim + base_lx;
+    const int gy = center.block_y * by_dim + base_ly;
+    const int gz = center.block_z * bz_dim + base_lz;
+    bool found = false;
+    ObsCellFloat64 best;
+    double best_dist2 = 1.0e100;
+    for (int dz = -1; dz <= 1; ++dz) {
+        for (int dy = -1; dy <= 1; ++dy) {
+            for (int dx = -1; dx <= 1; ++dx) {
+                const int manhattan = std::abs(dx) + std::abs(dy) + std::abs(dz);
+                const int chessboard = std::max(std::max(std::abs(dx), std::abs(dy)), std::abs(dz));
+                if (manhattan == 0) {
+                    continue;
+                }
+                if ((golden.map_header.lookup_nearby_type <= 6 && manhattan != 1) ||
+                    (golden.map_header.lookup_nearby_type > 6 && golden.map_header.lookup_nearby_type <= 18 &&
+                     (chessboard > 1 || manhattan > 2))) {
+                    continue;
+                }
+                const int ngx = gx + dx;
+                const int ngy = gy + dy;
+                const int ngz = gz + dz;
+                EncodedCell neighbor;
+                neighbor.block_x = FloorDivHost(ngx, bx_dim);
+                neighbor.block_y = FloorDivHost(ngy, by_dim);
+                neighbor.block_z = FloorDivHost(ngz, bz_dim);
+                const int lx = ModFloorHost(ngx, bx_dim);
+                const int ly = ModFloorHost(ngy, by_dim);
+                const int lz = ModFloorHost(ngz, bz_dim);
+                neighbor.cell_idx = (lz * by_dim + ly) * bx_dim + lx;
+                const ObsCellFloat64* candidate = LookupCellHost(golden, neighbor);
+                if (candidate == nullptr) {
+                    continue;
+                }
+                bool better = false;
+                if (!found) {
+                    better = true;
+                } else if (golden.params.mode == MAPPING_OBSERVATION) {
+                    better = BetterMappingCandidateHost(*candidate, best, x, y, z);
+                } else {
+                    const double ddx = x - candidate->centroid_x;
+                    const double ddy = y - candidate->centroid_y;
+                    const double ddz = z - candidate->centroid_z;
+                    const double dist2 = ddx * ddx + ddy * ddy + ddz * ddz;
+                    better = dist2 < best_dist2;
+                    if (better) {
+                        best_dist2 = dist2;
+                    }
+                }
+                if (better) {
+                    best = *candidate;
+                    found = true;
+                    if (golden.params.mode != MAPPING_OBSERVATION) {
+                        const double ddx = x - candidate->centroid_x;
+                        const double ddy = y - candidate->centroid_y;
+                        const double ddz = z - candidate->centroid_z;
+                        best_dist2 = ddx * ddx + ddy * ddy + ddz * ddz;
+                    }
+                }
+            }
+        }
+    }
+    if (found) {
+        out = best;
+    }
+    return found;
+}
+
+std::vector<ObsCellFloat64> BuildCandidateCellsHost(const GoldenCase& golden) {
+    std::vector<ObsCellFloat64> candidates(golden.scan.size());
+    for (size_t i = 0; i < golden.scan.size(); ++i) {
+        double x = 0.0;
+        double y = 0.0;
+        double z = 0.0;
+        RotatePointHost(golden.pose, golden.scan[i], x, y, z);
+        ObsCellFloat64 candidate;
+        if (LookupCandidateHost(golden, x, y, z, candidate)) {
+            candidates[i] = candidate;
+        }
+    }
+    return candidates;
+}
+
 bool CompareEquation(const SlamNormalEquation& actual, const SlamNormalEquation& expected, double abs_tol,
                      double rel_tol, std::string& report) {
     double max_abs = 0.0;
@@ -401,6 +607,21 @@ int RunGoldenCase(const std::string& golden_dir) {
     std::cout << "[obs_tb] " << golden.mode_name << " " << FormatDebugCounters(actual_words) << std::endl;
     if (!pass) {
         return 2;
+    }
+    std::vector<ObsCellFloat64> candidate_cells = BuildCandidateCellsHost(golden);
+    SlamAccelObservationParams v2_params = golden.params;
+    v2_params.flags |= SLAM_ACCEL_OBS_FLAG_CANDIDATE_ABI_V2;
+    uint64_t v2_words[kNormalEquationWords] = {};
+    unified_surfel_observation_core(golden.scan.data(), static_cast<uint32_t>(golden.scan.size()), &golden.pose,
+                                    &golden.map_header, reinterpret_cast<const uint64_t*>(&v2_params),
+                                    golden.blocks.data(), candidate_cells.data(), v2_words);
+    const SlamNormalEquation v2_actual = DecodeOutputWords(v2_words);
+    std::string v2_report;
+    const bool v2_pass = CompareEquation(v2_actual, golden.expected, 1e-4, 1e-3, v2_report);
+    std::cout << "[obs_tb] " << golden.mode_name << "_v2 " << v2_report << std::endl;
+    std::cout << "[obs_tb] " << golden.mode_name << "_v2 " << FormatDebugCounters(v2_words) << std::endl;
+    if (!v2_pass) {
+        return 6;
     }
     return 0;
 }

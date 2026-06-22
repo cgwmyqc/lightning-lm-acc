@@ -28,6 +28,7 @@ DEFINE_bool(ddr_smoke, false, "Run PL DDR pattern smoke");
 DEFINE_int32(ddr_size, 4096, "Bytes per PL DDR smoke region");
 DEFINE_double(abs_tol, 1e-4, "Absolute tolerance for normal-equation comparison");
 DEFINE_double(rel_tol, 1e-3, "Relative tolerance for normal-equation comparison");
+DEFINE_bool(abi_v2_candidates, false, "Use ABI V2 per-point precomputed candidate cells");
 
 namespace {
 
@@ -110,6 +111,10 @@ bool WriteResultJson(const std::string& output_dir, int iteration, const std::st
     os << "  \"golden_dir\": \"" << golden_dir << "\",\n";
     os << "  \"ctrl_base\": " << ctrl_base << ",\n";
     os << "  \"scan_count\": " << result.scan_count_readback << ",\n";
+    os << "  \"candidate_count\": " << result.candidate_count << ",\n";
+    os << "  \"candidate_valid_count\": " << result.candidate_valid_count << ",\n";
+    os << "  \"candidate_miss_count\": " << result.candidate_miss_count << ",\n";
+    os << "  \"candidate_bytes\": " << result.candidate_bytes << ",\n";
     os << "  \"status\": " << result.status << ",\n";
     os << "  \"error\": " << result.error << ",\n";
     os << "  \"run_count_before\": " << result.run_count_before << ",\n";
@@ -205,6 +210,7 @@ int main(int argc, char** argv) {
     const auto expected_abi = lightning::loc::golden::ToAbiNormalEquation(frame.expected_obs);
 
     std::cout << "XDMA_CPP_GOLDEN_LOAD_PASS\n";
+    std::cout << "abi_v2_candidates=" << (FLAGS_abi_v2_candidates ? 1 : 0) << "\n";
     std::cout << "scan_count=" << scan_points.size() << "\n";
     std::cout << "active_blocks=" << frame.active_map.blocks.size() << "\n";
     std::cout << "active_cells=" << frame.active_map.cells.size() << "\n";
@@ -214,8 +220,13 @@ int main(int argc, char** argv) {
     for (int iter = 1; iter <= FLAGS_repeat; ++iter) {
         XdmaRuntime::RunResult result;
         const bool write_full_image = iter == 1;
-        if (!runtime.RunLocalizationObservation(scan_points, pose, frame.active_map, write_full_image,
-                                                FLAGS_verify_readback && write_full_image, result, &error)) {
+        const bool run_ok =
+            FLAGS_abi_v2_candidates
+                ? runtime.RunLocalizationObservationV2(scan_points, pose, frame.active_map, write_full_image,
+                                                       FLAGS_verify_readback && write_full_image, result, &error)
+                : runtime.RunLocalizationObservation(scan_points, pose, frame.active_map, write_full_image,
+                                                     FLAGS_verify_readback && write_full_image, result, &error);
+        if (!run_ok) {
             LOG(ERROR) << error;
             return 6;
         }
@@ -244,6 +255,13 @@ int main(int argc, char** argv) {
                   << std::setfill(' ') << " RUN_COUNT=" << result.run_count_before << "->" << result.run_count_after
                   << " ELAPSED_SEC=" << std::setprecision(6) << result.elapsed_sec << "\n";
         std::cout << "SCAN_COUNT_READBACK=" << result.scan_count_readback << "\n";
+        std::cout << "ABI_V2_CANDIDATES=" << (FLAGS_abi_v2_candidates ? 1 : 0) << "\n";
+        std::cout << "CANDIDATE_COUNT=" << result.candidate_count << "\n";
+        std::cout << "CANDIDATE_VALID=" << result.candidate_valid_count << "\n";
+        std::cout << "CANDIDATE_MISS=" << result.candidate_miss_count << "\n";
+        std::cout << "CANDIDATE_BYTES=" << result.candidate_bytes << "\n";
+        std::cout << "H2C_CANDIDATE_SEC=" << std::setprecision(6) << result.timing.h2c_candidate_sec << "\n";
+        std::cout << "HLS_WAIT_SEC=" << std::setprecision(6) << result.timing.hls_wait_sec << "\n";
         std::cout << "COUNTS=" << Counts(actual) << "\n";
         std::cout << "OUTPUT_WORD[27]=0x" << std::hex << std::setw(16) << std::setfill('0')
                   << result.raw_output_words[27] << "\n";
@@ -255,6 +273,7 @@ int main(int argc, char** argv) {
 
     if (FLAGS_repeat > 1) {
         std::cout << "XDMA_CPP_GOLDEN_REPEAT_PASS ITERATIONS=" << FLAGS_repeat
+                  << " ABI_V2_CANDIDATES=" << (FLAGS_abi_v2_candidates ? 1 : 0)
                   << " MAX_ELAPSED_SEC=" << std::setprecision(6) << max_elapsed << "\n";
     }
     return 0;

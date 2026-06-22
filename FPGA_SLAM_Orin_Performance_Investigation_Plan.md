@@ -1911,3 +1911,84 @@ The first localization replay attempt failed before HLS start because /tmp/light
 was a stale user-owned file that sudo could not write on this system. It was removed and recreated by root.
 This was not an FPGA/HLS failure.
 ```
+
+## 24. Stage61 Windows/HLS Result: Candidate ABI V2
+
+Stage61 implements the ABI V2 direction selected after Stage58 missed the 5x
+gate. Orin now precomputes the final candidate surfel per scan point; FPGA no
+longer performs active-block lookup or random full-map `obs_cells` reads when
+`SLAM_ACCEL_OBS_FLAG_CANDIDATE_ABI_V2` is set.
+
+Interface decision:
+
+```text
+V1: params.flags bit clear
+    FPGA uses Stage58 lookup path.
+
+V2: params.flags has SLAM_ACCEL_OBS_FLAG_CANDIDATE_ABI_V2
+    OBS_CELLS_BASE is candidate_cells[scan_count].
+    candidate_cells[i] is the final ObsCellFloat64 for scan point i.
+    flags=0 means lookup miss.
+```
+
+Windows validation on 2026-06-22:
+
+```text
+g++ CSim:                 PASS
+Vivado HLS CSim:          PASS
+Vivado HLS C Synthesis:   PASS
+Vivado HLS IP export:     PASS
+Vivado BD validate:       PASS
+Vivado project synthesis: PASS
+Vivado implementation:    PASS
+Bitstream generation:     PASS
+Windows JTAG program:     PASS
+```
+
+Correctness:
+
+```text
+V1 localization: 6050/911/2 PASS
+V1 mapping:      611/0/171 PASS
+V2 localization: 6050/911/2 PASS
+V2 mapping:      611/0/171 PASS
+```
+
+V2 CSim counters confirm the intended bottlenecks are bypassed:
+
+```text
+localization V2: block_lookup=0, block_search_steps=0, obs_cell_read=0
+mapping V2:      block_lookup=0, block_search_steps=0, obs_cell_read=0
+debug_magic:     0x53543631 ("ST61")
+```
+
+Board bitstream:
+
+```text
+bitstream: fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit
+post-route WNS: 0.071 ns
+post-route WHS: 0.009 ns
+timing: all user timing constraints met
+DRC: 0 errors, 0 critical warnings
+JTAG: JTAG_PROGRAM_PASS, FPGA_STATE=FPGA is configured, DONE pin 1
+```
+
+Next Orin gate:
+
+```bash
+./install/lightning/lib/lightning/run_surfel_loc_xdma_golden \
+  --golden_dir fpga/golden/localization/frame_000001 \
+  --ctrl_base 0x1000 \
+  --timeout_sec 120 \
+  --abi_v2_candidates
+
+./install/lightning/lib/lightning/run_surfel_mapping_xdma_golden \
+  --golden_dir fpga/golden/mapping/frame_000001 \
+  --ctrl_base 0x1000 \
+  --timeout_sec 120 \
+  --abi_v2_candidates
+```
+
+Acceptance remains: localization `6050/911/2`, mapping `611/0/171`, no XDMA
+config BAR failure, no `CmpltTO`, no AER fatal, and localization full-frame
+`hls_wait <= 0.307s`.

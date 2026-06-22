@@ -178,6 +178,8 @@ bool LidarLoc::Init(const std::string& config_path) {
         GetYamlValue(lidar_loc_node, "surfel_fpga_timeout_sec", options_.surfel_xdma_options_.timeout_sec);
     options_.surfel_xdma_options_.verify_readback =
         GetYamlValue(lidar_loc_node, "surfel_fpga_verify_readback", options_.surfel_xdma_options_.verify_readback);
+    options_.surfel_xdma_options_.candidate_abi_v2 =
+        GetYamlValue(lidar_loc_node, "surfel_fpga_candidate_abi_v2", options_.surfel_xdma_options_.candidate_abi_v2);
     const YAML::Node fpga_runtime = yaml_node["fpga"] ? yaml_node["fpga"]["runtime"] : YAML::Node();
     options_.surfel_xdma_options_.user_dev =
         GetYamlValue(fpga_runtime, "user_dev", options_.surfel_xdma_options_.user_dev);
@@ -191,6 +193,8 @@ bool LidarLoc::Init(const std::string& config_path) {
         GetYamlValue(fpga_runtime, "timeout_sec", options_.surfel_xdma_options_.timeout_sec);
     options_.surfel_xdma_options_.verify_readback =
         GetYamlValue(fpga_runtime, "verify_readback", options_.surfel_xdma_options_.verify_readback);
+    options_.surfel_xdma_options_.candidate_abi_v2 =
+        GetYamlValue(fpga_runtime, "candidate_abi_v2", options_.surfel_xdma_options_.candidate_abi_v2);
     const YAML::Node profile_node = yaml_node["profile"];
     options_.surfel_fpga_profile_enable_ =
         GetYamlValue(profile_node, "fpga_obs_trace_enable", options_.surfel_fpga_profile_enable_);
@@ -241,6 +245,7 @@ bool LidarLoc::Init(const std::string& config_path) {
               << " surfel_lookup_nearby_type=" << options_.surfel_options_.lookup_nearby_type
               << " surfel_fpga_ctrl_base=0x" << std::hex << options_.surfel_xdma_options_.ctrl_base << std::dec
               << " surfel_fpga_timeout_sec=" << options_.surfel_xdma_options_.timeout_sec
+              << " surfel_candidate_abi_v2=" << options_.surfel_xdma_options_.candidate_abi_v2
               << " loc_fpga_obs_trace_enable=" << options_.surfel_fpga_profile_enable_
               << " loc_fpga_obs_trace_csv_enable=" << options_.surfel_fpga_profile_csv_enable_
               << " loc_fpga_obs_trace_csv_path=" << options_.surfel_fpga_profile_csv_path_;
@@ -1133,9 +1138,9 @@ void LidarLoc::AppendLocFpgaProfileCsv(uint64_t frame_id, uint32_t iter, uint64_
         ofs << "frame_id,loc_iter,fpga_call,scan_points,active_blocks,active_cells,window_id,window_version,"
                "valid_count,reject_count,miss_count,mean_abs_residual,max_abs_residual,score,"
                "rebuild_window_ms,pack_scan_ms,total_ms,mutex_wait_ms,lock_ms,open_ms,h2c_scan_ms,"
-               "h2c_pose_header_params_ms,h2c_map_ms,verify_readback_ms,output_zero_ms,reg_config_ms,"
+               "h2c_pose_header_params_ms,h2c_map_ms,h2c_candidate_ms,verify_readback_ms,output_zero_ms,reg_config_ms,"
                "hls_wait_ms,c2h_output_ms,solve_ms,pose_update_ms,status,error,run_count_before,"
-               "run_count_after,scan_count_readback\n";
+               "run_count_after,scan_count_readback,candidate_count,candidate_valid,candidate_miss,candidate_bytes\n";
     }
 
     const auto ms = [](double sec) { return sec * 1000.0; };
@@ -1147,11 +1152,14 @@ void LidarLoc::AppendLocFpgaProfileCsv(uint64_t frame_id, uint32_t iter, uint64_
         << ms(pack_scan_sec) << "," << ms(result.timing.total_sec) << "," << ms(result.timing.mutex_wait_sec)
         << "," << ms(result.timing.lock_sec) << "," << ms(result.timing.open_sec) << ","
         << ms(result.timing.h2c_scan_sec) << "," << ms(result.timing.h2c_pose_header_params_sec) << ","
-        << ms(result.timing.h2c_map_sec) << "," << ms(result.timing.verify_readback_sec) << ","
-        << ms(result.timing.output_zero_sec) << "," << ms(result.timing.reg_config_sec) << ","
-        << ms(result.timing.hls_wait_sec) << "," << ms(result.timing.c2h_output_sec) << "," << ms(solve_sec)
-        << "," << ms(pose_update_sec) << "," << result.status << "," << result.error << ","
-        << result.run_count_before << "," << result.run_count_after << "," << result.scan_count_readback << "\n";
+        << ms(result.timing.h2c_map_sec) << "," << ms(result.timing.h2c_candidate_sec) << ","
+        << ms(result.timing.verify_readback_sec) << "," << ms(result.timing.output_zero_sec) << ","
+        << ms(result.timing.reg_config_sec) << "," << ms(result.timing.hls_wait_sec) << ","
+        << ms(result.timing.c2h_output_sec) << "," << ms(solve_sec) << "," << ms(pose_update_sec) << ","
+        << result.status << "," << result.error << "," << result.run_count_before << "," << result.run_count_after
+        << "," << result.scan_count_readback << "," << result.candidate_count << ","
+        << result.candidate_valid_count << "," << result.candidate_miss_count << "," << result.candidate_bytes
+        << "\n";
 }
 
 bool LidarLoc::LocalizeSurfelFpgaObs(SE3& pose, double& confidence, CloudPtr input, CloudPtr output) {
@@ -1232,6 +1240,11 @@ bool LidarLoc::LocalizeSurfelFpgaObs(SE3& pose, double& confidence, CloudPtr inp
                           << " scan_points=" << (input ? input->size() : 0)
                           << " active_blocks=" << active_buffer.blocks.size()
                           << " active_cells=" << active_buffer.cells.size()
+                          << " candidate_abi_v2=" << options_.surfel_xdma_options_.candidate_abi_v2
+                          << " candidate_count=" << run_result.candidate_count
+                          << " candidate_valid=" << run_result.candidate_valid_count
+                          << " candidate_miss=" << run_result.candidate_miss_count
+                          << " candidate_bytes=" << run_result.candidate_bytes
                           << " valid=" << equation.valid_count
                           << " reject=" << equation.reject_count
                           << " miss=" << equation.miss_count
@@ -1246,6 +1259,7 @@ bool LidarLoc::LocalizeSurfelFpgaObs(SE3& pose, double& confidence, CloudPtr inp
                           << " h2c_scan=" << run_result.timing.h2c_scan_sec
                           << " h2c_pose_header_params=" << run_result.timing.h2c_pose_header_params_sec
                           << " h2c_map=" << run_result.timing.h2c_map_sec
+                          << " h2c_candidate=" << run_result.timing.h2c_candidate_sec
                           << " verify_readback=" << run_result.timing.verify_readback_sec
                           << " output_zero=" << run_result.timing.output_zero_sec
                           << " reg_config=" << run_result.timing.reg_config_sec

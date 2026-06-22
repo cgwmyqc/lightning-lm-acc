@@ -15,6 +15,7 @@ DEFINE_double(timeout_sec, 120.0, "HLS timeout in seconds");
 DEFINE_bool(verify_readback, false, "Verify DDR image readback");
 DEFINE_double(abs_tol, 1e-4, "Absolute tolerance");
 DEFINE_double(rel_tol, 1e-3, "Relative tolerance");
+DEFINE_bool(abi_v2_candidates, false, "Use ABI V2 per-point precomputed candidate cells");
 
 int main(int argc, char** argv) {
     google::InitGoogleLogging(argv[0]);
@@ -50,8 +51,13 @@ int main(int argc, char** argv) {
                                                                       extrinsic_R, extrinsic_T);
 
     lightning::fpga::XdmaRuntime::RunResult result;
-    if (!runtime.RunMappingObservation(scan_points, pose, frame.active_map, params, true, FLAGS_verify_readback,
-                                       result, &error)) {
+    const bool run_ok =
+        FLAGS_abi_v2_candidates
+            ? runtime.RunMappingObservationV2(scan_points, pose, frame.active_map, params, true, FLAGS_verify_readback,
+                                             result, &error)
+            : runtime.RunMappingObservation(scan_points, pose, frame.active_map, params, true, FLAGS_verify_readback,
+                                            result, &error);
+    if (!run_ok) {
         LOG(ERROR) << error;
         return 1;
     }
@@ -64,7 +70,14 @@ int main(int argc, char** argv) {
                                                          &report);
     LOG(INFO) << "[mapping_xdma_golden] STATUS=0x" << std::hex << result.status << " ERROR=0x" << result.error
               << std::dec << " RUN_COUNT=" << result.run_count_before << "->" << result.run_count_after
-              << " SCAN_COUNT_READBACK=" << result.scan_count_readback << " " << report;
+              << " SCAN_COUNT_READBACK=" << result.scan_count_readback
+              << " abi_v2_candidates=" << (FLAGS_abi_v2_candidates ? 1 : 0)
+              << " candidate_count=" << result.candidate_count
+              << " candidate_valid=" << result.candidate_valid_count
+              << " candidate_miss=" << result.candidate_miss_count
+              << " candidate_bytes=" << result.candidate_bytes
+              << " h2c_candidate_sec=" << result.timing.h2c_candidate_sec
+              << " hls_wait_sec=" << result.timing.hls_wait_sec << " " << report;
     if (!pass) {
         LOG(ERROR) << "MAPPING_XDMA_REPLAY_FAIL";
         return 2;

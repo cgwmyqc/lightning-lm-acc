@@ -162,3 +162,46 @@ The default generated project directories are:
 Vivado may temporarily see those paths through a short `subst` drive to avoid
 Windows/Vivado 2018.3 path-length issues. The actual files remain under
 `fpga/vivado/.build/`, which is ignored by git.
+
+## Stage 61 ABI V2 Candidate Bitstream 2026-06-22
+
+Formal board image regenerated with the Stage 61 HLS IP. The BD, BAR shim,
+MIG-backed PL DDR3, and controller register map are unchanged. The HLS IP now
+supports V1 lookup and opt-in V2 candidate input selected by
+`SLAM_ACCEL_OBS_FLAG_CANDIDATE_ABI_V2`.
+
+Commands:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_project_synth.ps1 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_impl_bitstream.ps1 -Jobs 18
+```
+
+Results:
+
+- Project synthesis: PASS.
+- Implementation/bitstream: PASS.
+- Windows JTAG program: PASS.
+- Bitstream: `fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit`.
+- Timing: WNS `0.071 ns`, WHS `0.009 ns`; all user timing constraints met.
+- DRC: 0 errors, 0 critical warnings; ordinary warnings/advisories remain.
+- Utilization: Slice LUTs `76854 / 277400 = 27.71%`, Slice Registers
+  `89411 / 554800 = 16.12%`, BRAM `85.5 / 755 = 11.32%`, DSP
+  `348 / 2020 = 17.23%`.
+- JTAG: `JTAG_PROGRAM_PASS`, `FPGA_STATE=FPGA is configured`, DONE pin `1`.
+
+Next Orin gate:
+
+```bash
+./install/lightning/lib/lightning/run_surfel_loc_xdma_golden \
+  --golden_dir fpga/golden/localization/frame_000001 \
+  --ctrl_base 0x1000 \
+  --timeout_sec 120 \
+  --abi_v2_candidates
+
+./install/lightning/lib/lightning/run_surfel_mapping_xdma_golden \
+  --golden_dir fpga/golden/mapping/frame_000001 \
+  --ctrl_base 0x1000 \
+  --timeout_sec 120 \
+  --abi_v2_candidates
+```

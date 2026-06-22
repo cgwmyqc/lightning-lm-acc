@@ -1,4 +1,4 @@
-﻿# AX7Z100 PCIe/MIG Board Skeleton Commands
+# AX7Z100 PCIe/MIG Board Skeleton Commands
 
 ## Static Board Profile
 
@@ -337,3 +337,18 @@ Results:
 - DRC: 0 errors; warnings/advisories remain.
 
 Next Orin gate: JTAG program the new bitstream, reboot Orin, run shim/reg, DDR, Stage 42 residual probes, then Stage 41 multi-cell and Stage 40 n64 golden if probes pass.
+
+## Stage 61 ABI V2 Candidate Bitstream
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_project_synth.ps1 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_impl_bitstream.ps1 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\program_bitstream_jtag.ps1 -Bitstream .\fpga\vivado\.build\azmig_impl\azmig.runs\impl_1\azmig_wrapper.bit
+```
+
+Orin V2 golden gate:
+
+```bash
+./install/lightning/lib/lightning/run_surfel_loc_xdma_golden --golden_dir fpga/golden/localization/frame_000001 --ctrl_base 0x1000 --timeout_sec 120 --abi_v2_candidates
+./install/lightning/lib/lightning/run_surfel_mapping_xdma_golden --golden_dir fpga/golden/mapping/frame_000001 --ctrl_base 0x1000 --timeout_sec 120 --abi_v2_candidates
+```

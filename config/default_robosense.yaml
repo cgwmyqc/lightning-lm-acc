@@ -79,6 +79,7 @@ fpga:
     ctrl_base: 0x1000
     timeout_sec: 120.0
     verify_readback: false
+    candidate_abi_v2: false
   mapping:
     enable: false      # Effective only when fpga.enable=true.
     mode: cpu_sim      # cpu/cpu_sim use CPU. fpga_obs uses FPGA/HLS observation with CPU EKF update.

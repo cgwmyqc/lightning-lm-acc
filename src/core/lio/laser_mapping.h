@@ -68,6 +68,7 @@ class LaserMapping {
         bool mapping_fallback_to_cpu_ = true;
         fpga::XdmaRuntime::Options mapping_xdma_options_;
         bool mapping_xdma_verify_readback_ = false;
+        bool mapping_candidate_abi_v2_ = false;
         bool mapping_fpga_profile_enable_ = false;
         bool mapping_fpga_profile_csv_enable_ = false;
         std::string mapping_fpga_profile_csv_path_ = "./data/profile/fpga_obs_trace.csv";

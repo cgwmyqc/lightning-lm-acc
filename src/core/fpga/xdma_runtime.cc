@@ -11,11 +11,13 @@
 #include <array>
 #include <chrono>
 #include <cstring>
+#include <cmath>
 #include <mutex>
 #include <sstream>
 #include <thread>
 
 #include "fpga/host/xdma_smoke/ax7z100_plddr_layout.h"
+#include "core/localization/surfel_loc/surfel_loc_backend.h"
 
 namespace lightning::fpga {
 namespace {
@@ -208,6 +210,141 @@ bool VerifyBytes(int fd, uint32_t base, const void* expected, size_t size, std::
     return true;
 }
 
+Vec3d ToVec3d(const SlamAccelScanPoint& point) {
+    return Vec3d(static_cast<double>(point.x), static_cast<double>(point.y), static_cast<double>(point.z));
+}
+
+SE3 FromAbiPose(const SlamAccelPose& pose) {
+    Eigen::Quaterniond q(static_cast<double>(pose.qw), static_cast<double>(pose.qx), static_cast<double>(pose.qy),
+                         static_cast<double>(pose.qz));
+    q.normalize();
+    return SE3(q, Vec3d(static_cast<double>(pose.tx), static_cast<double>(pose.ty), static_cast<double>(pose.tz)));
+}
+
+double PlaneResidual(const loc::ObsCellFloat64& cell, const Vec3d& point_world) {
+    return static_cast<double>(cell.normal_x) * point_world.x() +
+           static_cast<double>(cell.normal_y) * point_world.y() +
+           static_cast<double>(cell.normal_z) * point_world.z() + static_cast<double>(cell.plane_d);
+}
+
+bool BetterMappingCell(const loc::ObsCellFloat64& lhs, const loc::ObsCellFloat64& rhs, const Vec3d& point_world) {
+    const double lhs_res = std::fabs(PlaneResidual(lhs, point_world));
+    const double rhs_res = std::fabs(PlaneResidual(rhs, point_world));
+    if (std::fabs(lhs_res - rhs_res) > 1.0e-4) {
+        return lhs_res < rhs_res;
+    }
+
+    const Vec3d lhs_centroid(lhs.centroid_x, lhs.centroid_y, lhs.centroid_z);
+    const Vec3d rhs_centroid(rhs.centroid_x, rhs.centroid_y, rhs.centroid_z);
+    const double lhs_dist = (lhs_centroid - point_world).squaredNorm();
+    const double rhs_dist = (rhs_centroid - point_world).squaredNorm();
+    if (std::fabs(lhs_dist - rhs_dist) > 1.0e-4) {
+        return lhs_dist < rhs_dist;
+    }
+    return lhs.quality < rhs.quality;
+}
+
+int DivFloor(int value, int divisor) {
+    int q = value / divisor;
+    int r = value % divisor;
+    if (r != 0 && ((r < 0) != (divisor < 0))) {
+        --q;
+    }
+    return q;
+}
+
+int ModFloor(int value, int divisor) {
+    int r = value % divisor;
+    return r < 0 ? r + divisor : r;
+}
+
+bool LookupMappingCandidate(const loc::SurfelLocBackend& lookup_backend, const loc::ActiveMapBuffer& active_map,
+                            const Vec3d& point_world, const loc::ObsCellFloat64*& out_cell) {
+    const auto center = lookup_backend.Encode(point_world, active_map);
+    out_cell = lookup_backend.LookupCell(active_map, center);
+    if (out_cell != nullptr) {
+        return true;
+    }
+    if (active_map.lookup_nearby_type == 0) {
+        return false;
+    }
+
+    const int block_dim_x = static_cast<int>(SLAM_ACCEL_BLOCK_DIM_X);
+    const int block_dim_y = static_cast<int>(SLAM_ACCEL_BLOCK_DIM_Y);
+    const int block_dim_z = static_cast<int>(SLAM_ACCEL_BLOCK_DIM_Z);
+    const int base_lz = center.cell_idx / (block_dim_x * block_dim_y);
+    const int rem = center.cell_idx - base_lz * block_dim_x * block_dim_y;
+    const int base_ly = rem / block_dim_x;
+    const int base_lx = rem - base_ly * block_dim_x;
+    const int gx = center.block_x * block_dim_x + base_lx;
+    const int gy = center.block_y * block_dim_y + base_ly;
+    const int gz = center.block_z * block_dim_z + base_lz;
+
+    bool found = false;
+    const loc::ObsCellFloat64* best = nullptr;
+    for (int dx = -1; dx <= 1; ++dx) {
+        for (int dy = -1; dy <= 1; ++dy) {
+            for (int dz = -1; dz <= 1; ++dz) {
+                if (dx == 0 && dy == 0 && dz == 0) {
+                    continue;
+                }
+                const int manhattan = std::abs(dx) + std::abs(dy) + std::abs(dz);
+                if (active_map.lookup_nearby_type == 6 && manhattan > 1) {
+                    continue;
+                }
+                if (active_map.lookup_nearby_type == 18 && manhattan > 2) {
+                    continue;
+                }
+
+                const int ngx = gx + dx;
+                const int ngy = gy + dy;
+                const int ngz = gz + dz;
+                loc::SurfelLocBackend::EncodedCell neighbor;
+                neighbor.block_x = DivFloor(ngx, block_dim_x);
+                neighbor.block_y = DivFloor(ngy, block_dim_y);
+                neighbor.block_z = DivFloor(ngz, block_dim_z);
+                const int nlx = ModFloor(ngx, block_dim_x);
+                const int nly = ModFloor(ngy, block_dim_y);
+                const int nlz = ModFloor(ngz, block_dim_z);
+                neighbor.cell_idx = (nlz * block_dim_y + nly) * block_dim_x + nlx;
+
+                const loc::ObsCellFloat64* candidate = lookup_backend.LookupCell(active_map, neighbor);
+                if (candidate != nullptr && (!found || BetterMappingCell(*candidate, *best, point_world))) {
+                    best = candidate;
+                    found = true;
+                }
+            }
+        }
+    }
+    out_cell = best;
+    return found;
+}
+
+std::vector<ObsCellFloat64> BuildCandidateCells(const std::vector<SlamAccelScanPoint>& scan_points,
+                                                const SlamAccelPose& pose,
+                                                const loc::ActiveMapBuffer& active_map, uint32_t mode,
+                                                uint32_t& valid_count, uint32_t& miss_count) {
+    std::vector<ObsCellFloat64> candidates(scan_points.size());
+    valid_count = 0;
+    miss_count = 0;
+    const SE3 pose_se3 = FromAbiPose(pose);
+    const loc::SurfelLocBackend lookup_backend;
+    for (size_t i = 0; i < scan_points.size(); ++i) {
+        const Vec3d point_world = pose_se3 * ToVec3d(scan_points[i]);
+        const loc::ObsCellFloat64* cell = nullptr;
+        const bool hit = mode == MAPPING_OBSERVATION ? LookupMappingCandidate(lookup_backend, active_map, point_world, cell)
+                                                     : lookup_backend.TryLookupNearest(active_map, point_world, cell);
+        if (hit && cell != nullptr) {
+            candidates[i] = *cell;
+            ++valid_count;
+        } else {
+            candidates[i] = ObsCellFloat64();
+            ++miss_count;
+        }
+    }
+    return candidates;
+}
+
 bool ConfigureRegisters(int user_fd, uint32_t ctrl_base, uint32_t mode, uint32_t scan_count, std::string* error) {
     const std::array<std::pair<uint32_t, uint32_t>, 16> writes = {{
         {LIGHTNING_CTRL_KERNEL_SEL, LIGHTNING_KERNEL_UNIFIED_OBSERVATION},
@@ -341,6 +478,7 @@ namespace {
 bool RunObservationImpl(const XdmaRuntime::Options& options, uint32_t mode,
                         const std::vector<SlamAccelScanPoint>& scan_points, const SlamAccelPose& pose,
                         const loc::ActiveMapBuffer& active_map, const SlamAccelObservationParams& params,
+                        const std::vector<ObsCellFloat64>* candidate_cells,
                         bool write_full_image, bool verify_readback, XdmaRuntime::RunResult& result,
                         std::string* error) {
     const auto total_start = Clock::now();
@@ -371,6 +509,7 @@ bool RunObservationImpl(const XdmaRuntime::Options& options, uint32_t mode,
 
     const ActiveMapHeader map_header = MakeActiveMapHeader(active_map, mode);
     SlamNormalEquation output_zero;
+    const bool use_candidate_v2 = candidate_cells != nullptr;
 
     if (write_full_image) {
         stage_start = Clock::now();
@@ -392,26 +531,47 @@ bool RunObservationImpl(const XdmaRuntime::Options& options, uint32_t mode,
         result.timing.h2c_pose_header_params_sec = SecondsSince(stage_start);
 
         stage_start = Clock::now();
-        if (!WriteVector(h2c.get(), LIGHTNING_ACTIVE_BLOCKS_BASE, active_map.blocks, error, "active_blocks") ||
-            !WriteVector(h2c.get(), LIGHTNING_OBS_CELLS_BASE, active_map.cells, error, "obs_cells")) {
+        bool map_write_ok = true;
+        if (use_candidate_v2) {
+            map_write_ok =
+                WriteVector(h2c.get(), LIGHTNING_OBS_CELLS_BASE, *candidate_cells, error, "candidate_cells");
+        } else {
+            map_write_ok = WriteVector(h2c.get(), LIGHTNING_ACTIVE_BLOCKS_BASE, active_map.blocks, error,
+                                       "active_blocks") &&
+                           WriteVector(h2c.get(), LIGHTNING_OBS_CELLS_BASE, active_map.cells, error, "obs_cells");
+        }
+        if (!map_write_ok) {
             result.timing.h2c_map_sec = SecondsSince(stage_start);
             result.timing.total_sec = SecondsSince(total_start);
             return false;
         }
         result.timing.h2c_map_sec = SecondsSince(stage_start);
+        if (use_candidate_v2) {
+            result.timing.h2c_candidate_sec = result.timing.h2c_map_sec;
+        }
 
         if (verify_readback) {
             stage_start = Clock::now();
-            if (!VerifyBytes(c2h.get(), LIGHTNING_SCAN_POINTS_BASE, scan_points.data(),
-                             scan_points.size() * sizeof(SlamAccelScanPoint), error, "scan_points") ||
-                !VerifyBytes(c2h.get(), LIGHTNING_POSE_BASE, &pose, sizeof(pose), error, "pose") ||
-                !VerifyBytes(c2h.get(), LIGHTNING_MAP_HEADER_BASE, &map_header, sizeof(map_header), error,
-                             "map_header") ||
-                !VerifyBytes(c2h.get(), LIGHTNING_PARAMS_BASE, &params, sizeof(params), error, "params") ||
-                !VerifyBytes(c2h.get(), LIGHTNING_ACTIVE_BLOCKS_BASE, active_map.blocks.data(),
-                             active_map.blocks.size() * sizeof(ActiveBlockRecord), error, "active_blocks") ||
-                !VerifyBytes(c2h.get(), LIGHTNING_OBS_CELLS_BASE, active_map.cells.data(),
-                             active_map.cells.size() * sizeof(ObsCellFloat64), error, "obs_cells")) {
+            bool verify_ok = VerifyBytes(c2h.get(), LIGHTNING_SCAN_POINTS_BASE, scan_points.data(),
+                                         scan_points.size() * sizeof(SlamAccelScanPoint), error, "scan_points") &&
+                             VerifyBytes(c2h.get(), LIGHTNING_POSE_BASE, &pose, sizeof(pose), error, "pose") &&
+                             VerifyBytes(c2h.get(), LIGHTNING_MAP_HEADER_BASE, &map_header, sizeof(map_header), error,
+                                         "map_header") &&
+                             VerifyBytes(c2h.get(), LIGHTNING_PARAMS_BASE, &params, sizeof(params), error, "params");
+            if (verify_ok) {
+                if (use_candidate_v2) {
+                    verify_ok = VerifyBytes(c2h.get(), LIGHTNING_OBS_CELLS_BASE, candidate_cells->data(),
+                                            candidate_cells->size() * sizeof(ObsCellFloat64), error,
+                                            "candidate_cells");
+                } else {
+                    verify_ok = VerifyBytes(c2h.get(), LIGHTNING_ACTIVE_BLOCKS_BASE, active_map.blocks.data(),
+                                            active_map.blocks.size() * sizeof(ActiveBlockRecord), error,
+                                            "active_blocks") &&
+                                VerifyBytes(c2h.get(), LIGHTNING_OBS_CELLS_BASE, active_map.cells.data(),
+                                            active_map.cells.size() * sizeof(ObsCellFloat64), error, "obs_cells");
+                }
+            }
+            if (!verify_ok) {
                 result.timing.verify_readback_sec = SecondsSince(stage_start);
                 result.timing.total_sec = SecondsSince(total_start);
                 return false;
@@ -511,15 +671,51 @@ bool XdmaRuntime::RunLocalizationObservation(const std::vector<SlamAccelScanPoin
                                              std::string* error) const {
     const SlamAccelObservationParams params = MakeLocalizationObservationParams();
     return RunObservationImpl(options_, LOCALIZATION_OBSERVATION, scan_points, pose, active_map, params,
-                              write_full_image, verify_readback, result, error);
+                              nullptr, write_full_image, verify_readback, result, error);
+}
+
+bool XdmaRuntime::RunLocalizationObservationV2(const std::vector<SlamAccelScanPoint>& scan_points,
+                                               const SlamAccelPose& pose, const loc::ActiveMapBuffer& active_map,
+                                               bool write_full_image, bool verify_readback, RunResult& result,
+                                               std::string* error) const {
+    SlamAccelObservationParams params = MakeLocalizationObservationParams();
+    params.flags |= SLAM_ACCEL_OBS_FLAG_CANDIDATE_ABI_V2;
+    uint32_t candidate_valid = 0;
+    uint32_t candidate_miss = 0;
+    const auto candidates =
+        BuildCandidateCells(scan_points, pose, active_map, LOCALIZATION_OBSERVATION, candidate_valid, candidate_miss);
+    result.candidate_count = static_cast<uint32_t>(candidates.size());
+    result.candidate_valid_count = candidate_valid;
+    result.candidate_miss_count = candidate_miss;
+    result.candidate_bytes = candidates.size() * sizeof(ObsCellFloat64);
+    return RunObservationImpl(options_, LOCALIZATION_OBSERVATION, scan_points, pose, active_map, params,
+                              &candidates, write_full_image, verify_readback, result, error);
 }
 
 bool XdmaRuntime::RunMappingObservation(const std::vector<SlamAccelScanPoint>& scan_points,
                                         const SlamAccelPose& pose, const loc::ActiveMapBuffer& active_map,
                                         const SlamAccelObservationParams& params, bool write_full_image,
                                         bool verify_readback, RunResult& result, std::string* error) const {
-    return RunObservationImpl(options_, MAPPING_OBSERVATION, scan_points, pose, active_map, params, write_full_image,
-                              verify_readback, result, error);
+    return RunObservationImpl(options_, MAPPING_OBSERVATION, scan_points, pose, active_map, params, nullptr,
+                              write_full_image, verify_readback, result, error);
+}
+
+bool XdmaRuntime::RunMappingObservationV2(const std::vector<SlamAccelScanPoint>& scan_points,
+                                          const SlamAccelPose& pose, const loc::ActiveMapBuffer& active_map,
+                                          const SlamAccelObservationParams& input_params, bool write_full_image,
+                                          bool verify_readback, RunResult& result, std::string* error) const {
+    SlamAccelObservationParams params = input_params;
+    params.flags |= SLAM_ACCEL_OBS_FLAG_CANDIDATE_ABI_V2;
+    uint32_t candidate_valid = 0;
+    uint32_t candidate_miss = 0;
+    const auto candidates =
+        BuildCandidateCells(scan_points, pose, active_map, MAPPING_OBSERVATION, candidate_valid, candidate_miss);
+    result.candidate_count = static_cast<uint32_t>(candidates.size());
+    result.candidate_valid_count = candidate_valid;
+    result.candidate_miss_count = candidate_miss;
+    result.candidate_bytes = candidates.size() * sizeof(ObsCellFloat64);
+    return RunObservationImpl(options_, MAPPING_OBSERVATION, scan_points, pose, active_map, params,
+                              &candidates, write_full_image, verify_readback, result, error);
 }
 
 std::vector<SlamAccelScanPoint> ToAbiScanPoints(const CloudPtr& cloud) {

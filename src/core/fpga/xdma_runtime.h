@@ -31,6 +31,7 @@ class XdmaRuntime {
             double h2c_scan_sec = 0.0;
             double h2c_pose_header_params_sec = 0.0;
             double h2c_map_sec = 0.0;
+            double h2c_candidate_sec = 0.0;
             double verify_readback_sec = 0.0;
             double output_zero_sec = 0.0;
             double reg_config_sec = 0.0;
@@ -43,6 +44,10 @@ class XdmaRuntime {
         uint32_t run_count_before = 0;
         uint32_t run_count_after = 0;
         uint32_t scan_count_readback = 0;
+        uint32_t candidate_count = 0;
+        uint32_t candidate_valid_count = 0;
+        uint32_t candidate_miss_count = 0;
+        size_t candidate_bytes = 0;
         double elapsed_sec = 0.0;
         Timing timing;
         SlamNormalEquation output;
@@ -58,10 +63,17 @@ class XdmaRuntime {
     bool RunLocalizationObservation(const std::vector<SlamAccelScanPoint>& scan_points, const SlamAccelPose& pose,
                                     const loc::ActiveMapBuffer& active_map, bool write_full_image,
                                     bool verify_readback, RunResult& result, std::string* error = nullptr) const;
+    bool RunLocalizationObservationV2(const std::vector<SlamAccelScanPoint>& scan_points, const SlamAccelPose& pose,
+                                      const loc::ActiveMapBuffer& active_map, bool write_full_image,
+                                      bool verify_readback, RunResult& result, std::string* error = nullptr) const;
     bool RunMappingObservation(const std::vector<SlamAccelScanPoint>& scan_points, const SlamAccelPose& pose,
                                const loc::ActiveMapBuffer& active_map,
                                const SlamAccelObservationParams& params, bool write_full_image,
                                bool verify_readback, RunResult& result, std::string* error = nullptr) const;
+    bool RunMappingObservationV2(const std::vector<SlamAccelScanPoint>& scan_points, const SlamAccelPose& pose,
+                                 const loc::ActiveMapBuffer& active_map,
+                                 const SlamAccelObservationParams& params, bool write_full_image,
+                                 bool verify_readback, RunResult& result, std::string* error = nullptr) const;
 
     const Options& GetOptions() const { return options_; }
 

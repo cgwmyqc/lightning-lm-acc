@@ -51,6 +51,8 @@ constexpr int kNormalEquationWords = sizeof(SlamNormalEquation) / sizeof(uint64_
 constexpr int kMaxActiveBlocks = 8192;
 constexpr uint32_t kStage58DebugMagic = 0x53543538u;  // "ST58"
 constexpr uint32_t kStage58DebugVersion = 1u;
+constexpr uint32_t kStage61DebugMagic = 0x53543631u;  // "ST61"
+constexpr uint32_t kStage61DebugVersion = 1u;
 
 struct LookupDebugCounters {
     uint32_t point_count = 0;
@@ -66,6 +68,8 @@ struct LookupDebugCounters {
     uint32_t max_probe_per_point = 0;
     uint32_t block_cache_count = 0;
     uint32_t flags = 0;
+    uint32_t debug_magic = kStage58DebugMagic;
+    uint32_t debug_version = kStage58DebugVersion;
 };
 
 struct BlockLookupEntry {
@@ -456,7 +460,7 @@ void StoreOutputWords(const double h[6][6], const double b[6], uint32_t valid_co
     output_words[29] = DoubleToBits(residual_sum);
     output_words[30] = DoubleToBits(residual_abs_sum);
     output_words[31] = DoubleToBits(residual_max_abs);
-    output_words[32] = Pack32(kStage58DebugMagic, kStage58DebugVersion);
+    output_words[32] = Pack32(counters.debug_magic, counters.debug_version);
     output_words[33] = Pack32(counters.point_count, counters.exact_hit_count);
     output_words[34] = Pack32(counters.neighbor_hit_count, counters.lookup_miss_count);
     output_words[35] = Pack32(counters.neighbor_probe_count, counters.block_lookup_count);
@@ -489,12 +493,19 @@ void unified_surfel_observation_core(const SlamAccelScanPoint* scan_points, uint
     const bool params_valid =
         obs_params.magic == SLAM_ACCEL_ABI_MAGIC && obs_params.version == SLAM_ACCEL_GOLDEN_VERSION;
     const uint32_t obs_mode = params_valid ? obs_params.mode : map_header->mode;
+    const bool use_candidate_v2 =
+        params_valid && ((obs_params.flags & SLAM_ACCEL_OBS_FLAG_CANDIDATE_ABI_V2) != 0u);
     const double residual_outlier_th = params_valid ? obs_params.residual_outlier_th : 0.3;
     const double mapping_gate_scale = params_valid ? obs_params.mapping_gate_scale : 81.0;
     const double plane_icp_weight = params_valid ? obs_params.plane_icp_weight : 1.0;
     ActiveMapHeader local_map_header = *map_header;
     LookupDebugCounters counters;
-    if (local_map_header.num_blocks > static_cast<uint32_t>(kMaxActiveBlocks)) {
+    if (use_candidate_v2) {
+        counters.debug_magic = kStage61DebugMagic;
+        counters.debug_version = kStage61DebugVersion;
+        counters.flags |= SLAM_ACCEL_OBS_FLAG_CANDIDATE_ABI_V2;
+    }
+    if (!use_candidate_v2 && local_map_header.num_blocks > static_cast<uint32_t>(kMaxActiveBlocks)) {
         local_map_header.num_blocks = static_cast<uint32_t>(kMaxActiveBlocks);
         counters.flags |= 1u;
     }
@@ -502,7 +513,7 @@ void unified_surfel_observation_core(const SlamAccelScanPoint* scan_points, uint
 
     for (uint32_t i = 0; i < static_cast<uint32_t>(kMaxActiveBlocks); ++i) {
 #pragma HLS LOOP_TRIPCOUNT min = 1 max = 8192 avg = 4096
-        if (i < local_map_header.num_blocks) {
+        if (!use_candidate_v2 && i < local_map_header.num_blocks) {
             active_block_cache[i] = active_blocks[i];
         }
     }
@@ -518,10 +529,23 @@ void unified_surfel_observation_core(const SlamAccelScanPoint* scan_points, uint
 
         const Vec3 p = RotatePoint(*pose, scan);
         ObsCellFloat64 cell;
-        if (!LookupNearest(local_map_header, active_block_cache, obs_cells, p, obs_mode == MAPPING_OBSERVATION, cell,
-                           counters)) {
-            ++miss_count;
-            continue;
+        if (use_candidate_v2) {
+            const ObsCellFloat64& candidate = obs_cells[i];
+            if (!CellValid(candidate)) {
+                ++miss_count;
+                ++counters.invalid_candidate_count;
+                ++counters.lookup_miss_count;
+                continue;
+            }
+            CopyCell(candidate, cell);
+            ++counters.valid_candidate_count;
+            ++counters.exact_hit_count;
+        } else {
+            if (!LookupNearest(local_map_header, active_block_cache, obs_cells, p, obs_mode == MAPPING_OBSERVATION,
+                               cell, counters)) {
+                ++miss_count;
+                continue;
+            }
         }
 
         const double nx = cell.normal_x;

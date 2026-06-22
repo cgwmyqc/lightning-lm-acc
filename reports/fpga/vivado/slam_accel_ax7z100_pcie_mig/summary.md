@@ -1,4 +1,4 @@
-﻿# AX7Z100 PCIe/XDMA + PL DDR3/MIG Board Skeleton
+# AX7Z100 PCIe/XDMA + PL DDR3/MIG Board Skeleton
 
 ## Status
 
@@ -187,3 +187,39 @@ FPGA_STATE=FPGA is configured
 ```
 
 The programmed image is `fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit`. Next action is Orin reboot and the Stage 44 residual probe gate.
+
+## Stage 61 ABI V2 Candidate Bitstream 2026-06-22
+
+The full `azmig` board image was regenerated after exporting the Stage 61 HLS
+IP. BAR shim, `slam_accel_ctrl@0x1000`, XDMA/MIG topology, and the PL DDR base
+layout are unchanged. HLS now supports the opt-in Candidate ABI V2 path.
+
+Results:
+
+- Project synthesis: PASS.
+- Implementation/bitstream: PASS.
+- Windows JTAG program: PASS.
+- Bitstream: `fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit`.
+- Timing: WNS `0.071 ns`, WHS `0.009 ns`; all user timing constraints met.
+- DRC: 0 errors, 0 critical warnings; 1129 ordinary warning/advisory
+  violations reported by Vivado DRC.
+- Utilization: Slice LUTs `76854 / 277400 = 27.71%`, Slice Registers
+  `89411 / 554800 = 16.12%`, BRAM `85.5 / 755 = 11.32%`, DSP
+  `348 / 2020 = 17.23%`.
+- JTAG: `JTAG_PROGRAM_PASS`, `FPGA_STATE=FPGA is configured`, DONE pin `1`.
+
+Next Orin gate:
+
+```bash
+./install/lightning/lib/lightning/run_surfel_loc_xdma_golden \
+  --golden_dir fpga/golden/localization/frame_000001 \
+  --ctrl_base 0x1000 \
+  --timeout_sec 120 \
+  --abi_v2_candidates
+
+./install/lightning/lib/lightning/run_surfel_mapping_xdma_golden \
+  --golden_dir fpga/golden/mapping/frame_000001 \
+  --ctrl_base 0x1000 \
+  --timeout_sec 120 \
+  --abi_v2_candidates
+```
