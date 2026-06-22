@@ -5192,3 +5192,143 @@ Proc Lidar stays below the lidar frame period
 No sustained abnormal dt / lidar stream stall
 CPU baseline vs FPGA_OBS trajectory difference, failed frames, and fallback counts are recorded
 ```
+
+## Stage 58 Windows/HLS Result: Active-Block Cache Optimization
+
+Stage 58 Windows side has been implemented and verified. This stage only
+optimizes unified observation lookup performance; it does not change math
+semantics, BAR shim, XDMA/MIG topology, register map, PL DDR layout, or the
+host-visible normal-equation ABI.
+
+Implemented changes:
+
+```text
+HLS copies active_blocks[0..num_blocks) into local BRAM once per kernel launch.
+LookupCell block binary search now reads the BRAM cache instead of PL DDR.
+LookupNearest reuses per-point block-index results across the 27 center/neighbor probes.
+obs_cells still stays in PL DDR.
+output_words[32..39] now carry Stage 58 debug/performance counters.
+```
+
+Windows golden availability:
+
+```text
+localization golden: fpga/golden/localization/frame_000001
+mapping golden:      fpga/golden/mapping/frame_000001
+```
+
+Windows validation results:
+
+```text
+g++ CSim:                 PASS
+Vivado HLS 2018.3 CSim:   PASS
+Vivado HLS C Synthesis:   PASS
+Vivado HLS IP export:     PASS
+Vivado BD validate:       PASS
+Vivado project synthesis: PASS, -Jobs 18
+Vivado implementation:    PASS, -Jobs 18
+Bitstream generation:     PASS
+```
+
+Correctness stayed unchanged:
+
+```text
+localization frame_000001: 6050/911/2 PASS
+mapping frame_000001:      611/0/171 PASS
+reject_probe:              PASS
+mapping_lookup_probe:      PASS
+synthetic sweep:           PASS
+```
+
+Stage 58 debug counters from g++ CSim:
+
+```text
+localization:
+  point_count=6963
+  exact_hit=3573
+  neighbor_hit=3388
+  lookup_miss=2
+  neighbor_probe=88140
+  block_lookup=11467
+  block_search_steps=136966
+  obs_cell_read=94827
+  valid_candidate=29160
+  invalid_candidate=65943
+  max_probe_per_point=27
+  active_block_cache_count=3719
+
+mapping:
+  point_count=782
+  exact_hit=384
+  neighbor_hit=269
+  lookup_miss=129
+  neighbor_probe=10348
+  block_lookup=1338
+  block_search_steps=8339
+  obs_cell_read=10735
+  valid_candidate=1100
+  invalid_candidate=10030
+  max_probe_per_point=27
+  active_block_cache_count=73
+```
+
+Vivado HLS C Synthesis summary:
+
+```text
+target clock:    10.00 ns
+estimated clock: 9.307 ns
+BRAM_18K:        184 / 1510 = 12%
+DSP48E:          348 / 2020 = 17%
+FF:              64051 / 554800 = 11%
+LUT:             102449 / 277400 = 36%
+```
+
+Implementation summary:
+
+```text
+bitstream:
+  fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit
+post-route WNS: 0.090 ns
+post-route WHS: 0.028 ns
+timing errors:  0
+DRC errors:     0
+critical warnings: 0
+Slice LUTs:     75597 / 277400 = 27.25%
+Slice Registers:88385 / 554800 = 15.93%
+Block RAM Tile: 85.5 / 755 = 11.32%
+DSPs:           348 / 2020 = 17.23%
+Bonded IOB:     74 / 362 = 20.44%
+```
+
+Known implementation warnings remain non-fatal but must stay recorded:
+
+```text
+RAMB asynchronous-control warnings in generated HLS/XDMA FIFOs.
+MIG clock placement warning relies on the existing CLOCK_DEDICATED_ROUTE exception.
+Many HLS floating-point DSP input-pipeline advisories.
+```
+
+Build-time note: `-Jobs 18` is still required for board-level synthesis and
+implementation. Full bitstream generation can still take tens of minutes
+because Vivado 2018.3 uses only a small number of CPUs inside several route,
+timing, and bitgen substeps.
+
+Next Orin gate:
+
+```bash
+./install/lightning/lib/lightning/run_surfel_loc_xdma_golden \
+  --golden_dir fpga/golden/localization/frame_000001 \
+  --ctrl_base 0x1000 \
+  --timeout_sec 120
+
+./install/lightning/lib/lightning/run_surfel_mapping_xdma_golden \
+  --golden_dir fpga/golden/mapping/frame_000001 \
+  --ctrl_base 0x1000 \
+  --timeout_sec 120
+```
+
+After both golden replays still pass, measure `hls_wait` against Stage 57/54
+baseline. Stage 58 target remains at least `5x` localization full-frame
+`hls_wait` reduction. If this target is not reached, proceed to ABI v2:
+Orin precomputes candidate block/cell indices and FPGA performs residual,
+Jacobian, and H/b accumulation.

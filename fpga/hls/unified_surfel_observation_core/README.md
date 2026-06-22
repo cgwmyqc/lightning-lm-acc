@@ -213,8 +213,25 @@ output_words[28]:     low32=miss_count, high32=flags
 output_words[29]:     residual_sum as IEEE-754 double bit pattern
 output_words[30]:     residual_abs_sum as IEEE-754 double bit pattern
 output_words[31]:     residual_max_abs as IEEE-754 double bit pattern
-output_words[32..39]: reserved/padding, zero
+output_words[32]:     low32=0x53543538 ("ST58"), high32=debug_version
+output_words[33]:     low32=point_count, high32=exact_hit
+output_words[34]:     low32=neighbor_hit, high32=lookup_miss
+output_words[35]:     low32=neighbor_probe_count, high32=block_lookup_count
+output_words[36]:     low32=block_search_step_count, high32=obs_cell_read_count
+output_words[37]:     low32=valid_candidate_count, high32=invalid_candidate_count
+output_words[38]:     low32=max_probe_per_point, high32=active_block_cache_count
+output_words[39]:     low32=debug_flags, high32=0
 ```
+
+Stage 58 reuses the reserved output words as performance diagnostics. The
+formal normal-equation ABI in words `0..31` is unchanged, so existing host
+parsers keep reading the same `SlamNormalEquation` fields.
+
+Stage 58 also changes lookup implementation without changing lookup semantics:
+`active_blocks[0..num_blocks)` is copied once at kernel start into local BRAM,
+and each point reuses block-index lookups across its 27 center/neighbor probes.
+`obs_cells` still remains in PL DDR because the full localization map can be
+about 60 MB and is too large for first-round BRAM caching.
 
 Generated RTL direct mapping:
 

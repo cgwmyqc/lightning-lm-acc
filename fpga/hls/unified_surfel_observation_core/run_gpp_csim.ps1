@@ -1,6 +1,7 @@
 param(
     [string]$GoldenDir,
-    [string]$Compiler = "g++"
+    [string]$Compiler = "g++",
+    [switch]$SyntheticSweep
 )
 
 $ErrorActionPreference = "Stop"
@@ -28,5 +29,10 @@ if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
 
-& $Exe $GoldenDir
+$ArgsList = @($GoldenDir)
+if ($SyntheticSweep) {
+    $ArgsList += "--synthetic-sweep"
+}
+
+& $Exe @ArgsList
 exit $LASTEXITCODE

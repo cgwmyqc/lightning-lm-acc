@@ -1,7 +1,7 @@
 Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.
 ------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2018.3 (win64) Build 2405991 Thu Dec  6 23:38:27 MST 2018
-| Date         : Sun Jun 21 17:33:38 2026
+| Date         : Mon Jun 22 00:18:35 2026
 | Host         : DESKTOP-QEQDV5I running 64-bit major release  (build 9200)
 | Command      : report_utilization -file V:/azmig_syn/ax7z100_pcie_mig_util.rpt
 | Design       : azmig_wrapper
@@ -30,16 +30,16 @@ Table of Contents
 +----------------------------+-------+-------+-----------+-------+
 |          Site Type         |  Used | Fixed | Available | Util% |
 +----------------------------+-------+-------+-----------+-------+
-| Slice LUTs*                | 72655 |     0 |    277400 | 26.19 |
-|   LUT as Logic             | 67686 |     0 |    277400 | 24.40 |
-|   LUT as Memory            |  4969 |     0 |    108200 |  4.59 |
+| Slice LUTs*                | 82624 |     0 |    277400 | 29.79 |
+|   LUT as Logic             | 77654 |     0 |    277400 | 27.99 |
+|   LUT as Memory            |  4970 |     0 |    108200 |  4.59 |
 |     LUT as Distributed RAM |  3917 |     0 |           |       |
-|     LUT as Shift Register  |  1052 |     0 |           |       |
-| Slice Registers            | 81317 |     0 |    554800 | 14.66 |
-|   Register as Flip Flop    | 81317 |     0 |    554800 | 14.66 |
+|     LUT as Shift Register  |  1053 |     0 |           |       |
+| Slice Registers            | 97729 |     0 |    554800 | 17.62 |
+|   Register as Flip Flop    | 97729 |     0 |    554800 | 17.62 |
 |   Register as Latch        |     0 |     0 |    554800 |  0.00 |
-| F7 Muxes                   |  1022 |     0 |    138700 |  0.74 |
-| F8 Muxes                   |   101 |     0 |     69350 |  0.15 |
+| F7 Muxes                   |  1321 |     0 |    138700 |  0.95 |
+| F8 Muxes                   |   107 |     0 |     69350 |  0.15 |
 +----------------------------+-------+-------+-----------+-------+
 * Warning! The Final LUT count, after physical optimizations and full implementation, is typically lower. Run opt_design after synthesis, if not already completed, for a more realistic count.
 
@@ -58,8 +58,8 @@ Table of Contents
 | 0     |          Yes |           - |            - |
 | 314   |          Yes |           - |          Set |
 | 263   |          Yes |           - |        Reset |
-| 649   |          Yes |         Set |            - |
-| 80091 |          Yes |       Reset |            - |
+| 684   |          Yes |         Set |            - |
+| 96468 |          Yes |       Reset |            - |
 +-------+--------------+-------------+--------------+
 
 
@@ -69,9 +69,9 @@ Table of Contents
 +-------------------+------+-------+-----------+-------+
 |     Site Type     | Used | Fixed | Available | Util% |
 +-------------------+------+-------+-----------+-------+
-| Block RAM Tile    | 65.5 |     0 |       755 |  8.68 |
-|   RAMB36/FIFO*    |   60 |     8 |       755 |  7.95 |
-|     RAMB36E1 only |   60 |       |           |       |
+| Block RAM Tile    | 97.5 |     0 |       755 | 12.91 |
+|   RAMB36/FIFO*    |   92 |     8 |       755 | 12.19 |
+|     RAMB36E1 only |   92 |       |           |       |
 |   RAMB18          |   11 |     0 |      1510 |  0.73 |
 |     RAMB18E1 only |   11 |       |           |       |
 +-------------------+------+-------+-----------+-------+
@@ -84,8 +84,8 @@ Table of Contents
 +----------------+------+-------+-----------+-------+
 |    Site Type   | Used | Fixed | Available | Util% |
 +----------------+------+-------+-----------+-------+
-| DSPs           |  381 |     0 |      2020 | 18.86 |
-|   DSP48E1 only |  381 |       |           |       |
+| DSPs           |  348 |     0 |      2020 | 17.23 |
+|   DSP48E1 only |  348 |       |           |       |
 +----------------+------+-------+-----------+-------+
 
 
@@ -167,26 +167,26 @@ Table of Contents
 +------------------------+-------+----------------------+
 |        Ref Name        |  Used |  Functional Category |
 +------------------------+-------+----------------------+
-| FDRE                   | 80091 |         Flop & Latch |
-| LUT6                   | 23186 |                  LUT |
-| LUT3                   | 18852 |                  LUT |
-| LUT5                   | 16709 |                  LUT |
-| LUT4                   | 11734 |                  LUT |
-| LUT2                   |  8830 |                  LUT |
+| FDRE                   | 96468 |         Flop & Latch |
+| LUT6                   | 24814 |                  LUT |
+| LUT3                   | 24599 |                  LUT |
+| LUT5                   | 20952 |                  LUT |
+| LUT4                   | 15058 |                  LUT |
+| LUT2                   | 11238 |                  LUT |
 | RAMD32                 |  5734 |   Distributed Memory |
-| CARRY4                 |  3893 |           CarryLogic |
-| LUT1                   |  2137 |                  LUT |
+| CARRY4                 |  3698 |           CarryLogic |
+| LUT1                   |  2063 |                  LUT |
 | RAMS32                 |  1954 |   Distributed Memory |
-| MUXF7                  |  1022 |                MuxFx |
+| MUXF7                  |  1321 |                MuxFx |
+| FDSE                   |   684 |         Flop & Latch |
 | SRLC32E                |   671 |   Distributed Memory |
-| FDSE                   |   649 |         Flop & Latch |
-| SRL16E                 |   381 |   Distributed Memory |
-| DSP48E1                |   381 |     Block Arithmetic |
+| SRL16E                 |   382 |   Distributed Memory |
+| DSP48E1                |   348 |     Block Arithmetic |
 | FDPE                   |   314 |         Flop & Latch |
 | FDCE                   |   263 |         Flop & Latch |
-| MUXF8                  |   101 |                MuxFx |
+| MUXF8                  |   107 |                MuxFx |
+| RAMB36E1               |    92 |         Block Memory |
 | OSERDESE2              |    64 |                   IO |
-| RAMB36E1               |    60 |         Block Memory |
 | OBUF                   |    33 |                   IO |
 | OBUFT_DCIEN            |    32 |                   IO |
 | ISERDESE2              |    32 |                   IO |

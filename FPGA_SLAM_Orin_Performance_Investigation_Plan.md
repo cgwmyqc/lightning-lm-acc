@@ -1720,3 +1720,98 @@ CPU baseline vs FPGA_OBS 轨迹差异、失败帧、fallback 次数写入 report
 ---
 
 # End
+
+---
+
+## 22. Stage58 Windows/HLS Result
+
+Stage58 Windows/HLS optimization has been implemented.
+
+Scope:
+
+```text
+No math semantic change.
+No BAR shim / XDMA / MIG / register-map change.
+No host-visible normal-equation ABI change in output_words[0..31].
+```
+
+Implemented optimization:
+
+```text
+active_blocks are copied once per kernel launch into local BRAM.
+Block binary search now uses the local active-block cache.
+Each point reuses block-index lookup results across the 27 center/neighbor probes.
+obs_cells remain in PL DDR for this first optimization round.
+output_words[32..39] now contain Stage58 performance/debug counters.
+```
+
+Windows validation:
+
+```text
+g++ CSim PASS
+Vivado HLS CSim PASS
+Vivado HLS C Synthesis PASS
+Vivado HLS IP export PASS
+Vivado BD validate PASS
+Vivado project synthesis PASS with -Jobs 18
+Vivado implementation/bitstream PASS with -Jobs 18
+```
+
+Correctness:
+
+```text
+localization frame_000001: 6050/911/2 PASS
+mapping frame_000001: 611/0/171 PASS
+synthetic sweep PASS
+reject and mapping lookup probes PASS
+```
+
+HLS C Synthesis summary:
+
+```text
+target clock: 10.00 ns
+estimated clock: 9.307 ns
+BRAM_18K: 184 / 1510 = 12%
+DSP48E: 348 / 2020 = 17%
+FF: 64051 / 554800 = 11%
+LUT: 102449 / 277400 = 36%
+```
+
+Implementation summary:
+
+```text
+bitstream: fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit
+post-route WNS: 0.090 ns
+post-route WHS: 0.028 ns
+DRC errors: 0
+critical warnings: 0
+```
+
+Build-time note:
+
+```text
+Continue using -Jobs 18 for board-level synth/impl/bitstream.
+Long 30-60 minute builds are still expected because Vivado 2018.3 route,
+timing and bitgen steps internally use only a limited number of CPUs.
+Do not run full implementation for every small HLS edit; use g++ CSim,
+Vivado HLS CSim and C Synthesis first.
+```
+
+Next Orin gate:
+
+```bash
+./install/lightning/lib/lightning/run_surfel_loc_xdma_golden \
+  --golden_dir fpga/golden/localization/frame_000001 \
+  --ctrl_base 0x1000 \
+  --timeout_sec 120
+
+./install/lightning/lib/lightning/run_surfel_mapping_xdma_golden \
+  --golden_dir fpga/golden/mapping/frame_000001 \
+  --ctrl_base 0x1000 \
+  --timeout_sec 120
+```
+
+Then compare `hls_wait` with Stage57/54 baseline. If localization full-frame
+`hls_wait` does not improve by at least 5x, move to ABI v2: Orin precomputes
+candidate block/cell indices, FPGA only performs residual selection, Jacobian
+and H/b accumulation.

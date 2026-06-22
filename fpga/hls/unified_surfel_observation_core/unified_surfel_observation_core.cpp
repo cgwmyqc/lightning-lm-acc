@@ -48,6 +48,33 @@ bool KeyLess(int32_t x, int32_t y, int32_t z, const ActiveBlockRecord& rhs) {
 bool CellValid(const ObsCellFloat64& cell) { return (cell.flags & OBS_CELL_VALID) != 0; }
 
 constexpr int kNormalEquationWords = sizeof(SlamNormalEquation) / sizeof(uint64_t);
+constexpr int kMaxActiveBlocks = 8192;
+constexpr uint32_t kStage58DebugMagic = 0x53543538u;  // "ST58"
+constexpr uint32_t kStage58DebugVersion = 1u;
+
+struct LookupDebugCounters {
+    uint32_t point_count = 0;
+    uint32_t exact_hit_count = 0;
+    uint32_t neighbor_hit_count = 0;
+    uint32_t lookup_miss_count = 0;
+    uint32_t neighbor_probe_count = 0;
+    uint32_t block_lookup_count = 0;
+    uint32_t block_search_step_count = 0;
+    uint32_t obs_cell_read_count = 0;
+    uint32_t valid_candidate_count = 0;
+    uint32_t invalid_candidate_count = 0;
+    uint32_t max_probe_per_point = 0;
+    uint32_t block_cache_count = 0;
+    uint32_t flags = 0;
+};
+
+struct BlockLookupEntry {
+    int32_t x = 0;
+    int32_t y = 0;
+    int32_t z = 0;
+    int32_t index = -1;
+    bool valid = false;
+};
 
 uint64_t DoubleToBits(double value) {
     union DoubleWord {
@@ -70,6 +97,8 @@ float BitsToFloat(uint32_t value) {
 uint32_t Low32(uint64_t value) { return static_cast<uint32_t>(value & 0xFFFFffffULL); }
 
 uint32_t High32(uint64_t value) { return static_cast<uint32_t>(value >> 32); }
+
+uint64_t Pack32(uint32_t low, uint32_t high) { return (static_cast<uint64_t>(high) << 32) | low; }
 
 SlamAccelObservationParams LoadParams(const uint64_t* params_words) {
     SlamAccelObservationParams params;
@@ -173,12 +202,13 @@ void Encode(const Vec3& point, const ActiveMapHeader& map_header, int32_t& block
     cell_idx = (lz * static_cast<int>(SLAM_ACCEL_BLOCK_DIM_Y) + ly) * static_cast<int>(SLAM_ACCEL_BLOCK_DIM_X) + lx;
 }
 
-bool LookupCell(const ActiveMapHeader& map_header, const ActiveBlockRecord* active_blocks,
-                const ObsCellFloat64* obs_cells, int32_t block_x, int32_t block_y, int32_t block_z, int32_t cell_idx,
-                ObsCellFloat64& out_cell) {
+int FindBlockIndex(const ActiveMapHeader& map_header, const ActiveBlockRecord* active_blocks, int32_t block_x,
+                   int32_t block_y, int32_t block_z, LookupDebugCounters& counters) {
+    ++counters.block_lookup_count;
     int lo = 0;
     int hi = static_cast<int>(map_header.num_blocks);
     while (lo < hi) {
+        ++counters.block_search_step_count;
         const int mid = (lo + hi) / 2;
         if (BlockLess(active_blocks[mid], block_x, block_y, block_z)) {
             lo = mid + 1;
@@ -187,32 +217,91 @@ bool LookupCell(const ActiveMapHeader& map_header, const ActiveBlockRecord* acti
         }
     }
     if (lo >= static_cast<int>(map_header.num_blocks) || KeyLess(block_x, block_y, block_z, active_blocks[lo])) {
+        return -1;
+    }
+    return lo;
+}
+
+int GetBlockIndexCached(const ActiveMapHeader& map_header, const ActiveBlockRecord* active_blocks, int32_t block_x,
+                        int32_t block_y, int32_t block_z, BlockLookupEntry cache[27], int& cache_size,
+                        LookupDebugCounters& counters) {
+    for (int i = 0; i < cache_size; ++i) {
+        if (cache[i].valid && cache[i].x == block_x && cache[i].y == block_y && cache[i].z == block_z) {
+            return cache[i].index;
+        }
+    }
+
+    const int index = FindBlockIndex(map_header, active_blocks, block_x, block_y, block_z, counters);
+    if (cache_size < 27) {
+        cache[cache_size].x = block_x;
+        cache[cache_size].y = block_y;
+        cache[cache_size].z = block_z;
+        cache[cache_size].index = index;
+        cache[cache_size].valid = true;
+        ++cache_size;
+    }
+    return index;
+}
+
+bool LookupCellByBlockIndex(const ActiveMapHeader& map_header, const ActiveBlockRecord* active_blocks,
+                            const ObsCellFloat64* obs_cells, int block_index, int32_t cell_idx,
+                            ObsCellFloat64& out_cell, LookupDebugCounters& counters) {
+    if (block_index < 0 || block_index >= static_cast<int>(map_header.num_blocks)) {
+        ++counters.invalid_candidate_count;
         return false;
     }
-    const uint32_t offset = active_blocks[lo].first_cell + static_cast<uint32_t>(cell_idx);
+    const uint32_t offset = active_blocks[block_index].first_cell + static_cast<uint32_t>(cell_idx);
     if (offset >= map_header.num_cells) {
+        ++counters.invalid_candidate_count;
         return false;
     }
+    ++counters.obs_cell_read_count;
     const ObsCellFloat64& cell = obs_cells[offset];
     if (!CellValid(cell)) {
+        ++counters.invalid_candidate_count;
         return false;
     }
+    ++counters.valid_candidate_count;
     CopyCell(cell, out_cell);
     return true;
 }
 
+bool LookupCell(const ActiveMapHeader& map_header, const ActiveBlockRecord* active_blocks,
+                const ObsCellFloat64* obs_cells, int32_t block_x, int32_t block_y, int32_t block_z, int32_t cell_idx,
+                ObsCellFloat64& out_cell, LookupDebugCounters& counters) {
+    const int block_index = FindBlockIndex(map_header, active_blocks, block_x, block_y, block_z, counters);
+    return LookupCellByBlockIndex(map_header, active_blocks, obs_cells, block_index, cell_idx, out_cell, counters);
+}
+
 bool LookupNearest(const ActiveMapHeader& map_header, const ActiveBlockRecord* active_blocks,
-                   const ObsCellFloat64* obs_cells, const Vec3& point, bool mapping_mode, ObsCellFloat64& out_cell) {
+                   const ObsCellFloat64* obs_cells, const Vec3& point, bool mapping_mode, ObsCellFloat64& out_cell,
+                   LookupDebugCounters& counters) {
     int32_t center_bx = 0;
     int32_t center_by = 0;
     int32_t center_bz = 0;
     int32_t center_cell = 0;
     Encode(point, map_header, center_bx, center_by, center_bz, center_cell);
 
-    if (LookupCell(map_header, active_blocks, obs_cells, center_bx, center_by, center_bz, center_cell, out_cell)) {
+    uint32_t probes_this_point = 1;
+    BlockLookupEntry block_cache[27];
+#pragma HLS ARRAY_PARTITION variable = block_cache complete dim = 1
+    int block_cache_size = 0;
+    const int center_block_index =
+        GetBlockIndexCached(map_header, active_blocks, center_bx, center_by, center_bz, block_cache, block_cache_size,
+                            counters);
+    if (LookupCellByBlockIndex(map_header, active_blocks, obs_cells, center_block_index, center_cell, out_cell,
+                               counters)) {
+        ++counters.exact_hit_count;
+        if (probes_this_point > counters.max_probe_per_point) {
+            counters.max_probe_per_point = probes_this_point;
+        }
         return true;
     }
     if (map_header.lookup_nearby_type == 0) {
+        ++counters.lookup_miss_count;
+        if (probes_this_point > counters.max_probe_per_point) {
+            counters.max_probe_per_point = probes_this_point;
+        }
         return false;
     }
 
@@ -278,7 +367,13 @@ bool LookupNearest(const ActiveMapHeader& map_header, const ActiveBlockRecord* a
 
                 const int32_t ncell = (lz * by_dim + ly) * bx_dim + lx;
                 ObsCellFloat64 candidate;
-                if (!LookupCell(map_header, active_blocks, obs_cells, nbx, nby, nbz, ncell, candidate)) {
+                ++probes_this_point;
+                ++counters.neighbor_probe_count;
+                const int block_index =
+                    GetBlockIndexCached(map_header, active_blocks, nbx, nby, nbz, block_cache, block_cache_size,
+                                        counters);
+                if (!LookupCellByBlockIndex(map_header, active_blocks, obs_cells, block_index, ncell, candidate,
+                                            counters)) {
                     continue;
                 }
                 const double ddx = point.x - candidate.centroid_x;
@@ -318,7 +413,13 @@ bool LookupNearest(const ActiveMapHeader& map_header, const ActiveBlockRecord* a
         }
     }
     if (found) {
+        ++counters.neighbor_hit_count;
         CopyCell(best, out_cell);
+    } else {
+        ++counters.lookup_miss_count;
+    }
+    if (probes_this_point > counters.max_probe_per_point) {
+        counters.max_probe_per_point = probes_this_point;
     }
     return found;
 }
@@ -334,7 +435,7 @@ void AccumulateUpper(double h[6][6], double b[6], const double j[6], double resi
 
 void StoreOutputWords(const double h[6][6], const double b[6], uint32_t valid_count, uint32_t reject_count,
                       uint32_t miss_count, double residual_sum, double residual_abs_sum, double residual_max_abs,
-                      uint64_t* output_words) {
+                      const LookupDebugCounters& counters, uint64_t* output_words) {
     for (int i = 0; i < kNormalEquationWords; ++i) {
 #pragma HLS UNROLL
         output_words[i] = 0;
@@ -355,6 +456,14 @@ void StoreOutputWords(const double h[6][6], const double b[6], uint32_t valid_co
     output_words[29] = DoubleToBits(residual_sum);
     output_words[30] = DoubleToBits(residual_abs_sum);
     output_words[31] = DoubleToBits(residual_max_abs);
+    output_words[32] = Pack32(kStage58DebugMagic, kStage58DebugVersion);
+    output_words[33] = Pack32(counters.point_count, counters.exact_hit_count);
+    output_words[34] = Pack32(counters.neighbor_hit_count, counters.lookup_miss_count);
+    output_words[35] = Pack32(counters.neighbor_probe_count, counters.block_lookup_count);
+    output_words[36] = Pack32(counters.block_search_step_count, counters.obs_cell_read_count);
+    output_words[37] = Pack32(counters.valid_candidate_count, counters.invalid_candidate_count);
+    output_words[38] = Pack32(counters.max_probe_per_point, counters.block_cache_count);
+    output_words[39] = Pack32(counters.flags, 0);
 }
 
 }  // namespace
@@ -364,6 +473,9 @@ void unified_surfel_observation_core(const SlamAccelScanPoint* scan_points, uint
                                      const uint64_t* params,
                                      const ActiveBlockRecord* active_blocks, const ObsCellFloat64* obs_cells,
                                      uint64_t* output_words) {
+    ActiveBlockRecord active_block_cache[kMaxActiveBlocks];
+#pragma HLS RESOURCE variable = active_block_cache core = RAM_2P_BRAM
+
     double h[6][6] = {{0.0}};
     double b[6] = {0.0};
     uint32_t valid_count = 0;
@@ -380,9 +492,24 @@ void unified_surfel_observation_core(const SlamAccelScanPoint* scan_points, uint
     const double residual_outlier_th = params_valid ? obs_params.residual_outlier_th : 0.3;
     const double mapping_gate_scale = params_valid ? obs_params.mapping_gate_scale : 81.0;
     const double plane_icp_weight = params_valid ? obs_params.plane_icp_weight : 1.0;
+    ActiveMapHeader local_map_header = *map_header;
+    LookupDebugCounters counters;
+    if (local_map_header.num_blocks > static_cast<uint32_t>(kMaxActiveBlocks)) {
+        local_map_header.num_blocks = static_cast<uint32_t>(kMaxActiveBlocks);
+        counters.flags |= 1u;
+    }
+    counters.block_cache_count = local_map_header.num_blocks;
+
+    for (uint32_t i = 0; i < static_cast<uint32_t>(kMaxActiveBlocks); ++i) {
+#pragma HLS LOOP_TRIPCOUNT min = 1 max = 8192 avg = 4096
+        if (i < local_map_header.num_blocks) {
+            active_block_cache[i] = active_blocks[i];
+        }
+    }
 
     for (uint32_t i = 0; i < num_points; ++i) {
 #pragma HLS LOOP_TRIPCOUNT min = 1 max = 8192 avg = 4096
+        ++counters.point_count;
         const SlamAccelScanPoint& scan = scan_points[i];
         if (!std::isfinite(scan.x) || !std::isfinite(scan.y) || !std::isfinite(scan.z)) {
             ++reject_count;
@@ -391,7 +518,8 @@ void unified_surfel_observation_core(const SlamAccelScanPoint* scan_points, uint
 
         const Vec3 p = RotatePoint(*pose, scan);
         ObsCellFloat64 cell;
-        if (!LookupNearest(*map_header, active_blocks, obs_cells, p, obs_mode == MAPPING_OBSERVATION, cell)) {
+        if (!LookupNearest(local_map_header, active_block_cache, obs_cells, p, obs_mode == MAPPING_OBSERVATION, cell,
+                           counters)) {
             ++miss_count;
             continue;
         }
@@ -477,7 +605,7 @@ void unified_surfel_observation_core(const SlamAccelScanPoint* scan_points, uint
         }
     }
     StoreOutputWords(h, b, valid_count, reject_count, miss_count, residual_sum, residual_abs_sum, residual_max_abs,
-                     output_words);
+                     counters, output_words);
 }
 
 }  // namespace hls
