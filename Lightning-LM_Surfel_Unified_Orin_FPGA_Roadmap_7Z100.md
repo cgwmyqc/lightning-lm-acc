@@ -5332,3 +5332,98 @@ baseline. Stage 58 target remains at least `5x` localization full-frame
 `hls_wait` reduction. If this target is not reached, proceed to ABI v2:
 Orin precomputes candidate block/cell indices and FPGA performs residual,
 Jacobian, and H/b accumulation.
+
+## Stage 58 Orin Result: Correctness PASS, Performance Improved but Below 5x Gate
+
+Stage 58 Orin-side validation was run on 2026-06-22.
+
+Report:
+
+```text
+reports/fpga/runtime/stage58_orin_optimization/
+```
+
+XDMA / PCIe gate:
+
+```text
+0005:01:00.0 [10ee:7024]
+Kernel driver in use: xdma
+/dev/xdma0_user present
+/dev/xdma0_h2c_0 present
+/dev/xdma0_c2h_0 present
+enable=1
+LnkCap: Speed 5GT/s, Width x4
+LnkSta: Speed 5GT/s, Width x1 (downgraded)
+```
+
+Smoke:
+
+```text
+XDMA_CPP_SHIM_SMOKE_PASS
+XDMA_CPP_REG_SMOKE_PASS
+XDMA_CPP_DDR_SMOKE_PASS
+```
+
+Localization full-frame golden replay:
+
+```text
+scan_count=6963
+active_blocks=3719
+active_cells=952064
+expected_counts=6050/911/2
+iter 1: STATUS=0x204 ERROR=0x0 RUN_COUNT=0->1 elapsed=0.350222s counts=6050/911/2
+iter 2: STATUS=0x204 ERROR=0x0 RUN_COUNT=1->2 elapsed=0.350393s counts=6050/911/2
+iter 3: STATUS=0x204 ERROR=0x0 RUN_COUNT=2->3 elapsed=0.349656s counts=6050/911/2
+XDMA_CPP_GOLDEN_REPEAT_PASS ITERATIONS=3
+```
+
+Mapping full-frame golden replay:
+
+```text
+iter 1: MAPPING_XDMA_REPLAY_PASS, counts actual=611/0/171 expected=611/0/171, wall real=0.17s
+iter 2: MAPPING_XDMA_REPLAY_PASS, counts actual=611/0/171 expected=611/0/171, wall real=0.16s
+iter 3: MAPPING_XDMA_REPLAY_PASS, counts actual=611/0/171 expected=611/0/171, wall real=0.17s
+```
+
+Stage 58 debug counters were visible in localization `output_words[32..39]`.
+Decoded last iteration:
+
+```text
+point_count=6963
+exact_hit=3573
+neighbor_hit=3388
+lookup_miss=2
+neighbor_probe_count=88140
+block_lookup_count=11467
+block_search_steps=136966
+obs_cell_read_count=94827
+valid_candidate_count=29160
+invalid_candidate_count=65943
+max_probe_per_point=27
+active_block_cache_count=3719
+```
+
+Performance result:
+
+```text
+Stage57 localization baseline hls_wait ~= 1.536s
+Stage58 localization elapsed mean = 0.350090s
+Speedup = 4.39x
+5x gate = <= 0.307s
+20x ideal = <= 0.077s
+```
+
+Conclusion:
+
+```text
+Correctness: PASS
+Optimization effect: real and substantial
+5x performance gate: FAIL
+Joint online bring-up: keep blocked
+Next HLS direction: ABI v2, Orin precomputes candidate block/cell indices and FPGA accumulates residual/Jacobian/H/b
+```
+
+Host-state note: the first localization replay attempt failed before HLS start
+because `/tmp/lightning_xdma_observation.lock` was a stale user-owned file that
+sudo could not write on this system. Recreating the lock file as root fixed the
+host-state issue; this was not an FPGA/HLS failure.
