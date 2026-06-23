@@ -96,6 +96,14 @@ void PangolinWindow::UpdateKF(std::shared_ptr<Keyframe> kf) {
 void PangolinWindow::UpdatePerfStats(const PerfSnapshot& snapshot) {
     std::lock_guard<std::mutex> lock(impl_->mtx_perf_);
     impl_->perf_snapshot_ = snapshot;
+    impl_->perf_snapshot_is_loc_ = false;
+    impl_->perf_need_update_.store(true);
+}
+
+void PangolinWindow::UpdateLocPerfStats(const LocPerfSnapshot& snapshot) {
+    std::lock_guard<std::mutex> lock(impl_->mtx_perf_);
+    impl_->loc_perf_snapshot_ = snapshot;
+    impl_->perf_snapshot_is_loc_ = true;
     impl_->perf_need_update_.store(true);
 }
 

@@ -4,6 +4,8 @@
 #include "core/localization/lidar_loc/lidar_loc.h"
 #include "core/localization/localization.h"
 
+#include <chrono>
+#include <iomanip>
 #include <opencv2/highgui.hpp>
 
 #include "core/localization/pose_graph/pgo.h"
@@ -11,6 +13,23 @@
 #include "ui/pangolin_window.h"
 
 namespace lightning::loc {
+namespace {
+
+using Clock = std::chrono::steady_clock;
+
+double MsSince(const Clock::time_point& start) {
+    return std::chrono::duration<double, std::milli>(Clock::now() - start).count();
+}
+
+template <typename T>
+T GetYamlValue(const YAML::Node& node, const std::string& key, const T& default_value) {
+    if (node && node[key]) {
+        return node[key].as<T>();
+    }
+    return default_value;
+}
+
+}  // namespace
 
 // ！ 构造函数
 Localization::Localization(Options options) { options_ = options; }
@@ -24,6 +43,11 @@ bool Localization::Init(const std::string& yaml_path, const std::string& global_
     }
 
     YAML_IO yaml(yaml_path);
+    const YAML::Node yaml_node = YAML::LoadFile(yaml_path);
+    const YAML::Node profile_node = yaml_node["profile"];
+    profile_enable_ = GetYamlValue(profile_node, "enable", profile_enable_);
+    profile_ui_enable_ = GetYamlValue(profile_node, "ui_enable", profile_ui_enable_);
+    profile_log_every_n_frames_ = GetYamlValue(profile_node, "log_every_n_frames", profile_log_every_n_frames_);
     options_.with_ui_ = !options_.force_disable_ui_ && yaml.GetValue<bool>("system", "with_ui");
 
     /// lidar odom前端
@@ -144,9 +168,14 @@ void Localization::ProcessLidarMsg(const sensor_msgs::msg::PointCloud2::SharedPt
     }
 
     // 串行模式
+    const auto preprocess_start = Clock::now();
     CloudPtr laser_cloud(new PointCloudType);
     preprocess_->Process(cloud, laser_cloud);
     laser_cloud->header.stamp = cloud->header.stamp.sec * 1e9 + cloud->header.stamp.nanosec;
+    {
+        std::lock_guard<std::mutex> profile_lock(loc_profile_mutex_);
+        latest_preprocess_ms_ = MsSince(preprocess_start);
+    }
 
     if (options_.online_mode_) {
         lidar_odom_proc_cloud_.AddMessage(laser_cloud);
@@ -162,9 +191,14 @@ void Localization::ProcessLivoxLidarMsg(const livox_ros_driver2::msg::CustomMsg:
     }
 
     // 串行模式
+    const auto preprocess_start = Clock::now();
     CloudPtr laser_cloud(new PointCloudType);
     preprocess_->Process(cloud, laser_cloud);
     laser_cloud->header.stamp = cloud->header.stamp.sec * 1e9 + cloud->header.stamp.nanosec;
+    {
+        std::lock_guard<std::mutex> profile_lock(loc_profile_mutex_);
+        latest_preprocess_ms_ = MsSince(preprocess_start);
+    }
 
     if (options_.online_mode_) {
         lidar_odom_proc_cloud_.AddMessage(laser_cloud);
@@ -179,9 +213,17 @@ void Localization::LidarOdomProcCloud(CloudPtr cloud) {
     }
 
     /// NOTE: 在NCLT这种数据集中，lio内部是有缓存的，它拿到的点云不一定是最新时刻的点云
+    const auto lio_start = Clock::now();
     lio_->ProcessPointCloud2(cloud);
     if (!lio_->Run()) {
+        std::lock_guard<std::mutex> profile_lock(loc_profile_mutex_);
+        latest_lio_frontend_ms_ = MsSince(lio_start);
         return;
+    }
+    const double lio_frontend_ms = MsSince(lio_start);
+    {
+        std::lock_guard<std::mutex> profile_lock(loc_profile_mutex_);
+        latest_lio_frontend_ms_ = lio_frontend_ms;
     }
 
     auto lo_state = lio_->GetState();
@@ -232,14 +274,79 @@ void Localization::LidarOdomProcCloud(CloudPtr cloud) {
 }
 
 void Localization::LidarLocProcCloud(CloudPtr scan_undist) {
+    const auto loc_total_start = Clock::now();
+    const auto lidar_loc_start = Clock::now();
     lidar_loc_->ProcessCloud(scan_undist);
+    const double lidar_loc_ms = MsSince(lidar_loc_start);
 
     auto res = lidar_loc_->GetLocalizationResult();
+    const auto pgo_start = Clock::now();
     pgo_->ProcessLidarLoc(res);
+    const double pgo_ms = MsSince(pgo_start);
 
+    double ui_ms = 0.0;
     if (ui_) {
         // Twi with Til, here pose means Twl, thus Til=I
+        const auto ui_start = Clock::now();
         ui_->UpdateScan(scan_undist, res.pose_);
+        ui_ms = MsSince(ui_start);
+    }
+
+    LocPerfSnapshot snapshot = lidar_loc_->GetLastPerfSnapshot();
+    snapshot.frame_id = static_cast<int64_t>(++loc_profile_frame_count_);
+    snapshot.timestamp = res.timestamp_;
+    snapshot.loc_total_ms = MsSince(loc_total_start);
+    snapshot.lidar_loc_ms = lidar_loc_ms;
+    snapshot.pgo_ms = pgo_ms;
+    snapshot.ui_ms = ui_ms;
+    {
+        std::lock_guard<std::mutex> profile_lock(loc_profile_mutex_);
+        snapshot.preprocess_ms = latest_preprocess_ms_;
+        snapshot.lio_frontend_ms = latest_lio_frontend_ms_;
+    }
+    const auto now = Clock::now();
+    if (!have_first_loc_profile_time_) {
+        first_loc_profile_time_ = now;
+        have_first_loc_profile_time_ = true;
+    }
+    const double elapsed_sec = std::chrono::duration<double>(now - first_loc_profile_time_).count();
+    snapshot.processing_fps = elapsed_sec > 1e-9 ? static_cast<double>(loc_profile_frame_count_) / elapsed_sec : 0.0;
+
+    if (profile_enable_ && profile_log_every_n_frames_ > 0 &&
+        snapshot.frame_id % profile_log_every_n_frames_ == 0) {
+        LOG(INFO) << std::fixed << std::setprecision(3)
+                  << "[loc_profile] frame=" << snapshot.frame_id
+                  << " backend=" << snapshot.backend
+                  << " success=" << snapshot.success
+                  << " loc_total_ms=" << snapshot.loc_total_ms
+                  << " preprocess_ms=" << snapshot.preprocess_ms
+                  << " lio_frontend_ms=" << snapshot.lio_frontend_ms
+                  << " lidar_loc_ms=" << snapshot.lidar_loc_ms
+                  << " pgo_ms=" << snapshot.pgo_ms
+                  << " ui_ms=" << snapshot.ui_ms
+                  << " processing_fps=" << snapshot.processing_fps
+                  << " scan_points=" << snapshot.scan_points
+                  << " active_blocks=" << snapshot.active_blocks
+                  << " active_cells=" << snapshot.active_cells
+                  << " iterations=" << snapshot.iterations
+                  << " valid/reject/miss=" << snapshot.valid_count << "/" << snapshot.reject_count << "/"
+                  << snapshot.miss_count
+                  << " score=" << snapshot.score
+                  << " mean_abs_residual=" << snapshot.mean_abs_residual
+                  << " xdma_total_ms=" << snapshot.xdma_total_ms
+                  << " hls_wait_ms=" << snapshot.hls_wait_ms
+                  << " h2c_map_ms=" << snapshot.h2c_map_ms
+                  << " h2c_candidate_ms=" << snapshot.h2c_candidate_ms
+                  << " mutex_wait_ms=" << snapshot.mutex_wait_ms
+                  << " fallback_cpu_sim=" << snapshot.fallback_cpu_sim
+                  << " fallback_ndt=" << snapshot.fallback_ndt
+                  << " status=0x" << std::hex << snapshot.status
+                  << " error=0x" << snapshot.error << std::dec
+                  << " run_count=" << snapshot.run_count_before << "->" << snapshot.run_count_after;
+    }
+
+    if (ui_ && profile_enable_ && profile_ui_enable_) {
+        ui_->UpdateLocPerfStats(snapshot);
     }
 
     if (loc_state_callback_) {

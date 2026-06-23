@@ -204,10 +204,76 @@ bool PangolinWindowImpl::UpdatePerformance() {
     }
 
     PerfSnapshot snapshot;
+    LocPerfSnapshot loc_snapshot;
+    bool is_loc = false;
     {
         std::lock_guard<std::mutex> lock(mtx_perf_);
         snapshot = perf_snapshot_;
+        loc_snapshot = loc_perf_snapshot_;
+        is_loc = perf_snapshot_is_loc_;
         perf_need_update_.store(false);
+    }
+
+    auto make_line = [](const std::string &name, double value, const std::string &unit = " ms") {
+        std::ostringstream ss;
+        ss << std::fixed << std::setprecision(3) << name << ": " << value << unit;
+        return ss.str();
+    };
+
+    if (is_loc) {
+        std::ostringstream frame_ss;
+        frame_ss << std::fixed << std::setprecision(3) << loc_snapshot.loc_total_ms << " ms";
+        perf_frame_text_ = frame_ss.str();
+
+        std::ostringstream fps_ss;
+        fps_ss << std::fixed << std::setprecision(3) << loc_snapshot.processing_fps;
+        perf_fps_text_ = fps_ss.str();
+
+        perf_backend_text_ = loc_snapshot.backend;
+        perf_effect_text_ = std::to_string(loc_snapshot.valid_count);
+
+        std::vector<std::string> lines;
+        lines.emplace_back("loc backend: " + loc_snapshot.backend);
+        lines.emplace_back(make_line("Loc total", loc_snapshot.loc_total_ms));
+        lines.emplace_back(make_line("Preprocess", loc_snapshot.preprocess_ms));
+        lines.emplace_back(make_line("LIO frontend", loc_snapshot.lio_frontend_ms));
+        lines.emplace_back(make_line("LidarLoc", loc_snapshot.lidar_loc_ms));
+        lines.emplace_back(make_line("PGO", loc_snapshot.pgo_ms));
+        lines.emplace_back(make_line("UI", loc_snapshot.ui_ms));
+        lines.emplace_back(make_line("Iterations", static_cast<double>(loc_snapshot.iterations), ""));
+        lines.emplace_back(make_line("Processing FPS", loc_snapshot.processing_fps, ""));
+
+        std::ostringstream pts_line;
+        pts_line << "scan/block/cell: " << loc_snapshot.scan_points << " / " << loc_snapshot.active_blocks << " / "
+                 << loc_snapshot.active_cells;
+        lines.emplace_back(pts_line.str());
+
+        std::ostringstream count_line;
+        count_line << "valid/reject/miss: " << loc_snapshot.valid_count << " / " << loc_snapshot.reject_count << " / "
+                   << loc_snapshot.miss_count;
+        lines.emplace_back(count_line.str());
+
+        lines.emplace_back(make_line("Score", loc_snapshot.score, ""));
+        lines.emplace_back(make_line("Mean abs residual", loc_snapshot.mean_abs_residual, ""));
+        lines.emplace_back(make_line("Max abs residual", loc_snapshot.max_abs_residual, ""));
+        lines.emplace_back(make_line("XDMA total", loc_snapshot.xdma_total_ms));
+        lines.emplace_back(make_line("HLS wait", loc_snapshot.hls_wait_ms));
+        lines.emplace_back(make_line("H2C map", loc_snapshot.h2c_map_ms));
+        lines.emplace_back(make_line("H2C candidate", loc_snapshot.h2c_candidate_ms));
+        lines.emplace_back(make_line("Mutex wait", loc_snapshot.mutex_wait_ms));
+
+        std::ostringstream fallback_line;
+        fallback_line << "fallback cpu/ndt: " << static_cast<int>(loc_snapshot.fallback_cpu_sim) << " / "
+                      << static_cast<int>(loc_snapshot.fallback_ndt) << " success: "
+                      << static_cast<int>(loc_snapshot.success);
+        lines.emplace_back(fallback_line.str());
+
+        gltext_label_perf_lines_.clear();
+        gltext_label_perf_lines_.reserve(lines.size());
+        for (const auto &line : lines) {
+            gltext_label_perf_lines_.emplace_back(pangolin::default_font().Text(line));
+        }
+        return true;
     }
 
     std::ostringstream frame_ss;
@@ -220,12 +286,6 @@ bool PangolinWindowImpl::UpdatePerformance() {
 
     perf_backend_text_ = snapshot.backend;
     perf_effect_text_ = std::to_string(snapshot.effective_surface_points);
-
-    auto make_line = [](const std::string &name, double value, const std::string &unit = " ms") {
-        std::ostringstream ss;
-        ss << std::fixed << std::setprecision(3) << name << ": " << value << unit;
-        return ss.str();
-    };
 
     std::vector<std::string> lines;
     lines.emplace_back("profile backend: " + snapshot.backend);

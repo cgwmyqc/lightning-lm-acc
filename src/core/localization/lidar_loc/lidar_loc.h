@@ -15,6 +15,7 @@
 #include "core/localization/surfel_loc/surfel_loc_xdma_backend.h"
 #include "core/localization/surfel_loc/surfel_map_window.h"
 #include "core/maps/tiled_map.h"
+#include "utils/perf_monitor.h"
 
 #include "pclomp/ndt_omp_impl.hpp"
 
@@ -158,6 +159,8 @@ class LidarLoc {
     /// 激光定位是否认为LO有效
     bool LidarLocThinkLOReliable() { return lo_reliable_; }
 
+    LocPerfSnapshot GetLastPerfSnapshot() const;
+
    private:
     // 内部函数  ==========================================================================
     /**
@@ -215,6 +218,8 @@ class LidarLoc {
                                  double solve_sec, double pose_update_sec,
                                  const fpga::XdmaRuntime::RunResult& result,
                                  const LocNormalEquation& equation, const LocQuality& quality);
+    void SetLastPerfSnapshot(const LocPerfSnapshot& snapshot);
+    void UpdateLastPerfFallback(bool fallback_cpu_sim, bool fallback_ndt);
 
     // 成员变量  ==========================================================================
     Options options_;
@@ -239,6 +244,8 @@ class LidarLoc {
     int golden_frame_seen_count_ = 0;
     bool golden_frame_captured_ = false;
     LocGoldenFrameCaptureCallback golden_frame_callback_;
+    mutable std::mutex perf_mutex_;
+    LocPerfSnapshot last_perf_snapshot_;
 
     CloudPtr current_scan_ = nullptr;                   // 当前扫描
     std::shared_ptr<ui::PangolinWindow> ui_ = nullptr;  // ui

@@ -100,6 +100,8 @@ class PangolinWindowImpl {
     int max_size_of_current_scan_ = 200;  // 当前扫描数据保留多少个
     std::vector<std::shared_ptr<Keyframe>> all_keyframes_;
     PerfSnapshot perf_snapshot_;
+    LocPerfSnapshot loc_perf_snapshot_;
+    bool perf_snapshot_is_loc_ = false;
 
     //////////////////////////////// 以下和render相关 ///////////////////////////
    private:

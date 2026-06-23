@@ -594,6 +594,22 @@ void LidarLoc::UpdateMapThread() {
     }
 }
 
+LocPerfSnapshot LidarLoc::GetLastPerfSnapshot() const {
+    std::lock_guard<std::mutex> lock(perf_mutex_);
+    return last_perf_snapshot_;
+}
+
+void LidarLoc::SetLastPerfSnapshot(const LocPerfSnapshot& snapshot) {
+    std::lock_guard<std::mutex> lock(perf_mutex_);
+    last_perf_snapshot_ = snapshot;
+}
+
+void LidarLoc::UpdateLastPerfFallback(bool fallback_cpu_sim, bool fallback_ndt) {
+    std::lock_guard<std::mutex> lock(perf_mutex_);
+    last_perf_snapshot_.fallback_cpu_sim = fallback_cpu_sim;
+    last_perf_snapshot_.fallback_ndt = fallback_ndt;
+}
+
 void LidarLoc::SetInitialPose(SE3 init_pose) {
     UL lock(initial_pose_mutex_);
     loc_inited_ = false;
@@ -989,9 +1005,12 @@ bool LidarLoc::CheckLidarOdomValid(const SE3& current_pose_esti, double& delta_p
 
 bool LidarLoc::Localize(SE3& pose, double& confidence, CloudPtr input, CloudPtr output, bool use_rough_res) {
     if (options_.backend_type_ == LocBackendType::NDT_OMP || use_rough_res) {
-        return LocalizeNdt(pose, confidence, input, output, use_rough_res);
+        const bool ok = LocalizeNdt(pose, confidence, input, output, use_rough_res);
+        UpdateLastPerfFallback(false, false);
+        return ok;
     }
 
+    bool fallback_cpu_sim = false;
     if (options_.backend_type_ == LocBackendType::SURFEL_FPGA_OBS) {
         SE3 fpga_pose = pose;
         double fpga_confidence = 0.0;
@@ -999,9 +1018,11 @@ bool LidarLoc::Localize(SE3& pose, double& confidence, CloudPtr input, CloudPtr 
         if (fpga_success) {
             pose = fpga_pose;
             confidence = fpga_confidence;
+            UpdateLastPerfFallback(false, false);
             return true;
         }
 
+        fallback_cpu_sim = true;
         LOG(WARNING) << "[LidarLoc] SURFEL_FPGA_OBS failed, fallback to SURFEL_CPU_SIM";
     }
 
@@ -1011,15 +1032,19 @@ bool LidarLoc::Localize(SE3& pose, double& confidence, CloudPtr input, CloudPtr 
     if (surfel_success) {
         pose = surfel_pose;
         confidence = surfel_confidence;
+        UpdateLastPerfFallback(fallback_cpu_sim, false);
         return true;
     }
 
     if (options_.surfel_fallback_to_ndt_) {
         LOG(WARNING) << "[LidarLoc] surfel localization failed, fallback to NDT_OMP";
-        return LocalizeNdt(pose, confidence, input, output, use_rough_res);
+        const bool ok = LocalizeNdt(pose, confidence, input, output, use_rough_res);
+        UpdateLastPerfFallback(fallback_cpu_sim, true);
+        return ok;
     }
 
     confidence = surfel_confidence;
+    UpdateLastPerfFallback(fallback_cpu_sim, false);
     return false;
 }
 
@@ -1076,7 +1101,15 @@ void LidarLoc::MaybeCaptureGoldenFrame(const CloudPtr& input, const SE3& pose_gu
 }
 
 bool LidarLoc::LocalizeSurfelCpuSim(SE3& pose, double& confidence, CloudPtr input, CloudPtr output) {
+    const auto loc_start = Clock::now();
     if (!surfel_backend_ || !surfel_window_) {
+        LocPerfSnapshot snapshot;
+        snapshot.timestamp = current_timestamp_;
+        snapshot.backend = "SURFEL_CPU_SIM";
+        snapshot.scan_points = input ? input->size() : 0;
+        snapshot.loc_total_ms = SecondsSince(loc_start) * 1000.0;
+        snapshot.success = false;
+        SetLastPerfSnapshot(snapshot);
         return false;
     }
 
@@ -1088,6 +1121,13 @@ bool LidarLoc::LocalizeSurfelCpuSim(SE3& pose, double& confidence, CloudPtr inpu
     if (surfel_window_dirty_ || surfel_window_->Buffer().Empty()) {
         if (!RebuildSurfelWindow()) {
             LOG(WARNING) << "[LidarLoc] failed to build surfel active window";
+            LocPerfSnapshot snapshot;
+            snapshot.timestamp = current_timestamp_;
+            snapshot.backend = "SURFEL_CPU_SIM";
+            snapshot.scan_points = input ? input->size() : 0;
+            snapshot.loc_total_ms = SecondsSince(loc_start) * 1000.0;
+            snapshot.success = false;
+            SetLastPerfSnapshot(snapshot);
             return false;
         }
     }
@@ -1108,6 +1148,23 @@ bool LidarLoc::LocalizeSurfelCpuSim(SE3& pose, double& confidence, CloudPtr inpu
               << " max_abs_residual=" << quality.max_abs_residual << " iterations=" << quality.iterations
               << " window=" << quality.active_window_id << ":" << quality.active_window_version
               << " matrix_ok=" << quality.matrix_ok;
+
+    LocPerfSnapshot snapshot;
+    snapshot.timestamp = current_timestamp_;
+    snapshot.backend = "SURFEL_CPU_SIM";
+    snapshot.loc_total_ms = SecondsSince(loc_start) * 1000.0;
+    snapshot.iterations = quality.iterations;
+    snapshot.scan_points = input ? input->size() : 0;
+    snapshot.active_blocks = surfel_window_->Buffer().blocks.size();
+    snapshot.active_cells = surfel_window_->Buffer().cells.size();
+    snapshot.valid_count = quality.valid_count;
+    snapshot.reject_count = quality.reject_count;
+    snapshot.miss_count = quality.miss_count;
+    snapshot.score = quality.score;
+    snapshot.mean_abs_residual = quality.mean_abs_residual;
+    snapshot.max_abs_residual = quality.max_abs_residual;
+    snapshot.success = success;
+    SetLastPerfSnapshot(snapshot);
 
     return success;
 }
@@ -1163,7 +1220,15 @@ void LidarLoc::AppendLocFpgaProfileCsv(uint64_t frame_id, uint32_t iter, uint64_
 }
 
 bool LidarLoc::LocalizeSurfelFpgaObs(SE3& pose, double& confidence, CloudPtr input, CloudPtr output) {
+    const auto loc_start = Clock::now();
     if (!surfel_xdma_backend_ || !surfel_window_) {
+        LocPerfSnapshot snapshot;
+        snapshot.timestamp = current_timestamp_;
+        snapshot.backend = "SURFEL_FPGA_OBS";
+        snapshot.scan_points = input ? input->size() : 0;
+        snapshot.loc_total_ms = SecondsSince(loc_start) * 1000.0;
+        snapshot.success = false;
+        SetLastPerfSnapshot(snapshot);
         return false;
     }
 
@@ -1178,6 +1243,13 @@ bool LidarLoc::LocalizeSurfelFpgaObs(SE3& pose, double& confidence, CloudPtr inp
         const auto rebuild_start = Clock::now();
         if (!RebuildSurfelWindow()) {
             LOG(WARNING) << "[LidarLoc] failed to build surfel active window for FPGA_OBS";
+            LocPerfSnapshot snapshot;
+            snapshot.timestamp = current_timestamp_;
+            snapshot.backend = "SURFEL_FPGA_OBS";
+            snapshot.scan_points = input ? input->size() : 0;
+            snapshot.loc_total_ms = SecondsSince(loc_start) * 1000.0;
+            snapshot.success = false;
+            SetLastPerfSnapshot(snapshot);
             return false;
         }
         rebuild_window_sec = SecondsSince(rebuild_start);
@@ -1194,10 +1266,16 @@ bool LidarLoc::LocalizeSurfelFpgaObs(SE3& pose, double& confidence, CloudPtr inp
     double xdma_total_sum = 0.0;
     double hls_wait_sum = 0.0;
     double h2c_map_sum = 0.0;
+    double h2c_candidate_sum = 0.0;
+    double mutex_wait_sum = 0.0;
     double pack_scan_sum = 0.0;
     double solve_sum = 0.0;
     double pose_update_sum = 0.0;
     std::string last_error;
+    uint64_t run_count_before = 0;
+    uint64_t run_count_after = 0;
+    uint32_t last_status = 0;
+    uint32_t last_error_code = 0;
 
     for (int iter = 0; iter < options_.surfel_options_.max_iterations; ++iter) {
         LocNormalEquation equation;
@@ -1217,7 +1295,15 @@ bool LidarLoc::LocalizeSurfelFpgaObs(SE3& pose, double& confidence, CloudPtr inp
         xdma_total_sum += run_result.timing.total_sec;
         hls_wait_sum += run_result.timing.hls_wait_sec;
         h2c_map_sum += run_result.timing.h2c_map_sec;
+        h2c_candidate_sum += run_result.timing.h2c_candidate_sec;
+        mutex_wait_sum += run_result.timing.mutex_wait_sec;
         pack_scan_sum += pack_scan_sec;
+        if (quality.iterations == 0) {
+            run_count_before = run_result.run_count_before;
+        }
+        run_count_after = run_result.run_count_after;
+        last_status = run_result.status;
+        last_error_code = run_result.error;
 
         quality.iterations = iter + 1;
         quality.valid_count = equation.valid_count;
@@ -1341,6 +1427,8 @@ bool LidarLoc::LocalizeSurfelFpgaObs(SE3& pose, double& confidence, CloudPtr inp
               << " xdma_total_sum=" << xdma_total_sum
               << " hls_wait_sum=" << hls_wait_sum
               << " h2c_map_sum=" << h2c_map_sum
+              << " h2c_candidate_sum=" << h2c_candidate_sum
+              << " mutex_wait_sum=" << mutex_wait_sum
               << " pack_scan_sum=" << pack_scan_sum
               << " solve_sum=" << solve_sum
               << " pose_update_sum=" << pose_update_sum
@@ -1348,10 +1436,37 @@ bool LidarLoc::LocalizeSurfelFpgaObs(SE3& pose, double& confidence, CloudPtr inp
               << " active_cells=" << active_buffer.cells.size()
               << " last_error=" << last_error;
 
+    LocPerfSnapshot snapshot;
+    snapshot.timestamp = current_timestamp_;
+    snapshot.backend = "SURFEL_FPGA_OBS";
+    snapshot.loc_total_ms = SecondsSince(loc_start) * 1000.0;
+    snapshot.iterations = quality.iterations;
+    snapshot.scan_points = input ? input->size() : 0;
+    snapshot.active_blocks = active_buffer.blocks.size();
+    snapshot.active_cells = active_buffer.cells.size();
+    snapshot.valid_count = quality.valid_count;
+    snapshot.reject_count = quality.reject_count;
+    snapshot.miss_count = quality.miss_count;
+    snapshot.score = quality.score;
+    snapshot.mean_abs_residual = quality.mean_abs_residual;
+    snapshot.max_abs_residual = quality.max_abs_residual;
+    snapshot.xdma_total_ms = xdma_total_sum * 1000.0;
+    snapshot.hls_wait_ms = hls_wait_sum * 1000.0;
+    snapshot.h2c_map_ms = h2c_map_sum * 1000.0;
+    snapshot.h2c_candidate_ms = h2c_candidate_sum * 1000.0;
+    snapshot.mutex_wait_ms = mutex_wait_sum * 1000.0;
+    snapshot.run_count_before = run_count_before;
+    snapshot.run_count_after = run_count_after;
+    snapshot.status = last_status;
+    snapshot.error = last_error_code;
+    snapshot.success = success;
+    SetLastPerfSnapshot(snapshot);
+
     return success;
 }
 
 bool LidarLoc::LocalizeNdt(SE3& pose, double& confidence, CloudPtr input, CloudPtr output, bool use_rough_res) {
+    const auto loc_start = Clock::now();
     Eigen::Matrix4f trans;
     bool loc_success = false;
     Eigen::Matrix4f guess_pose = pose.matrix().cast<float>();
@@ -1420,6 +1535,15 @@ bool LidarLoc::LocalizeNdt(SE3& pose, double& confidence, CloudPtr input, CloudP
     pose = SE3(q_3d, t_3d);
 
     LOG(INFO) << "confidence: " << confidence << ", t: " << t_3d.transpose() << ", succ: " << loc_success;
+
+    LocPerfSnapshot snapshot;
+    snapshot.timestamp = current_timestamp_;
+    snapshot.backend = use_rough_res ? "NDT_OMP_ROUGH" : "NDT_OMP";
+    snapshot.loc_total_ms = SecondsSince(loc_start) * 1000.0;
+    snapshot.scan_points = input ? input->size() : 0;
+    snapshot.score = confidence;
+    snapshot.success = loc_success;
+    SetLastPerfSnapshot(snapshot);
 
     return loc_success;
 }

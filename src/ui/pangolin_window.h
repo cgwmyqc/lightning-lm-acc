@@ -52,6 +52,7 @@ class PangolinWindow {
     void UpdateKF(std::shared_ptr<Keyframe> kf);
 
     void UpdatePerfStats(const PerfSnapshot& snapshot);
+    void UpdateLocPerfStats(const LocPerfSnapshot& snapshot);
 
     /// 等待显示线程结束，并释放资源
     void Quit();

@@ -14,7 +14,7 @@ fasterlio:
 
   skip_lidar_num: 0 # 点云的跳帧情况
   point_filter_num: 4 # 点云采样参数                    **
-  max_iteration: 4 # 最大迭代次数                       **
+  max_iteration: 1 # 最大迭代次数                       **
   filter_size_scan: 0.5 # 对scan进行的降采样              **
   filter_size_map: 0.5  # 对历史地图的稀疏                 **
 
@@ -70,8 +70,8 @@ profile:
 # - Mapping FPGA observation: fpga.enable=true, mapping.enable=true, mapping.mode=fpga_obs.
 # - fpga.runtime is shared by localization and mapping FPGA_OBS paths.
 fpga:
-  enable: false        # Master switch. false forces mapping and localization to CPU paths.
-  mode: cpu_sim            # Global default mode if a subsystem mode is omitted: cpu/cpu_sim/fpga_obs/fpga_full.
+  enable: true        # Master switch. false forces mapping and localization to CPU paths.
+  mode: fpga_obs            # Global default mode if a subsystem mode is omitted: cpu/cpu_sim/fpga_obs/fpga_full.
   runtime:
     user_dev: /dev/xdma0_user
     h2c_dev: /dev/xdma0_h2c_0
@@ -81,12 +81,12 @@ fpga:
     verify_readback: false
     candidate_abi_v2: true
   mapping:
-    enable: false       # Effective only when fpga.enable=true.
-    mode: cpu_sim      # cpu/cpu_sim use CPU. fpga_obs uses FPGA/HLS observation with CPU EKF update.
+    enable: true       # Effective only when fpga.enable=true.
+    mode: fpga_obs      # cpu/cpu_sim use CPU. fpga_obs uses FPGA/HLS observation with CPU EKF update.
     fallback: cpu      # Mapping FPGA failure fallback target.
   localization:
-    enable: false      # Effective only when fpga.enable=true.
-    mode: CPU_SIM      # cpu_sim: surfel CPU_SIM. fpga_obs: FPGA/HLS observation with CPU iteration/solve.
+    enable: true      # Effective only when fpga.enable=true.
+    mode: fpga_obs      # cpu_sim: surfel CPU_SIM. fpga_obs: FPGA/HLS observation with CPU iteration/solve.
     fallback: ndt_omp  # Final localization fallback if surfel CPU_SIM/FPGA_OBS fails.
 
 g2p5:
@@ -110,7 +110,7 @@ system:
   evaluation: false
   lidar_loc_skip_num: 4
   lidar_odom_skip_num: 2
-  map_path: ./data/new_map/
+  map_path: ./data/fpga_map/
   pub_tf: true
 
 loop_closing:
@@ -147,7 +147,7 @@ lidar_loc:
   surfel_min_support: 3            # Minimum points/cell support for surfel validity.
   surfel_quality_max: 0.05         # Max surfel plane quality accepted by lookup.
   surfel_lookup_nearby_type: 26    # 26-neighbor lookup; must match FPGA/HLS ABI expectation.
-  surfel_max_iterations: 4         # CPU pose update iterations for CPU_SIM/FPGA_OBS.
+  surfel_max_iterations: 1         # CPU pose update iterations for CPU_SIM/FPGA_OBS.
   surfel_min_valid_count: 300      # Quality gate before accepting surfel localization.
   surfel_max_mean_residual: 0.2    # Quality gate before accepting surfel localization.
   surfel_fpga_user_dev: /dev/xdma0_user   # Used only by localization mode=fpga_obs.

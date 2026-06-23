@@ -71,6 +71,47 @@ struct PerfSnapshot {
     std::map<std::string, PerfStageSummary> stage_summaries;
 };
 
+struct LocPerfSnapshot {
+    int64_t frame_id = 0;
+    double timestamp = 0.0;
+    std::string backend = "NDT_OMP";
+
+    double processing_fps = 0.0;
+    double preprocess_ms = 0.0;
+    double loc_total_ms = 0.0;
+    double lio_frontend_ms = 0.0;
+    double lidar_loc_ms = 0.0;
+    double pgo_ms = 0.0;
+    double ui_ms = 0.0;
+
+    int iterations = 0;
+    size_t scan_points = 0;
+    size_t active_blocks = 0;
+    size_t active_cells = 0;
+
+    uint32_t valid_count = 0;
+    uint32_t reject_count = 0;
+    uint32_t miss_count = 0;
+    double score = 0.0;
+    double mean_abs_residual = 0.0;
+    double max_abs_residual = 0.0;
+
+    double xdma_total_ms = 0.0;
+    double hls_wait_ms = 0.0;
+    double h2c_map_ms = 0.0;
+    double h2c_candidate_ms = 0.0;
+    double mutex_wait_ms = 0.0;
+
+    uint64_t run_count_before = 0;
+    uint64_t run_count_after = 0;
+    uint32_t status = 0;
+    uint32_t error = 0;
+
+    bool fallback_cpu_sim = false;
+    bool fallback_ndt = false;
+    bool success = false;
+};
+
 class PerfMonitor {
    public:
     struct Config {

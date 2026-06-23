@@ -3,11 +3,14 @@
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "std_msgs/msg/int32.hpp"
 
+#include <chrono>
+
 #include "common/imu.h"
 #include "core/lio/laser_mapping.h"
 #include "core/localization/lidar_loc/lidar_loc.h"
 #include "core/localization/localization_result.h"
 #include "core/system/async_message_process.h"
+#include "utils/perf_monitor.h"
 
 /// 预声明
 namespace lightning {
@@ -125,6 +128,16 @@ class Localization {
     LocStateCallback loc_state_callback_;
     PointcloudBodyCallback pointcloud_body_callback_;
     PointcloudWorldCallback pointcloud_world_callback_;
+
+    bool profile_enable_ = true;
+    bool profile_ui_enable_ = true;
+    int profile_log_every_n_frames_ = 10;
+    uint64_t loc_profile_frame_count_ = 0;
+    double latest_preprocess_ms_ = 0.0;
+    double latest_lio_frontend_ms_ = 0.0;
+    std::mutex loc_profile_mutex_;
+    std::chrono::steady_clock::time_point first_loc_profile_time_;
+    bool have_first_loc_profile_time_ = false;
 
     /// 输入检查
     double last_imu_time_ = 0;
