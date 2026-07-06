@@ -4,6 +4,9 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <algorithm>
+#include <array>
+#include <cmath>
 #include <sstream>
 #include <string>
 
@@ -29,6 +32,7 @@ DEFINE_int32(ddr_size, 4096, "Bytes per PL DDR smoke region");
 DEFINE_double(abs_tol, 1e-4, "Absolute tolerance for normal-equation comparison");
 DEFINE_double(rel_tol, 1e-3, "Relative tolerance for normal-equation comparison");
 DEFINE_bool(abi_v2_candidates, false, "Use ABI V2 per-point precomputed candidate cells");
+DEFINE_bool(fpga_solve6x6, false, "Request FPGA-side localization 6x6 solve after observation");
 
 namespace {
 
@@ -52,7 +56,8 @@ void WriteJsonArray(std::ostream& os, const double* data, size_t size) {
     os << "]";
 }
 
-void WriteJsonArray(std::ostream& os, const std::array<uint64_t, 40>& data) {
+template <size_t N>
+void WriteJsonArray(std::ostream& os, const std::array<uint64_t, N>& data) {
     os << "[";
     for (size_t i = 0; i < data.size(); ++i) {
         if (i != 0) {
@@ -78,6 +83,110 @@ void WriteEquationJson(std::ostream& os, const lightning::fpga::SlamNormalEquati
     os << ",\"residual_abs_sum\":" << std::setprecision(17) << equation.residual_abs_sum;
     os << ",\"residual_max_abs\":" << std::setprecision(17) << equation.residual_max_abs;
     os << "}";
+}
+
+void WriteSolveJson(std::ostream& os, const lightning::fpga::SlamSolve6x6Result& solve) {
+    os << "{";
+    os << "\"magic\":" << solve.magic;
+    os << ",\"version\":" << solve.version;
+    os << ",\"status\":" << solve.status;
+    os << ",\"flags\":" << solve.flags;
+    os << ",\"dx\":";
+    WriteJsonArray(os, solve.dx, 6);
+    os << ",\"damping\":" << std::setprecision(17) << solve.damping;
+    os << ",\"min_pivot\":" << std::setprecision(17) << solve.min_pivot;
+    os << ",\"max_diag\":" << std::setprecision(17) << solve.max_diag;
+    os << ",\"residual_norm\":" << std::setprecision(17) << solve.residual_norm;
+    os << "}";
+}
+
+bool ReferenceSolve6x6(const lightning::fpga::SlamNormalEquation& equation, double dx[6], std::string* error) {
+    constexpr double kDamping = 1.0e-6;
+    double a[6][6] = {};
+    double l[6][6] = {};
+    double d[6] = {};
+    double rhs[6] = {};
+    int idx = 0;
+    for (int r = 0; r < 6; ++r) {
+        for (int c = r; c < 6; ++c) {
+            a[r][c] = equation.h_upper[idx];
+            a[c][r] = equation.h_upper[idx];
+            ++idx;
+        }
+        a[r][r] += kDamping;
+        rhs[r] = -equation.b[r];
+        dx[r] = 0.0;
+    }
+    for (int i = 0; i < 6; ++i) {
+        for (int j = 0; j < i; ++j) {
+            double sum = a[i][j];
+            for (int k = 0; k < j; ++k) {
+                sum -= l[i][k] * d[k] * l[j][k];
+            }
+            if (std::fabs(d[j]) <= 1e-12) {
+                if (error != nullptr) *error = "reference solve zero pivot";
+                return false;
+            }
+            l[i][j] = sum / d[j];
+        }
+        double diag = a[i][i];
+        for (int k = 0; k < i; ++k) {
+            diag -= l[i][k] * l[i][k] * d[k];
+        }
+        if (!std::isfinite(diag) || diag <= 1e-12) {
+            if (error != nullptr) *error = "reference solve non-positive pivot";
+            return false;
+        }
+        d[i] = diag;
+        l[i][i] = 1.0;
+    }
+    double y[6] = {};
+    double z[6] = {};
+    for (int i = 0; i < 6; ++i) {
+        double sum = rhs[i];
+        for (int k = 0; k < i; ++k) {
+            sum -= l[i][k] * y[k];
+        }
+        y[i] = sum;
+        z[i] = y[i] / d[i];
+    }
+    for (int i = 5; i >= 0; --i) {
+        double sum = z[i];
+        for (int k = i + 1; k < 6; ++k) {
+            sum -= l[k][i] * dx[k];
+        }
+        dx[i] = sum;
+    }
+    return true;
+}
+
+bool CompareSolve6x6(const lightning::fpga::SlamSolve6x6Result& actual,
+                     const lightning::fpga::SlamNormalEquation& equation, std::string* report) {
+    double expected_dx[6] = {};
+    std::string error;
+    if (!ReferenceSolve6x6(equation, expected_dx, &error)) {
+        if (report != nullptr) *report = error;
+        return false;
+    }
+    double max_abs = 0.0;
+    double max_rel = 0.0;
+    for (int i = 0; i < 6; ++i) {
+        const double abs_err = std::fabs(actual.dx[i] - expected_dx[i]);
+        const double rel_err = abs_err / std::max(1.0, std::fabs(expected_dx[i]));
+        max_abs = std::max(max_abs, abs_err);
+        max_rel = std::max(max_rel, rel_err);
+    }
+    const bool pass = actual.magic == lightning::fpga::SLAM_ACCEL_SOLVE6X6_MAGIC &&
+                      actual.version == lightning::fpga::SLAM_ACCEL_SOLVE6X6_VERSION &&
+                      actual.status == lightning::fpga::SLAM_SOLVE6X6_SUCCESS &&
+                      (max_abs <= 1e-7 || max_rel <= 1e-5);
+    if (report != nullptr) {
+        std::ostringstream ss;
+        ss << "status=" << actual.status << " max_abs=" << max_abs << " max_rel=" << max_rel
+           << " dx0=" << actual.dx[0] << " expected_dx0=" << expected_dx[0];
+        *report = ss.str();
+    }
+    return pass;
 }
 
 bool WriteResultJson(const std::string& output_dir, int iteration, const std::string& golden_dir, uint32_t ctrl_base,
@@ -125,6 +234,9 @@ bool WriteResultJson(const std::string& output_dir, int iteration, const std::st
     os << ",\n";
     os << "  \"actual\": ";
     WriteEquationJson(os, result.output);
+    os << ",\n";
+    os << "  \"solve6x6\": ";
+    WriteSolveJson(os, result.solve);
     os << ",\n";
     os << "  \"expected\": ";
     WriteEquationJson(os, expected);
@@ -211,6 +323,7 @@ int main(int argc, char** argv) {
 
     std::cout << "XDMA_CPP_GOLDEN_LOAD_PASS\n";
     std::cout << "abi_v2_candidates=" << (FLAGS_abi_v2_candidates ? 1 : 0) << "\n";
+    std::cout << "fpga_solve6x6=" << (FLAGS_fpga_solve6x6 ? 1 : 0) << "\n";
     std::cout << "scan_count=" << scan_points.size() << "\n";
     std::cout << "active_blocks=" << frame.active_map.blocks.size() << "\n";
     std::cout << "active_cells=" << frame.active_map.cells.size() << "\n";
@@ -220,12 +333,23 @@ int main(int argc, char** argv) {
     for (int iter = 1; iter <= FLAGS_repeat; ++iter) {
         XdmaRuntime::RunResult result;
         const bool write_full_image = iter == 1;
-        const bool run_ok =
-            FLAGS_abi_v2_candidates
-                ? runtime.RunLocalizationObservationV2(scan_points, pose, frame.active_map, write_full_image,
-                                                       FLAGS_verify_readback && write_full_image, result, &error)
-                : runtime.RunLocalizationObservation(scan_points, pose, frame.active_map, write_full_image,
-                                                     FLAGS_verify_readback && write_full_image, result, &error);
+        bool run_ok = false;
+        if (FLAGS_fpga_solve6x6) {
+            if (!FLAGS_abi_v2_candidates) {
+                LOG(ERROR) << "--fpga_solve6x6 currently requires --abi_v2_candidates";
+                return 1;
+            }
+            run_ok = runtime.RunLocalizationObservationV2Solve6x6(scan_points, pose, frame.active_map,
+                                                                  write_full_image,
+                                                                  FLAGS_verify_readback && write_full_image,
+                                                                  result, &error);
+        } else if (FLAGS_abi_v2_candidates) {
+            run_ok = runtime.RunLocalizationObservationV2(scan_points, pose, frame.active_map, write_full_image,
+                                                          FLAGS_verify_readback && write_full_image, result, &error);
+        } else {
+            run_ok = runtime.RunLocalizationObservation(scan_points, pose, frame.active_map, write_full_image,
+                                                       FLAGS_verify_readback && write_full_image, result, &error);
+        }
         if (!run_ok) {
             LOG(ERROR) << error;
             return 6;
@@ -247,6 +371,23 @@ int main(int argc, char** argv) {
                              &error)) {
             LOG(ERROR) << error;
             return 8;
+        }
+        if (FLAGS_fpga_solve6x6) {
+            std::string solve_report;
+            if (!CompareSolve6x6(result.solve, result.output, &solve_report)) {
+                LOG(ERROR) << "solve6x6 mismatch: " << solve_report;
+                return 9;
+            }
+            std::cout << "LOC_XDMA_SOLVE6X6_PASS " << solve_report << "\n";
+            std::cout << "FPGA_SOLVE6X6_STATUS=" << result.solve.status << "\n";
+            std::cout << "FPGA_SOLVE6X6_DX=";
+            for (int i = 0; i < 6; ++i) {
+                if (i != 0) {
+                    std::cout << ",";
+                }
+                std::cout << std::setprecision(17) << result.solve.dx[i];
+            }
+            std::cout << "\n";
         }
 
         std::cout << "XDMA_CPP_HLS_DONE_PASS\n";

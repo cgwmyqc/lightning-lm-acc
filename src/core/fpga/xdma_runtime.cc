@@ -507,8 +507,9 @@ bool RunObservationImpl(const XdmaRuntime::Options& options, uint32_t mode,
     }
     result.timing.open_sec = SecondsSince(stage_start);
 
+    constexpr size_t kOutputBytes = sizeof(SlamNormalEquation) + sizeof(SlamSolve6x6Result);
     const ActiveMapHeader map_header = MakeActiveMapHeader(active_map, mode);
-    SlamNormalEquation output_zero;
+    std::array<uint8_t, kOutputBytes> output_zero = {};
     const bool use_candidate_v2 = candidate_cells != nullptr;
 
     if (write_full_image) {
@@ -581,7 +582,7 @@ bool RunObservationImpl(const XdmaRuntime::Options& options, uint32_t mode,
     }
 
     stage_start = Clock::now();
-    if (!WriteObject(h2c.get(), LIGHTNING_OUTPUT_BASE, output_zero, error, "output_zero")) {
+    if (!WriteExact(h2c.get(), output_zero.data(), output_zero.size(), LIGHTNING_OUTPUT_BASE, error, "output_zero")) {
         result.timing.output_zero_sec = SecondsSince(stage_start);
         result.timing.total_sec = SecondsSince(total_start);
         return false;
@@ -649,7 +650,7 @@ bool RunObservationImpl(const XdmaRuntime::Options& options, uint32_t mode,
         return false;
     }
 
-    std::array<uint8_t, sizeof(SlamNormalEquation)> output_bytes = {};
+    std::array<uint8_t, kOutputBytes> output_bytes = {};
     stage_start = Clock::now();
     if (!ReadExact(c2h.get(), output_bytes.data(), output_bytes.size(), LIGHTNING_OUTPUT_BASE, error, "output")) {
         result.timing.c2h_output_sec = SecondsSince(stage_start);
@@ -658,6 +659,7 @@ bool RunObservationImpl(const XdmaRuntime::Options& options, uint32_t mode,
     }
     result.timing.c2h_output_sec = SecondsSince(stage_start);
     std::memcpy(&result.output, output_bytes.data(), sizeof(result.output));
+    std::memcpy(&result.solve, output_bytes.data() + sizeof(SlamNormalEquation), sizeof(result.solve));
     std::memcpy(result.raw_output_words.data(), output_bytes.data(), sizeof(result.raw_output_words));
     result.timing.total_sec = SecondsSince(total_start);
     return true;
@@ -680,6 +682,26 @@ bool XdmaRuntime::RunLocalizationObservationV2(const std::vector<SlamAccelScanPo
                                                std::string* error) const {
     SlamAccelObservationParams params = MakeLocalizationObservationParams();
     params.flags |= SLAM_ACCEL_OBS_FLAG_CANDIDATE_ABI_V2;
+    uint32_t candidate_valid = 0;
+    uint32_t candidate_miss = 0;
+    const auto candidates =
+        BuildCandidateCells(scan_points, pose, active_map, LOCALIZATION_OBSERVATION, candidate_valid, candidate_miss);
+    result.candidate_count = static_cast<uint32_t>(candidates.size());
+    result.candidate_valid_count = candidate_valid;
+    result.candidate_miss_count = candidate_miss;
+    result.candidate_bytes = candidates.size() * sizeof(ObsCellFloat64);
+    return RunObservationImpl(options_, LOCALIZATION_OBSERVATION, scan_points, pose, active_map, params,
+                              &candidates, write_full_image, verify_readback, result, error);
+}
+
+bool XdmaRuntime::RunLocalizationObservationV2Solve6x6(const std::vector<SlamAccelScanPoint>& scan_points,
+                                                       const SlamAccelPose& pose,
+                                                       const loc::ActiveMapBuffer& active_map,
+                                                       bool write_full_image, bool verify_readback,
+                                                       RunResult& result, std::string* error) const {
+    SlamAccelObservationParams params = MakeLocalizationObservationParams();
+    params.flags |= SLAM_ACCEL_OBS_FLAG_CANDIDATE_ABI_V2;
+    params.flags |= SLAM_ACCEL_OBS_FLAG_SOLVE6X6;
     uint32_t candidate_valid = 0;
     uint32_t candidate_miss = 0;
     const auto candidates =

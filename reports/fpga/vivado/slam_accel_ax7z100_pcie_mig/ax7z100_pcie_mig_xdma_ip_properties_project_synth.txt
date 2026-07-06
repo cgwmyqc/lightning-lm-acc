@@ -1,4 +1,4 @@
-Property                                          Type     Read-only  Value
+﻿Property                                          Type     Read-only  Value
 ALLOWED_SIM_MODELS                                string*  true       rtl
 BASE_BOARD_PART                                   string   true
 BOARD                                             string   true

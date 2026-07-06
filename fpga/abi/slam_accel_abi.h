@@ -25,6 +25,7 @@ enum SlamAccelCellFlag : uint32_t {
 
 enum SlamAccelObservationFlag : uint32_t {
     SLAM_ACCEL_OBS_FLAG_CANDIDATE_ABI_V2 = 1u << 0,
+    SLAM_ACCEL_OBS_FLAG_SOLVE6X6 = 1u << 1,
 };
 
 struct alignas(16) SlamAccelScanPoint {
@@ -118,6 +119,31 @@ struct alignas(64) SlamNormalEquation {
     uint32_t reserved[4] = {0, 0, 0, 0};
 };
 static_assert(sizeof(SlamNormalEquation) == 320, "SlamNormalEquation must be exactly 320B");
+
+constexpr uint32_t SLAM_ACCEL_SOLVE6X6_MAGIC = 0x53365836u;  // "S6X6"
+constexpr uint32_t SLAM_ACCEL_SOLVE6X6_VERSION = 1u;
+
+enum SlamSolve6x6Status : uint32_t {
+    SLAM_SOLVE6X6_DISABLED = 0u,
+    SLAM_SOLVE6X6_SUCCESS = 1u,
+    SLAM_SOLVE6X6_NON_FINITE_INPUT = 2u,
+    SLAM_SOLVE6X6_NON_POSITIVE_PIVOT = 3u,
+    SLAM_SOLVE6X6_NON_FINITE_OUTPUT = 4u,
+};
+
+struct alignas(64) SlamSolve6x6Result {
+    uint32_t magic = SLAM_ACCEL_SOLVE6X6_MAGIC;
+    uint32_t version = SLAM_ACCEL_SOLVE6X6_VERSION;
+    uint32_t status = SLAM_SOLVE6X6_DISABLED;
+    uint32_t flags = 0;
+    double dx[6] = {0.0};
+    double damping = 0.0;
+    double min_pivot = 0.0;
+    double max_diag = 0.0;
+    double residual_norm = 0.0;
+    uint32_t reserved[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+};
+static_assert(sizeof(SlamSolve6x6Result) == 128, "SlamSolve6x6Result must be exactly 128B");
 
 struct alignas(64) GoldenFileHeader {
     uint32_t magic = SLAM_ACCEL_ABI_MAGIC;

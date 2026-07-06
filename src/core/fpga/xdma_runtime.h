@@ -51,7 +51,8 @@ class XdmaRuntime {
         double elapsed_sec = 0.0;
         Timing timing;
         SlamNormalEquation output;
-        std::array<uint64_t, 40> raw_output_words = {};
+        SlamSolve6x6Result solve;
+        std::array<uint64_t, 56> raw_output_words = {};
     };
 
     explicit XdmaRuntime(Options options);
@@ -66,6 +67,11 @@ class XdmaRuntime {
     bool RunLocalizationObservationV2(const std::vector<SlamAccelScanPoint>& scan_points, const SlamAccelPose& pose,
                                       const loc::ActiveMapBuffer& active_map, bool write_full_image,
                                       bool verify_readback, RunResult& result, std::string* error = nullptr) const;
+    bool RunLocalizationObservationV2Solve6x6(const std::vector<SlamAccelScanPoint>& scan_points,
+                                              const SlamAccelPose& pose,
+                                              const loc::ActiveMapBuffer& active_map, bool write_full_image,
+                                              bool verify_readback, RunResult& result,
+                                              std::string* error = nullptr) const;
     bool RunMappingObservation(const std::vector<SlamAccelScanPoint>& scan_points, const SlamAccelPose& pose,
                                const loc::ActiveMapBuffer& active_map,
                                const SlamAccelObservationParams& params, bool write_full_image,

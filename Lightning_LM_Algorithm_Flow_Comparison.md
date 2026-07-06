@@ -255,3 +255,49 @@ Stage58 前 FPGA：FPGA 接手 observation，但还在 FPGA 里做大量随机 l
 Stage58 后 FPGA：FPGA 缓存 active_blocks，快了很多，但 obs_cells 随机读还慢。
 ABI v2：CPU/Orin 先把候选找好，FPGA 只做最适合硬件流水的数值累计。
 ```
+
+---
+
+## Stage62 / Stage65 Addendum
+
+### Version 6: ABI V2 + FPGA solve6x6
+
+This version keeps Stage61 Candidate ABI V2 as the observation path:
+
+```text
+Orin candidate precompute
+-> FPGA residual/Jacobian/H/b accumulation
+-> optional FPGA localization solve6x6 dx
+-> CPU pose apply / convergence / fallback
+```
+
+Boundary:
+
+- FPGA solves only the localization 6x6 normal equation.
+- CPU still applies `SE3::exp(dx) * pose`.
+- CPU still owns convergence checks, quality gates, and fallback.
+- Mapping ESKF update is not included in Version 6.
+
+Current status:
+
+```text
+Windows HLS CSim/C Synthesis/IP export: PASS
+Board synthesis/implementation/bitstream: PASS
+Next gate: Orin run_surfel_loc_xdma_golden --abi_v2_candidates --fpga_solve6x6
+```
+
+### Version 7: ABI V2 + FPGA EKF update
+
+This version is planned after Stage64 CPU golden refactor:
+
+```text
+FPGA observation V2
+-> dedicated FPGA EKF update core
+-> CPU policy/fallback and unsupported observation handling
+```
+
+Boundary:
+
+- EKF update must be a separate HLS IP, not part of `unified_surfel_observation_core`.
+- First version only targets fixed lidar/surfel pose observation update.
+- If full 23D covariance update is too expensive, first land FPGA solve/update `dx` and keep covariance update on CPU as `FPGA_OBS_SOLVE_PARTIAL`.

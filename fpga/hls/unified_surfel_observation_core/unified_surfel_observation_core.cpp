@@ -48,7 +48,11 @@ bool KeyLess(int32_t x, int32_t y, int32_t z, const ActiveBlockRecord& rhs) {
 bool CellValid(const ObsCellFloat64& cell) { return (cell.flags & OBS_CELL_VALID) != 0; }
 
 constexpr int kNormalEquationWords = sizeof(SlamNormalEquation) / sizeof(uint64_t);
+constexpr int kSolve6x6Words = sizeof(SlamSolve6x6Result) / sizeof(uint64_t);
+constexpr int kOutputWordsWithSolve = kNormalEquationWords + kSolve6x6Words;
 constexpr int kMaxActiveBlocks = 8192;
+constexpr double kSolve6x6Damping = 1.0e-6;
+constexpr double kSolve6x6MinPivot = 1.0e-12;
 constexpr uint32_t kStage58DebugMagic = 0x53543538u;  // "ST58"
 constexpr uint32_t kStage58DebugVersion = 1u;
 constexpr uint32_t kStage61DebugMagic = 0x53543631u;  // "ST61"
@@ -440,7 +444,7 @@ void AccumulateUpper(double h[6][6], double b[6], const double j[6], double resi
 void StoreOutputWords(const double h[6][6], const double b[6], uint32_t valid_count, uint32_t reject_count,
                       uint32_t miss_count, double residual_sum, double residual_abs_sum, double residual_max_abs,
                       const LookupDebugCounters& counters, uint64_t* output_words) {
-    for (int i = 0; i < kNormalEquationWords; ++i) {
+    for (int i = 0; i < kOutputWordsWithSolve; ++i) {
 #pragma HLS UNROLL
         output_words[i] = 0;
     }
@@ -468,6 +472,128 @@ void StoreOutputWords(const double h[6][6], const double b[6], uint32_t valid_co
     output_words[37] = Pack32(counters.valid_candidate_count, counters.invalid_candidate_count);
     output_words[38] = Pack32(counters.max_probe_per_point, counters.block_cache_count);
     output_words[39] = Pack32(counters.flags, 0);
+}
+
+void StoreSolveResultWords(const SlamSolve6x6Result& solve, uint64_t* output_words) {
+    const int base = kNormalEquationWords;
+    output_words[base + 0] = Pack32(solve.magic, solve.version);
+    output_words[base + 1] = Pack32(solve.status, solve.flags);
+    for (int i = 0; i < 6; ++i) {
+#pragma HLS UNROLL
+        output_words[base + 2 + i] = DoubleToBits(solve.dx[i]);
+    }
+    output_words[base + 8] = DoubleToBits(solve.damping);
+    output_words[base + 9] = DoubleToBits(solve.min_pivot);
+    output_words[base + 10] = DoubleToBits(solve.max_diag);
+    output_words[base + 11] = DoubleToBits(solve.residual_norm);
+    for (int i = 12; i < kSolve6x6Words; ++i) {
+#pragma HLS UNROLL
+        output_words[base + i] = 0;
+    }
+}
+
+void Solve6x6Ldlt(const double h[6][6], const double b[6], uint32_t flags, SlamSolve6x6Result& solve) {
+    solve.magic = SLAM_ACCEL_SOLVE6X6_MAGIC;
+    solve.version = SLAM_ACCEL_SOLVE6X6_VERSION;
+    solve.status = SLAM_SOLVE6X6_SUCCESS;
+    solve.flags = flags;
+    solve.damping = kSolve6x6Damping;
+    solve.min_pivot = 0.0;
+    solve.max_diag = 0.0;
+    solve.residual_norm = 0.0;
+
+    double a[6][6];
+    double l[6][6];
+    double d[6];
+    double rhs[6];
+    double y[6];
+    double z[6];
+
+    for (int r = 0; r < 6; ++r) {
+        rhs[r] = -b[r];
+        y[r] = 0.0;
+        z[r] = 0.0;
+        solve.dx[r] = 0.0;
+        for (int c = 0; c < 6; ++c) {
+#pragma HLS UNROLL
+            const double value = (r <= c) ? h[r][c] : h[c][r];
+            a[r][c] = value + ((r == c) ? kSolve6x6Damping : 0.0);
+            l[r][c] = (r == c) ? 1.0 : 0.0;
+            if (!std::isfinite(a[r][c])) {
+                solve.status = SLAM_SOLVE6X6_NON_FINITE_INPUT;
+            }
+        }
+        if (!std::isfinite(rhs[r])) {
+            solve.status = SLAM_SOLVE6X6_NON_FINITE_INPUT;
+        }
+    }
+    if (solve.status != SLAM_SOLVE6X6_SUCCESS) {
+        return;
+    }
+
+    for (int i = 0; i < 6; ++i) {
+        for (int j = 0; j < i; ++j) {
+            double sum = a[i][j];
+            for (int k = 0; k < j; ++k) {
+                sum -= l[i][k] * d[k] * l[j][k];
+            }
+            if (std::fabs(d[j]) <= kSolve6x6MinPivot) {
+                solve.status = SLAM_SOLVE6X6_NON_POSITIVE_PIVOT;
+                return;
+            }
+            l[i][j] = sum / d[j];
+        }
+
+        double diag = a[i][i];
+        for (int k = 0; k < i; ++k) {
+            diag -= l[i][k] * l[i][k] * d[k];
+        }
+        d[i] = diag;
+        if (i == 0 || diag < solve.min_pivot) {
+            solve.min_pivot = diag;
+        }
+        if (i == 0 || a[i][i] > solve.max_diag) {
+            solve.max_diag = a[i][i];
+        }
+        if (!std::isfinite(diag) || diag <= kSolve6x6MinPivot) {
+            solve.status = SLAM_SOLVE6X6_NON_POSITIVE_PIVOT;
+            return;
+        }
+    }
+
+    for (int i = 0; i < 6; ++i) {
+        double sum = rhs[i];
+        for (int k = 0; k < i; ++k) {
+            sum -= l[i][k] * y[k];
+        }
+        y[i] = sum;
+        z[i] = y[i] / d[i];
+    }
+    for (int i = 5; i >= 0; --i) {
+        double sum = z[i];
+        for (int k = i + 1; k < 6; ++k) {
+            sum -= l[k][i] * solve.dx[k];
+        }
+        solve.dx[i] = sum;
+        if (!std::isfinite(solve.dx[i])) {
+            solve.status = SLAM_SOLVE6X6_NON_FINITE_OUTPUT;
+            return;
+        }
+    }
+
+    double residual_sq = 0.0;
+    for (int r = 0; r < 6; ++r) {
+        double ax = 0.0;
+        for (int c = 0; c < 6; ++c) {
+            ax += a[r][c] * solve.dx[c];
+        }
+        const double err = ax - rhs[r];
+        residual_sq += err * err;
+    }
+    solve.residual_norm = std::sqrt(residual_sq);
+    if (!std::isfinite(solve.residual_norm)) {
+        solve.status = SLAM_SOLVE6X6_NON_FINITE_OUTPUT;
+    }
 }
 
 }  // namespace
@@ -630,6 +756,11 @@ void unified_surfel_observation_core(const SlamAccelScanPoint* scan_points, uint
     }
     StoreOutputWords(h, b, valid_count, reject_count, miss_count, residual_sum, residual_abs_sum, residual_max_abs,
                      counters, output_words);
+    if (params_valid && ((obs_params.flags & SLAM_ACCEL_OBS_FLAG_SOLVE6X6) != 0u)) {
+        SlamSolve6x6Result solve;
+        Solve6x6Ldlt(h, b, obs_params.flags, solve);
+        StoreSolveResultWords(solve, output_words);
+    }
 }
 
 }  // namespace hls
@@ -650,7 +781,7 @@ void unified_surfel_observation_core(const lightning::fpga::SlamAccelScanPoint* 
 #pragma HLS INTERFACE m_axi port = params offset = direct bundle = gmem1 depth = 16
 #pragma HLS INTERFACE m_axi port = active_blocks offset = direct bundle = gmem2 depth = 8192
 #pragma HLS INTERFACE m_axi port = obs_cells offset = direct bundle = gmem3 depth = 1048576
-#pragma HLS INTERFACE m_axi port = output_words offset = direct bundle = gmem4 depth = 40
+#pragma HLS INTERFACE m_axi port = output_words offset = direct bundle = gmem4 depth = 56
 #pragma HLS DATA_PACK variable = scan_points
 #pragma HLS DATA_PACK variable = pose
 #pragma HLS DATA_PACK variable = map_header

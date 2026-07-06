@@ -5644,3 +5644,161 @@ Next stage: Stage62 mapping-only and localization-only online V2 smoke
 Stage62 should enable `fpga.runtime.candidate_abi_v2: true` only in controlled
 single-path online tests first. Keep `max_iterations=1` for the first smoke and
 do not immediately resume joint mapping + localization online.
+
+## Stage 62 Windows Result: Localization Solve6x6 HLS / Bitstream Ready
+
+Stage 62 Windows-side implementation was run on 2026-07-06.
+
+Purpose:
+
+- Move localization 6x6 solve onto FPGA as an optional extension after
+  Candidate ABI V2 observation.
+- Keep the first 320B `SlamNormalEquation` ABI unchanged.
+- Append a 128B `SlamSolve6x6Result` at `OUTPUT_BASE + 0x140`.
+- Keep BAR shim, XDMA/MIG, AXI-Lite register map, PL DDR layout, and Candidate
+  ABI V2 unchanged.
+
+Code/API changes:
+
+- `SLAM_ACCEL_OBS_FLAG_SOLVE6X6 = 1 << 1`.
+- `SlamSolve6x6Result` contains `magic/version/status/flags/dx[6]` plus
+  damping/pivot/residual diagnostics.
+- HLS `output_words` depth is now 56 64-bit words:
+  - words `0..39`: existing observation output/debug counters
+  - words `40..55`: solve6x6 output
+- HLS uses double LDLT on `H + 1e-6 * I` and solves `dx = (H + damping I)^-1 * (-b)`.
+- Orin runtime can call `RunLocalizationObservationV2Solve6x6()`.
+- `run_surfel_loc_xdma_golden` now accepts `--fpga_solve6x6`.
+
+Windows validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\unified_surfel_observation_core\run_gpp_csim.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\unified_surfel_observation_core\run_vivado_hls_csim.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\unified_surfel_observation_core\run_vivado_hls_csynth.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\unified_surfel_observation_core\run_vivado_hls_export_ip.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_bd_validate.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_project_synth.ps1 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_impl_bitstream.ps1 -Jobs 18
+```
+
+Results:
+
+```text
+g++ CSim: PASS
+Vivado HLS CSim: PASS, CSim done with 0 errors
+HLS C Synthesis: PASS
+HLS IP export: PASS after existing Vivado 2018.3 core_revision workaround
+BD validate: PASS
+Project synthesis: PASS
+Implementation/bitstream: PASS
+```
+
+Correctness gates in CSim:
+
+```text
+localization V1 PASS: 6050/911/2
+localization V2 PASS: 6050/911/2
+localization V2 solve6x6 PASS: status=1, dx matched testbench LDLT reference
+mapping V1 PASS: 611/0/171
+mapping V2 PASS: 611/0/171
+```
+
+HLS C Synthesis summary:
+
+```text
+target clock:    10.00 ns
+estimated clock: 9.307 ns
+BRAM_18K:        194 / 1510 = 12%
+DSP48E:          365 / 2020 = 18%
+FF:              78040 / 554800 = 14%
+LUT:             118656 / 277400 = 42%
+```
+
+Post-implementation summary:
+
+```text
+bitstream: fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit
+WNS: 0.090 ns
+WHS: 0.030 ns
+Timing: all user specified timing constraints are met
+DRC: 0 errors, 0 critical warnings; ordinary warnings/advisories remain
+Slice LUTs: 86589 / 277400 = 31.21%
+Slice Registers: 99787 / 554800 = 17.99%
+Block RAM Tile: 90.5 / 755 = 11.99%
+DSPs: 365 / 2020 = 18.07%
+```
+
+Next Orin gate:
+
+```bash
+./install/lightning/lib/lightning/run_surfel_loc_xdma_golden \
+  --golden_dir fpga/golden/localization/frame_000001 \
+  --ctrl_base 0x1000 \
+  --timeout_sec 120 \
+  --abi_v2_candidates \
+  --fpga_solve6x6
+
+./install/lightning/lib/lightning/run_surfel_mapping_xdma_golden \
+  --golden_dir fpga/golden/mapping/frame_000001 \
+  --ctrl_base 0x1000 \
+  --timeout_sec 120 \
+  --abi_v2_candidates
+```
+
+Acceptance:
+
+- localization observation still `6050/911/2`
+- `LOC_XDMA_SOLVE6X6_PASS`
+- `dx[6]` tolerance: `abs <= 1e-7` or `rel <= 1e-5`
+- mapping observation V2 still `611/0/171`
+- no XDMA config BAR failure, `CmpltTO`, or AER fatal
+
+## Stage 63 Plan: Localization FPGA_OBS_SOLVE Runtime
+
+Stage63 starts only after Stage62 Orin golden PASS.
+
+- `SURFEL_FPGA_OBS_SOLVE` should stop degrading to `SURFEL_FPGA_OBS`.
+- Localization online path uses FPGA observation + FPGA solve `dx`.
+- CPU still applies `SE3::exp(dx) * pose`, convergence checks, quality gates,
+  and fallback.
+- Keep `SURFEL_FPGA_OBS`, `SURFEL_CPU_SIM`, and NDT fallback.
+- Add profile fields: `fpga_solve_sec`, `fpga_solve_status`, `dx_norm`,
+  `dx[6]`.
+- First online smoke is localization-only with `max_iterations=1`.
+
+## Stage 64 Plan: Mapping ESKF Update CPU Golden Refactor
+
+Do not write HLS for mapping update before this stage passes.
+
+- Extract the lidar/surfel update portion of `ESKF::Update()` into a CPU-testable
+  function.
+- Fixed inputs: `HTH/HTr`, propagated `P`, current `dx`, `R`, degeneracy
+  threshold, step limits, and state snapshot.
+- Fixed outputs: updated `dx_current[NavState::dim]`, status/debug flags, and
+  either updated covariance `P` or enough intermediate data for CPU covariance
+  update.
+- Generate mapping update golden and prove the extracted function matches the
+  current CPU path before any FPGA EKF update work.
+
+## Stage 65 Plan: Mapping EKF Update HLS Core
+
+Stage65 starts only after Stage64 CPU golden PASS.
+
+- Add a separate HLS IP such as `slam_ekf_update_core`; do not merge it into
+  `unified_surfel_observation_core`.
+- First version only supports fixed-dimension lidar/surfel pose observation
+  update.
+- Runtime sequence: FPGA observation V2 -> FPGA EKF update -> CPU policy and
+  fallback.
+- If full 23D covariance update is too expensive, first land FPGA solve/update
+  `dx` and keep covariance on CPU, recorded as `FPGA_OBS_SOLVE_PARTIAL`.
+
+Guardrails:
+
+- Stage61 Candidate ABI V2 remains the default observation performance path and
+  fallback.
+- `FPGA_FULL` is not considered complete until Stage65 mapping EKF update gates
+  pass.
+- PCIe Gen2 x1/x4 performance work remains separate from solve/update
+  correctness.

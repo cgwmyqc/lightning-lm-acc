@@ -20,6 +20,9 @@ using namespace lightning::fpga;
 using namespace lightning::fpga::hls;
 
 constexpr size_t kNormalEquationWords = sizeof(SlamNormalEquation) / sizeof(uint64_t);
+constexpr size_t kSolve6x6Words = sizeof(SlamSolve6x6Result) / sizeof(uint64_t);
+constexpr size_t kOutputWords = kNormalEquationWords + kSolve6x6Words;
+constexpr double kSolve6x6Damping = 1.0e-6;
 
 struct GoldenCase {
     std::string mode_name;
@@ -280,9 +283,15 @@ bool ReadMappingMeta(const std::string& path, SlamAccelObservationParams& params
     return true;
 }
 
-SlamNormalEquation DecodeOutputWords(const uint64_t words[kNormalEquationWords]) {
+SlamNormalEquation DecodeOutputWords(const uint64_t words[kOutputWords]) {
     SlamNormalEquation out;
     std::memcpy(&out, words, sizeof(out));
+    return out;
+}
+
+SlamSolve6x6Result DecodeSolveWords(const uint64_t words[kOutputWords]) {
+    SlamSolve6x6Result out;
+    std::memcpy(&out, words + kNormalEquationWords, sizeof(out));
     return out;
 }
 
@@ -290,7 +299,7 @@ uint32_t DebugLow32(uint64_t value) { return static_cast<uint32_t>(value & 0xFFF
 
 uint32_t DebugHigh32(uint64_t value) { return static_cast<uint32_t>(value >> 32); }
 
-std::string FormatDebugCounters(const uint64_t words[kNormalEquationWords]) {
+std::string FormatDebugCounters(const uint64_t words[kOutputWords]) {
     std::ostringstream ss;
     ss << "debug_magic=0x" << std::hex << DebugLow32(words[32]) << std::dec
        << " debug_version=" << DebugHigh32(words[32])
@@ -557,6 +566,94 @@ bool CompareEquation(const SlamNormalEquation& actual, const SlamNormalEquation&
     return counts_ok && values_ok;
 }
 
+bool ReferenceSolve6x6(const SlamNormalEquation& equation, double dx[6], std::string& error) {
+    double a[6][6] = {};
+    double l[6][6] = {};
+    double d[6] = {};
+    double rhs[6] = {};
+    int idx = 0;
+    for (int r = 0; r < 6; ++r) {
+        for (int c = r; c < 6; ++c) {
+            a[r][c] = equation.h_upper[idx];
+            a[c][r] = equation.h_upper[idx];
+            ++idx;
+        }
+        a[r][r] += kSolve6x6Damping;
+        rhs[r] = -equation.b[r];
+        dx[r] = 0.0;
+    }
+
+    for (int i = 0; i < 6; ++i) {
+        for (int j = 0; j < i; ++j) {
+            double sum = a[i][j];
+            for (int k = 0; k < j; ++k) {
+                sum -= l[i][k] * d[k] * l[j][k];
+            }
+            if (std::fabs(d[j]) <= 1e-12) {
+                error = "reference solve zero pivot";
+                return false;
+            }
+            l[i][j] = sum / d[j];
+        }
+        double diag = a[i][i];
+        for (int k = 0; k < i; ++k) {
+            diag -= l[i][k] * l[i][k] * d[k];
+        }
+        if (!std::isfinite(diag) || diag <= 1e-12) {
+            error = "reference solve non-positive pivot";
+            return false;
+        }
+        d[i] = diag;
+        l[i][i] = 1.0;
+    }
+
+    double y[6] = {};
+    double z[6] = {};
+    for (int i = 0; i < 6; ++i) {
+        double sum = rhs[i];
+        for (int k = 0; k < i; ++k) {
+            sum -= l[i][k] * y[k];
+        }
+        y[i] = sum;
+        z[i] = y[i] / d[i];
+    }
+    for (int i = 5; i >= 0; --i) {
+        double sum = z[i];
+        for (int k = i + 1; k < 6; ++k) {
+            sum -= l[k][i] * dx[k];
+        }
+        dx[i] = sum;
+    }
+    return true;
+}
+
+bool CompareSolve6x6(const SlamSolve6x6Result& actual, const SlamNormalEquation& equation, std::string& report) {
+    double expected_dx[6] = {};
+    std::string error;
+    if (!ReferenceSolve6x6(equation, expected_dx, error)) {
+        report = error;
+        return false;
+    }
+    double max_abs = 0.0;
+    double max_rel = 0.0;
+    for (int i = 0; i < 6; ++i) {
+        const double abs_err = std::fabs(actual.dx[i] - expected_dx[i]);
+        const double rel_err = abs_err / std::max(1.0, std::fabs(expected_dx[i]));
+        max_abs = std::max(max_abs, abs_err);
+        max_rel = std::max(max_rel, rel_err);
+    }
+    const bool pass = actual.magic == SLAM_ACCEL_SOLVE6X6_MAGIC &&
+                      actual.version == SLAM_ACCEL_SOLVE6X6_VERSION &&
+                      actual.status == SLAM_SOLVE6X6_SUCCESS &&
+                      (max_abs <= 1e-9 || max_rel <= 1e-7);
+    std::ostringstream ss;
+    ss << "solve_status=" << actual.status << " max_abs=" << max_abs << " max_rel=" << max_rel
+       << " residual_norm=" << actual.residual_norm << " dx0=" << actual.dx[0] << " expected_dx0="
+       << expected_dx[0];
+    report = ss.str();
+    return pass;
+}
+
 bool ReadGoldenCase(const std::string& golden_dir, GoldenCase& golden, std::string& error) {
     if (FileExists(JoinPath(golden_dir, "loc_scan.bin"))) {
         golden.mode_name = "localization";
@@ -595,7 +692,7 @@ int RunGoldenCase(const std::string& golden_dir) {
         return 1;
     }
 
-    uint64_t actual_words[kNormalEquationWords] = {};
+    uint64_t actual_words[kOutputWords] = {};
     unified_surfel_observation_core(golden.scan.data(), static_cast<uint32_t>(golden.scan.size()), &golden.pose,
                                     &golden.map_header, reinterpret_cast<const uint64_t*>(&golden.params),
                                     golden.blocks.data(), golden.cells.data(), actual_words);
@@ -611,7 +708,7 @@ int RunGoldenCase(const std::string& golden_dir) {
     std::vector<ObsCellFloat64> candidate_cells = BuildCandidateCellsHost(golden);
     SlamAccelObservationParams v2_params = golden.params;
     v2_params.flags |= SLAM_ACCEL_OBS_FLAG_CANDIDATE_ABI_V2;
-    uint64_t v2_words[kNormalEquationWords] = {};
+    uint64_t v2_words[kOutputWords] = {};
     unified_surfel_observation_core(golden.scan.data(), static_cast<uint32_t>(golden.scan.size()), &golden.pose,
                                     &golden.map_header, reinterpret_cast<const uint64_t*>(&v2_params),
                                     golden.blocks.data(), candidate_cells.data(), v2_words);
@@ -622,6 +719,25 @@ int RunGoldenCase(const std::string& golden_dir) {
     std::cout << "[obs_tb] " << golden.mode_name << "_v2 " << FormatDebugCounters(v2_words) << std::endl;
     if (!v2_pass) {
         return 6;
+    }
+    if (golden.params.mode == LOCALIZATION_OBSERVATION) {
+        SlamAccelObservationParams solve_params = v2_params;
+        solve_params.flags |= SLAM_ACCEL_OBS_FLAG_SOLVE6X6;
+        uint64_t solve_words[kOutputWords] = {};
+        unified_surfel_observation_core(golden.scan.data(), static_cast<uint32_t>(golden.scan.size()), &golden.pose,
+                                        &golden.map_header, reinterpret_cast<const uint64_t*>(&solve_params),
+                                        golden.blocks.data(), candidate_cells.data(), solve_words);
+        const SlamNormalEquation solve_equation = DecodeOutputWords(solve_words);
+        const SlamSolve6x6Result solve = DecodeSolveWords(solve_words);
+        std::string solve_eq_report;
+        const bool solve_eq_pass = CompareEquation(solve_equation, golden.expected, 1e-4, 1e-3, solve_eq_report);
+        std::string solve_report;
+        const bool solve_pass = CompareSolve6x6(solve, solve_equation, solve_report);
+        std::cout << "[obs_tb] " << golden.mode_name << "_v2_solve6x6 equation " << solve_eq_report << std::endl;
+        std::cout << "[obs_tb] " << golden.mode_name << "_v2_solve6x6 " << solve_report << std::endl;
+        if (!solve_eq_pass || !solve_pass) {
+            return 7;
+        }
     }
     return 0;
 }
@@ -694,7 +810,7 @@ bool RunRejectProbe(std::string& report) {
     std::vector<ObsCellFloat64> cells;
     FillRejectProbe(scan, pose, map_header, block, cells);
 
-    uint64_t actual_words[kNormalEquationWords] = {};
+    uint64_t actual_words[kOutputWords] = {};
     SlamAccelObservationParams params;
     params.mode = LOCALIZATION_OBSERVATION;
     unified_surfel_observation_core(&scan, 1, &pose, &map_header, reinterpret_cast<const uint64_t*>(&params), &block,
@@ -783,7 +899,7 @@ bool RunMappingLookupProbe(std::string& report) {
     std::vector<ObsCellFloat64> cells;
     FillMappingLookupProbe(scan, pose, map_header, block, cells);
 
-    uint64_t actual_words[kNormalEquationWords] = {};
+    uint64_t actual_words[kOutputWords] = {};
     SlamAccelObservationParams params;
     params.mode = MAPPING_OBSERVATION;
     params.plane_icp_weight = 1.0f;
@@ -867,7 +983,7 @@ bool RunSyntheticSweep() {
         for (size_t c = 0; c < sizeof(cell_counts) / sizeof(cell_counts[0]); ++c) {
             GoldenCase golden;
             FillSyntheticSweepCase(point_counts[p], cell_counts[c], golden);
-            uint64_t actual_words[kNormalEquationWords] = {};
+            uint64_t actual_words[kOutputWords] = {};
             const auto start = std::chrono::steady_clock::now();
             unified_surfel_observation_core(golden.scan.data(), static_cast<uint32_t>(golden.scan.size()),
                                             &golden.pose, &golden.map_header,
