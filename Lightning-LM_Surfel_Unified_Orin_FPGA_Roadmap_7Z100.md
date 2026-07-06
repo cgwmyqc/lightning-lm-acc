@@ -5754,6 +5754,107 @@ Acceptance:
 - mapping observation V2 still `611/0/171`
 - no XDMA config BAR failure, `CmpltTO`, or AER fatal
 
+## Stage 62 Orin Result: Localization Solve6x6 Golden PASS
+
+Stage 62 Orin-side validation was run on 2026-07-06 after JTAG downloading the
+Stage62 `azmig_wrapper.bit` and rebooting Orin.
+
+XDMA gate:
+
+```text
+0005:01:00.0 [10ee:7024]
+Kernel driver in use: xdma
+/dev/xdma0_user
+/dev/xdma0_h2c_0
+/dev/xdma0_c2h_0
+enable=1
+PCIe link: 5GT/s x1, endpoint capability x4
+```
+
+Smoke:
+
+```text
+XDMA_CPP_SHIM_SMOKE_PASS
+XDMA_CPP_REG_SMOKE_PASS
+XDMA_CPP_DDR_SMOKE_PASS
+```
+
+Localization V2 regression:
+
+```text
+abi_v2_candidates=1
+fpga_solve6x6=0
+scan_count=6963
+COUNTS=6050/911/2
+XDMA_CPP_GOLDEN_NUMERIC_PASS
+HLS_WAIT_SEC=0.12032
+```
+
+Localization V2 + FPGA solve6x6:
+
+```text
+abi_v2_candidates=1
+fpga_solve6x6=1
+LOC_XDMA_SOLVE6X6_PASS
+FPGA_SOLVE6X6_STATUS=1
+COUNTS=6050/911/2
+XDMA_CPP_GOLDEN_REPEAT_PASS ITERATIONS=3 ABI_V2_CANDIDATES=1
+```
+
+Measured solve result:
+
+```text
+elapsed_sec=[0.120416260, 0.120113495, 0.120796971]
+elapsed_mean=0.120442242
+speedup_vs_stage57_1536ms=12.753x
+speedup_vs_stage61_120290ms=0.999x
+dx=[-0.048509941555978785,
+    -0.041637405753014667,
+     0.023276896564930594,
+     0.0017501070996257212,
+     0.0058700982657821452,
+    -0.0012874587746111517]
+dx_norm=0.068321888
+solve max_abs=6.93889e-18
+solve max_rel=6.93889e-18
+```
+
+Mapping V2 regression:
+
+```text
+MAPPING_XDMA_REPLAY_PASS
+STATUS=0x204
+ERROR=0x0
+RUN_COUNT=4->5
+SCAN_COUNT_READBACK=782
+abi_v2_candidates=1
+candidate_count=782
+candidate_valid=653
+candidate_miss=129
+hls_wait_sec=0.0149056
+counts actual=611/0/171 expected=611/0/171
+values_ok=1
+max_abs=0.268571
+max_rel=1.99295e-05
+worst_field=H(3,3)
+```
+
+Conclusion:
+
+```text
+Stage62 Orin golden gate: PASS
+Localization observation V2: PASS
+Localization FPGA solve6x6: PASS
+Mapping observation V2 regression: PASS
+Next stage: Stage63 online SURFEL_FPGA_OBS_SOLVE runtime integration
+```
+
+Report:
+
+```text
+reports/fpga/runtime/stage62_solve6x6_orin/
+```
+
 ## Stage 63 Plan: Localization FPGA_OBS_SOLVE Runtime
 
 Stage63 starts only after Stage62 Orin golden PASS.
@@ -5766,6 +5867,109 @@ Stage63 starts only after Stage62 Orin golden PASS.
 - Add profile fields: `fpga_solve_sec`, `fpga_solve_status`, `dx_norm`,
   `dx[6]`.
 - First online smoke is localization-only with `max_iterations=1`.
+
+## Stage 63 Code Result: Online FPGA_OBS_SOLVE Runtime Integrated
+
+Stage63 Orin-side code integration was completed on 2026-07-06.
+
+Implemented:
+
+- `fpga.localization.mode=fpga_obs_solve` and `fpga_solve` now select
+  `SURFEL_FPGA_OBS_SOLVE` instead of degrading to `SURFEL_FPGA_OBS`.
+- `fpga_full` currently warns and uses `SURFEL_FPGA_OBS_SOLVE`, because Stage63
+  covers observation + localization solve6x6 only.
+- `SurfelLocXdmaBackend` now exposes `ComputeObservationAndSolve6x6()` and calls
+  `XdmaRuntime::RunLocalizationObservationV2Solve6x6()`.
+- Online `LidarLoc` uses FPGA-returned `dx[6]` for
+  `SURFEL_FPGA_OBS_SOLVE`; CPU still applies `SE3::exp(dx) * pose`, convergence
+  checks, quality gates, output transform, PGO, UI, and fallback.
+- UI, `[loc_profile]`, and `loc_fpga_obs_trace.csv` now include
+  `fpga_solve_status`, `fpga_solve_ms`, and `dx_norm`.
+
+Regression:
+
+```text
+colcon build --packages-select lightning: PASS
+Stage62 golden replay with --abi_v2_candidates --fpga_solve6x6: PASS
+LOC_XDMA_SOLVE6X6_PASS status=1 max_abs=6.93889e-18 max_rel=6.93889e-18
+COUNTS=6050/911/2
+HLS_WAIT_SEC=0.120614
+```
+
+Online smoke configuration:
+
+```yaml
+fpga:
+  enable: true
+  runtime:
+    candidate_abi_v2: true
+  mapping:
+    enable: false
+  localization:
+    enable: true
+    mode: fpga_obs_solve
+    fallback: ndt_omp
+lidar_loc:
+  surfel_max_iterations: 1
+```
+
+Expected online markers:
+
+```text
+backend=SURFEL_FPGA_OBS_SOLVE
+fpga_solve_status=1
+dx_norm=...
+fallback_cpu_sim=0
+fallback_ndt=0
+```
+
+Stage63 online smoke result:
+
+```text
+PASS
+command: ros2 run lightning run_loc_online --config ./config/default_livox.yaml
+bag: /home/hit/Cheng/FPGA_ACC/mid360_20260313_outdoor_30deg_up_quan_03_0.db3
+mapping_backend=CPU
+backend=SURFEL_FPGA_OBS_SOLVE
+candidate_abi_v2=1
+online solve calls: 46
+fpga_solve_status=1 on captured calls
+fallback_cpu_sim=0
+fallback_ndt=0
+mapping FPGA_OBS success lines: 0
+```
+
+Timing summary:
+
+```text
+xdma total mean: 121.033 ms
+hls_wait mean: 118.972 ms
+h2c_map mean: 1.166 ms
+h2c_candidate mean: 1.166 ms
+mutex_wait mean: 0.0007 ms
+dx_norm mean: 0.02036
+```
+
+Representative `[loc_profile]`:
+
+```text
+frame=30 backend=SURFEL_FPGA_OBS_SOLVE success=1 loc_total_ms=139.070
+lio_frontend_ms=4.602 lidar_loc_ms=137.723 pgo_ms=1.303
+scan_points=7033 active_blocks=663 active_cells=169728 iterations=1
+valid/reject/miss=6545/482/6
+xdma_total_ms=127.545 hls_wait_ms=125.315
+h2c_map_ms=1.289 h2c_candidate_ms=1.289 mutex_wait_ms=0.001
+fpga_solve_status=1 dx_norm=0.017 fallback_cpu_sim=0 fallback_ndt=0
+status=0x204 error=0x0
+```
+
+Conclusion:
+
+- `fpga.localization.mode=fpga_obs_solve` now truly enters online
+  `SURFEL_FPGA_OBS_SOLVE`.
+- FPGA solve6x6 online path is functionally enabled.
+- Remaining online runtime is dominated by FPGA observation/HLS wait, not the
+  solve6x6 step.
 
 ## Stage 64 Plan: Mapping ESKF Update CPU Golden Refactor
 

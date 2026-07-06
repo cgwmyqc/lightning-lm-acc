@@ -77,4 +77,55 @@ bool SurfelLocXdmaBackend::ComputeObservation(const CloudPtr& scan_body, const S
     return out.valid_count > 0;
 }
 
+bool SurfelLocXdmaBackend::ComputeObservationAndSolve6x6(const CloudPtr& scan_body, const SE3& pose_guess,
+                                                         const ActiveMapBuffer& map, LocNormalEquation& out,
+                                                         double* elapsed_sec, std::string* error,
+                                                         fpga::XdmaRuntime::RunResult* run_result,
+                                                         double* pack_scan_sec) const {
+    out.Reset();
+    if (!options_.candidate_abi_v2) {
+        if (error != nullptr) {
+            *error = "FPGA solve6x6 requires candidate ABI V2";
+        }
+        return false;
+    }
+    if (scan_body == nullptr || scan_body->empty() || map.Empty()) {
+        if (error != nullptr) {
+            *error = "empty scan or active map";
+        }
+        return false;
+    }
+    if (!runtime_) {
+        if (error != nullptr) {
+            *error = "XDMA runtime is not initialized";
+        }
+        return false;
+    }
+
+    const auto pack_start = Clock::now();
+    const auto scan_points = fpga::ToAbiScanPoints(scan_body);
+    if (pack_scan_sec != nullptr) {
+        *pack_scan_sec = std::chrono::duration<double>(Clock::now() - pack_start).count();
+    }
+    const auto pose = golden::ToAbiPose(pose_guess);
+    fpga::XdmaRuntime::RunResult result;
+    const bool run_ok = runtime_->RunLocalizationObservationV2Solve6x6(scan_points, pose, map, true,
+                                                                       options_.verify_readback, result, error);
+    if (!run_ok) {
+        return false;
+    }
+
+    out = golden::FromAbiNormalEquation(result.output);
+    if (elapsed_sec != nullptr) {
+        *elapsed_sec = result.elapsed_sec;
+    }
+    if (run_result != nullptr) {
+        *run_result = result;
+    }
+    if (result.solve.status != fpga::SLAM_SOLVE6X6_SUCCESS && error != nullptr) {
+        *error = "FPGA solve6x6 failed with status " + std::to_string(result.solve.status);
+    }
+    return out.valid_count > 0 && result.solve.status == fpga::SLAM_SOLVE6X6_SUCCESS;
+}
+
 }  // namespace lightning::loc

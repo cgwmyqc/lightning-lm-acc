@@ -283,7 +283,18 @@ Current status:
 ```text
 Windows HLS CSim/C Synthesis/IP export: PASS
 Board synthesis/implementation/bitstream: PASS
-Next gate: Orin run_surfel_loc_xdma_golden --abi_v2_candidates --fpga_solve6x6
+Stage62 Orin golden: PASS
+localization V2 counts: 6050/911/2
+FPGA solve6x6: PASS, status=1
+solve dx max_abs=6.93889e-18, max_rel=6.93889e-18
+localization elapsed mean: 0.120442 s
+mapping V2 regression: PASS, counts 611/0/171
+Stage63 online SURFEL_FPGA_OBS_SOLVE smoke: PASS
+online backend: SURFEL_FPGA_OBS_SOLVE
+online solve calls: 46
+online hls_wait mean: 118.972 ms
+online xdma total mean: 121.033 ms
+online fallback_cpu_sim/fallback_ndt: 0/0
 ```
 
 ### Version 7: ABI V2 + FPGA EKF update

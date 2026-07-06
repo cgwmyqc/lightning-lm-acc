@@ -261,6 +261,12 @@ bool PangolinWindowImpl::UpdatePerformance() {
         lines.emplace_back(make_line("H2C map", loc_snapshot.h2c_map_ms));
         lines.emplace_back(make_line("H2C candidate", loc_snapshot.h2c_candidate_ms));
         lines.emplace_back(make_line("Mutex wait", loc_snapshot.mutex_wait_ms));
+        lines.emplace_back(make_line("FPGA solve", loc_snapshot.fpga_solve_ms));
+        lines.emplace_back(make_line("dx norm", loc_snapshot.dx_norm, ""));
+
+        std::ostringstream solve_line;
+        solve_line << "fpga solve status: " << loc_snapshot.fpga_solve_status;
+        lines.emplace_back(solve_line.str());
 
         std::ostringstream fallback_line;
         fallback_line << "fallback cpu/ndt: " << static_cast<int>(loc_snapshot.fallback_cpu_sim) << " / "

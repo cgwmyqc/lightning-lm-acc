@@ -101,6 +101,9 @@ struct LocPerfSnapshot {
     double h2c_map_ms = 0.0;
     double h2c_candidate_ms = 0.0;
     double mutex_wait_ms = 0.0;
+    double fpga_solve_ms = 0.0;
+    double dx_norm = 0.0;
+    uint32_t fpga_solve_status = 0;
 
     uint64_t run_count_before = 0;
     uint64_t run_count_after = 0;

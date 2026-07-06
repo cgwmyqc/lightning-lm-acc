@@ -338,6 +338,9 @@ void Localization::LidarLocProcCloud(CloudPtr scan_undist) {
                   << " h2c_map_ms=" << snapshot.h2c_map_ms
                   << " h2c_candidate_ms=" << snapshot.h2c_candidate_ms
                   << " mutex_wait_ms=" << snapshot.mutex_wait_ms
+                  << " fpga_solve_ms=" << snapshot.fpga_solve_ms
+                  << " fpga_solve_status=" << snapshot.fpga_solve_status
+                  << " dx_norm=" << snapshot.dx_norm
                   << " fallback_cpu_sim=" << snapshot.fallback_cpu_sim
                   << " fallback_ndt=" << snapshot.fallback_ndt
                   << " status=0x" << std::hex << snapshot.status

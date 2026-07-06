@@ -31,6 +31,12 @@ class SurfelLocXdmaBackend {
                             fpga::XdmaRuntime::RunResult* run_result = nullptr,
                             double* pack_scan_sec = nullptr) const;
 
+    bool ComputeObservationAndSolve6x6(const CloudPtr& scan_body, const SE3& pose_guess,
+                                       const ActiveMapBuffer& map, LocNormalEquation& out,
+                                       double* elapsed_sec = nullptr, std::string* error = nullptr,
+                                       fpga::XdmaRuntime::RunResult* run_result = nullptr,
+                                       double* pack_scan_sec = nullptr) const;
+
    private:
     SurfelLocXdmaOptions options_;
     std::unique_ptr<fpga::XdmaRuntime> runtime_;
