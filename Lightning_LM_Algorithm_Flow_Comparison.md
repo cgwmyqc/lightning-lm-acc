@@ -165,7 +165,9 @@ flowchart TD
     J --> K[Write debug counters to output_words 32..39]
     K --> L[XDMA C2H read SlamNormalEquation]
     L --> M[CPU solve / EKF update]
-    M --> N[Pose / map output]
+    M --> Q{Converged or max iteration?}
+    Q -- No --> A
+    Q -- Yes --> N[Pose / map output]
 ```
 
 Stage58 Orin 实测：
@@ -196,21 +198,22 @@ active_blocks 缓存有效，但 obs_cells 随机访问仍让性能没过 5x gat
 
 ```mermaid
 flowchart TD
-    A[LiDAR + IMU front-end] --> B[Undistorted scan]
-    B --> C[CPU / Orin active map window]
-    C --> D[CPU precompute candidate block/cell per point]
-    D --> E[Candidate list / selected surfel records]
-    B --> F[Pack scan + pose + candidates ABI v2]
-    E --> F
-    F --> G[XDMA H2C write compact candidate payload]
-    G --> H[FPGA HLS accumulation kernel]
-    H --> I[Skip 26-neighbor block lookup]
+    A[LiDAR + IMU front-end] --> B[IMU prediction + undistorted scan]
+    B --> C{IEKF iteration}
+    C --> D[CPU / Orin active map window]
+    D --> E[CPU precompute candidate block/cell per point using current pose]
+    E --> F[Candidate list / selected surfel records]
+    F --> G[Pack scan + current pose + candidates ABI v2]
+    G --> H[XDMA H2C write compact candidate payload]
+    H --> I[FPGA HLS accumulation kernel]
     I --> J[Use provided candidate surfel data]
     J --> K[FPGA residual + Jacobian]
     K --> L[FPGA accumulate H / b]
     L --> M[XDMA C2H read normal equation]
     M --> N[CPU solve / EKF update]
-    N --> O[Pose / map output]
+    N --> O{Converged or max iteration?}
+    O -- No --> C
+    O -- Yes --> P[Pose / map output]
 ```
 
 预期收益：
