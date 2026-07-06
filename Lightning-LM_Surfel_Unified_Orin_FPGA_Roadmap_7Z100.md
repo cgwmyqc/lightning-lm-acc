@@ -6049,7 +6049,7 @@ Stage65 starts only after Stage64 CPU golden PASS.
   update.
 - Runtime sequence: FPGA observation V2 -> FPGA EKF update -> CPU policy and
   fallback.
-- If full 23D covariance update is too expensive, first land FPGA solve/update
+- If full 12D covariance update is too expensive, first land FPGA solve/update
   `dx` and keep covariance on CPU, recorded as `FPGA_OBS_SOLVE_PARTIAL`.
 
 Guardrails:
@@ -6060,3 +6060,72 @@ Guardrails:
   pass.
 - PCIe Gen2 x1/x4 performance work remains separate from solve/update
   correctness.
+
+## Stage 65A Result: Standalone Mapping EKF Update HLS Core
+
+Stage65A Windows-side HLS development was completed on 2026-07-06.
+
+Scope:
+
+- Added independent `fpga/hls/slam_ekf_update_core`.
+- Did not modify `unified_surfel_observation_core`, Vivado BD,
+  `azmig_wrapper.bit`, XDMA/MIG, BAR shim, or Orin runtime.
+- Corrected the Stage65 implementation basis to the current code reality:
+  `NavState::dim = 12`, lidar/surfel pose observation dimension = 6.
+
+HLS ABI:
+
+- Input and output use explicit 64-bit word buffers.
+- CSim testbench parses Stage64 `update_input.bin` / `update_expected.bin`
+  and packs them into the HLS word ABI.
+- Output covers status flags, nullity, `dx_current[12]`, `K_r[12]`,
+  `K_H[12x12]`, `HTH_eff[6x6]`, `HTr_eff[6]`, updated state, working
+  covariance, updated covariance, and diagnostic norms.
+
+Validation:
+
+```text
+g++ CSim: PASS
+Vivado HLS CSim: PASS
+Vivado HLS C Synthesis: PASS
+```
+
+CSim result:
+
+```text
+MAPPING_EKF_UPDATE_HLS_CSIM_PASS
+flags_ok=1
+dx_max_abs=2.1792463667e-17
+cov_max_abs=1.08504920543e-18
+state_max_abs=2.08166817117e-17
+actual_nullity=0
+expected_nullity=0
+status=0x9
+```
+
+C Synthesis summary:
+
+```text
+target clock:    10.00 ns
+estimated clock: 9.544 ns
+latency:         19632..202755 cycles
+BRAM_18K:        94 / 1510 = 6%
+DSP48E:          399 / 2020 = 19%
+FF:              63645 / 554800 = 11%
+LUT:             78126 / 277400 = 28%
+```
+
+Important Windows note:
+
+- The g++ CSim executable is named `ekf_tb.exe`, not
+  `ekf_update_tb.exe`, because Windows UAC installer detection may treat
+  executable names containing `update` as requiring elevation and prevent
+  normal execution.
+
+Next stage:
+
+- Stage65B should design the controller/BD-level integration for the separate
+  EKF update IP, including DDR input/output layout and `slam_accel_ctrl`
+  command/port contract.
+- Do not mark `FPGA_FULL` complete until Stage65B/65C board and Orin runtime
+  gates pass.

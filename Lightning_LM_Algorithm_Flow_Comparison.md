@@ -311,7 +311,7 @@ Boundary:
 
 - EKF update must be a separate HLS IP, not part of `unified_surfel_observation_core`.
 - First version only targets fixed lidar/surfel pose observation update.
-- If full 23D covariance update is too expensive, first land FPGA solve/update `dx` and keep covariance update on CPU as `FPGA_OBS_SOLVE_PARTIAL`.
+- If full 12D covariance update is too expensive, first land FPGA solve/update `dx` and keep covariance update on CPU as `FPGA_OBS_SOLVE_PARTIAL`.
 
 Current preparation status:
 
@@ -322,4 +322,22 @@ MAPPING_ESKF_UPDATE_CPU_REPLAY_PASS
 dx_max_abs=0
 cov_max_abs=0
 state_max_abs=6.50049e-20
+```
+
+Stage65A standalone Mapping EKF Update HLS:
+
+```text
+Status: PASS
+Core: fpga/hls/slam_ekf_update_core
+State dimension: 12
+Pose observation dimension: 6
+g++ CSim: PASS
+Vivado HLS CSim: PASS
+Vivado HLS C Synthesis: PASS
+dx_max_abs=2.1792463667e-17
+cov_max_abs=1.08504920543e-18
+state_max_abs=2.08166817117e-17
+target clock=10.00 ns
+estimated clock=9.544 ns
+BRAM_18K=94, DSP48E=399, FF=63645, LUT=78126
 ```
