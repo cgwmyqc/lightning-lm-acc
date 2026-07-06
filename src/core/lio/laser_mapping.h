@@ -14,6 +14,7 @@
 #include "common/options.h"
 #include "core/fpga/xdma_runtime.h"
 #include "core/block_surfel_map/block_surfel_map.h"
+#include "core/lio/mapping_eskf_update.h"
 #include "core/ivox3d/ivox3d.h"
 #include "core/lio/eskf.hpp"
 #include "core/lio/imu_processing.hpp"
@@ -123,6 +124,10 @@ class LaserMapping {
     void SetUI(std::shared_ptr<ui::PangolinWindow> ui) { ui_ = ui; }
     void SetMappingGoldenFrameCapture(int target_frame_index, MappingGoldenFrameCaptureCallback callback);
     bool MappingGoldenFrameCaptured() const { return mapping_golden_frame_captured_; }
+    void SetMappingUpdateGoldenCapture(int target_frame_index, mapping_update::CaptureCallback callback) {
+        kf_.SetMappingUpdateGoldenCapture(target_frame_index, std::move(callback));
+    }
+    bool MappingUpdateGoldenCaptured() const { return kf_.MappingUpdateGoldenCaptured(); }
 
     /// 获取关键帧
     Keyframe::Ptr GetKeyframe() const { return last_kf_; }

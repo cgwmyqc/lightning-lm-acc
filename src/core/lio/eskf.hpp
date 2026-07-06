@@ -9,7 +9,15 @@
 #include "common/nav_state.h"
 #include "core/lio/anderson_acceleration.h"
 
+#include <functional>
+#include <utility>
+
 namespace lightning {
+
+namespace mapping_update {
+struct GoldenFrame;
+using CaptureCallback = std::function<bool(const GoldenFrame&)>;
+}
 
 /**
  * LIO 中的ESKF重写
@@ -109,6 +117,15 @@ class ESKF {
     /// 自定义模型更新
     void Update(ObsType obs, const double& R);
 
+    void SetMappingUpdateGoldenCapture(int target_index, mapping_update::CaptureCallback callback) {
+        mapping_update_golden_target_index_ = target_index;
+        mapping_update_golden_count_ = 0;
+        mapping_update_golden_captured_ = false;
+        mapping_update_golden_callback_ = std::move(callback);
+    }
+
+    bool MappingUpdateGoldenCaptured() const { return mapping_update_golden_captured_; }
+
     // accessors
     const NavState& GetX() const { return x_; }
     const CovType& GetP() const { return P_; }
@@ -148,6 +165,11 @@ class ESKF {
     AndersonAcceleration<double, state_dim_, 10> aa_;
 
     Options options_;
+
+    int mapping_update_golden_target_index_ = -1;
+    int mapping_update_golden_count_ = 0;
+    bool mapping_update_golden_captured_ = false;
+    mapping_update::CaptureCallback mapping_update_golden_callback_;
 };
 
 }  // namespace lightning

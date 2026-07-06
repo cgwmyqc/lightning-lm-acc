@@ -4,6 +4,7 @@
 
 #include "core/lio/eskf.hpp"
 #include "core/lightning_math.hpp"
+#include "core/lio/mapping_eskf_update.h"
 #include "utils/perf_monitor.h"
 
 #include <Eigen/Eigenvalues>
@@ -176,101 +177,49 @@ void ESKF::Update(ESKF::ObsType obs, const double& R) {
             final_res_ = custom_obs_model_.lidar_residual_mean_ / init_res;
         }
 
-        StateVecType dx = x_.boxminus(start_x);  // 当前x与起点之间的dx
-        dx_current = dx;                         //
+        mapping_update::UpdateInput update_input;
+        update_input.start_state = start_x;
+        update_input.current_state = x_;
+        update_input.propagated_cov = P_propagated;
+        update_input.HTH = custom_obs_model_.HTH_;
+        update_input.HTr = custom_obs_model_.HTr_;
+        update_input.dx_from_start = x_.boxminus(start_x);
+        update_input.params.R = R;
+        update_input.params.degeneracy_threshold_ratio = options_.degeneracy_threshold_ratio_;
+        update_input.params.degeneracy_cov_inflation = options_.degeneracy_cov_inflation_;
+        update_input.params.min_cov_diag = options_.min_cov_diag_;
+        update_input.params.max_update_translation_step = options_.max_update_translation_step_;
+        update_input.params.max_update_rotation_step_deg = options_.max_update_rotation_step_deg_;
+        update_input.params.limit = limit_;
+        update_input.iteration_index = i;
+        update_input.finish_update = false;
 
+        mapping_update::UpdateOutput update_output;
         {
-        ScopedPerfStage perf("ESKF Covariance Update");
-        P_ = P_propagated;
-
-        /// 更新P 和 dx
-        /// P = J*P*J^T
-        /// dx = J * dx
-        for (auto it : x_.SO3_states_) {
-            int idx = it.idx_;
-            Vec3d seg_SO3 = dx.block<3, 1>(idx, 0);
-            Mat3d res_temp_SO3 = math::A_matrix(seg_SO3).transpose();  // 小块的J阵, SO3上的雅可比？
-
-            dx_current.block<3, 1>(idx, 0) = res_temp_SO3 * dx.block<3, 1>(idx, 0);
-
-            /// P 上面有SO3的行 进行转换
-            for (int j = 0; j < state_dim_; j++) {
-                P_.block<3, 1>(idx, j) = res_temp_SO3 * (P_.block<3, 1>(idx, j));
+            ScopedPerfStage perf("ESKF Solve Matrix");
+            if (!mapping_update::RunUpdateStep(update_input, update_output)) {
+                if (update_output.status == "eigen_failed") {
+                    LOG(WARNING) << "Failed to decompose ESKF observation information matrix.";
+                    continue;
+                }
+                if (update_output.rejected) {
+                    LOG(ERROR) << "Reject ESKF iter update, dtrans: " << update_output.dx_translation
+                               << ", drot_deg: " << update_output.dx_rotation_deg
+                               << ", dvel: "
+                               << update_output.dx_current.segment<NavState::kBlockDim>(NavState::kVelIdx).norm();
+                    x_ = start_x;
+                    P_ = P_propagated;
+                }
+                return;
             }
-            /// P 上面有SO3的列 进行转换
-            for (int j = 0; j < state_dim_; j++) {
-                P_.block<1, 3>(j, idx) = (P_.block<1, 3>(j, idx)) * res_temp_SO3.transpose();
-            }
-        }
-        }
-
-        int nullity = 0;
-        {
-        ScopedPerfStage perf("ESKF Solve Matrix");
-        Mat6d HTH = custom_obs_model_.HTH_;
-        Vec6d HTr = custom_obs_model_.HTr_;
-        Mat6d HTH_sym = 0.5 * (HTH + HTH.transpose());
-
-        Eigen::SelfAdjointEigenSolver<Mat6d> eigen_solver(HTH_sym);
-        if (eigen_solver.info() != Eigen::Success) {
-            LOG(WARNING) << "Failed to decompose ESKF observation information matrix.";
-            continue;
-        }
-
-        const Vec6d eigen_values = eigen_solver.eigenvalues();
-        const Mat6d eigen_vectors = eigen_solver.eigenvectors();
-        const double max_eigen_value = std::max(1e-12, eigen_values.maxCoeff());
-        const double degeneracy_threshold = max_eigen_value * options_.degeneracy_threshold_ratio_;
-
-        // LOG(INFO) << "eigen values of HTH: " << eigen_values.transpose();
-
-        Vec6d observable_mask = Vec6d::Zero();
-        for (int k = 0; k < observable_mask.size(); ++k) {
-            if (eigen_values(k) > degeneracy_threshold) {
-                observable_mask(k) = 1.0;
-            } else {
-                nullity++;
-            }
-        }
-
-        const Mat6d observable_projector = eigen_vectors * observable_mask.asDiagonal() * eigen_vectors.transpose();
-        const Mat6d HTH_eff = observable_projector * HTH_sym * observable_projector;
-        const Vec6d HTr_eff = observable_projector * HTr;
-
-        CovType P_temp = (P_ / R).inverse();  // P阵上面已经更新
-
-        /// 现在问题是这个权重太大，导致整体过于依赖先验 ...
-        // P_temp.setIdentity();
-
-        P_temp.block<pose_obs_dim_, pose_obs_dim_>(0, 0) += HTH_eff;
-        CovType Q_inv = P_temp.inverse();  // Q inv
-
-        // Q*H^T * R^-1 * r = K * r
-        // <-- K ----->
-        K_r = Q_inv.template block<state_dim_, pose_obs_dim_>(0, 0) * HTr_eff;
-
-        // K_H = Q^-1 H^T R^-1 H
-        //       <--  K     ->
-        K_H.setZero();
-        K_H.template block<state_dim_, pose_obs_dim_>(0, 0) =
-            Q_inv.template block<state_dim_, pose_obs_dim_>(0, 0) * HTH_eff;
-
-        // dx = Kr + (KH-I) dx
-        // LOG(INFO) << "K_r: " << K_r.transpose()
-        //           << ", prior: " << ((K_H - Eigen::Matrix<double, state_dim_, state_dim_>::Identity()) * dx_current).transpose();
-
-        dx_current = K_r + (K_H - Eigen::Matrix<double, state_dim_, state_dim_>::Identity()) * dx_current;
+            P_ = update_output.working_cov;
+            dx_current = update_output.dx_current;
+            K_r = update_output.K_r;
+            K_H = update_output.K_H;
         }
 
         {
         ScopedPerfStage perf("ESKF State Update");
-        // check nan
-        for (int j = 0; j < state_dim_; ++j) {
-            if (std::isnan(dx_current(j, 0))) {
-                return;
-            }
-        }
-
         // Vec3d dv = dx_current.middleRows(NavState::kVelIdx, NavState::kBlockDim);
         // if (dv.norm() > options_.vel_clip_norm_) {
         //     dv = dv / dv.norm() * options_.vel_clip_norm_;
@@ -282,19 +231,8 @@ void ESKF::Update(ESKF::ObsType obs, const double& R) {
         // dx_current.middleRows(18, 5).setZero();
 
         // LOG(INFO) << "iter " << iterations_ << ", dx: " << dx_current.transpose();
-        const double dx_translation = dx_current.head<3>().norm();
-        const double dx_rotation_deg = dx_current.segment<3>(3).norm() * 180.0 / M_PI;
-        if (dx_translation > options_.max_update_translation_step_ ||
-            dx_rotation_deg > options_.max_update_rotation_step_deg_) {
-            LOG(ERROR) << "Reject ESKF iter update, dtrans: " << dx_translation << ", drot_deg: " << dx_rotation_deg
-                       << ", dvel: " << dx_current.segment<NavState::kBlockDim>(NavState::kVelIdx).norm();
-            x_ = start_x;
-            P_ = P_propagated;
-            return;
-        }
-
         if (!use_aa_) {
-            x_ = x_.boxplus(dx_current);
+            x_ = update_output.updated_state;
         } else {
             // 转到起点的线性空间
             x_ = x_.boxplus(dx_current);
@@ -339,38 +277,27 @@ void ESKF::Update(ESKF::ObsType obs, const double& R) {
 
         if (should_finish_update) {
             ScopedPerfStage perf("ESKF Covariance Update");
-            /// 结束条件：已经收敛
-            /// 更新P阵, using (45)
-            L_ = P_;
-            Mat3d res_temp_SO3;
-            Vec3d seg_SO3;
-            for (auto it : x_.SO3_states_) {
-                int idx = it.idx_;
-                for (int j = 0; j < 3; j++) {
-                    seg_SO3(j) = dx_current(j + idx);
-                }
-
-                res_temp_SO3 = math::A_matrix(seg_SO3).transpose();
-                for (int j = 0; j < state_dim_; j++) {
-                    L_.block<3, 1>(idx, j) = res_temp_SO3 * (P_.block<3, 1>(idx, j));
-                }
-
-                for (int j = 0; j < pose_obs_dim_; j++) {
-                    K_H.block<3, 1>(idx, j) = res_temp_SO3 * (K_H.block<3, 1>(idx, j));
-                }
-
-                for (int j = 0; j < state_dim_; j++) {
-                    L_.block<1, 3>(j, idx) = (L_.block<1, 3>(j, idx)) * res_temp_SO3.transpose();
-                    P_.block<1, 3>(j, idx) = (P_.block<1, 3>(j, idx)) * res_temp_SO3.transpose();
-                }
+            update_input.finish_update = true;
+            mapping_update::UpdateOutput final_output;
+            if (!mapping_update::RunUpdateStep(update_input, final_output)) {
+                x_ = start_x;
+                P_ = P_propagated;
+                return;
             }
+            final_output.updated_state = x_;
+            P_ = final_output.updated_cov;
 
-            P_ = L_ - K_H.block<state_dim_, pose_obs_dim_>(0, 0) * P_.template block<pose_obs_dim_, state_dim_>(0, 0);
-
-            if (nullity > 0) {
-                // LOG_EVERY_N(INFO, 50) << "ESKF observation degeneracy rank " << (pose_obs_dim_ - nullity) << "/"
-                //                      << pose_obs_dim_;
-                P_.block<pose_obs_dim_, pose_obs_dim_>(0, 0) *= options_.degeneracy_cov_inflation_;
+            if (mapping_update_golden_callback_ && !mapping_update_golden_captured_ &&
+                obs == ObsType::LIDAR) {
+                const int capture_index = mapping_update_golden_count_++;
+                if (capture_index >= mapping_update_golden_target_index_) {
+                    final_output.updated_state = x_;
+                    mapping_update::GoldenFrame frame;
+                    frame.input = update_input;
+                    frame.input.frame_index = capture_index;
+                    frame.expected = final_output;
+                    mapping_update_golden_captured_ = mapping_update_golden_callback_(frame);
+                }
             }
 
             break;

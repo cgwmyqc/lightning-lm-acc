@@ -299,7 +299,7 @@ online fallback_cpu_sim/fallback_ndt: 0/0
 
 ### Version 7: ABI V2 + FPGA EKF update
 
-This version is planned after Stage64 CPU golden refactor:
+This version is planned after the Stage64 CPU golden refactor:
 
 ```text
 FPGA observation V2
@@ -312,3 +312,14 @@ Boundary:
 - EKF update must be a separate HLS IP, not part of `unified_surfel_observation_core`.
 - First version only targets fixed lidar/surfel pose observation update.
 - If full 23D covariance update is too expensive, first land FPGA solve/update `dx` and keep covariance update on CPU as `FPGA_OBS_SOLVE_PARTIAL`.
+
+Current preparation status:
+
+```text
+Stage64 Mapping ESKF Update CPU Golden: PASS
+golden: fpga/golden/mapping_update/frame_000001
+MAPPING_ESKF_UPDATE_CPU_REPLAY_PASS
+dx_max_abs=0
+cov_max_abs=0
+state_max_abs=6.50049e-20
+```

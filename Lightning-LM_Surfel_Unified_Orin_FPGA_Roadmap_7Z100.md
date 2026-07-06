@@ -5985,6 +5985,60 @@ Do not write HLS for mapping update before this stage passes.
 - Generate mapping update golden and prove the extracted function matches the
   current CPU path before any FPGA EKF update work.
 
+Stage64 implementation result:
+
+```text
+PASS
+colcon build --packages-select lightning: PASS
+export_mapping_eskf_update_golden: PASS
+run_mapping_eskf_update_golden_replay: PASS
+```
+
+What changed:
+
+- The lidar/surfel update math from `ESKF::Update()` is now factored into a
+  standalone CPU helper.
+- The online CPU path still calls the same math and keeps the original
+  iteration, convergence, reject, AA, covariance, and fallback behavior.
+- `LaserMapping` can capture a real mapping update golden from a rosbag run.
+- `run_mapping_eskf_update_golden_replay` replays the helper against the saved
+  golden.
+
+Stage64 golden:
+
+```text
+fpga/golden/mapping_update/frame_000001/update_input.bin
+fpga/golden/mapping_update/frame_000001/update_expected.bin
+fpga/golden/mapping_update/frame_000001/update_meta.yaml
+```
+
+Observed replay:
+
+```text
+MAPPING_ESKF_UPDATE_CPU_REPLAY_PASS
+frame_index=20
+iteration_index=0
+nullity=0
+dx_norm=0.00471868
+dx_max_abs=0
+cov_max_abs=0
+state_max_abs=6.50049e-20
+flags_ok=1
+```
+
+Observation regression after refactor:
+
+```text
+MAPPING_CPU_REPLAY_PASS counts actual=611/0/171 expected=611/0/171
+MAPPING_XDMA_REPLAY_PASS counts actual=611/0/171 expected=611/0/171
+```
+
+Conclusion:
+
+- Stage64 CPU golden gate is complete.
+- Stage65 may start, but mapping EKF update must be implemented as a separate
+  HLS IP/core and must keep Stage61 observation V2 as the fallback path.
+
 ## Stage 65 Plan: Mapping EKF Update HLS Core
 
 Stage65 starts only after Stage64 CPU golden PASS.
