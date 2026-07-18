@@ -6349,3 +6349,47 @@ Risk boundary:
 - If Stage65C times out, first inspect `KERNEL_SEL=5`, EKF address registers,
   and EKF `ap_start/ap_done` BD wiring. If it completes but numeric compare
   fails, first inspect input/output word ABI and endian/offset handling.
+
+Stage65C Orin result on 2026-07-18:
+
+```text
+Result: PASS
+Build: colcon build --packages-select lightning PASS
+BDF: 0005:01:00.0 [10ee:7024]
+Kernel driver in use: xdma
+/dev/xdma0_user: present
+/dev/xdma0_h2c_0: present
+/dev/xdma0_c2h_0: present
+enable: 1
+PCIe: 5GT/s x1 downgraded
+SHIM_SMOKE_PASS
+REG_SMOKE_PASS
+DDR_SMOKE_PASS
+KERNEL_SEL=5 transaction:
+  MAPPING_EKF_UPDATE_XDMA_START_PASS
+  MAPPING_EKF_UPDATE_XDMA_DONE_PASS
+  MAPPING_EKF_UPDATE_XDMA_NUMERIC_PASS
+  MAPPING_EKF_UPDATE_XDMA_PASS
+STATUS=0x00000204
+ERROR=0x00000000
+RUN_COUNT=0->1
+elapsed_sec=0.003196015
+hls_wait_sec=0.003196015
+dx_max_abs=4.96565e-17
+cov_max_abs=1.53144e-18
+state_max_abs=4.94396e-17
+actual_nullity=0
+expected_nullity=0
+actual_success=1
+expected_success=1
+Kernel log: no new Failed to detect XDMA config BAR, CmpltTO, AER fatal,
+offline, or frozen errors.
+Report: reports/fpga/runtime/stage65c_ekf_update_xdma_golden/
+```
+
+Conclusion: the Stage65C Orin runtime can dispatch the standalone mapping EKF
+update IP through `KERNEL_SEL=5`, exchange input/output via
+`0x30010000/0x30020000`, and match the Stage64 CPU golden within tolerance.
+This completes the first functional board golden for mapping EKF update. The
+bitstream still has the Stage65B timing-risk boundary, so online `FPGA_FULL`
+must remain disabled until repeated stability and timing-risk gates pass.
