@@ -76,6 +76,14 @@ module xdma_restore_bar_shim_ctrl_wrapper (
     output wire [31:0] unified_obs_output_residual_max_abs_addr,
     output wire [31:0] unified_obs_output_reserved_addr,
 
+    output wire        ekf_ap_start,
+    input  wire        ekf_ap_idle,
+    input  wire        ekf_ap_ready,
+    input  wire        ekf_ap_done,
+    input  wire [31:0] ekf_error,
+    output wire [31:0] ekf_input_addr,
+    output wire [31:0] ekf_output_addr,
+
     output wire [31:0] kernel_sel,
     output wire [31:0] mode
 );
@@ -356,6 +364,13 @@ slam_accel_ctrl u_ctrl (
     .unified_obs_output_residual_abs_sum_addr(unified_obs_output_residual_abs_sum_addr),
     .unified_obs_output_residual_max_abs_addr(unified_obs_output_residual_max_abs_addr),
     .unified_obs_output_reserved_addr(unified_obs_output_reserved_addr),
+    .ekf_ap_start(ekf_ap_start),
+    .ekf_ap_idle(ekf_ap_idle),
+    .ekf_ap_ready(ekf_ap_ready),
+    .ekf_ap_done(ekf_ap_done),
+    .ekf_error(ekf_error),
+    .ekf_input_addr(ekf_input_addr),
+    .ekf_output_addr(ekf_output_addr),
     .kernel_sel(kernel_sel),
     .mode(mode)
 );

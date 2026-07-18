@@ -27,6 +27,8 @@ must stay zero.
 | active blocks | `0x02000000` |
 | obs cells | `0x10000000` |
 | output | `0x30000000` |
+| EKF update input | `0x30010000` |
+| EKF update output | `0x30020000` |
 
 The whole layout stays inside the 1 GB PL DDR3 window `0x00000000..0x3fffffff`.
 
@@ -53,6 +55,10 @@ offset `0x1000`:
 ```bash
 python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000
 ```
+
+Stage65B keeps unified observation at `KERNEL_SEL=4` and adds standalone
+mapping EKF update at `KERNEL_SEL=5`. Stage65B smoke still only requires
+shim/register/DDR checks; the real EKF golden transaction is Stage65C.
 
 For the HLS-restored `azmig_wrapper.bit`, run the tiny synthetic transaction
 after shim/reg/DDR smoke passes:

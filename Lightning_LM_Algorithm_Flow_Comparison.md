@@ -341,3 +341,21 @@ target clock=10.00 ns
 estimated clock=9.544 ns
 BRAM_18K=94, DSP48E=399, FF=63645, LUT=78126
 ```
+
+Stage65B board integration skeleton:
+
+```text
+Status: PASS with timing risk
+KERNEL_SEL=5: mapping EKF update
+EKF input base:  0x30010000
+EKF output base: 0x30020000
+BD validate: PASS
+project synthesis: PASS
+implementation/bitstream: PASS
+post-impl WNS=-0.579 ns, TNS=-2451.445 ns
+DSP=792/2020, LUT=147499/277400, BRAM Tile=127.5/755
+```
+
+Stage65B only proves hardware integration. Version 7 is not considered online
+ready until Stage65C Orin EKF update golden replay passes and the timing risk
+is handled or explicitly accepted for smoke-only testing.

@@ -6129,3 +6129,105 @@ Next stage:
   command/port contract.
 - Do not mark `FPGA_FULL` complete until Stage65B/65C board and Orin runtime
   gates pass.
+
+## Stage 65B Result: EKF Update IP Board Integration Skeleton
+
+Stage65B Windows-side board integration was completed on 2026-07-06.
+
+Scope:
+
+- Exported `slam_ekf_update_core` as a standalone HLS IP.
+- Added `KERNEL_SEL=5` dispatch in `slam_accel_ctrl`.
+- Added EKF update DDR buffers:
+  - `EKF_UPDATE_INPUT_BASE  = 0x30010000`
+  - `EKF_UPDATE_OUTPUT_BASE = 0x30020000`
+- Added controller registers:
+  - `0x05c/0x060` `EKF_INPUT_ADDR_LO/HI`
+  - `0x064/0x068` `EKF_OUTPUT_ADDR_LO/HI`
+- Integrated `slam_ekf_update_core` into the AX7Z100 PCIe/MIG BD with two
+  AXI master ports connected to the existing MIG-backed PL DDR fabric.
+- Kept observation V2, localization solve6x6, XDMA/MIG, BAR shim, and output
+  normal-equation ABI unchanged.
+
+Validation:
+
+```text
+EKF g++ CSim: PASS
+EKF HLS IP export: PASS
+slam_accel_ctrl OOC synthesis: PASS
+BD validate: PASS
+project synthesis: PASS
+implementation/bitstream: PASS
+```
+
+Generated bitstream:
+
+```text
+fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit
+size: 12309627 bytes
+```
+
+Post-implementation summary:
+
+```text
+Slice LUTs:      147499 / 277400 = 53.17%
+Slice Registers: 156432 / 554800 = 28.20%
+Block RAM Tile:  127.5 / 755     = 16.89%
+DSPs:            792 / 2020      = 39.21%
+Route errors:    0
+DRC errors:      0
+```
+
+Timing risk:
+
+```text
+Timing constraints are not met.
+WNS = -0.579 ns
+TNS = -2451.445 ns
+WHS = 0.029 ns
+Critical warning: timing failed
+```
+
+This bitstream is acceptable for Stage65B/65C functional bring-up, but it is
+not a reliable timing-closed baseline. Stage65C must keep the first Orin test
+as a smoke/golden gate and must not enable online `FPGA_FULL` by default until
+EKF update correctness and timing risk are both addressed.
+
+Stage65B Orin smoke test:
+
+```bash
+sudo reboot
+lspci -nnk -s 0005:01:00.0
+ls -l /dev/xdma0_user /dev/xdma0_h2c_0 /dev/xdma0_c2h_0
+journalctl -k --no-pager | grep -Ei 'xdma|10ee|7024|0005:01:00|CmpltTO|BAR|probe|AER|link' | tail -n 120
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --ddr-smoke
+```
+
+Stage65B Orin acceptance:
+
+```text
+Kernel driver in use: xdma
+/dev/xdma0_user exists
+/dev/xdma0_h2c_0 exists
+/dev/xdma0_c2h_0 exists
+SHIM_SMOKE_PASS
+REG_SMOKE_PASS
+DDR_SMOKE_PASS
+No new Failed to detect XDMA config BAR
+No new CmpltTO or AER fatal
+```
+
+If Stage65B Orin smoke fails, do not run EKF golden or online mapping. First
+check whether the new EKF IP BD integration affected XDMA BAR probe, BAR shim,
+MIG interconnect, or the PL DDR address map. If Stage65B Orin smoke passes,
+proceed to Stage65C EKF update golden transaction.
+
+Next stage:
+
+- Stage65C should add Orin runtime/golden support for `KERNEL_SEL=5`:
+  write Stage64 `update_input.bin` to `EKF_UPDATE_INPUT_BASE`, clear
+  `EKF_UPDATE_OUTPUT_BASE`, trigger EKF update, read output, and compare with
+  `update_expected.bin`.
+- Stage61/62/63 observation and localization solve regressions must continue
+  to pass before any online mapping mode is enabled.

@@ -1,7 +1,7 @@
-﻿Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.
+Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.
 ------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2018.3 (win64) Build 2405991 Thu Dec  6 23:38:27 MST 2018
-| Date         : Mon Jul  6 14:29:47 2026
+| Date         : Mon Jul  6 20:45:43 2026
 | Host         : DESKTOP-QEQDV5I running 64-bit major release  (build 9200)
 | Command      : report_ip_status
 ------------------------------------------------------------------------------------
@@ -10,7 +10,7 @@ IP Status Summary
 
 1. Project IP Status
 --------------------
-Your project uses 14 IP. Some of these IP may have undergone changes in this release of the software. Please review the recommended actions.
+Your project uses 15 IP. Some of these IP may have undergone changes in this release of the software. Please review the recommended actions.
 
 More information on the Xilinx versioning policy is available at www.xilinx.com.
 
@@ -24,6 +24,10 @@ Project IP Instances
 |                                 |            |                     |           |                    | 5)      |               |            |                      |
 +---------------------------------+------------+---------------------+-----------+--------------------+---------+---------------+------------+----------------------+
 | azmig_ctrl_0_0                  | Up-to-date | No changes required | Change    | xdma_restore_bar_s | 1.0     | 1.0 (Rev. 1)  | Included   | xc7z100ffg900-2      |
+|                                 |            |                     | Log not   |                    | (Rev.   |               |            |                      |
+|                                 |            |                     | available |                    | 1)      |               |            |                      |
++---------------------------------+------------+---------------------+-----------+--------------------+---------+---------------+------------+----------------------+
+| azmig_ekf_update_0_0            | Up-to-date | No changes required | Change    | Slam_ekf_update_co | 1.0     | 1.0 (Rev. 1)  | Included   | xc7z100ffg900-2      |
 |                                 |            |                     | Log not   |                    | (Rev.   |               |            |                      |
 |                                 |            |                     | available |                    | 1)      |               |            |                      |
 +---------------------------------+------------+---------------------+-----------+--------------------+---------+---------------+------------+----------------------+

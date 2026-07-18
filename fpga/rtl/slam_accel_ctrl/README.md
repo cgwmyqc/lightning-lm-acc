@@ -10,6 +10,7 @@ This version contains:
 - `kernel_sel` and `mode` registers
 - status, error, cycle, and run counters
 - direct `ap_ctrl_hs` wiring for `unified_surfel_observation_core`
+- direct `ap_ctrl_hs` wiring for `slam_ekf_update_core`
 - direct 32-bit base-address outputs for the HLS `m_axi offset=direct` ports
 - a direct output base address for the HLS `output_words` port
 
@@ -22,7 +23,7 @@ It does not instantiate XDMA, block design, DDR interconnect, or the HLS IP. Tho
 | `0x000` | `VERSION` | RO | Interface convergence version, currently `0x0002_0002` |
 | `0x004` | `CONTROL` | WO | bit0 `start`, bit1 `clear_done_error` |
 | `0x008` | `STATUS` | RO | bit0 idle, bit1 busy, bit2 done, bit3 error, bit8 HLS done, bit9 HLS idle, bit10 HLS ready |
-| `0x00c` | `KERNEL_SEL` | RW | `4` = unified observation |
+| `0x00c` | `KERNEL_SEL` | RW | `4` = unified observation, `5` = mapping EKF update |
 | `0x010` | `MODE` | RW | `0` mapping observation, `1` localization observation |
 | `0x014` | `ERROR` | RO | `0` ok, `1` unsupported kernel, `3` non-zero high address word |
 | `0x018` | `CYCLE_COUNT` | RW | increments while dispatch/wait are active |
@@ -42,6 +43,10 @@ It does not instantiate XDMA, block design, DDR interconnect, or the HLS IP. Tho
 | `0x050` | `OUT_ADDR_HI` | RW | must be zero in this 32-bit address phase |
 | `0x054` | `PARAMS_ADDR_LO` | RW | low 32 bits of `SlamAccelObservationParams` buffer base |
 | `0x058` | `PARAMS_ADDR_HI` | RW | must be zero in this 32-bit address phase |
+| `0x05c` | `EKF_INPUT_ADDR_LO` | RW | low 32 bits of `slam_ekf_update_core` input word buffer |
+| `0x060` | `EKF_INPUT_ADDR_HI` | RW | must be zero in this 32-bit address phase |
+| `0x064` | `EKF_OUTPUT_ADDR_LO` | RW | low 32 bits of `slam_ekf_update_core` output word buffer |
+| `0x068` | `EKF_OUTPUT_ADDR_HI` | RW | must be zero in this 32-bit address phase |
 
 ## HLS Direct Ports
 
@@ -110,6 +115,19 @@ unified_obs_ap_done
 unified_obs_error[31:0]
 ```
 
+Stage65B adds the separate mapping EKF update HLS dispatch path:
+
+```text
+ekf_ap_start
+ekf_input_addr[31:0]
+ekf_output_addr[31:0]
+
+ekf_ap_idle
+ekf_ap_ready
+ekf_ap_done
+ekf_error[31:0]
+```
+
 ## FSM
 
 ```text
@@ -117,9 +135,13 @@ IDLE -> DISPATCH -> WAIT -> DONE
                   \-> ERROR
 ```
 
-`DISPATCH` holds `unified_obs_ap_start` high until `unified_obs_ap_ready` is observed. `WAIT` completes on `unified_obs_ap_done` or enters `ERROR` when `unified_obs_error` is non-zero.
+`DISPATCH` holds the selected HLS `ap_start` high until the selected HLS
+`ap_ready` is observed. `WAIT` completes on selected `ap_done` or enters
+`ERROR` when the selected HLS error input is non-zero.
 
-Only `KERNEL_SEL=4` dispatches in this version. Other kernel selectors are reserved for later `map_update_pipeline` and `solve6x6_core` work.
+`KERNEL_SEL=4` dispatches unified observation. `KERNEL_SEL=5` dispatches
+the standalone mapping EKF update core. Other kernel selectors remain
+unsupported and return `ERROR=0x00000001`.
 
 ## OOC Synthesis
 

@@ -57,6 +57,14 @@ module slam_accel_ctrl #(
     output wire [31:0]                   unified_obs_output_residual_max_abs_addr,
     output wire [31:0]                   unified_obs_output_reserved_addr,
 
+    output reg                           ekf_ap_start,
+    input  wire                          ekf_ap_idle,
+    input  wire                          ekf_ap_ready,
+    input  wire                          ekf_ap_done,
+    input  wire [31:0]                   ekf_error,
+    output wire [31:0]                   ekf_input_addr,
+    output wire [31:0]                   ekf_output_addr,
+
     output wire [31:0]                   kernel_sel,
     output wire [31:0]                   mode
 );
@@ -86,8 +94,13 @@ localparam [11:0] REG_OUT_ADDR_LO       = 12'h04c;
 localparam [11:0] REG_OUT_ADDR_HI       = 12'h050;
 localparam [11:0] REG_PARAMS_ADDR_LO    = 12'h054;
 localparam [11:0] REG_PARAMS_ADDR_HI    = 12'h058;
+localparam [11:0] REG_EKF_INPUT_ADDR_LO = 12'h05c;
+localparam [11:0] REG_EKF_INPUT_ADDR_HI = 12'h060;
+localparam [11:0] REG_EKF_OUTPUT_ADDR_LO = 12'h064;
+localparam [11:0] REG_EKF_OUTPUT_ADDR_HI = 12'h068;
 
 localparam [31:0] KERNEL_UNIFIED_OBSERVATION = 32'd4;
+localparam [31:0] KERNEL_EKF_UPDATE = 32'd5;
 
 localparam [31:0] ERR_UNSUPPORTED_KERNEL = 32'h0000_0001;
 localparam [31:0] ERR_ADDR_HI_NONZERO    = 32'h0000_0003;
@@ -119,6 +132,10 @@ reg [31:0] out_addr_lo_reg;
 reg [31:0] out_addr_hi_reg;
 reg [31:0] params_addr_lo_reg;
 reg [31:0] params_addr_hi_reg;
+reg [31:0] ekf_input_addr_lo_reg;
+reg [31:0] ekf_input_addr_hi_reg;
+reg [31:0] ekf_output_addr_lo_reg;
+reg [31:0] ekf_output_addr_hi_reg;
 
 reg cmd_start;
 
@@ -142,6 +159,8 @@ assign unified_obs_output_residual_sum_addr = out_addr_lo_reg + 32'd232;
 assign unified_obs_output_residual_abs_sum_addr = out_addr_lo_reg + 32'd240;
 assign unified_obs_output_residual_max_abs_addr = out_addr_lo_reg + 32'd248;
 assign unified_obs_output_reserved_addr = out_addr_lo_reg + 32'd256;
+assign ekf_input_addr = ekf_input_addr_lo_reg;
+assign ekf_output_addr = ekf_output_addr_lo_reg;
 
 function [31:0] apply_wstrb;
     input [31:0] old_value;
@@ -165,6 +184,12 @@ wire status_idle = (state == FSM_IDLE);
 wire status_busy = (state == FSM_DISPATCH) || (state == FSM_WAIT);
 wire status_done = (state == FSM_DONE);
 wire status_error = (state == FSM_ERROR);
+wire selected_obs = (kernel_sel_reg == KERNEL_UNIFIED_OBSERVATION);
+wire selected_ekf = (kernel_sel_reg == KERNEL_EKF_UPDATE);
+wire selected_hls_done = selected_ekf ? ekf_ap_done : unified_obs_ap_done;
+wire selected_hls_idle = selected_ekf ? ekf_ap_idle : unified_obs_ap_idle;
+wire selected_hls_ready = selected_ekf ? ekf_ap_ready : unified_obs_ap_ready;
+wire [31:0] selected_hls_error = selected_ekf ? ekf_error : unified_obs_error;
 
 wire any_addr_hi_nonzero = (scan_addr_hi_reg != 32'd0) ||
                            (pose_addr_hi_reg != 32'd0) ||
@@ -172,7 +197,9 @@ wire any_addr_hi_nonzero = (scan_addr_hi_reg != 32'd0) ||
                            (active_blocks_addr_hi_reg != 32'd0) ||
                            (obs_cells_addr_hi_reg != 32'd0) ||
                            (out_addr_hi_reg != 32'd0) ||
-                           (params_addr_hi_reg != 32'd0);
+                           (params_addr_hi_reg != 32'd0) ||
+                           (ekf_input_addr_hi_reg != 32'd0) ||
+                           (ekf_output_addr_hi_reg != 32'd0);
 
 always @(posedge aclk) begin
     if (!aresetn) begin
@@ -186,6 +213,7 @@ always @(posedge aclk) begin
         s_axi_rvalid <= 1'b0;
 
         unified_obs_ap_start <= 1'b0;
+        ekf_ap_start <= 1'b0;
         state <= FSM_IDLE;
         kernel_sel_reg <= KERNEL_UNIFIED_OBSERVATION;
         mode_reg <= 32'd1;
@@ -207,12 +235,17 @@ always @(posedge aclk) begin
         out_addr_hi_reg <= 32'd0;
         params_addr_lo_reg <= 32'd0;
         params_addr_hi_reg <= 32'd0;
+        ekf_input_addr_lo_reg <= 32'd0;
+        ekf_input_addr_hi_reg <= 32'd0;
+        ekf_output_addr_lo_reg <= 32'd0;
+        ekf_output_addr_hi_reg <= 32'd0;
         cmd_start <= 1'b0;
     end else begin
         s_axi_awready <= write_fire;
         s_axi_wready <= write_fire;
         s_axi_arready <= read_fire;
         unified_obs_ap_start <= 1'b0;
+        ekf_ap_start <= 1'b0;
 
         if (s_axi_bvalid && s_axi_bready) begin
             s_axi_bvalid <= 1'b0;
@@ -261,6 +294,14 @@ always @(posedge aclk) begin
                 REG_OUT_ADDR_HI: out_addr_hi_reg <= apply_wstrb(out_addr_hi_reg, s_axi_wdata, s_axi_wstrb);
                 REG_PARAMS_ADDR_LO: params_addr_lo_reg <= apply_wstrb(params_addr_lo_reg, s_axi_wdata, s_axi_wstrb);
                 REG_PARAMS_ADDR_HI: params_addr_hi_reg <= apply_wstrb(params_addr_hi_reg, s_axi_wdata, s_axi_wstrb);
+                REG_EKF_INPUT_ADDR_LO:
+                    ekf_input_addr_lo_reg <= apply_wstrb(ekf_input_addr_lo_reg, s_axi_wdata, s_axi_wstrb);
+                REG_EKF_INPUT_ADDR_HI:
+                    ekf_input_addr_hi_reg <= apply_wstrb(ekf_input_addr_hi_reg, s_axi_wdata, s_axi_wstrb);
+                REG_EKF_OUTPUT_ADDR_LO:
+                    ekf_output_addr_lo_reg <= apply_wstrb(ekf_output_addr_lo_reg, s_axi_wdata, s_axi_wstrb);
+                REG_EKF_OUTPUT_ADDR_HI:
+                    ekf_output_addr_hi_reg <= apply_wstrb(ekf_output_addr_hi_reg, s_axi_wdata, s_axi_wstrb);
                 default: begin
                     s_axi_bresp <= 2'b10;
                 end
@@ -273,7 +314,7 @@ always @(posedge aclk) begin
             case (read_addr)
                 REG_VERSION: s_axi_rdata <= VERSION_VALUE;
                 REG_CONTROL: s_axi_rdata <= 32'd0;
-                REG_STATUS: s_axi_rdata <= {21'd0, unified_obs_ap_ready, unified_obs_ap_idle, unified_obs_ap_done,
+                REG_STATUS: s_axi_rdata <= {21'd0, selected_hls_ready, selected_hls_idle, selected_hls_done,
                                             4'd0, status_error, status_done, status_busy, status_idle};
                 REG_KERNEL_SEL: s_axi_rdata <= kernel_sel_reg;
                 REG_MODE: s_axi_rdata <= mode_reg;
@@ -295,6 +336,10 @@ always @(posedge aclk) begin
                 REG_OUT_ADDR_HI: s_axi_rdata <= out_addr_hi_reg;
                 REG_PARAMS_ADDR_LO: s_axi_rdata <= params_addr_lo_reg;
                 REG_PARAMS_ADDR_HI: s_axi_rdata <= params_addr_hi_reg;
+                REG_EKF_INPUT_ADDR_LO: s_axi_rdata <= ekf_input_addr_lo_reg;
+                REG_EKF_INPUT_ADDR_HI: s_axi_rdata <= ekf_input_addr_hi_reg;
+                REG_EKF_OUTPUT_ADDR_LO: s_axi_rdata <= ekf_output_addr_lo_reg;
+                REG_EKF_OUTPUT_ADDR_HI: s_axi_rdata <= ekf_output_addr_hi_reg;
                 default: begin
                     s_axi_rdata <= 32'd0;
                     s_axi_rresp <= 2'b10;
@@ -311,7 +356,7 @@ always @(posedge aclk) begin
                 if (cmd_start) begin
                     cmd_start <= 1'b0;
                     error_reg <= 32'd0;
-                    if (kernel_sel_reg != KERNEL_UNIFIED_OBSERVATION) begin
+                    if (!selected_obs && !selected_ekf) begin
                         error_reg <= ERR_UNSUPPORTED_KERNEL;
                         state <= FSM_ERROR;
                     end else if (any_addr_hi_nonzero) begin
@@ -323,24 +368,28 @@ always @(posedge aclk) begin
                 end
             end
             FSM_DISPATCH: begin
-                unified_obs_ap_start <= 1'b1;
-                if (unified_obs_ap_ready) begin
+                if (selected_ekf) begin
+                    ekf_ap_start <= 1'b1;
+                end else begin
+                    unified_obs_ap_start <= 1'b1;
+                end
+                if (selected_hls_ready) begin
                     run_count_reg <= run_count_reg + 32'd1;
                     state <= FSM_WAIT;
                 end
             end
             FSM_WAIT: begin
-                if (unified_obs_error != 32'd0) begin
-                    error_reg <= unified_obs_error;
+                if (selected_hls_error != 32'd0) begin
+                    error_reg <= selected_hls_error;
                     state <= FSM_ERROR;
-                end else if (unified_obs_ap_done) begin
+                end else if (selected_hls_done) begin
                     state <= FSM_DONE;
                 end
             end
             FSM_DONE: begin
                 if (cmd_start) begin
                     cmd_start <= 1'b0;
-                    if (kernel_sel_reg != KERNEL_UNIFIED_OBSERVATION) begin
+                    if (!selected_obs && !selected_ekf) begin
                         error_reg <= ERR_UNSUPPORTED_KERNEL;
                         state <= FSM_ERROR;
                     end else if (any_addr_hi_nonzero) begin

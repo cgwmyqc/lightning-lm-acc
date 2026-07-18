@@ -40,14 +40,16 @@ struct Region {
     uint32_t size;
 };
 
-constexpr std::array<Region, 7> kRegions = {{
+constexpr std::array<Region, 9> kRegions = {{
     {"scan_points", LIGHTNING_SCAN_POINTS_BASE, 0x01000000u},
     {"pose", LIGHTNING_POSE_BASE, 0x00001000u},
     {"map_header", LIGHTNING_MAP_HEADER_BASE, 0x00001000u},
     {"params", LIGHTNING_PARAMS_BASE, 0x00001000u},
     {"active_blocks", LIGHTNING_ACTIVE_BLOCKS_BASE, 0x01000000u},
     {"obs_cells", LIGHTNING_OBS_CELLS_BASE, 0x20000000u},
-    {"output", LIGHTNING_OUTPUT_BASE, 0x00100000u},
+    {"output", LIGHTNING_OUTPUT_BASE, 0x00010000u},
+    {"ekf_update_input", LIGHTNING_EKF_UPDATE_INPUT_BASE, 0x00010000u},
+    {"ekf_update_output", LIGHTNING_EKF_UPDATE_OUTPUT_BASE, 0x00010000u},
 }};
 
 void SetError(std::string* error, const std::string& message) {

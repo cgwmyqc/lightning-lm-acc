@@ -4,6 +4,7 @@ param(
     [string]$Vivado = "vivado",
     [string]$VivadoHls = "vivado_hls",
     [string]$HlsProjectDir,
+    [string]$EkfHlsProjectDir,
     [string]$ReferenceRoot
 )
 
@@ -20,15 +21,21 @@ if ([string]::IsNullOrWhiteSpace($ProjectDir)) {
 if ([string]::IsNullOrWhiteSpace($HlsProjectDir)) {
     $HlsProjectDir = Join-Path $BuildRoot "hls_unified_obs"
 }
+if ([string]::IsNullOrWhiteSpace($EkfHlsProjectDir)) {
+    $EkfHlsProjectDir = Join-Path $BuildRoot "hls_slam_ekf_update_export"
+}
 if ([string]::IsNullOrWhiteSpace($ReferenceRoot)) {
     $ReferenceRoot = Resolve-Path (Join-Path $RepoRoot "..")
 }
 
 $ProjectDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ProjectDir)
 $HlsProjectDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($HlsProjectDir)
+$EkfHlsProjectDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($EkfHlsProjectDir)
 $ReferenceRoot = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ReferenceRoot)
 $HlsIpDir = Join-Path $HlsProjectDir "solution1\impl\ip"
 $ComponentXml = Join-Path $HlsIpDir "component.xml"
+$EkfHlsIpDir = Join-Path $EkfHlsProjectDir "solution1\impl\ip"
+$EkfComponentXml = Join-Path $EkfHlsIpDir "component.xml"
 
 if (!(Test-Path $ComponentXml)) {
     $ExportScript = Join-Path $RepoRoot "fpga\hls\unified_surfel_observation_core\run_vivado_hls_export_ip.ps1"
@@ -38,6 +45,18 @@ if (!(Test-Path $ComponentXml)) {
     }
     if (!(Test-Path $ComponentXml)) {
         Write-Error "HLS IP export did not produce component.xml: $ComponentXml"
+        exit 1
+    }
+}
+
+if (!(Test-Path $EkfComponentXml)) {
+    $EkfExportScript = Join-Path $RepoRoot "fpga\hls\slam_ekf_update_core\run_vivado_hls_export_ip.ps1"
+    & powershell -ExecutionPolicy Bypass -File $EkfExportScript -ProjectDir $EkfHlsProjectDir -Part $Part -VivadoHls $VivadoHls
+    if ($LASTEXITCODE -ne 0) {
+        exit $LASTEXITCODE
+    }
+    if (!(Test-Path $EkfComponentXml)) {
+        Write-Error "EKF HLS IP export did not produce component.xml: $EkfComponentXml"
         exit 1
     }
 }
@@ -57,7 +76,7 @@ try {
     $VivadoProjectDir = $ShortPathInfo.ShortPath
     $VivadoLog = Join-Path $VivadoProjectDir "vivado_bd_validate.log"
     $VivadoJournal = Join-Path $VivadoProjectDir "vivado_bd_validate.jou"
-    & $Vivado -mode batch -source $Tcl -journal $VivadoJournal -log $VivadoLog -tclargs $VivadoProjectDir $Part $HlsIpDir $ReferenceRoot
+    & $Vivado -mode batch -source $Tcl -journal $VivadoJournal -log $VivadoLog -tclargs $VivadoProjectDir $Part $HlsIpDir $EkfHlsIpDir $ReferenceRoot
     $ExitCode = $LASTEXITCODE
 } finally {
     Remove-LightningVivadoShortPath -ShortPathInfo $ShortPathInfo

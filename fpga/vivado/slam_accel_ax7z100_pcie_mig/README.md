@@ -17,6 +17,8 @@ state as the source of truth.
   at `0x0000`; `slam_accel_ctrl` remains the only accelerator register bank and
   is reached through XDMA AXI-Lite at offset `0x1000`
 - Compute: true HLS IP `unified_surfel_observation_core`
+- Stage65B compute extension: standalone HLS IP `slam_ekf_update_core`,
+  selected through `KERNEL_SEL=5`
 
 Stage 44 HLS output contract: the board-level BD connects
 `slam_accel_ctrl.unified_obs_output_addr` directly to the HLS `output_words`
@@ -41,6 +43,8 @@ address contract.
 | `ACTIVE_BLOCKS_BASE` | `0x02000000` | HLS `active_blocks` |
 | `OBS_CELLS_BASE` | `0x10000000` | HLS `obs_cells` |
 | `OUTPUT_BASE` | `0x30000000` | HLS `output_words` base, host ABI is 320-byte `SlamNormalEquation` |
+| `EKF_UPDATE_INPUT_BASE` | `0x30010000` | HLS `slam_ekf_update_core.input_words` |
+| `EKF_UPDATE_OUTPUT_BASE` | `0x30020000` | HLS `slam_ekf_update_core.output_words` |
 
 The matching host-side constants live in
 `fpga/host/xdma_smoke/ax7z100_plddr_layout.h` and
@@ -59,6 +63,8 @@ The first on-board smoke should read the XDMA BAR shim identity, then read
 `slam_accel_ctrl.VERSION` at `0x1000`, write/read the
 control register bank, then write/read a 4 KB memory pattern at each PL DDR3
 buffer base. It does not require launching the accelerator as a hard gate.
+Stage65B keeps observation at `KERNEL_SEL=4` and adds mapping EKF update at
+`KERNEL_SEL=5`; EKF golden replay is deferred to Stage65C.
 
 ```bash
 python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000 --ddr-smoke
@@ -76,7 +82,7 @@ python3 fpga/host/xdma_smoke/xdma_smoke.py --reg-smoke --ctrl-base 0x1000 --star
 - `pcie_ref` is the PCIe endpoint reference clock from the Orin/root complex.
   It feeds XDMA `sys_clk` through `util_ds_buf`.
 - `xdma_0/axi_aclk` clocks XDMA AXI-Lite, XDMA AXI master, `slam_accel_ctrl`,
-  and the HLS core control/datapath side.
+  the observation HLS core, and the Stage65B EKF update HLS core.
 - `sys` is the AX7Z100 PL DDR3 200 MHz differential clock and feeds MIG
   `SYS_CLK`.
 - `mig_7series_0/ui_clk` clocks the MIG S_AXI memory side.

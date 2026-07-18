@@ -4,6 +4,7 @@ set reference_root [file normalize [file join $repo_root ".."]]
 set project_dir [file normalize [file join $script_dir ".." ".build" "azmig_bd"]]
 set target_part "xc7z100ffg900-2"
 set hls_ip_dir [file normalize [file join $repo_root "fpga" "vivado" ".build" "hls_unified_obs" "solution1" "impl" "ip"]]
+set ekf_hls_ip_dir [file normalize [file join $repo_root "fpga" "vivado" ".build" "hls_slam_ekf_update_export" "solution1" "impl" "ip"]]
 set design_name "azmig"
 
 set user_args $argv
@@ -17,12 +18,19 @@ if {[llength $user_args] >= 3 && [string length [lindex $user_args 2]] > 0} {
     set hls_ip_dir [file normalize [lindex $user_args 2]]
 }
 if {[llength $user_args] >= 4 && [string length [lindex $user_args 3]] > 0} {
-    set reference_root [file normalize [lindex $user_args 3]]
+    set ekf_hls_ip_dir [file normalize [lindex $user_args 3]]
+}
+if {[llength $user_args] >= 5 && [string length [lindex $user_args 4]] > 0} {
+    set reference_root [file normalize [lindex $user_args 4]]
 }
 
 set component_xml [file join $hls_ip_dir "component.xml"]
 if {![file exists $component_xml]} {
     error "Missing HLS IP component.xml: $component_xml"
+}
+set ekf_component_xml [file join $ekf_hls_ip_dir "component.xml"]
+if {![file exists $ekf_component_xml]} {
+    error "Missing EKF HLS IP component.xml: $ekf_component_xml"
 }
 
 set mig_source_prj [file join $reference_root "12_ddr3_pl" "mig_a.prj"]
@@ -109,7 +117,7 @@ file mkdir $project_dir
 cd $project_dir
 
 create_project -force azmig $project_dir -part $target_part
-set_property ip_repo_paths [list $hls_ip_dir] [current_project]
+set_property ip_repo_paths [list $hls_ip_dir $ekf_hls_ip_dir] [current_project]
 update_ip_catalog
 
 add_files -norecurse [list \
@@ -134,6 +142,7 @@ set_property CONFIG.POLARITY {ACTIVE_LOW} $pcie_rst_n
 
 set ctrl [create_bd_cell -type module -reference xdma_restore_bar_shim_ctrl_wrapper ctrl_0]
 set hls [create_bd_cell -type ip -vlnv xilinx.com:hls:unified_surfel_observation_core:1.0 unified_obs_0]
+set ekf_hls [create_bd_cell -type ip -vlnv xilinx.com:hls:slam_ekf_update_core:1.0 ekf_update_0]
 set zero32 [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 const_zero_32]
 set_property -dict [list CONFIG.CONST_WIDTH {32} CONFIG.CONST_VAL {0}] $zero32
 set mig_rst_hi [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 mig_rst_hi]
@@ -170,7 +179,7 @@ set_property -dict [list \
 ] $xdma_0
 
 set mem_ic [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 mem_axi_ic]
-set_property -dict [list CONFIG.NUM_SI {6} CONFIG.NUM_MI {1}] $mem_ic
+set_property -dict [list CONFIG.NUM_SI {8} CONFIG.NUM_MI {1}] $mem_ic
 
 set rst_mig_ui [create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 rst_mig_ui]
 
@@ -186,9 +195,9 @@ connect_bd_net [get_bd_pins mig_7series_0/ui_clk] [get_bd_pins rst_mig_ui/slowes
 connect_bd_net [get_bd_pins mig_7series_0/mmcm_locked] [get_bd_pins rst_mig_ui/dcm_locked]
 connect_bd_net [get_bd_pins mig_7series_0/ui_clk_sync_rst] [get_bd_pins rst_mig_ui/ext_reset_in]
 
-connect_bd_net [get_bd_pins xdma_0/axi_aclk] [get_bd_pins ctrl_0/aclk] [get_bd_pins unified_obs_0/ap_clk]
-connect_bd_net [get_bd_pins xdma_0/axi_aresetn] [get_bd_pins ctrl_0/aresetn] [get_bd_pins unified_obs_0/ap_rst_n]
-connect_bd_net [get_bd_pins const_zero_32/dout] [get_bd_pins ctrl_0/unified_obs_error]
+connect_bd_net [get_bd_pins xdma_0/axi_aclk] [get_bd_pins ctrl_0/aclk] [get_bd_pins unified_obs_0/ap_clk] [get_bd_pins ekf_update_0/ap_clk]
+connect_bd_net [get_bd_pins xdma_0/axi_aresetn] [get_bd_pins ctrl_0/aresetn] [get_bd_pins unified_obs_0/ap_rst_n] [get_bd_pins ekf_update_0/ap_rst_n]
+connect_bd_net [get_bd_pins const_zero_32/dout] [get_bd_pins ctrl_0/unified_obs_error] [get_bd_pins ctrl_0/ekf_error]
 
 connect_bd_net [get_bd_pins ctrl_0/unified_obs_ap_start] [get_bd_pins unified_obs_0/ap_start]
 connect_bd_net [get_bd_pins unified_obs_0/ap_done] [get_bd_pins ctrl_0/unified_obs_ap_done]
@@ -204,6 +213,13 @@ connect_bd_net [get_bd_pins ctrl_0/unified_obs_active_blocks_addr] [get_bd_pins 
 connect_bd_net [get_bd_pins ctrl_0/unified_obs_obs_cells_addr] [get_bd_pins unified_obs_0/obs_cells]
 connect_bd_net [get_bd_pins ctrl_0/unified_obs_output_addr] [get_bd_pins unified_obs_0/output_words]
 
+connect_bd_net [get_bd_pins ctrl_0/ekf_ap_start] [get_bd_pins ekf_update_0/ap_start]
+connect_bd_net [get_bd_pins ekf_update_0/ap_done] [get_bd_pins ctrl_0/ekf_ap_done]
+connect_bd_net [get_bd_pins ekf_update_0/ap_idle] [get_bd_pins ctrl_0/ekf_ap_idle]
+connect_bd_net [get_bd_pins ekf_update_0/ap_ready] [get_bd_pins ctrl_0/ekf_ap_ready]
+connect_bd_net [get_bd_pins ctrl_0/ekf_input_addr] [get_bd_pins ekf_update_0/input_words]
+connect_bd_net [get_bd_pins ctrl_0/ekf_output_addr] [get_bd_pins ekf_update_0/output_words]
+
 connect_bd_intf_net [get_bd_intf_pins xdma_0/M_AXI_LITE] [get_bd_intf_pins ctrl_0/S_AXI]
 
 connect_bd_intf_net [get_bd_intf_pins xdma_0/M_AXI] [get_bd_intf_pins mem_axi_ic/S00_AXI]
@@ -212,6 +228,8 @@ connect_bd_intf_net [get_bd_intf_pins unified_obs_0/m_axi_gmem1] [get_bd_intf_pi
 connect_bd_intf_net [get_bd_intf_pins unified_obs_0/m_axi_gmem2] [get_bd_intf_pins mem_axi_ic/S03_AXI]
 connect_bd_intf_net [get_bd_intf_pins unified_obs_0/m_axi_gmem3] [get_bd_intf_pins mem_axi_ic/S04_AXI]
 connect_bd_intf_net [get_bd_intf_pins unified_obs_0/m_axi_gmem4] [get_bd_intf_pins mem_axi_ic/S05_AXI]
+connect_bd_intf_net [get_bd_intf_pins ekf_update_0/m_axi_gmem0] [get_bd_intf_pins mem_axi_ic/S06_AXI]
+connect_bd_intf_net [get_bd_intf_pins ekf_update_0/m_axi_gmem1] [get_bd_intf_pins mem_axi_ic/S07_AXI]
 connect_bd_intf_net [get_bd_intf_pins mem_axi_ic/M00_AXI] [get_bd_intf_pins mig_7series_0/S_AXI]
 
 connect_bd_net [get_bd_pins xdma_0/axi_aclk] \
@@ -221,7 +239,9 @@ connect_bd_net [get_bd_pins xdma_0/axi_aclk] \
     [get_bd_pins mem_axi_ic/S02_ACLK] \
     [get_bd_pins mem_axi_ic/S03_ACLK] \
     [get_bd_pins mem_axi_ic/S04_ACLK] \
-    [get_bd_pins mem_axi_ic/S05_ACLK]
+    [get_bd_pins mem_axi_ic/S05_ACLK] \
+    [get_bd_pins mem_axi_ic/S06_ACLK] \
+    [get_bd_pins mem_axi_ic/S07_ACLK]
 connect_bd_net [get_bd_pins xdma_0/axi_aresetn] \
     [get_bd_pins mem_axi_ic/ARESETN] \
     [get_bd_pins mem_axi_ic/S00_ARESETN] \
@@ -229,7 +249,9 @@ connect_bd_net [get_bd_pins xdma_0/axi_aresetn] \
     [get_bd_pins mem_axi_ic/S02_ARESETN] \
     [get_bd_pins mem_axi_ic/S03_ARESETN] \
     [get_bd_pins mem_axi_ic/S04_ARESETN] \
-    [get_bd_pins mem_axi_ic/S05_ARESETN]
+    [get_bd_pins mem_axi_ic/S05_ARESETN] \
+    [get_bd_pins mem_axi_ic/S06_ARESETN] \
+    [get_bd_pins mem_axi_ic/S07_ARESETN]
 connect_bd_net [get_bd_pins mig_7series_0/ui_clk] [get_bd_pins mem_axi_ic/M00_ACLK]
 connect_bd_net [get_bd_pins rst_mig_ui/peripheral_aresetn] [get_bd_pins mem_axi_ic/M00_ARESETN] [get_bd_pins mig_7series_0/aresetn]
 
@@ -238,6 +260,10 @@ create_bd_addr_seg -range 0x40000000 -offset 0x00000000 [first_addr_space "xdma_
 foreach idx {0 1 2 3 4} {
     set space [first_addr_space "unified_obs_0/Data_m_axi_gmem${idx}"]
     create_bd_addr_seg -range 0x40000000 -offset 0x00000000 $space $mig_mem SEG_unified_obs_gmem${idx}_PL_DDR3
+}
+foreach idx {0 1} {
+    set space [first_addr_space "ekf_update_0/Data_m_axi_gmem${idx}"]
+    create_bd_addr_seg -range 0x40000000 -offset 0x00000000 $space $mig_mem SEG_ekf_update_gmem${idx}_PL_DDR3
 }
 
 set ctrl_seg [first_addr_seg "ctrl_0/S_AXI/*"]
@@ -270,6 +296,7 @@ if {[llength $external_hls_axi] != 0} {
 puts "BD_VALIDATE_PASS"
 puts "Project: $project_dir"
 puts "HLS IP: $hls_ip_dir"
+puts "EKF HLS IP: $ekf_hls_ip_dir"
 puts "MIG source: $mig_source_prj"
 puts "MIG derived AXI prj: $mig_prj_path"
 puts "Wrapper: $wrapper_file"

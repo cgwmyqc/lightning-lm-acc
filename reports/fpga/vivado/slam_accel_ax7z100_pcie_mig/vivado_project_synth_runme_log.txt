@@ -1,4 +1,4 @@
-﻿
+
 *** Running vivado
     with args -log azmig_wrapper.vds -m64 -product Vivado -mode batch -messageDb vivado.pb -notrace -source azmig_wrapper.tcl
 
@@ -11,16 +11,17 @@
 source azmig_wrapper.tcl -notrace
 INFO: [IP_Flow 19-234] Refreshing IP repositories
 INFO: [IP_Flow 19-1700] Loaded user IP repository 'f:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/.build/hls_unified_obs/solution1/impl/ip'.
+INFO: [IP_Flow 19-1700] Loaded user IP repository 'f:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/.build/hls_slam_ekf_update_export/solution1/impl/ip'.
 INFO: [IP_Flow 19-2313] Loaded Vivado IP repository 'E:/Xilinx/Vivado/2018.3/data/ip'.
-add_files: Time (s): cpu = 00:00:04 ; elapsed = 00:00:07 . Memory (MB): peak = 408.770 ; gain = 57.805
+add_files: Time (s): cpu = 00:00:05 ; elapsed = 00:00:08 . Memory (MB): peak = 410.863 ; gain = 59.039
 Command: synth_design -top azmig_wrapper -part xc7z100ffg900-2
 Starting synth_design
 Attempting to get a license for feature 'Synthesis' and/or device 'xc7z100'
 INFO: [Common 17-349] Got license for feature 'Synthesis' and/or device 'xc7z100'
 INFO: Launching helper process for spawning children vivado processes
-INFO: Helper process launched with PID 15404
+INFO: Helper process launched with PID 16768
 ---------------------------------------------------------------------------------
-Starting RTL Elaboration : Time (s): cpu = 00:00:02 ; elapsed = 00:00:02 . Memory (MB): peak = 524.031 ; gain = 108.406
+Starting RTL Elaboration : Time (s): cpu = 00:00:01 ; elapsed = 00:00:02 . Memory (MB): peak = 526.742 ; gain = 108.980
 ---------------------------------------------------------------------------------
 INFO: [Synth 8-6157] synthesizing module 'azmig_wrapper' [V:/azmig_syn/azmig.srcs/sources_1/imports/hdl/azmig_wrapper.v:12]
 INFO: [Synth 8-6157] synthesizing module 'azmig' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:13]
@@ -30,68 +31,88 @@ INFO: [Synth 8-6157] synthesizing module 'xlconstant_v1_1_5_xlconstant' [v:/azmi
 	Parameter CONST_WIDTH bound to: 32 - type: integer
 INFO: [Synth 8-6155] done synthesizing module 'xlconstant_v1_1_5_xlconstant' (1#1) [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ipshared/4649/hdl/xlconstant_v1_1_vl_rfs.v:23]
 INFO: [Synth 8-6155] done synthesizing module 'azmig_const_zero_32_0' (2#1) [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_const_zero_32_0/synth/azmig_const_zero_32_0.v:57]
-INFO: [Synth 8-6157] synthesizing module 'azmig_ctrl_0_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_ctrl_0_0_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_ctrl_0_0' (3#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_ctrl_0_0_stub.v:6]
-WARNING: [Synth 8-350] instance 'ctrl_0' of module 'azmig_ctrl_0_0' requires 44 connections, but only 32 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:388]
-INFO: [Synth 8-6157] synthesizing module 'azmig_mem_axi_ic_0' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:1004]
-INFO: [Synth 8-6157] synthesizing module 'm00_couplers_imp_2QRP7E' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:2854]
-INFO: [Synth 8-6157] synthesizing module 'azmig_auto_cc_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_auto_cc_0_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_cc_0' (4#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_auto_cc_0_stub.v:6]
-INFO: [Synth 8-6157] synthesizing module 'azmig_auto_ds_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_auto_ds_0_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_ds_0' (5#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_auto_ds_0_stub.v:6]
-WARNING: [Synth 8-350] instance 'auto_ds' of module 'azmig_auto_ds_0' requires 76 connections, but only 74 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3283]
-INFO: [Synth 8-6155] done synthesizing module 'm00_couplers_imp_2QRP7E' (6#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:2854]
-INFO: [Synth 8-6157] synthesizing module 's00_couplers_imp_QISGC1' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3360]
-INFO: [Synth 8-6157] synthesizing module 'azmig_auto_us_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_auto_us_0_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_us_0' (7#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_auto_us_0_stub.v:6]
-WARNING: [Synth 8-350] instance 'auto_us' of module 'azmig_auto_us_0' requires 76 connections, but only 74 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3647]
-INFO: [Synth 8-6155] done synthesizing module 's00_couplers_imp_QISGC1' (8#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3360]
-INFO: [Synth 8-6157] synthesizing module 's01_couplers_imp_1RXOY8P' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3724]
-INFO: [Synth 8-6157] synthesizing module 'azmig_auto_us_1' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_auto_us_1_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_us_1' (9#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_auto_us_1_stub.v:6]
-WARNING: [Synth 8-350] instance 'auto_us' of module 'azmig_auto_us_1' requires 72 connections, but only 70 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4011]
-INFO: [Synth 8-6155] done synthesizing module 's01_couplers_imp_1RXOY8P' (10#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3724]
-INFO: [Synth 8-6157] synthesizing module 's02_couplers_imp_1WJUXWG' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4084]
-INFO: [Synth 8-6155] done synthesizing module 's02_couplers_imp_1WJUXWG' (11#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4084]
-INFO: [Synth 8-6157] synthesizing module 's03_couplers_imp_LWAVGO' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4328]
-INFO: [Synth 8-6157] synthesizing module 'azmig_auto_us_2' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_auto_us_2_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_us_2' (12#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_auto_us_2_stub.v:6]
-WARNING: [Synth 8-350] instance 'auto_us' of module 'azmig_auto_us_2' requires 72 connections, but only 70 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4615]
-INFO: [Synth 8-6155] done synthesizing module 's03_couplers_imp_LWAVGO' (13#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4328]
-INFO: [Synth 8-6157] synthesizing module 's04_couplers_imp_1NCQQ4Y' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4688]
-INFO: [Synth 8-6155] done synthesizing module 's04_couplers_imp_1NCQQ4Y' (14#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4688]
-INFO: [Synth 8-6157] synthesizing module 's05_couplers_imp_TZGRAY' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4932]
-INFO: [Synth 8-6157] synthesizing module 'azmig_auto_us_3' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_auto_us_3_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_us_3' (15#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_auto_us_3_stub.v:6]
-WARNING: [Synth 8-350] instance 'auto_us' of module 'azmig_auto_us_3' requires 72 connections, but only 70 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:5219]
-INFO: [Synth 8-6155] done synthesizing module 's05_couplers_imp_TZGRAY' (16#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4932]
-INFO: [Synth 8-6157] synthesizing module 'azmig_xbar_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_xbar_0_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_xbar_0' (17#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_xbar_0_stub.v:6]
-WARNING: [Synth 8-350] instance 'xbar' of module 'azmig_xbar_0' requires 78 connections, but only 76 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:2775]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_mem_axi_ic_0' (18#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:1004]
-INFO: [Synth 8-6157] synthesizing module 'azmig_mig_7series_0_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_mig_7series_0_0_stub.v:5]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_mig_7series_0_0' (19#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_mig_7series_0_0_stub.v:5]
-WARNING: [Synth 8-350] instance 'mig_7series_0' of module 'azmig_mig_7series_0_0' requires 64 connections, but only 57 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:677]
+INFO: [Synth 8-6157] synthesizing module 'azmig_ctrl_0_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_ctrl_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_ctrl_0_0' (3#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_ctrl_0_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'ctrl_0' of module 'azmig_ctrl_0_0' requires 51 connections, but only 39 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:464]
+INFO: [Synth 8-6157] synthesizing module 'azmig_ekf_update_0_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_ekf_update_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_ekf_update_0_0' (4#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_ekf_update_0_0_stub.v:6]
+INFO: [Synth 8-6157] synthesizing module 'azmig_mem_axi_ic_0' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:1240]
+INFO: [Synth 8-6157] synthesizing module 'm00_couplers_imp_2QRP7E' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3598]
+INFO: [Synth 8-6157] synthesizing module 'azmig_auto_cc_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_auto_cc_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_cc_0' (5#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_auto_cc_0_stub.v:6]
+INFO: [Synth 8-6157] synthesizing module 'azmig_auto_ds_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_auto_ds_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_ds_0' (6#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_auto_ds_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'auto_ds' of module 'azmig_auto_ds_0' requires 76 connections, but only 74 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4027]
+INFO: [Synth 8-6155] done synthesizing module 'm00_couplers_imp_2QRP7E' (7#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3598]
+INFO: [Synth 8-6157] synthesizing module 's00_couplers_imp_QISGC1' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4104]
+INFO: [Synth 8-6157] synthesizing module 'azmig_auto_us_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_auto_us_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_us_0' (8#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_auto_us_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'auto_us' of module 'azmig_auto_us_0' requires 76 connections, but only 74 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4391]
+INFO: [Synth 8-6155] done synthesizing module 's00_couplers_imp_QISGC1' (9#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4104]
+INFO: [Synth 8-6157] synthesizing module 's01_couplers_imp_1RXOY8P' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4468]
+INFO: [Synth 8-6157] synthesizing module 'azmig_auto_us_1' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_auto_us_1_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_us_1' (10#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_auto_us_1_stub.v:6]
+WARNING: [Synth 8-350] instance 'auto_us' of module 'azmig_auto_us_1' requires 72 connections, but only 70 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4755]
+INFO: [Synth 8-6155] done synthesizing module 's01_couplers_imp_1RXOY8P' (11#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4468]
+INFO: [Synth 8-6157] synthesizing module 's02_couplers_imp_1WJUXWG' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4828]
+INFO: [Synth 8-6155] done synthesizing module 's02_couplers_imp_1WJUXWG' (12#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:4828]
+INFO: [Synth 8-6157] synthesizing module 's03_couplers_imp_LWAVGO' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:5072]
+INFO: [Synth 8-6157] synthesizing module 'azmig_auto_us_2' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_auto_us_2_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_us_2' (13#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_auto_us_2_stub.v:6]
+WARNING: [Synth 8-350] instance 'auto_us' of module 'azmig_auto_us_2' requires 72 connections, but only 70 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:5359]
+INFO: [Synth 8-6155] done synthesizing module 's03_couplers_imp_LWAVGO' (14#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:5072]
+INFO: [Synth 8-6157] synthesizing module 's04_couplers_imp_1NCQQ4Y' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:5432]
+INFO: [Synth 8-6155] done synthesizing module 's04_couplers_imp_1NCQQ4Y' (15#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:5432]
+INFO: [Synth 8-6157] synthesizing module 's05_couplers_imp_TZGRAY' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:5676]
+INFO: [Synth 8-6157] synthesizing module 'azmig_auto_us_3' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_auto_us_3_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_us_3' (16#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_auto_us_3_stub.v:6]
+WARNING: [Synth 8-350] instance 'auto_us' of module 'azmig_auto_us_3' requires 72 connections, but only 70 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:5963]
+INFO: [Synth 8-6155] done synthesizing module 's05_couplers_imp_TZGRAY' (17#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:5676]
+INFO: [Synth 8-6157] synthesizing module 's06_couplers_imp_YSU9FN' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:6036]
+INFO: [Synth 8-6157] synthesizing module 'azmig_auto_us_4' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_auto_us_4_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_us_4' (18#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_auto_us_4_stub.v:6]
+WARNING: [Synth 8-350] instance 'auto_us' of module 'azmig_auto_us_4' requires 72 connections, but only 70 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:6323]
+INFO: [Synth 8-6155] done synthesizing module 's06_couplers_imp_YSU9FN' (19#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:6036]
+INFO: [Synth 8-6157] synthesizing module 's07_couplers_imp_1IJOT63' [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:6396]
+INFO: [Synth 8-6157] synthesizing module 'azmig_auto_us_5' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_auto_us_5_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_auto_us_5' (20#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_auto_us_5_stub.v:6]
+WARNING: [Synth 8-350] instance 'auto_us' of module 'azmig_auto_us_5' requires 72 connections, but only 70 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:6683]
+INFO: [Synth 8-6155] done synthesizing module 's07_couplers_imp_1IJOT63' (21#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:6396]
+INFO: [Synth 8-6157] synthesizing module 'azmig_xbar_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_xbar_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_xbar_0' (22#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_xbar_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'xbar' of module 'azmig_xbar_0' requires 78 connections, but only 76 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:3519]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_mem_axi_ic_0' (23#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:1240]
+INFO: [Synth 8-6157] synthesizing module 'azmig_mig_7series_0_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_mig_7series_0_0_stub.v:5]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_mig_7series_0_0' (24#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_mig_7series_0_0_stub.v:5]
+WARNING: [Synth 8-350] instance 'mig_7series_0' of module 'azmig_mig_7series_0_0' requires 64 connections, but only 57 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:913]
 INFO: [Synth 8-6157] synthesizing module 'azmig_mig_rst_hi_0' [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_rst_hi_0/synth/azmig_mig_rst_hi_0.v:57]
 INFO: [Synth 8-6157] synthesizing module 'xlconstant_v1_1_5_xlconstant__parameterized0' [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ipshared/4649/hdl/xlconstant_v1_1_vl_rfs.v:23]
 	Parameter CONST_VAL bound to: 1 - type: integer
 	Parameter CONST_WIDTH bound to: 1 - type: integer
-INFO: [Synth 8-6155] done synthesizing module 'xlconstant_v1_1_5_xlconstant__parameterized0' (19#1) [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ipshared/4649/hdl/xlconstant_v1_1_vl_rfs.v:23]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_mig_rst_hi_0' (20#1) [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_rst_hi_0/synth/azmig_mig_rst_hi_0.v:57]
-INFO: [Synth 8-6157] synthesizing module 'azmig_rst_mig_ui_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_rst_mig_ui_0_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_rst_mig_ui_0' (21#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_rst_mig_ui_0_stub.v:6]
-WARNING: [Synth 8-350] instance 'rst_mig_ui' of module 'azmig_rst_mig_ui_0' requires 10 connections, but only 6 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:737]
-INFO: [Synth 8-6157] synthesizing module 'azmig_unified_obs_0_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_unified_obs_0_0_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_unified_obs_0_0' (22#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_unified_obs_0_0_stub.v:6]
-WARNING: [Synth 8-350] instance 'unified_obs_0' of module 'azmig_unified_obs_0_0' requires 189 connections, but only 185 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:744]
-INFO: [Synth 8-6157] synthesizing module 'azmig_util_ds_buf_0_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_util_ds_buf_0_0_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_util_ds_buf_0_0' (23#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_util_ds_buf_0_0_stub.v:6]
-WARNING: [Synth 8-350] instance 'util_ds_buf_0' of module 'azmig_util_ds_buf_0_0' requires 4 connections, but only 3 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:930]
-INFO: [Synth 8-6157] synthesizing module 'azmig_xdma_0_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_xdma_0_0_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_xdma_0_0' (24#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-60352-DESKTOP-QEQDV5I/realtime/azmig_xdma_0_0_stub.v:6]
-WARNING: [Synth 8-350] instance 'xdma_0' of module 'azmig_xdma_0_0' requires 75 connections, but only 67 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:934]
-INFO: [Synth 8-6155] done synthesizing module 'azmig' (25#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:13]
-INFO: [Synth 8-6155] done synthesizing module 'azmig_wrapper' (26#1) [V:/azmig_syn/azmig.srcs/sources_1/imports/hdl/azmig_wrapper.v:12]
+INFO: [Synth 8-6155] done synthesizing module 'xlconstant_v1_1_5_xlconstant__parameterized0' (24#1) [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ipshared/4649/hdl/xlconstant_v1_1_vl_rfs.v:23]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_mig_rst_hi_0' (25#1) [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_rst_hi_0/synth/azmig_mig_rst_hi_0.v:57]
+INFO: [Synth 8-6157] synthesizing module 'azmig_rst_mig_ui_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_rst_mig_ui_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_rst_mig_ui_0' (26#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_rst_mig_ui_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'rst_mig_ui' of module 'azmig_rst_mig_ui_0' requires 10 connections, but only 6 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:973]
+INFO: [Synth 8-6157] synthesizing module 'azmig_unified_obs_0_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_unified_obs_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_unified_obs_0_0' (27#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_unified_obs_0_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'unified_obs_0' of module 'azmig_unified_obs_0_0' requires 189 connections, but only 185 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:980]
+INFO: [Synth 8-6157] synthesizing module 'azmig_util_ds_buf_0_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_util_ds_buf_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_util_ds_buf_0_0' (28#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_util_ds_buf_0_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'util_ds_buf_0' of module 'azmig_util_ds_buf_0_0' requires 4 connections, but only 3 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:1166]
+INFO: [Synth 8-6157] synthesizing module 'azmig_xdma_0_0' [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_xdma_0_0_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_xdma_0_0' (29#1) [V:/azmig_syn/azmig.runs/synth_1/.Xil/Vivado-48076-DESKTOP-QEQDV5I/realtime/azmig_xdma_0_0_stub.v:6]
+WARNING: [Synth 8-350] instance 'xdma_0' of module 'azmig_xdma_0_0' requires 75 connections, but only 67 given [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:1170]
+INFO: [Synth 8-6155] done synthesizing module 'azmig' (30#1) [V:/azmig_syn/azmig.srcs/sources_1/bd/azmig/synth/azmig.v:13]
+INFO: [Synth 8-6155] done synthesizing module 'azmig_wrapper' (31#1) [V:/azmig_syn/azmig.srcs/sources_1/imports/hdl/azmig_wrapper.v:12]
+WARNING: [Synth 8-3331] design s07_couplers_imp_1IJOT63 has unconnected port M_ACLK
+WARNING: [Synth 8-3331] design s07_couplers_imp_1IJOT63 has unconnected port M_ARESETN
+WARNING: [Synth 8-3331] design s07_couplers_imp_1IJOT63 has unconnected port S_AXI_arlock[1]
+WARNING: [Synth 8-3331] design s07_couplers_imp_1IJOT63 has unconnected port S_AXI_awlock[1]
+WARNING: [Synth 8-3331] design s06_couplers_imp_YSU9FN has unconnected port M_ACLK
+WARNING: [Synth 8-3331] design s06_couplers_imp_YSU9FN has unconnected port M_ARESETN
+WARNING: [Synth 8-3331] design s06_couplers_imp_YSU9FN has unconnected port S_AXI_arlock[1]
+WARNING: [Synth 8-3331] design s06_couplers_imp_YSU9FN has unconnected port S_AXI_awlock[1]
 WARNING: [Synth 8-3331] design s05_couplers_imp_TZGRAY has unconnected port M_ACLK
 WARNING: [Synth 8-3331] design s05_couplers_imp_TZGRAY has unconnected port M_ARESETN
 WARNING: [Synth 8-3331] design s05_couplers_imp_TZGRAY has unconnected port S_AXI_arlock[1]
@@ -183,7 +204,7 @@ WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AX
 WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[31]
 WARNING: [Synth 8-3331] design m00_couplers_imp_2QRP7E has unconnected port S_AXI_awaddr[30]
 ---------------------------------------------------------------------------------
-Finished RTL Elaboration : Time (s): cpu = 00:00:03 ; elapsed = 00:00:03 . Memory (MB): peak = 587.227 ; gain = 171.602
+Finished RTL Elaboration : Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 593.848 ; gain = 176.086
 ---------------------------------------------------------------------------------
 
 Report Check Netlist:
@@ -196,10 +217,10 @@ Report Check Netlist:
 Start Handling Custom Attributes
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Handling Custom Attributes : Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 587.227 ; gain = 171.602
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 593.848 ; gain = 176.086
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished RTL Optimization Phase 1 : Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 587.227 ; gain = 171.602
+Finished RTL Optimization Phase 1 : Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 593.848 ; gain = 176.086
 ---------------------------------------------------------------------------------
 INFO: [Device 21-403] Loading part xc7z100ffg900-2
 INFO: [Project 1-570] Preparing netlist for logic optimization
@@ -210,6 +231,8 @@ Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_ctrl_0_0/a
 Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_ctrl_0_0/azmig_ctrl_0_0/azmig_ctrl_0_0_in_context.xdc] for cell 'azmig_i/ctrl_0'
 Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_unified_obs_0_0/azmig_unified_obs_0_0/azmig_unified_obs_0_0_in_context.xdc] for cell 'azmig_i/unified_obs_0'
 Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_unified_obs_0_0/azmig_unified_obs_0_0/azmig_unified_obs_0_0_in_context.xdc] for cell 'azmig_i/unified_obs_0'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_ekf_update_0_0/azmig_ekf_update_0_0/azmig_ekf_update_0_0_in_context.xdc] for cell 'azmig_i/ekf_update_0'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_ekf_update_0_0/azmig_ekf_update_0_0/azmig_ekf_update_0_0_in_context.xdc] for cell 'azmig_i/ekf_update_0'
 Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_util_ds_buf_0_0/azmig_util_ds_buf_0_0/azmig_util_ds_buf_0_0_in_context.xdc] for cell 'azmig_i/util_ds_buf_0'
 Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_util_ds_buf_0_0/azmig_util_ds_buf_0_0/azmig_util_ds_buf_0_0_in_context.xdc] for cell 'azmig_i/util_ds_buf_0'
 Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_mig_7series_0_0/azmig_mig_7series_0_0/azmig_mig_7series_0_0_in_context.xdc] for cell 'azmig_i/mig_7series_0'
@@ -226,6 +249,10 @@ Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_2/
 Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_2/azmig_auto_us_2/azmig_auto_us_2_in_context.xdc] for cell 'azmig_i/mem_axi_ic/s03_couplers/auto_us'
 Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_3/azmig_auto_us_3/azmig_auto_us_3_in_context.xdc] for cell 'azmig_i/mem_axi_ic/s05_couplers/auto_us'
 Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_3/azmig_auto_us_3/azmig_auto_us_3_in_context.xdc] for cell 'azmig_i/mem_axi_ic/s05_couplers/auto_us'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_4/azmig_auto_us_4/azmig_auto_us_3_in_context.xdc] for cell 'azmig_i/mem_axi_ic/s06_couplers/auto_us'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_4/azmig_auto_us_4/azmig_auto_us_3_in_context.xdc] for cell 'azmig_i/mem_axi_ic/s06_couplers/auto_us'
+Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_5/azmig_auto_us_5/azmig_auto_us_3_in_context.xdc] for cell 'azmig_i/mem_axi_ic/s07_couplers/auto_us'
+Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_us_5/azmig_auto_us_5/azmig_auto_us_3_in_context.xdc] for cell 'azmig_i/mem_axi_ic/s07_couplers/auto_us'
 Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_cc_0/azmig_auto_cc_0/azmig_auto_cc_0_in_context.xdc] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc'
 Finished Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_cc_0/azmig_auto_cc_0/azmig_auto_cc_0_in_context.xdc] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_cc'
 Parsing XDC File [v:/azmig_syn/azmig.srcs/sources_1/bd/azmig/ip/azmig_auto_ds_0/azmig_auto_ds_0/azmig_auto_ds_0_in_context.xdc] for cell 'azmig_i/mem_axi_ic/m00_couplers/auto_ds'
@@ -238,25 +265,26 @@ INFO: [Project 1-236] Implementation specific constraints were found while readi
 Resolution: To avoid this warning, move constraints listed in [.Xil/azmig_wrapper_propImpl.xdc] to another XDC file and exclude this new file from synthesis with the used_in_synthesis property (File Properties dialog in GUI) and re-run elaboration/synthesis.
 Parsing XDC File [V:/azmig_syn/azmig.runs/synth_1/dont_touch.xdc]
 Finished Parsing XDC File [V:/azmig_syn/azmig.runs/synth_1/dont_touch.xdc]
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1051.672 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.001 . Memory (MB): peak = 1060.164 ; gain = 0.000
 Completed Processing XDC Constraints
 
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1051.672 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1060.164 ; gain = 0.000
 INFO: [Project 1-111] Unisim Transformation Summary:
 No Unisim elements were transformed.
 
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1051.672 ; gain = 0.000
-Constraint Validation Runtime : Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.006 . Memory (MB): peak = 1051.672 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1060.164 ; gain = 0.000
+Constraint Validation Runtime : Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.006 . Memory (MB): peak = 1060.164 ; gain = 0.000
+WARNING: [Timing 38-316] Clock period '10.000' specified during out-of-context synthesis of instance 'azmig_i/ekf_update_0' at clock pin 'ap_clk' is different from the actual clock period '8.000', this can lead to different synthesis results.
 WARNING: [Timing 38-316] Clock period '10.000' specified during out-of-context synthesis of instance 'azmig_i/unified_obs_0' at clock pin 'ap_clk' is different from the actual clock period '8.000', this can lead to different synthesis results.
 ---------------------------------------------------------------------------------
-Finished Constraint Validation : Time (s): cpu = 00:00:12 ; elapsed = 00:00:14 . Memory (MB): peak = 1051.672 ; gain = 636.047
+Finished Constraint Validation : Time (s): cpu = 00:00:12 ; elapsed = 00:00:14 . Memory (MB): peak = 1061.145 ; gain = 643.383
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Loading Part and Timing Information
 ---------------------------------------------------------------------------------
 Loading part: xc7z100ffg900-2
 ---------------------------------------------------------------------------------
-Finished Loading Part and Timing Information : Time (s): cpu = 00:00:12 ; elapsed = 00:00:14 . Memory (MB): peak = 1051.672 ; gain = 636.047
+Finished Loading Part and Timing Information : Time (s): cpu = 00:00:12 ; elapsed = 00:00:14 . Memory (MB): peak = 1061.145 ; gain = 643.383
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Applying 'set_property' XDC Constraints
@@ -414,6 +442,7 @@ Applied set_property CLOCK_BUFFER_TYPE = NONE for sys_clk_p. (constraint file  v
 Applied set_property DONT_TOUCH = true for azmig_i. (constraint file  auto generated constraint, line ).
 Applied set_property DONT_TOUCH = true for azmig_i/ctrl_0. (constraint file  auto generated constraint, line ).
 Applied set_property DONT_TOUCH = true for azmig_i/unified_obs_0. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for azmig_i/ekf_update_0. (constraint file  auto generated constraint, line ).
 Applied set_property DONT_TOUCH = true for azmig_i/const_zero_32. (constraint file  auto generated constraint, line ).
 Applied set_property DONT_TOUCH = true for azmig_i/mig_rst_hi. (constraint file  auto generated constraint, line ).
 Applied set_property DONT_TOUCH = true for azmig_i/util_ds_buf_0. (constraint file  auto generated constraint, line ).
@@ -424,15 +453,17 @@ Applied set_property DONT_TOUCH = true for azmig_i/mem_axi_ic/s00_couplers/auto_
 Applied set_property DONT_TOUCH = true for azmig_i/mem_axi_ic/s01_couplers/auto_us. (constraint file  auto generated constraint, line ).
 Applied set_property DONT_TOUCH = true for azmig_i/mem_axi_ic/s03_couplers/auto_us. (constraint file  auto generated constraint, line ).
 Applied set_property DONT_TOUCH = true for azmig_i/mem_axi_ic/s05_couplers/auto_us. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for azmig_i/mem_axi_ic/s06_couplers/auto_us. (constraint file  auto generated constraint, line ).
+Applied set_property DONT_TOUCH = true for azmig_i/mem_axi_ic/s07_couplers/auto_us. (constraint file  auto generated constraint, line ).
 Applied set_property DONT_TOUCH = true for azmig_i/mem_axi_ic/m00_couplers/auto_cc. (constraint file  auto generated constraint, line ).
 Applied set_property DONT_TOUCH = true for azmig_i/mem_axi_ic/m00_couplers/auto_ds. (constraint file  auto generated constraint, line ).
 Applied set_property DONT_TOUCH = true for azmig_i/mem_axi_ic. (constraint file  auto generated constraint, line ).
 Applied set_property DONT_TOUCH = true for azmig_i/rst_mig_ui. (constraint file  auto generated constraint, line ).
 ---------------------------------------------------------------------------------
-Finished applying 'set_property' XDC Constraints : Time (s): cpu = 00:00:12 ; elapsed = 00:00:14 . Memory (MB): peak = 1051.672 ; gain = 636.047
+Finished applying 'set_property' XDC Constraints : Time (s): cpu = 00:00:12 ; elapsed = 00:00:15 . Memory (MB): peak = 1061.145 ; gain = 643.383
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished RTL Optimization Phase 2 : Time (s): cpu = 00:00:12 ; elapsed = 00:00:14 . Memory (MB): peak = 1051.672 ; gain = 636.047
+Finished RTL Optimization Phase 2 : Time (s): cpu = 00:00:13 ; elapsed = 00:00:15 . Memory (MB): peak = 1061.145 ; gain = 643.383
 ---------------------------------------------------------------------------------
 
 Report RTL Partitions:
@@ -469,17 +500,9 @@ Start Cross Boundary and Area Optimization
 Warning: Parallel synthesis criteria is not met
 WARNING: [Synth 8-3331] design azmig_mem_axi_ic_0 has unconnected port S01_AXI_arlock[1]
 WARNING: [Synth 8-3331] design azmig_mem_axi_ic_0 has unconnected port S01_AXI_awlock[1]
-WARNING: [Synth 8-3331] design azmig_mem_axi_ic_0 has unconnected port S02_ACLK
-WARNING: [Synth 8-3331] design azmig_mem_axi_ic_0 has unconnected port S02_ARESETN
-WARNING: [Synth 8-3331] design azmig_mem_axi_ic_0 has unconnected port S02_AXI_arlock[1]
-WARNING: [Synth 8-3331] design azmig_mem_axi_ic_0 has unconnected port S02_AXI_awlock[1]
-WARNING: [Synth 8-3331] design azmig_mem_axi_ic_0 has unconnected port S03_AXI_arlock[1]
-WARNING: [Synth 8-3331] design azmig_mem_axi_ic_0 has unconnected port S03_AXI_awlock[1]
-WARNING: [Synth 8-3331] design azmig_mem_axi_ic_0 has unconnected port S04_ACLK
-WARNING: [Synth 8-3331] design azmig_mem_axi_ic_0 has unconnected port S04_ARESETN
 INFO: [Common 17-14] Message 'Synth 8-3331' appears 100 times and further instances of the messages will be disabled. Use the Tcl command set_msg_config to change the current settings.
 ---------------------------------------------------------------------------------
-Finished Cross Boundary and Area Optimization : Time (s): cpu = 00:00:13 ; elapsed = 00:00:15 . Memory (MB): peak = 1051.672 ; gain = 636.047
+Finished Cross Boundary and Area Optimization : Time (s): cpu = 00:00:13 ; elapsed = 00:00:16 . Memory (MB): peak = 1061.145 ; gain = 643.383
 ---------------------------------------------------------------------------------
 
 Report RTL Partitions:
@@ -496,13 +519,13 @@ INFO: [Synth 8-5578] Moved timing constraint from pin 'azmig_i/mig_7series_0/ui_
 INFO: [Synth 8-5578] Moved timing constraint from pin 'azmig_i/xdma_0/axi_aclk' to pin 'azmig_i/xdma_0/bbstub_axi_aclk/O'
 INFO: [Synth 8-5819] Moved 4 constraints on hierarchical pins to their respective driving/loading pins
 ---------------------------------------------------------------------------------
-Finished Applying XDC Timing Constraints : Time (s): cpu = 00:00:21 ; elapsed = 00:00:24 . Memory (MB): peak = 1051.672 ; gain = 636.047
+Finished Applying XDC Timing Constraints : Time (s): cpu = 00:00:22 ; elapsed = 00:00:25 . Memory (MB): peak = 1061.145 ; gain = 643.383
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Timing Optimization
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Timing Optimization : Time (s): cpu = 00:00:22 ; elapsed = 00:00:24 . Memory (MB): peak = 1051.672 ; gain = 636.047
+Finished Timing Optimization : Time (s): cpu = 00:00:22 ; elapsed = 00:00:26 . Memory (MB): peak = 1061.145 ; gain = 643.383
 ---------------------------------------------------------------------------------
 
 Report RTL Partitions:
@@ -514,7 +537,7 @@ Report RTL Partitions:
 Start Technology Mapping
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Technology Mapping : Time (s): cpu = 00:00:22 ; elapsed = 00:00:24 . Memory (MB): peak = 1051.672 ; gain = 636.047
+Finished Technology Mapping : Time (s): cpu = 00:00:23 ; elapsed = 00:00:26 . Memory (MB): peak = 1061.145 ; gain = 643.383
 ---------------------------------------------------------------------------------
 
 Report RTL Partitions:
@@ -538,7 +561,7 @@ Start Final Netlist Cleanup
 Finished Final Netlist Cleanup
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished IO Insertion : Time (s): cpu = 00:00:23 ; elapsed = 00:00:25 . Memory (MB): peak = 1051.672 ; gain = 636.047
+Finished IO Insertion : Time (s): cpu = 00:00:23 ; elapsed = 00:00:27 . Memory (MB): peak = 1061.145 ; gain = 643.383
 ---------------------------------------------------------------------------------
 
 Report Check Netlist:
@@ -551,7 +574,7 @@ Report Check Netlist:
 Start Renaming Generated Instances
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Renaming Generated Instances : Time (s): cpu = 00:00:23 ; elapsed = 00:00:25 . Memory (MB): peak = 1051.672 ; gain = 636.047
+Finished Renaming Generated Instances : Time (s): cpu = 00:00:23 ; elapsed = 00:00:27 . Memory (MB): peak = 1061.145 ; gain = 643.383
 ---------------------------------------------------------------------------------
 
 Report RTL Partitions:
@@ -563,25 +586,25 @@ Report RTL Partitions:
 Start Rebuilding User Hierarchy
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Rebuilding User Hierarchy : Time (s): cpu = 00:00:23 ; elapsed = 00:00:25 . Memory (MB): peak = 1051.672 ; gain = 636.047
+Finished Rebuilding User Hierarchy : Time (s): cpu = 00:00:23 ; elapsed = 00:00:27 . Memory (MB): peak = 1061.145 ; gain = 643.383
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Renaming Generated Ports
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Renaming Generated Ports : Time (s): cpu = 00:00:23 ; elapsed = 00:00:25 . Memory (MB): peak = 1051.672 ; gain = 636.047
+Finished Renaming Generated Ports : Time (s): cpu = 00:00:23 ; elapsed = 00:00:27 . Memory (MB): peak = 1061.145 ; gain = 643.383
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Handling Custom Attributes
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Handling Custom Attributes : Time (s): cpu = 00:00:23 ; elapsed = 00:00:25 . Memory (MB): peak = 1051.672 ; gain = 636.047
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:24 ; elapsed = 00:00:27 . Memory (MB): peak = 1061.145 ; gain = 643.383
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Renaming Generated Nets
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Renaming Generated Nets : Time (s): cpu = 00:00:23 ; elapsed = 00:00:25 . Memory (MB): peak = 1051.672 ; gain = 636.047
+Finished Renaming Generated Nets : Time (s): cpu = 00:00:24 ; elapsed = 00:00:27 . Memory (MB): peak = 1061.145 ; gain = 643.383
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Writing Synthesis Report
@@ -598,12 +621,15 @@ Report BlackBoxes:
 |5     |azmig_auto_us_1       |         1|
 |6     |azmig_auto_us_2       |         1|
 |7     |azmig_auto_us_3       |         1|
-|8     |azmig_ctrl_0_0        |         1|
-|9     |azmig_mig_7series_0_0 |         1|
-|10    |azmig_rst_mig_ui_0    |         1|
-|11    |azmig_unified_obs_0_0 |         1|
-|12    |azmig_util_ds_buf_0_0 |         1|
-|13    |azmig_xdma_0_0        |         1|
+|8     |azmig_auto_us_4       |         1|
+|9     |azmig_auto_us_5       |         1|
+|10    |azmig_ctrl_0_0        |         1|
+|11    |azmig_ekf_update_0_0  |         1|
+|12    |azmig_mig_7series_0_0 |         1|
+|13    |azmig_rst_mig_ui_0    |         1|
+|14    |azmig_unified_obs_0_0 |         1|
+|15    |azmig_util_ds_buf_0_0 |         1|
+|16    |azmig_xdma_0_0        |         1|
 +------+----------------------+----------+
 
 Report Cell Usage:
@@ -616,52 +642,57 @@ Report Cell Usage:
 |4     |azmig_auto_us_1       |     1|
 |5     |azmig_auto_us_2       |     1|
 |6     |azmig_auto_us_3       |     1|
-|7     |azmig_ctrl_0_0        |     1|
-|8     |azmig_mig_7series_0_0 |     1|
-|9     |azmig_rst_mig_ui_0    |     1|
-|10    |azmig_unified_obs_0_0 |     1|
-|11    |azmig_util_ds_buf_0_0 |     1|
-|12    |azmig_xbar_0          |     1|
-|13    |azmig_xdma_0_0        |     1|
-|14    |IBUF                  |     9|
-|15    |OBUF                  |     8|
+|7     |azmig_auto_us_4       |     1|
+|8     |azmig_auto_us_5       |     1|
+|9     |azmig_ctrl_0_0        |     1|
+|10    |azmig_ekf_update_0_0  |     1|
+|11    |azmig_mig_7series_0_0 |     1|
+|12    |azmig_rst_mig_ui_0    |     1|
+|13    |azmig_unified_obs_0_0 |     1|
+|14    |azmig_util_ds_buf_0_0 |     1|
+|15    |azmig_xbar_0          |     1|
+|16    |azmig_xdma_0_0        |     1|
+|17    |IBUF                  |     9|
+|18    |OBUF                  |     8|
 +------+----------------------+------+
 
 Report Instance Areas:
 +------+-------------------+-------------------------+------+
 |      |Instance           |Module                   |Cells |
 +------+-------------------+-------------------------+------+
-|1     |top                |                         | 13453|
-|2     |  azmig_i          |azmig                    | 13436|
+|1     |top                |                         | 16537|
+|2     |  azmig_i          |azmig                    | 16520|
 |3     |    const_zero_32  |azmig_const_zero_32_0    |     0|
-|4     |    mem_axi_ic     |azmig_mem_axi_ic_0       |  9620|
+|4     |    mem_axi_ic     |azmig_mem_axi_ic_0       | 12232|
 |5     |      m00_couplers |m00_couplers_imp_2QRP7E  |  2174|
 |6     |      s00_couplers |s00_couplers_imp_QISGC1  |   914|
 |7     |      s01_couplers |s01_couplers_imp_1RXOY8P |   842|
 |8     |      s03_couplers |s03_couplers_imp_LWAVGO  |   970|
 |9     |      s05_couplers |s05_couplers_imp_TZGRAY  |   778|
-|10    |    mig_rst_hi     |azmig_mig_rst_hi_0       |     0|
+|10    |      s06_couplers |s06_couplers_imp_YSU9FN  |   778|
+|11    |      s07_couplers |s07_couplers_imp_1IJOT63 |   778|
+|12    |    mig_rst_hi     |azmig_mig_rst_hi_0       |     0|
 +------+-------------------+-------------------------+------+
 ---------------------------------------------------------------------------------
-Finished Writing Synthesis Report : Time (s): cpu = 00:00:23 ; elapsed = 00:00:25 . Memory (MB): peak = 1051.672 ; gain = 636.047
+Finished Writing Synthesis Report : Time (s): cpu = 00:00:24 ; elapsed = 00:00:27 . Memory (MB): peak = 1061.145 ; gain = 643.383
 ---------------------------------------------------------------------------------
-Synthesis finished with 0 errors, 0 critical warnings and 14 warnings.
-Synthesis Optimization Runtime : Time (s): cpu = 00:00:13 ; elapsed = 00:00:17 . Memory (MB): peak = 1051.672 ; gain = 171.602
-Synthesis Optimization Complete : Time (s): cpu = 00:00:23 ; elapsed = 00:00:25 . Memory (MB): peak = 1051.672 ; gain = 636.047
+Synthesis finished with 0 errors, 0 critical warnings and 18 warnings.
+Synthesis Optimization Runtime : Time (s): cpu = 00:00:14 ; elapsed = 00:00:19 . Memory (MB): peak = 1061.145 ; gain = 176.086
+Synthesis Optimization Complete : Time (s): cpu = 00:00:24 ; elapsed = 00:00:27 . Memory (MB): peak = 1061.145 ; gain = 643.383
 INFO: [Project 1-571] Translating synthesized netlist
 INFO: [Project 1-570] Preparing netlist for logic optimization
 INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1073.336 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1085.711 ; gain = 0.000
 INFO: [Project 1-111] Unisim Transformation Summary:
 No Unisim elements were transformed.
 
 INFO: [Common 17-83] Releasing license: Synthesis
-73 Infos, 113 Warnings, 0 Critical Warnings and 0 Errors encountered.
+84 Infos, 116 Warnings, 0 Critical Warnings and 0 Errors encountered.
 synth_design completed successfully
-synth_design: Time (s): cpu = 00:00:27 ; elapsed = 00:00:30 . Memory (MB): peak = 1073.352 ; gain = 664.582
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1073.352 ; gain = 0.000
+synth_design: Time (s): cpu = 00:00:28 ; elapsed = 00:00:32 . Memory (MB): peak = 1085.711 ; gain = 674.848
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 1085.711 ; gain = 0.000
 WARNING: [Constraints 18-5210] No constraints selected for write.
 Resolution: This message can indicate that there are no constraints for the design, or it can indicate that the used_in flags are set such that the constraints are ignored. This later case is used when running synth_design to not write synthesis constraints to the resulting checkpoint. Instead, project constraints are read when the synthesized design is opened.
 INFO: [Common 17-1381] The checkpoint 'V:/azmig_syn/azmig.runs/synth_1/azmig_wrapper.dcp' has been generated.
 INFO: [runtcl-4] Executing : report_utilization -file azmig_wrapper_utilization_synth.rpt -pb azmig_wrapper_utilization_synth.pb
-INFO: [Common 17-206] Exiting Vivado at Mon Jul  6 14:54:37 2026...
+INFO: [Common 17-206] Exiting Vivado at Mon Jul  6 21:05:36 2026...
