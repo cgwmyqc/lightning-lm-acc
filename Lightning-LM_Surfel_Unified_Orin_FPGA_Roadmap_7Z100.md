@@ -6218,6 +6218,43 @@ No new Failed to detect XDMA config BAR
 No new CmpltTO or AER fatal
 ```
 
+Stage65B Orin result on 2026-07-18:
+
+```text
+Result: PASS
+BDF: 0005:01:00.0 [10ee:7024]
+Kernel driver in use: xdma
+/dev/xdma0_user: present
+/dev/xdma0_h2c_0: present
+/dev/xdma0_c2h_0: present
+enable: 1
+PCIe: LnkCap 5GT/s x4, LnkSta 5GT/s x1 downgraded
+SHIM_SMOKE_PASS
+REG_SMOKE_PASS
+DDR_SMOKE_PASS
+VERSION=0x00020002
+CTRL_BASE=0x00001000
+KERNEL_SEL=4
+DDR ranges passed:
+  scan_points        0x00000000
+  pose               0x01000000
+  map_header         0x01001000
+  params             0x01002000
+  active_blocks      0x02000000
+  obs_cells          0x10000000
+  output             0x30000000
+  ekf_update_input   0x30010000
+  ekf_update_output  0x30020000
+Kernel log: no new Failed to detect XDMA config BAR, CmpltTO, AER fatal,
+offline, or frozen errors.
+Report: reports/fpga/runtime/stage65b_ekf_update_bd_orin/
+```
+
+Conclusion: the Stage65B EKF update IP BD integration did not break XDMA BAR
+probe, BAR shim/control access, or the PL DDR/MIG path. The PCIe link remains
+Gen2 x1 and should continue to be tracked as a performance issue, but it does
+not block Stage65C functional golden bring-up.
+
 If Stage65B Orin smoke fails, do not run EKF golden or online mapping. First
 check whether the new EKF IP BD integration affected XDMA BAR probe, BAR shim,
 MIG interconnect, or the PL DDR address map. If Stage65B Orin smoke passes,
