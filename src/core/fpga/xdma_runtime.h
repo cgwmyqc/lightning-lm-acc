@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "common/point_def.h"
+#include "core/lio/mapping_eskf_update.h"
 #include "core/localization/surfel_loc/surfel_loc_types.h"
 #include "fpga/abi/slam_accel_abi.h"
 
@@ -55,6 +56,31 @@ class XdmaRuntime {
         std::array<uint64_t, 56> raw_output_words = {};
     };
 
+    struct EkfUpdateRunResult {
+        struct Timing {
+            double total_sec = 0.0;
+            double mutex_wait_sec = 0.0;
+            double lock_sec = 0.0;
+            double open_sec = 0.0;
+            double h2c_input_sec = 0.0;
+            double verify_readback_sec = 0.0;
+            double output_zero_sec = 0.0;
+            double reg_config_sec = 0.0;
+            double hls_wait_sec = 0.0;
+            double c2h_output_sec = 0.0;
+        };
+
+        uint32_t status = 0;
+        uint32_t error = 0;
+        uint32_t run_count_before = 0;
+        uint32_t run_count_after = 0;
+        double elapsed_sec = 0.0;
+        Timing timing;
+        mapping_update::UpdateOutput output;
+        std::vector<uint64_t> raw_input_words;
+        std::vector<uint64_t> raw_output_words;
+    };
+
     explicit XdmaRuntime(Options options);
 
     bool ShimSmoke(std::string* error = nullptr) const;
@@ -80,6 +106,9 @@ class XdmaRuntime {
                                  const loc::ActiveMapBuffer& active_map,
                                  const SlamAccelObservationParams& params, bool write_full_image,
                                  bool verify_readback, RunResult& result, std::string* error = nullptr) const;
+    bool RunMappingEkfUpdate(const mapping_update::UpdateInput& input, bool write_full_image,
+                             bool verify_readback, EkfUpdateRunResult& result,
+                             std::string* error = nullptr) const;
 
     const Options& GetOptions() const { return options_; }
 

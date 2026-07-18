@@ -1,26 +1,29 @@
-﻿XSDB_CONNECT=localhost:3121
+XSDB_CONNECT=localhost:3121
 JTAG_TARGETS_BEGIN
 JTAG_TARGETS_END
 BITSTREAM_PATH=F:/Project_HITZRI/26-06-06_Lightninglm_fpga_acc/lightning-lm-acc/fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit
 
 initializing
   0%    0MB   0.0MB/s  ??:?? ETA
-  8%    0MB   1.6MB/s  ??:?? ETA
- 14%    1MB   1.4MB/s  ??:?? ETA
- 19%    1MB   1.3MB/s  ??:?? ETA
- 26%    2MB   1.2MB/s  ??:?? ETA
- 31%    3MB   1.2MB/s  ??:?? ETA
- 37%    3MB   1.2MB/s  00:05 ETA
- 44%    4MB   1.2MB/s  00:04 ETA
- 50%    4MB   1.2MB/s  00:04 ETA
- 56%    5MB   1.2MB/s  00:03 ETA
- 63%    6MB   1.2MB/s  00:03 ETA
- 69%    6MB   1.2MB/s  00:02 ETA
- 76%    7MB   1.2MB/s  00:01 ETA
- 82%    7MB   1.2MB/s  00:01 ETA
- 89%    8MB   1.2MB/s  00:00 ETA
- 95%    9MB   1.2MB/s  00:00 ETA
-100%    9MB   1.2MB/s  00:08    
+  6%    0MB   1.6MB/s  ??:?? ETA
+ 11%    1MB   1.4MB/s  ??:?? ETA
+ 16%    1MB   1.3MB/s  ??:?? ETA
+ 21%    2MB   1.3MB/s  ??:?? ETA
+ 26%    3MB   1.2MB/s  ??:?? ETA
+ 32%    3MB   1.2MB/s  00:06 ETA
+ 38%    4MB   1.2MB/s  00:05 ETA
+ 43%    5MB   1.2MB/s  00:05 ETA
+ 48%    5MB   1.2MB/s  00:05 ETA
+ 54%    6MB   1.2MB/s  00:04 ETA
+ 59%    7MB   1.2MB/s  00:04 ETA
+ 64%    7MB   1.2MB/s  00:03 ETA
+ 70%    8MB   1.2MB/s  00:03 ETA
+ 75%    8MB   1.2MB/s  00:02 ETA
+ 80%    9MB   1.2MB/s  00:01 ETA
+ 86%   10MB   1.2MB/s  00:01 ETA
+ 91%   10MB   1.2MB/s  00:00 ETA
+ 96%   11MB   1.2MB/s  00:00 ETA
+100%   11MB   1.2MB/s  00:10
 FPGA_STATE=FPGA is configured
 FPGA_CONFIG_STATUS=CONFIG STATUS: 1175486460
                                CRC ERROR (Bits [0]): 0

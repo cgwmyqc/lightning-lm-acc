@@ -31,6 +31,54 @@ constexpr uint32_t kShimScratch1Offset = 0x00Cu;
 
 constexpr uint32_t kStatusDone = 1u << 2u;
 constexpr uint32_t kStatusError = 1u << 3u;
+constexpr uint32_t kEkfInMagic = 0x45554650u;   // EUFP
+constexpr uint32_t kEkfOutMagic = 0x4555464Fu;  // EUFO
+constexpr uint32_t kEkfVersion = 1u;
+constexpr int kEkfStateDim = 12;
+constexpr int kEkfObsDim = 6;
+constexpr int kEkfMat12Words = kEkfStateDim * kEkfStateDim;
+constexpr int kEkfMat6Words = kEkfObsDim * kEkfObsDim;
+
+enum EkfInputWordOffset {
+    kEkfInMagicVersion = 0,
+    kEkfInFlags = 1,
+    kEkfInFrameIter = 2,
+    kEkfInCurrentState = 3,
+    kEkfInPropagatedCov = kEkfInCurrentState + 17,
+    kEkfInHth = kEkfInPropagatedCov + kEkfMat12Words,
+    kEkfInHtr = kEkfInHth + kEkfMat6Words,
+    kEkfInDxFromStart = kEkfInHtr + kEkfObsDim,
+    kEkfInParams = kEkfInDxFromStart + kEkfStateDim,
+    kEkfInLimit = kEkfInParams + 6,
+    kEkfInWords = kEkfInLimit + kEkfStateDim
+};
+
+enum EkfOutputWordOffset {
+    kEkfOutMagicVersion = 0,
+    kEkfOutStatus = 1,
+    kEkfOutNullity = 2,
+    kEkfOutDxCurrent = 3,
+    kEkfOutKR = kEkfOutDxCurrent + kEkfStateDim,
+    kEkfOutKH = kEkfOutKR + kEkfStateDim,
+    kEkfOutHthEff = kEkfOutKH + kEkfMat12Words,
+    kEkfOutHtrEff = kEkfOutHthEff + kEkfMat6Words,
+    kEkfOutUpdatedState = kEkfOutHtrEff + kEkfObsDim,
+    kEkfOutWorkingCov = kEkfOutUpdatedState + 17,
+    kEkfOutUpdatedCov = kEkfOutWorkingCov + kEkfMat12Words,
+    kEkfOutDiagnostics = kEkfOutUpdatedCov + kEkfMat12Words,
+    kEkfOutWords = kEkfOutDiagnostics + 4
+};
+
+enum EkfStatusBits {
+    kEkfStatusSuccess = 1u << 0u,
+    kEkfStatusRejected = 1u << 1u,
+    kEkfStatusConverged = 1u << 2u,
+    kEkfStatusCovarianceFinalized = 1u << 3u,
+    kEkfStatusEigenFailed = 1u << 8u,
+    kEkfStatusInverseFailed = 1u << 9u,
+    kEkfStatusNanDx = 1u << 10u,
+    kEkfStatusStepRejected = 1u << 11u
+};
 std::mutex g_observation_transaction_mutex;
 using Clock = std::chrono::steady_clock;
 
@@ -477,6 +525,170 @@ bool XdmaRuntime::DdrSmoke(size_t pattern_size, std::string* error) const {
 
 namespace {
 
+uint64_t PackU32Pair(uint32_t lo, uint32_t hi) {
+    return (static_cast<uint64_t>(hi) << 32) | static_cast<uint64_t>(lo);
+}
+
+uint64_t DoubleToU64(double value) {
+    uint64_t bits = 0;
+    static_assert(sizeof(bits) == sizeof(value), "double must be 64-bit");
+    std::memcpy(&bits, &value, sizeof(bits));
+    return bits;
+}
+
+double U64ToDouble(uint64_t bits) {
+    double value = 0.0;
+    static_assert(sizeof(bits) == sizeof(value), "double must be 64-bit");
+    std::memcpy(&value, &bits, sizeof(value));
+    return value;
+}
+
+void PackEkfNavState(const NavState& state, std::vector<uint64_t>& words, int base) {
+    const Quatd q = state.rot_.unit_quaternion();
+    words[base + 0] = DoubleToU64(state.timestamp_);
+    for (int i = 0; i < 3; ++i) {
+        words[base + 1 + i] = DoubleToU64(state.pos_[i]);
+    }
+    const auto coeffs = q.coeffs();
+    for (int i = 0; i < 4; ++i) {
+        words[base + 4 + i] = DoubleToU64(coeffs[i]);
+    }
+    for (int i = 0; i < 3; ++i) {
+        words[base + 8 + i] = DoubleToU64(state.vel_[i]);
+        words[base + 11 + i] = DoubleToU64(state.bg_[i]);
+        words[base + 14 + i] = DoubleToU64(state.grav_[i]);
+    }
+}
+
+NavState UnpackEkfNavState(const std::vector<uint64_t>& words, int base) {
+    NavState state;
+    state.timestamp_ = U64ToDouble(words[base + 0]);
+    for (int i = 0; i < 3; ++i) {
+        state.pos_[i] = U64ToDouble(words[base + 1 + i]);
+    }
+    Eigen::Matrix<double, 4, 1> coeffs;
+    for (int i = 0; i < 4; ++i) {
+        coeffs[i] = U64ToDouble(words[base + 4 + i]);
+    }
+    state.rot_ = SO3(Quatd(coeffs[3], coeffs[0], coeffs[1], coeffs[2]).normalized());
+    for (int i = 0; i < 3; ++i) {
+        state.vel_[i] = U64ToDouble(words[base + 8 + i]);
+        state.bg_[i] = U64ToDouble(words[base + 11 + i]);
+        state.grav_[i] = U64ToDouble(words[base + 14 + i]);
+    }
+    return state;
+}
+
+std::vector<uint64_t> PackEkfUpdateInputWords(const mapping_update::UpdateInput& input) {
+    std::vector<uint64_t> words(kEkfInWords, 0);
+    words[kEkfInMagicVersion] = PackU32Pair(kEkfInMagic, kEkfVersion);
+    words[kEkfInFlags] = input.finish_update ? 1u : 0u;
+    words[kEkfInFrameIter] = PackU32Pair(static_cast<uint32_t>(input.frame_index),
+                                         static_cast<uint32_t>(input.iteration_index));
+    PackEkfNavState(input.current_state, words, kEkfInCurrentState);
+    for (int i = 0; i < kEkfMat12Words; ++i) {
+        words[kEkfInPropagatedCov + i] = DoubleToU64(input.propagated_cov.data()[i]);
+    }
+    for (int i = 0; i < kEkfMat6Words; ++i) {
+        words[kEkfInHth + i] = DoubleToU64(input.HTH.data()[i]);
+    }
+    for (int i = 0; i < kEkfObsDim; ++i) {
+        words[kEkfInHtr + i] = DoubleToU64(input.HTr[i]);
+    }
+    for (int i = 0; i < kEkfStateDim; ++i) {
+        words[kEkfInDxFromStart + i] = DoubleToU64(input.dx_from_start[i]);
+        words[kEkfInLimit + i] = DoubleToU64(input.params.limit[i]);
+    }
+    words[kEkfInParams + 0] = DoubleToU64(input.params.R);
+    words[kEkfInParams + 1] = DoubleToU64(input.params.degeneracy_threshold_ratio);
+    words[kEkfInParams + 2] = DoubleToU64(input.params.degeneracy_cov_inflation);
+    words[kEkfInParams + 3] = DoubleToU64(input.params.min_cov_diag);
+    words[kEkfInParams + 4] = DoubleToU64(input.params.max_update_translation_step);
+    words[kEkfInParams + 5] = DoubleToU64(input.params.max_update_rotation_step_deg);
+    return words;
+}
+
+std::string EkfStatusString(uint32_t status) {
+    if ((status & kEkfStatusSuccess) != 0u) {
+        return "ok";
+    }
+    if ((status & kEkfStatusRejected) != 0u) {
+        return "rejected";
+    }
+    if ((status & kEkfStatusEigenFailed) != 0u) {
+        return "eigen_failed";
+    }
+    if ((status & kEkfStatusInverseFailed) != 0u) {
+        return "inverse_failed";
+    }
+    if ((status & kEkfStatusNanDx) != 0u) {
+        return "nan_dx";
+    }
+    if ((status & kEkfStatusStepRejected) != 0u) {
+        return "step_rejected";
+    }
+    return "failed";
+}
+
+mapping_update::UpdateOutput UnpackEkfUpdateOutputWords(const std::vector<uint64_t>& words) {
+    mapping_update::UpdateOutput output;
+    const uint32_t status = static_cast<uint32_t>(words[kEkfOutStatus] & 0xFFFFFFFFu);
+    output.success = (status & kEkfStatusSuccess) != 0u;
+    output.rejected = (status & kEkfStatusRejected) != 0u;
+    output.converged = (status & kEkfStatusConverged) != 0u;
+    output.covariance_finalized = (status & kEkfStatusCovarianceFinalized) != 0u;
+    output.nullity = static_cast<int>(words[kEkfOutNullity]);
+    output.status = EkfStatusString(status);
+    for (int i = 0; i < kEkfStateDim; ++i) {
+        output.dx_current[i] = U64ToDouble(words[kEkfOutDxCurrent + i]);
+        output.K_r[i] = U64ToDouble(words[kEkfOutKR + i]);
+    }
+    for (int i = 0; i < kEkfMat12Words; ++i) {
+        output.K_H.data()[i] = U64ToDouble(words[kEkfOutKH + i]);
+        output.working_cov.data()[i] = U64ToDouble(words[kEkfOutWorkingCov + i]);
+        output.updated_cov.data()[i] = U64ToDouble(words[kEkfOutUpdatedCov + i]);
+    }
+    for (int i = 0; i < kEkfMat6Words; ++i) {
+        output.HTH_eff.data()[i] = U64ToDouble(words[kEkfOutHthEff + i]);
+    }
+    for (int i = 0; i < kEkfObsDim; ++i) {
+        output.HTr_eff[i] = U64ToDouble(words[kEkfOutHtrEff + i]);
+    }
+    output.updated_state = UnpackEkfNavState(words, kEkfOutUpdatedState);
+    output.dx_translation = U64ToDouble(words[kEkfOutDiagnostics + 0]);
+    output.dx_rotation_deg = U64ToDouble(words[kEkfOutDiagnostics + 1]);
+    output.dx_norm = U64ToDouble(words[kEkfOutDiagnostics + 2]);
+    return output;
+}
+
+bool ConfigureEkfRegisters(int user_fd, uint32_t ctrl_base, std::string* error) {
+    if (!Write32(user_fd, ctrl_base + LIGHTNING_CTRL_CONTROL, 0x2u, error)) {
+        return false;
+    }
+    const std::array<std::pair<uint32_t, uint32_t>, 14> writes = {{
+        {LIGHTNING_CTRL_KERNEL_SEL, LIGHTNING_KERNEL_EKF_UPDATE},
+        {LIGHTNING_CTRL_SCAN_ADDR_HI, 0},
+        {LIGHTNING_CTRL_POSE_ADDR_HI, 0},
+        {LIGHTNING_CTRL_MAP_HEADER_ADDR_HI, 0},
+        {LIGHTNING_CTRL_ACTIVE_BLOCKS_ADDR_HI, 0},
+        {LIGHTNING_CTRL_OBS_CELLS_ADDR_HI, 0},
+        {LIGHTNING_CTRL_OUT_ADDR_HI, 0},
+        {LIGHTNING_CTRL_PARAMS_ADDR_HI, 0},
+        {LIGHTNING_CTRL_EKF_INPUT_ADDR_LO, LIGHTNING_EKF_UPDATE_INPUT_BASE},
+        {LIGHTNING_CTRL_EKF_INPUT_ADDR_HI, 0},
+        {LIGHTNING_CTRL_EKF_OUTPUT_ADDR_LO, LIGHTNING_EKF_UPDATE_OUTPUT_BASE},
+        {LIGHTNING_CTRL_EKF_OUTPUT_ADDR_HI, 0},
+        {LIGHTNING_CTRL_SCAN_COUNT, 0},
+        {LIGHTNING_CTRL_MODE, LIGHTNING_MODE_MAPPING},
+    }};
+    for (const auto& [offset, value] : writes) {
+        if (!Write32(user_fd, ctrl_base + offset, value, error)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 bool RunObservationImpl(const XdmaRuntime::Options& options, uint32_t mode,
                         const std::vector<SlamAccelScanPoint>& scan_points, const SlamAccelPose& pose,
                         const loc::ActiveMapBuffer& active_map, const SlamAccelObservationParams& params,
@@ -740,6 +952,148 @@ bool XdmaRuntime::RunMappingObservationV2(const std::vector<SlamAccelScanPoint>&
     result.candidate_bytes = candidates.size() * sizeof(ObsCellFloat64);
     return RunObservationImpl(options_, MAPPING_OBSERVATION, scan_points, pose, active_map, params,
                               &candidates, write_full_image, verify_readback, result, error);
+}
+
+bool XdmaRuntime::RunMappingEkfUpdate(const mapping_update::UpdateInput& input, bool write_full_image,
+                                      bool verify_readback, EkfUpdateRunResult& result,
+                                      std::string* error) const {
+    const auto total_start = Clock::now();
+    const auto mutex_start = Clock::now();
+    std::unique_lock<std::mutex> lock(g_observation_transaction_mutex);
+    result.timing.mutex_wait_sec = SecondsSince(mutex_start);
+
+    FileLock file_lock;
+    auto stage_start = Clock::now();
+    if (!file_lock.Lock("/tmp/lightning_xdma_observation.lock", error)) {
+        result.timing.lock_sec = SecondsSince(stage_start);
+        result.timing.total_sec = SecondsSince(total_start);
+        return false;
+    }
+    result.timing.lock_sec = SecondsSince(stage_start);
+
+    Fd user;
+    Fd h2c;
+    Fd c2h;
+    stage_start = Clock::now();
+    if (!OpenFd(user, options_.user_dev, O_RDWR, error) || !OpenFd(h2c, options_.h2c_dev, O_WRONLY, error) ||
+        !OpenFd(c2h, options_.c2h_dev, O_RDONLY, error)) {
+        result.timing.open_sec = SecondsSince(stage_start);
+        result.timing.total_sec = SecondsSince(total_start);
+        return false;
+    }
+    result.timing.open_sec = SecondsSince(stage_start);
+
+    result.raw_input_words = PackEkfUpdateInputWords(input);
+    result.raw_output_words.assign(kEkfOutWords, 0);
+    const std::vector<uint64_t> output_zero(kEkfOutWords, 0);
+
+    if (write_full_image) {
+        stage_start = Clock::now();
+        if (!WriteExact(h2c.get(), result.raw_input_words.data(),
+                        result.raw_input_words.size() * sizeof(uint64_t), LIGHTNING_EKF_UPDATE_INPUT_BASE, error,
+                        "ekf_update_input")) {
+            result.timing.h2c_input_sec = SecondsSince(stage_start);
+            result.timing.total_sec = SecondsSince(total_start);
+            return false;
+        }
+        result.timing.h2c_input_sec = SecondsSince(stage_start);
+
+        if (verify_readback) {
+            stage_start = Clock::now();
+            if (!VerifyBytes(c2h.get(), LIGHTNING_EKF_UPDATE_INPUT_BASE, result.raw_input_words.data(),
+                             result.raw_input_words.size() * sizeof(uint64_t), error, "ekf_update_input")) {
+                result.timing.verify_readback_sec = SecondsSince(stage_start);
+                result.timing.total_sec = SecondsSince(total_start);
+                return false;
+            }
+            result.timing.verify_readback_sec = SecondsSince(stage_start);
+        }
+    }
+
+    stage_start = Clock::now();
+    if (!WriteExact(h2c.get(), output_zero.data(), output_zero.size() * sizeof(uint64_t),
+                    LIGHTNING_EKF_UPDATE_OUTPUT_BASE, error, "ekf_update_output_zero")) {
+        result.timing.output_zero_sec = SecondsSince(stage_start);
+        result.timing.total_sec = SecondsSince(total_start);
+        return false;
+    }
+    result.timing.output_zero_sec = SecondsSince(stage_start);
+
+    stage_start = Clock::now();
+    if (!ConfigureEkfRegisters(user.get(), options_.ctrl_base, error) ||
+        !Read32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_RUN_COUNT, result.run_count_before, error)) {
+        result.timing.reg_config_sec = SecondsSince(stage_start);
+        result.timing.total_sec = SecondsSince(total_start);
+        return false;
+    }
+    result.timing.reg_config_sec = SecondsSince(stage_start);
+
+    const auto start = Clock::now();
+    if (!Write32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_CONTROL, 0x1u, error)) {
+        result.timing.hls_wait_sec = SecondsSince(start);
+        result.timing.total_sec = SecondsSince(total_start);
+        return false;
+    }
+    const auto deadline = start + std::chrono::duration<double>(options_.timeout_sec);
+    while (Clock::now() < deadline) {
+        if (!Read32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_STATUS, result.status, error) ||
+            !Read32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_ERROR, result.error, error)) {
+            result.timing.hls_wait_sec = SecondsSince(start);
+            result.timing.total_sec = SecondsSince(total_start);
+            return false;
+        }
+        if ((result.status & kStatusError) != 0 || result.error != 0) {
+            SetError(error, "EKF update entered error status");
+            result.timing.hls_wait_sec = SecondsSince(start);
+            result.timing.total_sec = SecondsSince(total_start);
+            return false;
+        }
+        if ((result.status & kStatusDone) != 0) {
+            break;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    if ((result.status & kStatusDone) == 0) {
+        SetError(error, "EKF update timeout");
+        result.timing.hls_wait_sec = SecondsSince(start);
+        result.timing.total_sec = SecondsSince(total_start);
+        return false;
+    }
+    const auto end = Clock::now();
+    result.elapsed_sec = std::chrono::duration<double>(end - start).count();
+    result.timing.hls_wait_sec = result.elapsed_sec;
+
+    if (!Read32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_RUN_COUNT, result.run_count_after, error)) {
+        result.timing.total_sec = SecondsSince(total_start);
+        return false;
+    }
+    if (result.run_count_after <= result.run_count_before) {
+        SetError(error, "RUN_COUNT did not increment");
+        result.timing.total_sec = SecondsSince(total_start);
+        return false;
+    }
+
+    stage_start = Clock::now();
+    if (!ReadExact(c2h.get(), result.raw_output_words.data(), result.raw_output_words.size() * sizeof(uint64_t),
+                   LIGHTNING_EKF_UPDATE_OUTPUT_BASE, error, "ekf_update_output")) {
+        result.timing.c2h_output_sec = SecondsSince(stage_start);
+        result.timing.total_sec = SecondsSince(total_start);
+        return false;
+    }
+    result.timing.c2h_output_sec = SecondsSince(stage_start);
+
+    const uint64_t expected_magic = PackU32Pair(kEkfOutMagic, kEkfVersion);
+    if (result.raw_output_words[kEkfOutMagicVersion] != expected_magic) {
+        std::ostringstream ss;
+        ss << "bad EKF output magic/version word=0x" << std::hex
+           << result.raw_output_words[kEkfOutMagicVersion] << " expected=0x" << expected_magic;
+        SetError(error, ss.str());
+        result.timing.total_sec = SecondsSince(total_start);
+        return false;
+    }
+    result.output = UnpackEkfUpdateOutputWords(result.raw_output_words);
+    result.timing.total_sec = SecondsSince(total_start);
+    return true;
 }
 
 std::vector<SlamAccelScanPoint> ToAbiScanPoints(const CloudPtr& cloud) {

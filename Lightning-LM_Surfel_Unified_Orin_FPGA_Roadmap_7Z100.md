@@ -6268,3 +6268,84 @@ Next stage:
   `update_expected.bin`.
 - Stage61/62/63 observation and localization solve regressions must continue
   to pass before any online mapping mode is enabled.
+
+## Stage 65C Implementation: Mapping EKF Update XDMA Golden Transaction
+
+Stage65C Windows-side runtime support was implemented on 2026-07-18.
+
+Scope:
+
+- Added `XdmaRuntime::RunMappingEkfUpdate()` for the standalone EKF update HLS
+  IP.
+- Added executable `run_mapping_ekf_update_xdma_golden`.
+- Reused Stage64 `fpga/golden/mapping_update/frame_000001/update_input.bin`
+  and `update_expected.bin`.
+- Did not change HLS, Vivado BD, BAR shim, XDMA/MIG, or regenerate
+  `azmig_wrapper.bit`.
+
+EKF XDMA transaction contract:
+
+```text
+KERNEL_SEL=5
+EKF_UPDATE_INPUT_BASE  = 0x30010000
+EKF_UPDATE_OUTPUT_BASE = 0x30020000
+EKF_INPUT_ADDR_LO/HI   = 0x05c / 0x060
+EKF_OUTPUT_ADDR_LO/HI  = 0x064 / 0x068
+```
+
+Runtime behavior:
+
+- Pack Stage64 `UpdateInput` into the HLS `uint64_t input_words` ABI.
+- Write input words to `EKF_UPDATE_INPUT_BASE`.
+- Clear `EKF_UPDATE_OUTPUT_BASE`.
+- Configure `slam_accel_ctrl` with `KERNEL_SEL=5` and EKF input/output base
+  addresses.
+- Trigger start, poll selected EKF `ap_done/error`, read output words, and
+  unpack into `mapping_update::UpdateOutput`.
+- Compare against Stage64 expected using the existing mapping update comparator.
+
+Orin test command:
+
+```bash
+colcon build --packages-select lightning
+source install/setup.bash
+
+lspci -nnk -s 0005:01:00.0
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --ddr-smoke
+
+sudo ./install/lightning/lib/lightning/run_mapping_ekf_update_xdma_golden \
+  --golden_dir fpga/golden/mapping_update/frame_000001 \
+  --ctrl_base 0x1000 \
+  --timeout_sec 120 \
+  --output_dir reports/fpga/runtime/stage65c_ekf_update_xdma_golden
+```
+
+Expected markers:
+
+```text
+MAPPING_EKF_UPDATE_XDMA_START_PASS
+MAPPING_EKF_UPDATE_XDMA_DONE_PASS
+MAPPING_EKF_UPDATE_XDMA_NUMERIC_PASS
+MAPPING_EKF_UPDATE_XDMA_PASS
+```
+
+Acceptance:
+
+- `SHIM_SMOKE_PASS`, `REG_SMOKE_PASS`, and `DDR_SMOKE_PASS` remain PASS.
+- EKF transaction reports `STATUS.error=0`, `ERROR=0`, and `RUN_COUNT`
+  increment.
+- `dx_current` and `updated_state` max abs <= `1e-9`.
+- `updated_cov` max abs <= `1e-8`.
+- No new XDMA config BAR failure, `CmpltTO`, AER fatal, offline, or frozen
+  errors.
+
+Risk boundary:
+
+- Stage65C is only a short functional golden smoke because the Stage65B
+  bitstream is not timing closed.
+- Do not enable online `FPGA_FULL` after Stage65C unless EKF correctness and
+  timing closure are both addressed.
+- If Stage65C times out, first inspect `KERNEL_SEL=5`, EKF address registers,
+  and EKF `ap_start/ap_done` BD wiring. If it completes but numeric compare
+  fails, first inspect input/output word ABI and endian/offset handling.
