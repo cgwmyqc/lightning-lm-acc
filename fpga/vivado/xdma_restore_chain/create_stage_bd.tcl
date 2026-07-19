@@ -196,11 +196,20 @@ connect_bd_intf_net [get_bd_intf_ports pcie_mgt] [get_bd_intf_pins xdma_0/pcie_m
 
 connect_bd_net [get_bd_pins xdma_0/axi_aclk] [get_bd_pins ctrl_0/aclk]
 connect_bd_net [get_bd_pins xdma_0/axi_aresetn] [get_bd_pins ctrl_0/aresetn]
-connect_bd_net [get_bd_pins const_zero_32/dout] [get_bd_pins ctrl_0/unified_obs_error]
+connect_bd_net [get_bd_pins const_zero_32/dout] \
+    [get_bd_pins ctrl_0/unified_obs_error] \
+    [get_bd_pins ctrl_0/ekf_error] \
+    [get_bd_pins ctrl_0/loc_iter_error]
 connect_bd_net [get_bd_pins const_one_1/dout] \
     [get_bd_pins ctrl_0/unified_obs_ap_idle] \
     [get_bd_pins ctrl_0/unified_obs_ap_ready] \
-    [get_bd_pins ctrl_0/unified_obs_ap_done]
+    [get_bd_pins ctrl_0/unified_obs_ap_done] \
+    [get_bd_pins ctrl_0/ekf_ap_idle] \
+    [get_bd_pins ctrl_0/ekf_ap_ready] \
+    [get_bd_pins ctrl_0/ekf_ap_done] \
+    [get_bd_pins ctrl_0/loc_iter_ap_idle] \
+    [get_bd_pins ctrl_0/loc_iter_ap_ready] \
+    [get_bd_pins ctrl_0/loc_iter_ap_done]
 connect_bd_intf_net [get_bd_intf_pins xdma_0/M_AXI_LITE] [get_bd_intf_pins ctrl_0/S_AXI]
 
 set ctrl_seg [first_addr_seg "ctrl_0/S_AXI/*"]

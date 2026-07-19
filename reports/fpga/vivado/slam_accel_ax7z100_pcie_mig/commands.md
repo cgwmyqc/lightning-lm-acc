@@ -352,3 +352,33 @@ Orin V2 golden gate:
 ./install/lightning/lib/lightning/run_surfel_loc_xdma_golden --golden_dir fpga/golden/localization/frame_000001 --ctrl_base 0x1000 --timeout_sec 120 --abi_v2_candidates
 ./install/lightning/lib/lightning/run_surfel_mapping_xdma_golden --golden_dir fpga/golden/mapping/frame_000001 --ctrl_base 0x1000 --timeout_sec 120 --abi_v2_candidates
 ```
+
+## Stage 72C Localization Iterative Core Integration
+
+Windows commands:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\slam_loc_iterative_core\run_gpp_csim.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\slam_loc_iterative_core\run_vivado_hls_csim.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\slam_loc_iterative_core\run_vivado_hls_csynth.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\slam_loc_iterative_core\run_vivado_hls_export_ip.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\rtl\slam_accel_ctrl\run_vivado_ooc_synth.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_bd_validate.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_project_synth.ps1 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_impl_bitstream.ps1 -Jobs 18
+```
+
+Stage72D JTAG:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\program_bitstream_jtag.ps1 -Bitstream .\fpga\vivado\.build\azmig_impl\azmig.runs\impl_1\azmig_wrapper.bit
+```
+
+Stage72D Orin base gate:
+
+```bash
+sudo reboot
+lspci -nnk -s 0005:01:00.0
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --ddr-smoke
+```

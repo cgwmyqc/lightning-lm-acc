@@ -74,11 +74,63 @@ Full log:
 reports/fpga/runtime/stage72_loc_full_iter_orin/cpu_replay.log
 ```
 
-## Not Run In Stage72A
+## Stage72B Windows HLS
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\slam_loc_iterative_core\run_gpp_csim.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\slam_loc_iterative_core\run_vivado_hls_csim.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\slam_loc_iterative_core\run_vivado_hls_csynth.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\slam_loc_iterative_core\run_vivado_hls_export_ip.ps1
+```
+
+## Not Run In Stage72A/B
 
 ```text
 run_surfel_loc_iterative_xdma_golden
 ```
 
-Reason: Stage72A only generates and validates the real Orin-side CPU golden.
-Board replay waits for Windows/HLS real-golden PASS and BD/XDMA integration.
+Reason: Stage72A generated and validated the real Orin-side CPU golden.
+Stage72B validated the standalone HLS core against that real golden. Board
+replay waits for BD/XDMA integration.
+
+## Stage72C Windows BD Integration
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\slam_loc_iterative_core\run_gpp_csim.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\slam_loc_iterative_core\run_vivado_hls_csim.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\slam_loc_iterative_core\run_vivado_hls_csynth.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\slam_loc_iterative_core\run_vivado_hls_export_ip.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\rtl\slam_accel_ctrl\run_vivado_ooc_synth.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_bd_validate.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_project_synth.ps1 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_impl_bitstream.ps1 -Jobs 18
+```
+
+Result:
+
+```text
+LOC_ITER_EXPORT_IP_PASS
+BD_VALIDATE_PASS
+PROJECT_SYNTH_PASS
+IMPLEMENTATION_BITSTREAM_PASS
+```
+
+## Stage72D Orin Prep
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\program_bitstream_jtag.ps1 -Bitstream .\fpga\vivado\.build\azmig_impl\azmig.runs\impl_1\azmig_wrapper.bit
+```
+
+```bash
+sudo reboot
+lspci -nnk -s 0005:01:00.0
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --ddr-smoke
+```
+
+Then run the Stage72D loc iterative XDMA replay once the Orin executable is
+available. Expected final marker:
+
+```text
+LOC_ITER_XDMA_PASS
+```

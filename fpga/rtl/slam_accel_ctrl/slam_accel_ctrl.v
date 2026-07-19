@@ -65,6 +65,16 @@ module slam_accel_ctrl #(
     output wire [31:0]                   ekf_input_addr,
     output wire [31:0]                   ekf_output_addr,
 
+    output reg                           loc_iter_ap_start,
+    input  wire                          loc_iter_ap_idle,
+    input  wire                          loc_iter_ap_ready,
+    input  wire                          loc_iter_ap_done,
+    input  wire [31:0]                   loc_iter_error,
+    output wire [31:0]                   loc_iter_scan_addr,
+    output wire [31:0]                   loc_iter_candidate_addr,
+    output wire [31:0]                   loc_iter_input_addr,
+    output wire [31:0]                   loc_iter_output_addr,
+
     output wire [31:0]                   kernel_sel,
     output wire [31:0]                   mode
 );
@@ -98,9 +108,14 @@ localparam [11:0] REG_EKF_INPUT_ADDR_LO = 12'h05c;
 localparam [11:0] REG_EKF_INPUT_ADDR_HI = 12'h060;
 localparam [11:0] REG_EKF_OUTPUT_ADDR_LO = 12'h064;
 localparam [11:0] REG_EKF_OUTPUT_ADDR_HI = 12'h068;
+localparam [11:0] REG_LOC_ITER_INPUT_ADDR_LO = 12'h06c;
+localparam [11:0] REG_LOC_ITER_INPUT_ADDR_HI = 12'h070;
+localparam [11:0] REG_LOC_ITER_OUTPUT_ADDR_LO = 12'h074;
+localparam [11:0] REG_LOC_ITER_OUTPUT_ADDR_HI = 12'h078;
 
 localparam [31:0] KERNEL_UNIFIED_OBSERVATION = 32'd4;
 localparam [31:0] KERNEL_EKF_UPDATE = 32'd5;
+localparam [31:0] KERNEL_LOC_ITERATIVE = 32'd6;
 
 localparam [31:0] ERR_UNSUPPORTED_KERNEL = 32'h0000_0001;
 localparam [31:0] ERR_ADDR_HI_NONZERO    = 32'h0000_0003;
@@ -136,6 +151,10 @@ reg [31:0] ekf_input_addr_lo_reg;
 reg [31:0] ekf_input_addr_hi_reg;
 reg [31:0] ekf_output_addr_lo_reg;
 reg [31:0] ekf_output_addr_hi_reg;
+reg [31:0] loc_iter_input_addr_lo_reg;
+reg [31:0] loc_iter_input_addr_hi_reg;
+reg [31:0] loc_iter_output_addr_lo_reg;
+reg [31:0] loc_iter_output_addr_hi_reg;
 
 reg cmd_start;
 
@@ -161,6 +180,10 @@ assign unified_obs_output_residual_max_abs_addr = out_addr_lo_reg + 32'd248;
 assign unified_obs_output_reserved_addr = out_addr_lo_reg + 32'd256;
 assign ekf_input_addr = ekf_input_addr_lo_reg;
 assign ekf_output_addr = ekf_output_addr_lo_reg;
+assign loc_iter_scan_addr = scan_addr_lo_reg;
+assign loc_iter_candidate_addr = obs_cells_addr_lo_reg;
+assign loc_iter_input_addr = loc_iter_input_addr_lo_reg;
+assign loc_iter_output_addr = loc_iter_output_addr_lo_reg;
 
 function [31:0] apply_wstrb;
     input [31:0] old_value;
@@ -186,10 +209,11 @@ wire status_done = (state == FSM_DONE);
 wire status_error = (state == FSM_ERROR);
 wire selected_obs = (kernel_sel_reg == KERNEL_UNIFIED_OBSERVATION);
 wire selected_ekf = (kernel_sel_reg == KERNEL_EKF_UPDATE);
-wire selected_hls_done = selected_ekf ? ekf_ap_done : unified_obs_ap_done;
-wire selected_hls_idle = selected_ekf ? ekf_ap_idle : unified_obs_ap_idle;
-wire selected_hls_ready = selected_ekf ? ekf_ap_ready : unified_obs_ap_ready;
-wire [31:0] selected_hls_error = selected_ekf ? ekf_error : unified_obs_error;
+wire selected_loc_iter = (kernel_sel_reg == KERNEL_LOC_ITERATIVE);
+wire selected_hls_done = selected_loc_iter ? loc_iter_ap_done : (selected_ekf ? ekf_ap_done : unified_obs_ap_done);
+wire selected_hls_idle = selected_loc_iter ? loc_iter_ap_idle : (selected_ekf ? ekf_ap_idle : unified_obs_ap_idle);
+wire selected_hls_ready = selected_loc_iter ? loc_iter_ap_ready : (selected_ekf ? ekf_ap_ready : unified_obs_ap_ready);
+wire [31:0] selected_hls_error = selected_loc_iter ? loc_iter_error : (selected_ekf ? ekf_error : unified_obs_error);
 
 wire any_addr_hi_nonzero = (scan_addr_hi_reg != 32'd0) ||
                            (pose_addr_hi_reg != 32'd0) ||
@@ -199,7 +223,9 @@ wire any_addr_hi_nonzero = (scan_addr_hi_reg != 32'd0) ||
                            (out_addr_hi_reg != 32'd0) ||
                            (params_addr_hi_reg != 32'd0) ||
                            (ekf_input_addr_hi_reg != 32'd0) ||
-                           (ekf_output_addr_hi_reg != 32'd0);
+                           (ekf_output_addr_hi_reg != 32'd0) ||
+                           (loc_iter_input_addr_hi_reg != 32'd0) ||
+                           (loc_iter_output_addr_hi_reg != 32'd0);
 
 always @(posedge aclk) begin
     if (!aresetn) begin
@@ -214,6 +240,7 @@ always @(posedge aclk) begin
 
         unified_obs_ap_start <= 1'b0;
         ekf_ap_start <= 1'b0;
+        loc_iter_ap_start <= 1'b0;
         state <= FSM_IDLE;
         kernel_sel_reg <= KERNEL_UNIFIED_OBSERVATION;
         mode_reg <= 32'd1;
@@ -239,6 +266,10 @@ always @(posedge aclk) begin
         ekf_input_addr_hi_reg <= 32'd0;
         ekf_output_addr_lo_reg <= 32'd0;
         ekf_output_addr_hi_reg <= 32'd0;
+        loc_iter_input_addr_lo_reg <= 32'd0;
+        loc_iter_input_addr_hi_reg <= 32'd0;
+        loc_iter_output_addr_lo_reg <= 32'd0;
+        loc_iter_output_addr_hi_reg <= 32'd0;
         cmd_start <= 1'b0;
     end else begin
         s_axi_awready <= write_fire;
@@ -246,6 +277,7 @@ always @(posedge aclk) begin
         s_axi_arready <= read_fire;
         unified_obs_ap_start <= 1'b0;
         ekf_ap_start <= 1'b0;
+        loc_iter_ap_start <= 1'b0;
 
         if (s_axi_bvalid && s_axi_bready) begin
             s_axi_bvalid <= 1'b0;
@@ -302,6 +334,14 @@ always @(posedge aclk) begin
                     ekf_output_addr_lo_reg <= apply_wstrb(ekf_output_addr_lo_reg, s_axi_wdata, s_axi_wstrb);
                 REG_EKF_OUTPUT_ADDR_HI:
                     ekf_output_addr_hi_reg <= apply_wstrb(ekf_output_addr_hi_reg, s_axi_wdata, s_axi_wstrb);
+                REG_LOC_ITER_INPUT_ADDR_LO:
+                    loc_iter_input_addr_lo_reg <= apply_wstrb(loc_iter_input_addr_lo_reg, s_axi_wdata, s_axi_wstrb);
+                REG_LOC_ITER_INPUT_ADDR_HI:
+                    loc_iter_input_addr_hi_reg <= apply_wstrb(loc_iter_input_addr_hi_reg, s_axi_wdata, s_axi_wstrb);
+                REG_LOC_ITER_OUTPUT_ADDR_LO:
+                    loc_iter_output_addr_lo_reg <= apply_wstrb(loc_iter_output_addr_lo_reg, s_axi_wdata, s_axi_wstrb);
+                REG_LOC_ITER_OUTPUT_ADDR_HI:
+                    loc_iter_output_addr_hi_reg <= apply_wstrb(loc_iter_output_addr_hi_reg, s_axi_wdata, s_axi_wstrb);
                 default: begin
                     s_axi_bresp <= 2'b10;
                 end
@@ -340,6 +380,10 @@ always @(posedge aclk) begin
                 REG_EKF_INPUT_ADDR_HI: s_axi_rdata <= ekf_input_addr_hi_reg;
                 REG_EKF_OUTPUT_ADDR_LO: s_axi_rdata <= ekf_output_addr_lo_reg;
                 REG_EKF_OUTPUT_ADDR_HI: s_axi_rdata <= ekf_output_addr_hi_reg;
+                REG_LOC_ITER_INPUT_ADDR_LO: s_axi_rdata <= loc_iter_input_addr_lo_reg;
+                REG_LOC_ITER_INPUT_ADDR_HI: s_axi_rdata <= loc_iter_input_addr_hi_reg;
+                REG_LOC_ITER_OUTPUT_ADDR_LO: s_axi_rdata <= loc_iter_output_addr_lo_reg;
+                REG_LOC_ITER_OUTPUT_ADDR_HI: s_axi_rdata <= loc_iter_output_addr_hi_reg;
                 default: begin
                     s_axi_rdata <= 32'd0;
                     s_axi_rresp <= 2'b10;
@@ -356,7 +400,7 @@ always @(posedge aclk) begin
                 if (cmd_start) begin
                     cmd_start <= 1'b0;
                     error_reg <= 32'd0;
-                    if (!selected_obs && !selected_ekf) begin
+                    if (!selected_obs && !selected_ekf && !selected_loc_iter) begin
                         error_reg <= ERR_UNSUPPORTED_KERNEL;
                         state <= FSM_ERROR;
                     end else if (any_addr_hi_nonzero) begin
@@ -368,7 +412,9 @@ always @(posedge aclk) begin
                 end
             end
             FSM_DISPATCH: begin
-                if (selected_ekf) begin
+                if (selected_loc_iter) begin
+                    loc_iter_ap_start <= 1'b1;
+                end else if (selected_ekf) begin
                     ekf_ap_start <= 1'b1;
                 end else begin
                     unified_obs_ap_start <= 1'b1;
@@ -389,7 +435,7 @@ always @(posedge aclk) begin
             FSM_DONE: begin
                 if (cmd_start) begin
                     cmd_start <= 1'b0;
-                    if (!selected_obs && !selected_ekf) begin
+                    if (!selected_obs && !selected_ekf && !selected_loc_iter) begin
                         error_reg <= ERR_UNSUPPORTED_KERNEL;
                         state <= FSM_ERROR;
                     end else if (any_addr_hi_nonzero) begin

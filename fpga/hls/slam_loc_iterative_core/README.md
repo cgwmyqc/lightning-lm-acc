@@ -39,6 +39,8 @@ LOC_ITER_FINAL_POSE_MATCH
 LOC_ITER_ITERATIONS_MATCH
 LOC_ITER_COUNTS_MATCH
 LOC_ITER_EXPORT_IP_PASS
+LOC_ITER_REAL_GOLDEN_LOAD_PASS
+LOC_ITER_REAL_GOLDEN_NUMERIC_PASS
 ```
 
 Stage71 status:
@@ -47,4 +49,6 @@ Stage71 status:
 - Vivado HLS 2018.3 CSim: PASS.
 - Vivado HLS 2018.3 C Synthesis: PASS at 8ns target, estimated clock 7.519ns.
 - Vivado HLS IP export: PASS after local Vivado 2018.3 `core_revision` overflow workaround.
-- Real `fpga/golden/localization_iterative/frame_000001` is not present yet; Stage72 must generate it on Orin before board/runtime integration.
+- Real `fpga/golden/localization_iterative/frame_000001` Stage72A golden: PASS in g++ CSim and Vivado HLS CSim.
+- Real golden expected: iterations `4`, counts `6124/837/2`, status `1`, flags `1`.
+- Stage72B is still standalone HLS only; board/runtime integration starts after this gate.

@@ -1,2 +1,2 @@
 BITSTREAM_PATH=F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\.build\azmig_impl\azmig.runs\impl_1\azmig_wrapper.bit
-BITSTREAM_SIZE_BYTES=12454775
+BITSTREAM_SIZE_BYTES=12920775

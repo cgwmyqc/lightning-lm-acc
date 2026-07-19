@@ -3,6 +3,7 @@ set project_dir [file normalize [file join $script_dir ".." ".build" "azmig_syn"
 set target_part "xc7z100ffg900-2"
 set hls_ip_dir [file normalize [file join $::env(TEMP) "lightning_hls_unified_obs" "solution1" "impl" "ip"]]
 set ekf_hls_ip_dir [file normalize [file join $::env(TEMP) "lightning_hls_ekf_update" "solution1" "impl" "ip"]]
+set loc_iter_hls_ip_dir [file normalize [file join $::env(TEMP) "lightning_hls_loc_iterative" "solution1" "impl" "ip"]]
 set reference_root [file normalize [file join $script_dir ".." ".." ".." ".."]]
 set jobs 18
 
@@ -20,10 +21,13 @@ if {[llength $user_args] >= 4 && [string length [lindex $user_args 3]] > 0} {
     set ekf_hls_ip_dir [file normalize [lindex $user_args 3]]
 }
 if {[llength $user_args] >= 5 && [string length [lindex $user_args 4]] > 0} {
-    set reference_root [file normalize [lindex $user_args 4]]
+    set loc_iter_hls_ip_dir [file normalize [lindex $user_args 4]]
 }
 if {[llength $user_args] >= 6 && [string length [lindex $user_args 5]] > 0} {
-    set jobs [lindex $user_args 5]
+    set reference_root [file normalize [lindex $user_args 5]]
+}
+if {[llength $user_args] >= 7 && [string length [lindex $user_args 6]] > 0} {
+    set jobs [lindex $user_args 6]
 }
 if {![string is integer -strict $jobs] || $jobs < 1} {
     error "Invalid jobs value: $jobs"

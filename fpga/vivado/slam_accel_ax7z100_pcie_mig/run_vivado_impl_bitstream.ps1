@@ -5,6 +5,7 @@ param(
     [string]$VivadoHls = "vivado_hls",
     [string]$HlsProjectDir,
     [string]$EkfHlsProjectDir,
+    [string]$LocIterHlsProjectDir,
     [string]$ReferenceRoot,
     [int]$Jobs = 18
 )
@@ -25,6 +26,9 @@ if ([string]::IsNullOrWhiteSpace($HlsProjectDir)) {
 if ([string]::IsNullOrWhiteSpace($EkfHlsProjectDir)) {
     $EkfHlsProjectDir = Join-Path $BuildRoot "hls_slam_ekf_update_export"
 }
+if ([string]::IsNullOrWhiteSpace($LocIterHlsProjectDir)) {
+    $LocIterHlsProjectDir = Join-Path $BuildRoot "hls_slam_loc_iterative_export"
+}
 if ([string]::IsNullOrWhiteSpace($ReferenceRoot)) {
     $ReferenceRoot = Resolve-Path (Join-Path $RepoRoot "..")
 }
@@ -35,11 +39,14 @@ if ($Jobs -lt 1) {
 $ProjectDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ProjectDir)
 $HlsProjectDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($HlsProjectDir)
 $EkfHlsProjectDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($EkfHlsProjectDir)
+$LocIterHlsProjectDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($LocIterHlsProjectDir)
 $ReferenceRoot = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ReferenceRoot)
 $HlsIpDir = Join-Path $HlsProjectDir "solution1\impl\ip"
 $ComponentXml = Join-Path $HlsIpDir "component.xml"
 $EkfHlsIpDir = Join-Path $EkfHlsProjectDir "solution1\impl\ip"
 $EkfComponentXml = Join-Path $EkfHlsIpDir "component.xml"
+$LocIterHlsIpDir = Join-Path $LocIterHlsProjectDir "solution1\impl\ip"
+$LocIterComponentXml = Join-Path $LocIterHlsIpDir "component.xml"
 
 if (!(Test-Path $ComponentXml)) {
     $ExportScript = Join-Path $RepoRoot "fpga\hls\unified_surfel_observation_core\run_vivado_hls_export_ip.ps1"
@@ -65,6 +72,18 @@ if (!(Test-Path $EkfComponentXml)) {
     }
 }
 
+if (!(Test-Path $LocIterComponentXml)) {
+    $LocIterExportScript = Join-Path $RepoRoot "fpga\hls\slam_loc_iterative_core\run_vivado_hls_export_ip.ps1"
+    & powershell -ExecutionPolicy Bypass -File $LocIterExportScript -ProjectDir $LocIterHlsProjectDir -Part $Part -VivadoHls $VivadoHls
+    if ($LASTEXITCODE -ne 0) {
+        exit $LASTEXITCODE
+    }
+    if (!(Test-Path $LocIterComponentXml)) {
+        Write-Error "Localization iterative HLS IP export did not produce component.xml: $LocIterComponentXml"
+        exit 1
+    }
+}
+
 & powershell -ExecutionPolicy Bypass -File (Join-Path $ScriptDir "validate_board_profile.ps1") -ReferenceRoot $ReferenceRoot
 if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
@@ -80,7 +99,7 @@ try {
     $VivadoProjectDir = $ShortPathInfo.ShortPath
     $VivadoLog = Join-Path $VivadoProjectDir "vivado_impl_bitstream.log"
     $VivadoJournal = Join-Path $VivadoProjectDir "vivado_impl_bitstream.jou"
-    & $Vivado -mode batch -source $Tcl -journal $VivadoJournal -log $VivadoLog -tclargs $VivadoProjectDir $Part $HlsIpDir $EkfHlsIpDir $ReferenceRoot $Jobs
+    & $Vivado -mode batch -source $Tcl -journal $VivadoJournal -log $VivadoLog -tclargs $VivadoProjectDir $Part $HlsIpDir $EkfHlsIpDir $LocIterHlsIpDir $ReferenceRoot $Jobs
     $ExitCode = $LASTEXITCODE
 } finally {
     Remove-LightningVivadoShortPath -ShortPathInfo $ShortPathInfo

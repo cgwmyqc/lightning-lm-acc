@@ -80,6 +80,16 @@ module slam_accel_ctrl_axi_lite_wrapper (
     output wire [31:0] ekf_input_addr,
     output wire [31:0] ekf_output_addr,
 
+    output wire        loc_iter_ap_start,
+    input  wire        loc_iter_ap_idle,
+    input  wire        loc_iter_ap_ready,
+    input  wire        loc_iter_ap_done,
+    input  wire [31:0] loc_iter_error,
+    output wire [31:0] loc_iter_scan_addr,
+    output wire [31:0] loc_iter_candidate_addr,
+    output wire [31:0] loc_iter_input_addr,
+    output wire [31:0] loc_iter_output_addr,
+
     output wire [31:0] kernel_sel,
     output wire [31:0] mode
 );
@@ -134,6 +144,15 @@ slam_accel_ctrl u_ctrl (
     .ekf_error(ekf_error),
     .ekf_input_addr(ekf_input_addr),
     .ekf_output_addr(ekf_output_addr),
+    .loc_iter_ap_start(loc_iter_ap_start),
+    .loc_iter_ap_idle(loc_iter_ap_idle),
+    .loc_iter_ap_ready(loc_iter_ap_ready),
+    .loc_iter_ap_done(loc_iter_ap_done),
+    .loc_iter_error(loc_iter_error),
+    .loc_iter_scan_addr(loc_iter_scan_addr),
+    .loc_iter_candidate_addr(loc_iter_candidate_addr),
+    .loc_iter_input_addr(loc_iter_input_addr),
+    .loc_iter_output_addr(loc_iter_output_addr),
     .kernel_sel(kernel_sel),
     .mode(mode)
 );

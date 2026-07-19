@@ -29,6 +29,8 @@ must stay zero.
 | output | `0x30000000` |
 | EKF update input | `0x30010000` |
 | EKF update output | `0x30020000` |
+| localization iterative input | `0x30030000` |
+| localization iterative output | `0x30040000` |
 
 The whole layout stays inside the 1 GB PL DDR3 window `0x00000000..0x3fffffff`.
 
@@ -59,6 +61,13 @@ python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 
 Stage65B keeps unified observation at `KERNEL_SEL=4` and adds standalone
 mapping EKF update at `KERNEL_SEL=5`. Stage65B smoke still only requires
 shim/register/DDR checks; the real EKF golden transaction is Stage65C.
+
+Stage72C keeps those paths and adds standalone localization full-iterative at
+`KERNEL_SEL=6`. It reuses `SCAN_ADDR` for `loc_iter_scan.bin` and
+`OBS_CELLS_ADDR` for `loc_iter_candidates.bin`, then uses
+`LOC_ITER_INPUT_ADDR=0x30030000` and `LOC_ITER_OUTPUT_ADDR=0x30040000` for the
+64-bit word ABI buffers. Stage72D is the first Orin XDMA golden transaction for
+this kernel.
 
 For the HLS-restored `azmig_wrapper.bit`, run the tiny synthetic transaction
 after shim/reg/DDR smoke passes:

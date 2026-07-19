@@ -7236,3 +7236,228 @@ Next required step:
 Stage72B: Windows/HLS real golden CSim/Cosim using
 fpga/golden/localization_iterative/frame_000001.
 ```
+
+## Stage 72B Windows Result: Real Localization Iterative HLS PASS
+
+Date: 2026-07-19
+
+Stage72B upgraded the `slam_loc_iterative_core` testbench from synthetic-only to
+synthetic plus real golden replay.
+
+Real golden used:
+
+```text
+fpga/golden/localization_iterative/frame_000001/
+  loc_iter_scan.bin
+  loc_iter_candidates.bin
+  loc_iter_input.bin
+  loc_iter_expected.bin
+  loc_iter_meta.yaml
+```
+
+The testbench validates each binary through the 64B `GoldenFileHeader`, including
+record type, record size, and record count, before passing the payload to HLS.
+This prevents accidental header-offset ABI mismatches.
+
+Windows commands completed:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\slam_loc_iterative_core\run_gpp_csim.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\slam_loc_iterative_core\run_vivado_hls_csim.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\slam_loc_iterative_core\run_vivado_hls_csynth.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\slam_loc_iterative_core\run_vivado_hls_export_ip.ps1
+```
+
+Result:
+
+```text
+LOC_ITER_SYNTHETIC_CSIM_PASS
+LOC_ITER_REAL_GOLDEN_LOAD_PASS scan_count=6963 candidate_count=6963
+LOC_ITER_REAL_GOLDEN_NUMERIC_PASS
+LOC_ITER_GPP_CSIM_PASS
+LOC_ITER_HLS_CSIM_PASS
+LOC_ITER_CSYNTH_PASS
+LOC_ITER_EXPORT_IP_PASS
+```
+
+Real golden numeric summary:
+
+```text
+status=1
+flags=1
+iterations=4
+counts=6124/837/2
+max_abs=2.91323e-13
+max_rel=6.73397e-15
+worst_field=residual_sum
+```
+
+Vivado HLS C Synthesis summary:
+
+```text
+target part: xc7z100ffg900-2
+target clock: 8.00 ns
+estimated clock: 7.519 ns
+BRAM_18K: 156 / 1510 (10%)
+DSP48E: 574 / 2020 (28%)
+FF: 85804 / 554800 (15%)
+LUT: 94725 / 277400 (34%)
+```
+
+IP export path:
+
+```text
+fpga/vivado/.build/hls_slam_loc_iterative_export/solution1/impl/ip/
+```
+
+Boundary:
+
+```text
+Stage72B does not modify the AX7Z100 BD, XDMA/MIG/BAR shim, register map, or
+azmig_wrapper.bit. SURFEL_FPGA_FULL_ITERATIVE remains unavailable online until
+Stage72C/D/E pass.
+```
+
+Next required step:
+
+```text
+Stage72C: integrate slam_loc_iterative_core into slam_accel_ctrl and the
+AX7Z100 MIG-backed BD.
+```
+
+## Stage 72C Windows Result: Localization Iterative Core Integrated
+
+Date: 2026-07-19
+
+Stage72C connected the standalone `slam_loc_iterative_core` HLS IP into the
+formal AX7Z100 `azmig_wrapper.bit` design. This stage only performs Windows
+hardware integration and bitstream generation; it does not enable online ROS
+`SURFEL_FPGA_FULL_ITERATIVE`.
+
+Interface changes:
+
+```text
+KERNEL_SEL=4: unified observation
+KERNEL_SEL=5: mapping EKF update
+KERNEL_SEL=6: localization full iterative core
+
+SCAN_ADDR: reused as loc iterative scan base
+OBS_CELLS_ADDR: reused as loc iterative candidate base
+LOC_ITER_INPUT_ADDR_LO/HI:  0x06c / 0x070
+LOC_ITER_OUTPUT_ADDR_LO/HI: 0x074 / 0x078
+
+LOC_ITER_INPUT_BASE:  0x30030000
+LOC_ITER_OUTPUT_BASE: 0x30040000
+```
+
+Windows commands executed:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\slam_loc_iterative_core\run_gpp_csim.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\slam_loc_iterative_core\run_vivado_hls_csim.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\slam_loc_iterative_core\run_vivado_hls_csynth.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\slam_loc_iterative_core\run_vivado_hls_export_ip.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\rtl\slam_accel_ctrl\run_vivado_ooc_synth.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_bd_validate.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_project_synth.ps1 -Jobs 18
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\run_vivado_impl_bitstream.ps1 -Jobs 18
+```
+
+Windows result:
+
+```text
+LOC_ITER_GPP_CSIM_PASS
+LOC_ITER_HLS_CSIM_PASS
+LOC_ITER_CSYNTH_PASS
+LOC_ITER_EXPORT_IP_PASS
+slam_accel_ctrl OOC synthesis: PASS
+BD_VALIDATE_PASS
+PROJECT_SYNTH_PASS
+IMPLEMENTATION_BITSTREAM_PASS
+```
+
+Stage72C bitstream:
+
+```text
+fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit
+size: 12920775 bytes
+```
+
+Post-route timing/resource summary:
+
+```text
+All user specified timing constraints are met.
+WNS=0.086 ns
+TNS=0.000 ns
+WHS=0.016 ns
+THS=0.000 ns
+Route errors=0
+DRC errors=0
+Critical warnings=0
+
+Slice LUTs:      216599 / 277400 = 78.08%
+Slice Registers: 246370 / 554800 = 44.41%
+BRAM Tile:          146 /    755 = 19.34%
+DSP:               1386 /   2020 = 68.61%
+Bonded IOB:          74 /    362 = 20.44%
+```
+
+Risk:
+
+```text
+DSP utilization is now high at 68.61%. Timing is clean for this image, but
+future full-pipeline kernels should not be added without resource and timing
+review.
+```
+
+## Stage 72D Plan: Orin XDMA Golden Replay
+
+Stage72D should JTAG download the Stage72C bitstream and run an offline golden
+transaction for `KERNEL_SEL=6`. It is still not an online ROS test.
+
+Windows JTAG:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\slam_accel_ax7z100_pcie_mig\program_bitstream_jtag.ps1 -Bitstream .\fpga\vivado\.build\azmig_impl\azmig.runs\impl_1\azmig_wrapper.bit
+```
+
+Orin base gate:
+
+```bash
+sudo reboot
+lspci -nnk -s 0005:01:00.0
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000
+sudo python3 fpga/host/xdma_smoke/xdma_smoke.py --ddr-smoke
+```
+
+Stage72D transaction requirements:
+
+```text
+write loc_iter_scan.bin        -> SCAN_POINTS_BASE
+write loc_iter_candidates.bin  -> OBS_CELLS_BASE
+write loc_iter_input.bin       -> LOC_ITER_INPUT_BASE
+zero loc iterative output      -> LOC_ITER_OUTPUT_BASE
+KERNEL_SEL=6
+LOC_ITER_INPUT_ADDR_LO=0x30030000
+LOC_ITER_OUTPUT_ADDR_LO=0x30040000
+CONTROL.start=1
+```
+
+Expected Stage72D markers:
+
+```text
+LOC_ITER_XDMA_START_PASS
+LOC_ITER_XDMA_DONE_PASS
+LOC_ITER_XDMA_NUMERIC_PASS
+LOC_ITER_XDMA_PASS
+```
+
+Expected numeric result:
+
+```text
+iterations=4
+counts=6124/837/2
+status=1
+flags=1
+final pose/dx/residual/score within Stage72B tolerance
+```

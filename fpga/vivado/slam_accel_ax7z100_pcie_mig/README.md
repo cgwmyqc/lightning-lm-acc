@@ -19,6 +19,8 @@ state as the source of truth.
 - Compute: true HLS IP `unified_surfel_observation_core`
 - Stage65B compute extension: standalone HLS IP `slam_ekf_update_core`,
   selected through `KERNEL_SEL=5`
+- Stage72C compute extension: standalone HLS IP `slam_loc_iterative_core`,
+  selected through `KERNEL_SEL=6`
 
 Stage 44 HLS output contract: the board-level BD connects
 `slam_accel_ctrl.unified_obs_output_addr` directly to the HLS `output_words`
@@ -45,6 +47,8 @@ address contract.
 | `OUTPUT_BASE` | `0x30000000` | HLS `output_words` base, host ABI is 320-byte `SlamNormalEquation` |
 | `EKF_UPDATE_INPUT_BASE` | `0x30010000` | HLS `slam_ekf_update_core.input_words` |
 | `EKF_UPDATE_OUTPUT_BASE` | `0x30020000` | HLS `slam_ekf_update_core.output_words` |
+| `LOC_ITER_INPUT_BASE` | `0x30030000` | HLS `slam_loc_iterative_core.input_words` |
+| `LOC_ITER_OUTPUT_BASE` | `0x30040000` | HLS `slam_loc_iterative_core.output_words` |
 
 The matching host-side constants live in
 `fpga/host/xdma_smoke/ax7z100_plddr_layout.h` and
@@ -65,6 +69,8 @@ control register bank, then write/read a 4 KB memory pattern at each PL DDR3
 buffer base. It does not require launching the accelerator as a hard gate.
 Stage65B keeps observation at `KERNEL_SEL=4` and adds mapping EKF update at
 `KERNEL_SEL=5`; EKF golden replay is deferred to Stage65C.
+Stage72C adds localization full iterative at `KERNEL_SEL=6`; the Orin XDMA
+golden transaction is deferred to Stage72D.
 
 ```bash
 python3 fpga/host/xdma_smoke/xdma_smoke.py --shim-smoke --reg-smoke --ctrl-base 0x1000 --ddr-smoke
@@ -82,7 +88,8 @@ python3 fpga/host/xdma_smoke/xdma_smoke.py --reg-smoke --ctrl-base 0x1000 --star
 - `pcie_ref` is the PCIe endpoint reference clock from the Orin/root complex.
   It feeds XDMA `sys_clk` through `util_ds_buf`.
 - `xdma_0/axi_aclk` clocks XDMA AXI-Lite, XDMA AXI master, `slam_accel_ctrl`,
-  the observation HLS core, and the Stage65B EKF update HLS core.
+  the observation HLS core, the Stage65B EKF update HLS core, and the Stage72C
+  localization full-iterative HLS core.
 - `sys` is the AX7Z100 PL DDR3 200 MHz differential clock and feeds MIG
   `SYS_CLK`.
 - `mig_7series_0/ui_clk` clocks the MIG S_AXI memory side.

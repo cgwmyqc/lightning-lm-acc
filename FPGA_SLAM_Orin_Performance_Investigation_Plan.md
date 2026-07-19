@@ -2438,3 +2438,102 @@ Windows/HLS reruns slam_loc_iterative_core CSim/Cosim with the real Stage72A
 golden. Only after real-golden HLS PASS and BD/XDMA integration should Orin run
 run_surfel_loc_iterative_xdma_golden.
 ```
+
+Stage72B Windows result:
+
+```text
+LOC_ITER_SYNTHETIC_CSIM_PASS
+LOC_ITER_REAL_GOLDEN_LOAD_PASS scan_count=6963 candidate_count=6963
+LOC_ITER_REAL_GOLDEN_NUMERIC_PASS
+LOC_ITER_GPP_CSIM_PASS
+LOC_ITER_HLS_CSIM_PASS
+LOC_ITER_CSYNTH_PASS
+LOC_ITER_EXPORT_IP_PASS
+```
+
+Real golden numeric summary:
+
+```text
+status=1
+flags=1
+iterations=4
+counts=6124/837/2
+max_abs=2.91323e-13
+max_rel=6.73397e-15
+```
+
+Vivado HLS summary:
+
+```text
+target clock: 8.00 ns
+estimated clock: 7.519 ns
+BRAM_18K: 156
+DSP48E: 574
+FF: 85804
+LUT: 94725
+```
+
+Next step is Stage72C board integration. Stage72B did not modify the AX7Z100
+BD, XDMA/MIG/BAR shim, register map, or `azmig_wrapper.bit`.
+
+## Stage72C Windows Board Integration Result
+
+Stage72C connected `slam_loc_iterative_core` to the formal AX7Z100 board design
+and regenerated `azmig_wrapper.bit`.
+
+New hardware contract:
+
+```text
+KERNEL_SEL=6: localization full iterative core
+LOC_ITER_INPUT_BASE=0x30030000
+LOC_ITER_OUTPUT_BASE=0x30040000
+LOC_ITER_INPUT_ADDR_LO/HI=0x06c/0x070
+LOC_ITER_OUTPUT_ADDR_LO/HI=0x074/0x078
+SCAN_ADDR is reused for loc_iter_scan.bin
+OBS_CELLS_ADDR is reused for loc_iter_candidates.bin
+```
+
+Windows result:
+
+```text
+LOC_ITER_GPP_CSIM_PASS
+LOC_ITER_HLS_CSIM_PASS
+LOC_ITER_CSYNTH_PASS
+LOC_ITER_EXPORT_IP_PASS
+slam_accel_ctrl OOC synthesis PASS
+BD_VALIDATE_PASS
+PROJECT_SYNTH_PASS
+IMPLEMENTATION_BITSTREAM_PASS
+```
+
+Bitstream:
+
+```text
+fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit
+BITSTREAM_SIZE_BYTES=12920775
+```
+
+Post-route timing is clean:
+
+```text
+All user specified timing constraints are met.
+WNS=0.086 ns
+WHS=0.016 ns
+TNS=0.000 ns
+THS=0.000 ns
+DRC errors=0
+critical warnings=0
+```
+
+Post-route utilization:
+
+```text
+Slice LUTs:      216599 / 277400 = 78.08%
+Slice Registers: 246370 / 554800 = 44.41%
+BRAM Tile:          146 /    755 = 19.34%
+DSP:               1386 /   2020 = 68.61%
+```
+
+The next gate is Stage72D Orin XDMA golden replay. This is still an offline
+golden transaction; online ROS `SURFEL_FPGA_FULL_ITERATIVE` remains disabled
+until Stage72D passes.

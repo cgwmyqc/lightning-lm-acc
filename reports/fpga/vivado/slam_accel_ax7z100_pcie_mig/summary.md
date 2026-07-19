@@ -223,3 +223,35 @@ Next Orin gate:
   --timeout_sec 120 \
   --abi_v2_candidates
 ```
+
+## Stage 72C Localization Iterative Core Integration 2026-07-19
+
+The formal `azmig` board image was regenerated after adding
+`slam_loc_iterative_core` as `KERNEL_SEL=6`.
+
+Results:
+
+- HLS g++ CSim / Vivado HLS CSim / C Synthesis / IP export: PASS.
+- `slam_accel_ctrl` OOC synthesis: PASS.
+- BD validate: PASS.
+- Project synthesis: PASS.
+- Implementation/bitstream: PASS.
+- Bitstream: `fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit`.
+- Timing: WNS `0.086 ns`, WHS `0.016 ns`; all user timing constraints met.
+- Route status: 0 routing errors.
+- DRC: 0 errors, 0 critical warnings.
+- Utilization: LUT `78.08%`, FF `44.41%`, BRAM `19.34%`, DSP `68.61%`.
+
+New loc iterative contract:
+
+```text
+KERNEL_SEL=6
+LOC_ITER_INPUT_ADDR_LO/HI=0x06c/0x070
+LOC_ITER_OUTPUT_ADDR_LO/HI=0x074/0x078
+LOC_ITER_INPUT_BASE=0x30030000
+LOC_ITER_OUTPUT_BASE=0x30040000
+```
+
+Next Orin gate: JTAG program the new bitstream, reboot Orin, run shim/reg and
+DDR smoke, then run the Stage72D loc iterative XDMA golden replay against
+`fpga/golden/localization_iterative/frame_000001`.

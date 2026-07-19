@@ -11,6 +11,7 @@ This version contains:
 - status, error, cycle, and run counters
 - direct `ap_ctrl_hs` wiring for `unified_surfel_observation_core`
 - direct `ap_ctrl_hs` wiring for `slam_ekf_update_core`
+- direct `ap_ctrl_hs` wiring for `slam_loc_iterative_core`
 - direct 32-bit base-address outputs for the HLS `m_axi offset=direct` ports
 - a direct output base address for the HLS `output_words` port
 
@@ -23,7 +24,7 @@ It does not instantiate XDMA, block design, DDR interconnect, or the HLS IP. Tho
 | `0x000` | `VERSION` | RO | Interface convergence version, currently `0x0002_0002` |
 | `0x004` | `CONTROL` | WO | bit0 `start`, bit1 `clear_done_error` |
 | `0x008` | `STATUS` | RO | bit0 idle, bit1 busy, bit2 done, bit3 error, bit8 HLS done, bit9 HLS idle, bit10 HLS ready |
-| `0x00c` | `KERNEL_SEL` | RW | `4` = unified observation, `5` = mapping EKF update |
+| `0x00c` | `KERNEL_SEL` | RW | `4` = unified observation, `5` = mapping EKF update, `6` = localization full iterative |
 | `0x010` | `MODE` | RW | `0` mapping observation, `1` localization observation |
 | `0x014` | `ERROR` | RO | `0` ok, `1` unsupported kernel, `3` non-zero high address word |
 | `0x018` | `CYCLE_COUNT` | RW | increments while dispatch/wait are active |
@@ -47,6 +48,10 @@ It does not instantiate XDMA, block design, DDR interconnect, or the HLS IP. Tho
 | `0x060` | `EKF_INPUT_ADDR_HI` | RW | must be zero in this 32-bit address phase |
 | `0x064` | `EKF_OUTPUT_ADDR_LO` | RW | low 32 bits of `slam_ekf_update_core` output word buffer |
 | `0x068` | `EKF_OUTPUT_ADDR_HI` | RW | must be zero in this 32-bit address phase |
+| `0x06c` | `LOC_ITER_INPUT_ADDR_LO` | RW | low 32 bits of `slam_loc_iterative_core` input word buffer |
+| `0x070` | `LOC_ITER_INPUT_ADDR_HI` | RW | must be zero in this 32-bit address phase |
+| `0x074` | `LOC_ITER_OUTPUT_ADDR_LO` | RW | low 32 bits of `slam_loc_iterative_core` output word buffer |
+| `0x078` | `LOC_ITER_OUTPUT_ADDR_HI` | RW | must be zero in this 32-bit address phase |
 
 ## HLS Direct Ports
 
@@ -128,6 +133,21 @@ ekf_ap_done
 ekf_error[31:0]
 ```
 
+Stage72C adds the separate localization full-iterative HLS dispatch path:
+
+```text
+loc_iter_ap_start
+loc_iter_scan_addr[31:0]       // reuses SCAN_ADDR_LO
+loc_iter_candidate_addr[31:0]  // reuses OBS_CELLS_ADDR_LO as candidate_cells
+loc_iter_input_addr[31:0]
+loc_iter_output_addr[31:0]
+
+loc_iter_ap_idle
+loc_iter_ap_ready
+loc_iter_ap_done
+loc_iter_error[31:0]
+```
+
 ## FSM
 
 ```text
@@ -140,8 +160,9 @@ IDLE -> DISPATCH -> WAIT -> DONE
 `ERROR` when the selected HLS error input is non-zero.
 
 `KERNEL_SEL=4` dispatches unified observation. `KERNEL_SEL=5` dispatches
-the standalone mapping EKF update core. Other kernel selectors remain
-unsupported and return `ERROR=0x00000001`.
+the standalone mapping EKF update core. `KERNEL_SEL=6` dispatches the
+localization full-iterative core. Other kernel selectors remain unsupported and
+return `ERROR=0x00000001`.
 
 ## OOC Synthesis
 

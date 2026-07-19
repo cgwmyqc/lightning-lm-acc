@@ -846,11 +846,11 @@ CONFIG.xdma_sts_ports                             string  false      false
 CONFIG.xdma_wnum_chnl                             string  false      1
 CONFIG.xdma_wnum_rids                             string  false      16
 CONFIG.xlnx_ref_board                             string  false      None
-LOCATION                                          string  false
+LOCATION                                          string  false      
 LOCK_UPGRADE                                      bool    false      0
 NAME                                              string  false      xdma_0
 PATH                                              string  true       /xdma_0
-SCREENSIZE                                        string  false
+SCREENSIZE                                        string  false      
 SELECTED_SIM_MODEL                                string  false      rtl
 TYPE                                              string  true       ip
 VLNV                                              string  true       xilinx.com:ip:xdma:4.1

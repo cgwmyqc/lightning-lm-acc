@@ -494,9 +494,36 @@ The real golden is now available at:
 fpga/golden/localization_iterative/frame_000001
 ```
 
+Stage72B Windows status:
+
+```text
+real localization iterative golden CSim: PASS
+Vivado HLS CSim: PASS
+Vivado HLS C Synthesis: PASS
+Vivado HLS IP export: PASS
+iterations/counts: 4, 6124/837/2
+max_abs=2.91323e-13
+max_rel=6.73397e-15
+```
+
 The core is still not connected to the AX7Z100 BD and does not change the
-current `azmig_wrapper.bit`. The next gate is Windows/HLS real-golden CSim/Cosim,
-then BD/XDMA integration, then Orin board replay.
+current `azmig_wrapper.bit`. The next gate is BD/XDMA integration, then Orin
+board replay.
+
+Stage72C Windows status:
+
+```text
+slam_loc_iterative_core connected to AX7Z100 BD: PASS
+KERNEL_SEL=6 added to slam_accel_ctrl: PASS
+LOC_ITER_INPUT/OUTPUT DDR regions added: PASS
+BD validate / synthesis / implementation / bitstream: PASS
+post-route timing: PASS, WNS=0.086 ns, WHS=0.016 ns
+```
+
+Stage72C does not prove online localization yet. It only proves that Version 8
+now has a downloadable board image with the full iterative localization kernel
+present. The next gate is Stage72D Orin XDMA golden replay with
+`KERNEL_SEL=6`.
 
 Acceptance for Version 8:
 
