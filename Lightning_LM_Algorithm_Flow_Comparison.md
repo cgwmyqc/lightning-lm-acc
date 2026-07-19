@@ -464,6 +464,21 @@ Stage71: Windows/HLS loc full iterative IP and golden
 Stage72: Orin golden replay and run_loc_online integration
 ```
 
+Stage70/71 Windows status:
+
+```text
+slam_loc_iterative_core standalone HLS IP: implemented
+g++ CSim: PASS
+Vivado HLS CSim: PASS
+Vivado HLS C Synthesis: PASS
+Vivado HLS IP export: PASS
+```
+
+The current Stage71 validation is synthetic because real
+`fpga/golden/localization_iterative/frame_000001` has not been generated yet.
+The core is not connected to the AX7Z100 BD and does not change the current
+`azmig_wrapper.bit`.
+
 Acceptance for Version 8:
 
 ```text

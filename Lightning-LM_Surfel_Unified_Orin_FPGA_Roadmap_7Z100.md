@@ -6988,6 +6988,95 @@ Reports:
 reports/fpga/runtime/stage71_loc_full_iter_hls/
 ```
 
+## Stage 70/71 Windows Result: Localization Full Iterative HLS
+
+Status: Windows standalone HLS stage PASS.
+
+Implemented files:
+
+```text
+fpga/hls/slam_loc_iterative_core/
+reports/fpga/runtime/stage70_loc_full_iter_abi/
+reports/fpga/runtime/stage71_loc_full_iter_hls/
+reports/fpga/hls/slam_loc_iterative_core/stage71/
+```
+
+The new HLS core is intentionally independent from both existing kernels:
+
+```text
+unified_surfel_observation_core: observation V1/V2 + optional solve6x6
+slam_ekf_update_core: mapping 12D ESKF update
+slam_loc_iterative_core: localization full iterative pose registration
+```
+
+Stage71 first version uses Candidate ABI V2 only:
+
+```text
+scan_points[i] + candidate_cells[i] -> residual/Jacobian/H,b -> solve6x6 -> pose update
+```
+
+It does not read `active_blocks` and does not perform FPGA-side map lookup. This
+keeps the Stage61 performance decision: Orin remains responsible for irregular
+candidate selection, while FPGA handles dense math and the localization
+iteration loop.
+
+Windows validation commands completed:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\slam_loc_iterative_core\run_gpp_csim.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\slam_loc_iterative_core\run_vivado_hls_csim.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\slam_loc_iterative_core\run_vivado_hls_csynth.ps1
+powershell -ExecutionPolicy Bypass -File .\fpga\hls\slam_loc_iterative_core\run_vivado_hls_export_ip.ps1
+```
+
+Validation result:
+
+```text
+LOC_ITER_GPP_CSIM_PASS
+LOC_ITER_HLS_CSIM_PASS
+LOC_ITER_CSYNTH_PASS
+LOC_ITER_EXPORT_IP_PASS
+LOC_ITER_FINAL_POSE_MATCH tx=1 ty=-2 tz=0
+LOC_ITER_ITERATIONS_MATCH iterations=3
+LOC_ITER_COUNTS_MATCH counts=2/0/0
+```
+
+Vivado HLS C Synthesis summary:
+
+```text
+target part: xc7z100ffg900-2
+target clock: 8.00 ns
+estimated clock: 7.519 ns
+BRAM_18K: 156 / 1510 (10%)
+DSP48E: 574 / 2020 (28%)
+FF: 85804 / 554800 (15%)
+LUT: 94725 / 277400 (34%)
+```
+
+IP export path:
+
+```text
+fpga/vivado/.build/hls_slam_loc_iterative_export/solution1/impl/ip/
+```
+
+Vivado HLS 2018.3 generated an overflowing timestamp-style `core_revision`.
+The local export script now detects missing `component.xml`, rewrites the
+generated `run_ippack.tcl` revision to `1`, reruns Vivado IP packager, and then
+reports `LOC_ITER_EXPORT_IP_PASS`.
+
+Limitations:
+
+```text
+fpga/golden/localization_iterative/frame_000001/
+```
+
+is not present yet. Therefore Stage71 is currently validated with a deterministic
+synthetic fixture only. It proves the HLS full-iteration mechanics, but not real
+online localization trajectory equivalence.
+
+No board BD, XDMA/MIG/BAR shim, register map, or `azmig_wrapper.bit` change was
+made in Stage71.
+
 ## Stage 72 Plan: Orin Localization Full Iterative Golden and Online Test
 
 Stage72 verifies the Stage71 localization full iterative IP on Orin and then

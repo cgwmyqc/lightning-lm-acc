@@ -2350,3 +2350,56 @@ fallback_cpu_sim=0
 fallback_ndt=0
 red/green trajectory lines do not continuously diverge
 ```
+
+#### Stage70/71 Windows Update
+
+Stage70/71 Windows-side development is complete for the standalone HLS gate.
+
+Implemented:
+
+```text
+fpga/hls/slam_loc_iterative_core/
+```
+
+The first HLS core is Candidate ABI V2 only. It consumes one precomputed
+candidate surfel per scan point, then runs localization observation, solve6x6,
+left SE3 pose update, and convergence internally. It does not perform active map
+lookup in FPGA.
+
+Validation completed:
+
+```text
+LOC_ITER_GPP_CSIM_PASS
+LOC_ITER_HLS_CSIM_PASS
+LOC_ITER_CSYNTH_PASS
+LOC_ITER_EXPORT_IP_PASS
+```
+
+Synthetic fixture result:
+
+```text
+final pose: tx=1, ty=-2, tz=0
+iterations: 3
+counts: 2/0/0
+```
+
+Vivado HLS 2018.3 C Synthesis:
+
+```text
+target clock: 8.00 ns
+estimated clock: 7.519 ns
+BRAM_18K: 156
+DSP48E: 574
+FF: 85804
+LUT: 94725
+```
+
+Current limitation:
+
+```text
+fpga/golden/localization_iterative/frame_000001/
+```
+
+does not exist yet. Stage72 should first generate real localization iterative
+golden on Orin, then rerun this HLS path against real data before BD/runtime
+integration.
