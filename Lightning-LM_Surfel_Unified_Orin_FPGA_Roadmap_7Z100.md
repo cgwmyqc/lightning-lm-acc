@@ -7082,6 +7082,16 @@ made in Stage71.
 Stage72 verifies the Stage71 localization full iterative IP on Orin and then
 connects it to `run_loc_online`.
 
+Stage72 is split into explicit gates:
+
+```text
+Stage72A: Orin real localization iterative golden generation + CPU replay
+Stage72B: Windows/HLS real golden CSim/Cosim
+Stage72C: BD/register/XDMA integration
+Stage72D: Orin XDMA golden replay
+Stage72E: run_loc_online SURFEL_FPGA_FULL_ITERATIVE smoke
+```
+
 Golden replay target:
 
 ```text
@@ -7120,4 +7130,109 @@ Reports:
 
 ```text
 reports/fpga/runtime/stage72_loc_full_iter_orin/
+```
+
+## Stage 72A Orin Result: Real Localization Iterative Golden PASS
+
+Date: 2026-07-19
+
+Implemented Orin-side tools:
+
+```text
+build_surfel_loc_iterative_golden
+run_surfel_loc_iterative_golden_replay
+```
+
+Generated real fixed-candidate iterative golden:
+
+```text
+fpga/golden/localization_iterative/frame_000001/
+  loc_iter_scan.bin
+  loc_iter_candidates.bin
+  loc_iter_input.bin
+  loc_iter_expected.bin
+  loc_iter_meta.yaml
+```
+
+Source golden:
+
+```text
+fpga/golden/localization/frame_000001
+```
+
+Build command:
+
+```bash
+ros2 run lightning build_surfel_loc_iterative_golden \
+  --source_golden_dir fpga/golden/localization/frame_000001 \
+  --output_dir fpga/golden/localization_iterative/frame_000001 \
+  --max_iterations 4 \
+  --residual_outlier_th 0.3 \
+  --conv_translation 1e-4 \
+  --conv_rotation 1e-4 \
+  --min_valid_count 300
+```
+
+Build result:
+
+```text
+LOC_ITER_GOLDEN_BUILD_PASS
+scan_count=6963
+candidate_count=6963
+candidate_valid=6961
+candidate_miss=2
+iterations_used=4
+status=1
+flags=0x1
+counts=6124/837/2
+score=2.25349
+dx_norm=0.00349622
+```
+
+CPU replay command:
+
+```bash
+ros2 run lightning run_surfel_loc_iterative_golden_replay \
+  --golden_dir fpga/golden/localization_iterative/frame_000001
+```
+
+CPU replay result:
+
+```text
+LOC_ITER_CPU_REPLAY_PASS
+loc_iter_expected.bin parser roundtrip PASS
+status_ok=1
+values_ok=1
+max_abs=0
+max_rel=0
+actual_counts=6124/837/2
+expected_counts=6124/837/2
+actual_iterations=4
+expected_iterations=4
+final_pose_finite=1
+```
+
+Important semantic note:
+
+```text
+Stage72A expected uses a fixed Candidate ABI V2 list generated from the initial
+pose. It intentionally does not redo active-map lookup after each pose update.
+This matches the Stage71 HLS full iterative core semantics.
+```
+
+Current boundary:
+
+```text
+run_surfel_loc_iterative_xdma_golden is still not a board PASS target until
+Windows reruns Stage71 HLS against this real golden and integrates the IP into
+azmig_wrapper.bit.
+localization.mode=fpga_full still must not be claimed as online
+SURFEL_FPGA_FULL_ITERATIVE until Stage72D/E.
+```
+
+Next required step:
+
+```text
+Stage72B: Windows/HLS real golden CSim/Cosim using
+fpga/golden/localization_iterative/frame_000001.
 ```

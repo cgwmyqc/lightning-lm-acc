@@ -474,10 +474,29 @@ Vivado HLS C Synthesis: PASS
 Vivado HLS IP export: PASS
 ```
 
-The current Stage71 validation is synthetic because real
-`fpga/golden/localization_iterative/frame_000001` has not been generated yet.
-The core is not connected to the AX7Z100 BD and does not change the current
-`azmig_wrapper.bit`.
+Stage72A Orin status:
+
+```text
+real localization iterative golden: generated
+CPU replay: PASS
+scan_count=6963
+candidate_count=6963
+candidate_valid=6961
+candidate_miss=2
+iterations_used=4
+counts=6124/837/2
+score=2.25349
+```
+
+The real golden is now available at:
+
+```text
+fpga/golden/localization_iterative/frame_000001
+```
+
+The core is still not connected to the AX7Z100 BD and does not change the
+current `azmig_wrapper.bit`. The next gate is Windows/HLS real-golden CSim/Cosim,
+then BD/XDMA integration, then Orin board replay.
 
 Acceptance for Version 8:
 

@@ -162,6 +162,9 @@ enum GoldenRecordType : uint32_t {
     GOLDEN_POSE = 2u,
     GOLDEN_ACTIVE_MAP = 3u,
     GOLDEN_NORMAL_EQUATION = 4u,
+    GOLDEN_LOC_ITER_CANDIDATE_CELLS = 5u,
+    GOLDEN_LOC_ITER_INPUT_WORDS = 6u,
+    GOLDEN_LOC_ITER_OUTPUT_WORDS = 7u,
 };
 
 }  // namespace fpga

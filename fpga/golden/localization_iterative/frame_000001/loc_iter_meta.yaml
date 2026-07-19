@@ -1,0 +1,31 @@
+mode: LOCALIZATION_FULL_ITERATIVE
+source_golden_dir: fpga/golden/localization/frame_000001
+scan_count: 6963
+candidate_count: 6963
+candidate_valid_count: 6961
+candidate_miss_count: 2
+fixed_candidate_list: true
+max_iterations: 4
+residual_outlier_th: 0.29999999999999999
+conv_translation: 0.0001
+conv_rotation: 0.0001
+min_valid_count: 300
+expected:
+  status: 1
+  flags: 1
+  iterations_used: 4
+  valid_count: 6124
+  reject_count: 837
+  miss_count: 2
+  residual_abs_sum: 343.64376530505422
+  residual_max_abs: 0.29998974813190227
+  score: 2.2534928608749407
+  dx_norm: 0.0034962173832383588
+  final_pose:
+    tx: 4.725505878898252
+    ty: 1.2943354090059787
+    tz: 6.3375662373050403
+    qx: 0.0636433214522764
+    qy: 0.039594235983679407
+    qz: -0.065081673623631542
+    qw: 0.99506090259327251

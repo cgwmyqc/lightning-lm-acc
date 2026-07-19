@@ -2400,6 +2400,41 @@ Current limitation:
 fpga/golden/localization_iterative/frame_000001/
 ```
 
-does not exist yet. Stage72 should first generate real localization iterative
-golden on Orin, then rerun this HLS path against real data before BD/runtime
-integration.
+was generated on Orin in Stage72A. The generated golden uses a fixed Candidate
+ABI V2 list from the initial pose, matching the Stage71 HLS full-iteration
+semantics instead of the current CPU path that can redo lookup per iteration.
+
+Stage72A Orin result:
+
+```text
+LOC_ITER_GOLDEN_BUILD_PASS
+LOC_ITER_CPU_REPLAY_PASS
+scan_count=6963
+candidate_count=6963
+candidate_valid=6961
+candidate_miss=2
+iterations_used=4
+counts=6124/837/2
+score=2.25349
+dx_norm=0.00349622
+parser roundtrip max_abs=0 max_rel=0
+```
+
+Generated files:
+
+```text
+fpga/golden/localization_iterative/frame_000001/
+  loc_iter_scan.bin
+  loc_iter_candidates.bin
+  loc_iter_input.bin
+  loc_iter_expected.bin
+  loc_iter_meta.yaml
+```
+
+Next performance investigation step:
+
+```text
+Windows/HLS reruns slam_loc_iterative_core CSim/Cosim with the real Stage72A
+golden. Only after real-golden HLS PASS and BD/XDMA integration should Orin run
+run_surfel_loc_iterative_xdma_golden.
+```
