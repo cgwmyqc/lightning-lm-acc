@@ -60,7 +60,13 @@ void PerfMonitor::ConfigureFromYaml(const YAML::Node& yaml) {
 
     const YAML::Node fpga = yaml["fpga"];
     config_.backend = NormalizeBackend(GetYamlValue(fpga, "mode", std::string("cpu")));
+    if (fpga && fpga["mapping"] && fpga["mapping"]["mode"]) {
+        config_.backend = NormalizeBackend(fpga["mapping"]["mode"].as<std::string>());
+    }
     if (fpga && fpga["enable"] && !fpga["enable"].as<bool>()) {
+        config_.backend = "CPU";
+    }
+    if (fpga && fpga["mapping"] && fpga["mapping"]["enable"] && !fpga["mapping"]["enable"].as<bool>()) {
         config_.backend = "CPU";
     }
 

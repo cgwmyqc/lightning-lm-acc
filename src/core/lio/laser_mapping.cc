@@ -429,7 +429,14 @@ bool LaserMapping::Run() {
     // pred_state.pos_ = state_point_.pos_;  // 假定位置不动行不行,防止速度漂移
     // kf_.ChangeX(pred_state);
 
-    {
+    if (options_.mapping_backend_type_ == MappingBackendType::FPGA_FULL) {
+        ScopedPerfStage perf("Mapping FPGA_FULL one-shot total");
+        if (!RunMappingFpgaFullOneShot()) {
+            if (!RunCpuEskfUpdateForFpgaFallback()) {
+                return false;
+            }
+        }
+    } else {
         ScopedPerfStage perf("ESKF Update total");
         kf_.Update(ESKF::ObsType::LIDAR, 1.0);
     }
@@ -733,8 +740,8 @@ void LaserMapping::MapIncremental() {
 
 void LaserMapping::MapIncrementalFpgaUpdate() {
     if (!mapping_backend_warning_logged_) {
-        LOG(WARNING) << "[LaserMapping] FPGA mapping update backend requested but XDMA/HLS is not implemented yet; "
-                     << "fallback to CPU MapIncremental.";
+        LOG(WARNING) << "[LaserMapping] FPGA map incremental update is not implemented yet; "
+                     << "using CPU MapIncremental. FPGA_FULL still uses FPGA observation + FPGA EKF update.";
         mapping_backend_warning_logged_ = true;
     }
     MapIncrementalCpu();
@@ -807,6 +814,174 @@ void LaserMapping::MapIncrementalCpu() {
             }
         },
         "    Local Map Add Points");
+}
+
+bool LaserMapping::RunCpuEskfUpdateForFpgaFallback() {
+    if (!options_.mapping_fallback_to_cpu_) {
+        LOG(ERROR) << "[LaserMapping] mapping FPGA_FULL failed and CPU fallback is disabled.";
+        return false;
+    }
+    const MappingBackendType saved_backend = options_.mapping_backend_type_;
+    options_.mapping_backend_type_ = MappingBackendType::CPU;
+    {
+        ScopedPerfStage perf("ESKF Update total (FPGA_FULL CPU fallback)");
+        kf_.Update(ESKF::ObsType::LIDAR, 1.0);
+    }
+    options_.mapping_backend_type_ = saved_backend;
+    return true;
+}
+
+bool LaserMapping::RunMappingFpgaFullOneShot() {
+    const auto full_start = Clock::now();
+    const uint64_t fpga_call_id = ++mapping_fpga_call_count_;
+    const int64_t frame_id = PerfMonitor::GetCurrentFrameId();
+
+    auto fail = [&](const std::string& reason) {
+        ++mapping_fpga_fallback_count_;
+        LOG(WARNING) << "[LaserMapping] mapping FPGA_FULL failed -> CPU fallback: " << reason
+                     << " fallback_count=" << mapping_fpga_fallback_count_;
+        return false;
+    };
+
+    if (options_.enable_icp_part_) {
+        return fail("enable_icp_part=true but FPGA_FULL one-shot only supports surfel plane observation");
+    }
+    if (use_aa_) {
+        return fail("use_aa=true is not supported by FPGA_FULL one-shot");
+    }
+    if (!options_.mapping_candidate_abi_v2_) {
+        return fail("FPGA_FULL requires candidate ABI V2");
+    }
+    if (!surfel_map_) {
+        return fail("surfel_map is disabled");
+    }
+    if (scan_down_body_ == nullptr || scan_down_body_->empty()) {
+        return fail("empty scan_down_body");
+    }
+
+    loc::ActiveMapBuffer active_map;
+    auto stage_start = Clock::now();
+    if (!surfel_map_->ExportActiveMap(active_map) || active_map.Empty()) {
+        return fail("failed to export active surfel map");
+    }
+    const double export_active_map_sec = SecondsSince(stage_start);
+
+    std::array<float, 9> extrinsic_R{};
+    std::array<float, 3> extrinsic_T{};
+    const Mat3f extrinsic_R_f = offset_R_lidar_fixed_.cast<float>();
+    const Vec3f extrinsic_T_f = offset_t_lidar_fixed_.cast<float>();
+    for (int r = 0; r < 3; ++r) {
+        for (int c = 0; c < 3; ++c) {
+            extrinsic_R[static_cast<size_t>(r * 3 + c)] = extrinsic_R_f(r, c);
+        }
+        extrinsic_T[static_cast<size_t>(r)] = extrinsic_T_f(r);
+    }
+
+    stage_start = Clock::now();
+    const auto scan_points = fpga::ToAbiScanPoints(scan_down_body_);
+    const double pack_scan_sec = SecondsSince(stage_start);
+
+    const NavState start_state = kf_.GetX();
+    const ESKF::CovType propagated_cov = kf_.GetP();
+    const SE3 lidar_pose = mapping_golden::LidarPoseFromState(start_state, offset_R_lidar_fixed_, offset_t_lidar_fixed_);
+    const auto pose = loc::golden::ToAbiPose(lidar_pose);
+    const auto params = fpga::MakeMappingObservationParams(static_cast<float>(options_.plane_icp_weight_),
+                                                           extrinsic_R, extrinsic_T);
+
+    fpga::XdmaRuntime runtime(options_.mapping_xdma_options_);
+    fpga::XdmaRuntime::RunResult obs_result;
+    std::string error;
+    stage_start = Clock::now();
+    if (!runtime.RunMappingObservationV2(scan_points, pose, active_map, params, true,
+                                         options_.mapping_xdma_verify_readback_, obs_result, &error)) {
+        return fail("observation V2 failed: " + error);
+    }
+    const double observation_call_sec = SecondsSince(stage_start);
+
+    const loc::LocNormalEquation equation = loc::golden::FromAbiNormalEquation(obs_result.output);
+    if (equation.valid_count < 20) {
+        return fail("not enough FPGA_FULL effective surface points: " + std::to_string(equation.valid_count));
+    }
+
+    mapping_update::UpdateInput update_input;
+    update_input.start_state = start_state;
+    update_input.current_state = start_state;
+    update_input.propagated_cov = propagated_cov;
+    update_input.HTH = equation.hessian;
+    update_input.HTr = equation.gradient;
+    update_input.dx_from_start = ESKF::StateVecType::Zero();
+    update_input.params.R = 1.0;
+    update_input.params.limit = 1e-3 * ESKF::StateVecType::Ones();
+    update_input.frame_index = static_cast<int>(frame_id);
+    update_input.iteration_index = 0;
+    update_input.finish_update = true;
+
+    fpga::XdmaRuntime::EkfUpdateRunResult ekf_result;
+    stage_start = Clock::now();
+    if (!runtime.RunMappingEkfUpdate(update_input, true, options_.mapping_xdma_verify_readback_, ekf_result, &error)) {
+        return fail("EKF update failed: " + error);
+    }
+    const double ekf_call_sec = SecondsSince(stage_start);
+    if (!ekf_result.output.success || ekf_result.output.rejected) {
+        return fail("EKF update output status=" + ekf_result.output.status);
+    }
+
+    NavState updated_state = ekf_result.output.updated_state;
+    updated_state.timestamp_ = measures_.lidar_end_time_;
+    kf_.ChangeX(updated_state);
+    kf_.ChangeP(ekf_result.output.updated_cov);
+
+    effect_feat_surf_ = static_cast<int>(equation.valid_count);
+    effect_feat_icp_ = 0;
+    surfel_hit_num_ = static_cast<int>(equation.valid_count);
+    surfel_fallback_num_ = static_cast<int>(equation.miss_count);
+    ++mapping_fpga_success_count_;
+    PerfMonitor::SetEffectivePointStats(effect_feat_surf_, effect_feat_icp_);
+
+    if (options_.mapping_fpga_profile_enable_) {
+        AppendMappingFpgaProfileCsv(frame_id, 1, fpga_call_id, scan_points.size(), active_map.blocks.size(),
+                                    active_map.cells.size(), export_active_map_sec, pack_scan_sec, obs_result,
+                                    equation);
+    }
+
+    LOG(INFO) << "[LaserMapping] mapping FPGA_FULL observation success=1"
+              << " ekf_update success=1"
+              << " success_count=" << mapping_fpga_success_count_
+              << " frame_id=" << frame_id
+              << " fpga_call=" << fpga_call_id
+              << " scan_points=" << scan_points.size()
+              << " active_blocks=" << active_map.blocks.size()
+              << " active_cells=" << active_map.cells.size()
+              << " kernel_sel_obs=4"
+              << " kernel_sel_ekf=5"
+              << " candidate_abi_v2=" << options_.mapping_candidate_abi_v2_
+              << " candidate_count=" << obs_result.candidate_count
+              << " candidate_valid=" << obs_result.candidate_valid_count
+              << " candidate_miss=" << obs_result.candidate_miss_count
+              << " candidate_bytes=" << obs_result.candidate_bytes
+              << " valid/reject/miss=" << equation.valid_count << "/" << equation.reject_count << "/"
+              << equation.miss_count
+              << " residual_abs_sum=" << equation.residual_abs_sum
+              << " residual_max_abs=" << equation.residual_max_abs
+              << " obs_hls_wait=" << obs_result.timing.hls_wait_sec
+              << " obs_total=" << obs_result.timing.total_sec
+              << " obs_runtime_call=" << observation_call_sec
+              << " ekf_hls_wait=" << ekf_result.timing.hls_wait_sec
+              << " ekf_total=" << ekf_result.timing.total_sec
+              << " ekf_runtime_call=" << ekf_call_sec
+              << " ekf_status=" << ekf_result.output.status
+              << " dx_norm=" << ekf_result.output.dx_norm
+              << " dx_translation=" << ekf_result.output.dx_translation
+              << " dx_rotation_deg=" << ekf_result.output.dx_rotation_deg
+              << " fallback=0"
+              << " full_total=" << SecondsSince(full_start)
+              << " obs_status=0x" << std::hex << obs_result.status
+              << " obs_error=0x" << obs_result.error
+              << " ekf_status_reg=0x" << ekf_result.status
+              << " ekf_error=0x" << ekf_result.error
+              << std::dec << " obs_run_count=" << obs_result.run_count_before << "->" << obs_result.run_count_after
+              << " ekf_run_count=" << ekf_result.run_count_before << "->" << ekf_result.run_count_after;
+    return true;
 }
 
 /**

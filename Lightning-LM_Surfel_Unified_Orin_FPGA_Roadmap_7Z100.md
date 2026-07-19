@@ -6615,3 +6615,420 @@ Stage67 reports:
 
 - `reports/fpga/hls/unified_surfel_observation_core/stage67_timing_closure/`
 - `reports/fpga/vivado/stage67_timing_closure/`
+- `reports/fpga/runtime/stage67_timing_clean_orin/`
+
+Stage67 Orin result on 2026-07-19:
+
+```text
+Result: PASS
+Build: colcon build --packages-select lightning PASS
+BDF: 0005:01:00.0 [10ee:7024]
+Kernel driver in use: xdma
+/dev/xdma0_user: present
+/dev/xdma0_h2c_0: present
+/dev/xdma0_c2h_0: present
+enable: 1
+PCIe: LnkCap 5GT/s x4, LnkSta 5GT/s x1 downgraded
+SHIM_SMOKE_PASS
+REG_SMOKE_PASS
+DDR_SMOKE_PASS
+Localization V2:
+  XDMA_CPP_GOLDEN_NUMERIC_PASS
+  counts=6050/911/2
+  status=0x00000204
+  error=0x00000000
+  hls_wait_sec=0.134540319
+Mapping V2:
+  MAPPING_XDMA_REPLAY_PASS
+  counts actual=611/0/171 expected=611/0/171
+  hls_wait_sec=0.0171922
+  max_abs=0.268571
+  max_rel=1.99295e-05
+  worst_field=H(3,3)
+Mapping EKF update:
+  MAPPING_EKF_UPDATE_REPEAT_PASS repeat=50
+  iterations=50/50
+  RUN_COUNT monotonic=true
+  hls_wait min=0.003391264
+  hls_wait mean=0.00426241396
+  hls_wait max=0.004391836
+  dx_max_abs=4.96565e-17
+  cov_max_abs=1.53144e-18
+  state_max_abs=4.94396e-17
+Kernel log: no new Failed to detect XDMA config BAR, CmpltTO, AER fatal,
+offline, or frozen errors.
+```
+
+Conclusion: Stage67 timing-clean bitstream passed Orin golden regression for
+observation V2 and standalone mapping EKF update. The Stage66B timing-risk
+blocker is cleared. Online `FPGA_FULL` remains disabled by default; the next
+stage should be a guarded online smoke with explicit fallback and short-bag
+limits.
+
+## Stage 68 Plan: Mapping FPGA_FULL Online Integration
+
+Stage68 is the next implementation stage after the Stage67 timing-clean Orin
+regression. The goal is to connect the already verified mapping observation V2
+and standalone mapping EKF update hardware path to `run_slam_online`.
+
+Current online gap:
+
+- `MappingBackendType::FPGA_FULL` is parsed from YAML, but online
+  `LaserMapping::ObsModel()` still routes `FPGA_FULL` into
+  `ObsModelFpgaObservation()`.
+- `RunMappingEkfUpdate()` / `KERNEL_SEL=5` is currently exercised by
+  `run_mapping_ekf_update_xdma_golden`, not by the online mapping loop.
+- Therefore online `FPGA_FULL` is not yet equivalent to "mapping IEKF/EKF
+  update in FPGA".
+
+Stage68 implementation target:
+
+```text
+mapping.mode=fpga_full
+  -> export active surfel map
+  -> RunMappingObservationV2() / KERNEL_SEL=4
+  -> build mapping_update::UpdateInput from current ESKF state, P, HTH/HTr
+  -> RunMappingEkfUpdate() / KERNEL_SEL=5
+  -> kf_.ChangeX(updated_state)
+  -> kf_.ChangeP(updated_cov)
+  -> CPU policy, fallback, map update, UI
+```
+
+First online version is intentionally one-shot:
+
+- Do not follow the old `ESKF::Update()` outer loop for `FPGA_FULL`.
+- Do not let one frame produce `obs_call=1..5`.
+- Require `fasterlio.max_iteration=1`, `enable_icp_part=false`, and
+  `use_aa=false` for the first smoke.
+- On any XDMA, observation, EKF update, status, or quality failure, fallback to
+  the existing CPU mapping path when `fpga.mapping.fallback=cpu`.
+
+Stage68 online smoke config:
+
+```yaml
+fpga:
+  enable: true
+  runtime:
+    candidate_abi_v2: true
+  mapping:
+    enable: true
+    mode: fpga_full
+    fallback: cpu
+  localization:
+    enable: false
+
+fasterlio:
+  max_iteration: 1
+  enable_icp_part: false
+  use_aa: false
+```
+
+Acceptance:
+
+```text
+mapping_backend=FPGA_FULL
+mapping FPGA_FULL observation success=1
+mapping FPGA_FULL ekf_update success=1
+KERNEL_SEL=4 observation path used
+KERNEL_SEL=5 EKF update path used
+fallback=0 for the smoke segment
+No repeated per-frame obs_call=1..5 pattern
+Proc Lidar is reduced from the old ~110 ms multi-iteration FPGA_OBS frame
+No sustained abnormal dt
+No XDMA config BAR failure, CmpltTO, AER fatal, offline, or frozen
+```
+
+Reports:
+
+```text
+reports/fpga/runtime/stage68_mapping_online_fpga_full/
+```
+
+### Stage 68 Orin Result: PASS
+
+Stage68A was implemented on Orin:
+
+```text
+mapping.mode=fpga_full
+  -> RunMappingObservationV2() / KERNEL_SEL=4
+  -> RunMappingEkfUpdate() / KERNEL_SEL=5
+  -> kf_.ChangeX(updated_state)
+  -> kf_.ChangeP(updated_cov)
+```
+
+Additional cleanup:
+
+- `FPGA_FULL` no longer enters the old online `ESKF::Update()` multi-iteration
+  observation path.
+- Mapping profile backend display now reads `fpga.mapping.mode`, so the log
+  shows `backend=FPGA_FULL` instead of the old global `FPGA_OBS` label.
+- The map incremental warning was clarified: map insertion remains CPU, while
+  observation and EKF update are FPGA in `FPGA_FULL`.
+
+Orin gate:
+
+```text
+XDMA driver: bound
+/dev/xdma0_user, /dev/xdma0_h2c_0, /dev/xdma0_c2h_0: present
+enable=1
+SHIM_SMOKE_PASS
+REG_SMOKE_PASS
+DDR_SMOKE_PASS
+PCIe link: Gen2 x1 downgraded
+Kernel log: no new XDMA config BAR failure, CmpltTO, AER fatal, offline, or frozen
+```
+
+Golden regression before online smoke:
+
+```text
+Mapping observation V2: MAPPING_XDMA_REPLAY_PASS
+counts actual=611/0/171 expected=611/0/171
+hls_wait_sec=0.017015
+
+Mapping EKF update repeat: MAPPING_EKF_UPDATE_REPEAT_PASS repeat=50
+EKF hls_wait ~= 0.00428 s
+dx_max_abs=4.96565e-17
+cov_max_abs=1.53144e-18
+state_max_abs=4.94396e-17
+```
+
+Controlled short-bag smoke used:
+
+```text
+run_slam_offline
+bag=/home/hit/Cheng/FPGA_ACC/mid360_20260313_outdoor_30deg_up_quan_03_0.db3
+temporary config=/tmp/stage68_fpga_full_livox.yaml
+mapping.mode=fpga_full
+localization.enable=false
+fasterlio.max_iteration=1
+enable_icp_part=false
+use_aa=false
+```
+
+Online-path smoke markers:
+
+```text
+mapping_backend=FPGA_FULL
+mapping FPGA_FULL observation success=1
+mapping FPGA_FULL ekf_update success=1
+kernel_sel_obs=4
+kernel_sel_ekf=5
+fallback=0
+```
+
+Smoke statistics:
+
+```text
+FPGA_FULL success frames: 2048
+old obs_call= pattern: 0
+old mapping FPGA_OBS success markers: 0
+fallback markers: 0
+abnormal dt count: 0
+
+frame_total_ms mean=32.750, p95=39.402, max=61.295
+FPGA_FULL full_total_ms mean=28.822, p95=34.727, max=53.357
+observation hls_wait_ms mean=19.301, p95=25.547, max=42.628
+EKF update hls_wait_ms mean=4.280, p95=4.328, max=7.583
+scan_points mean=793.9, max=1720
+active_blocks mean=461.9, max=911
+active_cells mean=118235, max=233216
+```
+
+Conclusion: Stage68 is PASS as an online mapping `FPGA_FULL` smoke. The next
+stage is Stage69: fixed-segment mapping quality and performance comparison
+between CPU mapping, FPGA_OBS mapping, and FPGA_FULL mapping.
+
+## Stage 69 Plan: Mapping FPGA_FULL Online Mapping Quality Test
+
+Stage69 starts only after Stage68 online `FPGA_FULL` smoke passes.
+
+Goal:
+
+- Compare CPU mapping, FPGA_OBS mapping, and FPGA_FULL mapping on the same fixed
+  short bag segment.
+- Verify that the online `KERNEL_SEL=5` mapping update path improves frame time
+  without degrading mapping trajectory or map quality.
+
+Metrics:
+
+```text
+Proc Lidar min/mean/max
+abnormal dt count
+fallback frames
+keyframe count
+trajectory drift against CPU baseline
+map quality / visible deformation
+observation hls_wait
+ekf_update hls_wait
+RUN_COUNT monotonicity
+kernel log errors
+```
+
+Stage69 does not test localization and does not run joint mapping/localization.
+Mapping and localization are separate programs in this project and should be
+validated as separate online products.
+
+Reports:
+
+```text
+reports/fpga/runtime/stage69_mapping_fpga_full_bag_compare/
+```
+
+## Stage 70 Plan: Localization Full Iterative FPGA ABI Design
+
+Stage70 starts after the mapping FPGA_FULL online path is under control. It is
+an ABI/design stage, not a board test.
+
+Current localization state:
+
+```text
+SURFEL_FPGA_OBS_SOLVE
+  per iteration:
+    RunLocalizationObservationV2Solve6x6()
+    FPGA computes observation + H/b + solve6x6 dx
+    CPU applies dx, checks convergence, handles fallback
+```
+
+This means `lidar_loc.surfel_max_iterations` still linearly increases runtime,
+because every localization iteration launches another FPGA observation/solve
+transaction.
+
+Stage70 target mode:
+
+```text
+SURFEL_FPGA_FULL_ITERATIVE
+```
+
+Future YAML meaning:
+
+```yaml
+fpga:
+  localization:
+    mode: fpga_full
+```
+
+Proposed ABI inputs:
+
+```text
+scan
+active_map
+initial_pose
+max_iterations
+convergence thresholds
+residual / inlier quality thresholds
+force_2d or related localization policy flags if needed
+```
+
+Proposed FPGA responsibilities:
+
+```text
+candidate lookup or candidate ABI V2 consumption
+H/b accumulation
+solve6x6
+pose update
+convergence check
+multi-iteration loop
+```
+
+Proposed outputs:
+
+```text
+final_pose
+final_dx
+iterations_used
+valid/reject/miss
+mean_abs_residual / max_abs_residual
+score
+status/error/debug counters
+```
+
+Do not reuse `slam_ekf_update_core` for localization full iteration. That core
+is mapping ESKF-specific: it consumes `NavState`, covariance `P`, and mapping
+`HTH/HTr`, then outputs updated mapping state and covariance. Localization full
+iteration is a registration loop over pose, scan, and active map.
+
+Reports:
+
+```text
+reports/fpga/runtime/stage70_loc_full_iter_abi/
+```
+
+## Stage 71 Plan: Windows/HLS Localization Full Iterative IP
+
+Stage71 implements the localization full-iteration HLS path designed in
+Stage70.
+
+Expected artifacts:
+
+```text
+fpga/golden/localization_iterative/frame_000001/
+  loc_iter_input.bin
+  loc_iter_expected.bin
+  loc_iter_meta.yaml
+```
+
+Expected Windows/HLS gates:
+
+```text
+LOC_ITER_GPP_CSIM_PASS
+LOC_ITER_HLS_CSIM_PASS
+LOC_ITER_CSYNTH_PASS
+LOC_ITER_FINAL_POSE_MATCH
+LOC_ITER_ITERATIONS_MATCH
+LOC_ITER_COUNTS_MATCH
+```
+
+The first HLS version may reuse existing candidate ABI V2 data structures, but
+the hardware-visible contract must be named and versioned separately from
+`SURFEL_FPGA_OBS_SOLVE`.
+
+Reports:
+
+```text
+reports/fpga/runtime/stage71_loc_full_iter_hls/
+```
+
+## Stage 72 Plan: Orin Localization Full Iterative Golden and Online Test
+
+Stage72 verifies the Stage71 localization full iterative IP on Orin and then
+connects it to `run_loc_online`.
+
+Golden replay target:
+
+```text
+run_surfel_loc_iterative_xdma_golden
+```
+
+Online localization-only config:
+
+```yaml
+fpga:
+  enable: true
+  runtime:
+    candidate_abi_v2: true
+  mapping:
+    enable: false
+  localization:
+    enable: true
+    mode: fpga_full
+    fallback: ndt_omp
+```
+
+Acceptance:
+
+```text
+backend=SURFEL_FPGA_FULL_ITERATIVE
+one FPGA transaction per localization frame
+iterations_used <= configured max
+fallback_cpu_sim=0
+fallback_ndt=0
+red/green trajectory lines do not continuously diverge
+loc_total_ms no longer scales linearly with surfel_max_iterations
+No XDMA config BAR failure, CmpltTO, AER fatal, offline, or frozen
+```
+
+Reports:
+
+```text
+reports/fpga/runtime/stage72_loc_full_iter_orin/
+```

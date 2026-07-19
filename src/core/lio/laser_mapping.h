@@ -168,6 +168,8 @@ class LaserMapping {
     void ObsModel(NavState &s, ESKF::CustomObservationModel &obs);
     void ObsModelCpu(NavState &s, ESKF::CustomObservationModel &obs);
     void ObsModelFpgaObservation(NavState &s, ESKF::CustomObservationModel &obs);
+    bool RunMappingFpgaFullOneShot();
+    bool RunCpuEskfUpdateForFpgaFallback();
     void AppendMappingFpgaProfileCsv(int64_t frame_id, uint64_t obs_call_index, uint64_t fpga_call_id,
                                      size_t scan_points, size_t active_blocks, size_t active_cells,
                                      double export_active_map_sec, double pack_scan_sec,

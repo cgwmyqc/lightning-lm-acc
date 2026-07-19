@@ -359,3 +359,119 @@ DSP=792/2020, LUT=147499/277400, BRAM Tile=127.5/755
 Stage65B only proves hardware integration. Version 7 is not considered online
 ready until Stage65C Orin EKF update golden replay passes and the timing risk
 is handled or explicitly accepted for smoke-only testing.
+
+Stage65C / Stage67 current status:
+
+```text
+Mapping EKF update XDMA golden: PASS
+Mapping EKF update repeat: PASS 50/50
+Stage67 timing-clean bitstream: PASS
+Mapping observation V2: PASS, counts 611/0/171
+Localization observation V2: PASS, counts 6050/911/2
+```
+
+Important online boundary:
+
+```text
+run_mapping_ekf_update_xdma_golden uses KERNEL_SEL=5 successfully.
+run_slam_online does not yet use KERNEL_SEL=5 in its online mapping loop.
+```
+
+So Version 7 hardware was functionally ready after Stage67, and Stage68 has now
+connected it to the online mapping path.
+
+Online target flow for Stage68:
+
+```mermaid
+flowchart TD
+    A[run_slam_online lidar frame] --> B[CPU preprocess / undistort / downsample]
+    B --> C[Export active surfel map]
+    C --> D[FPGA observation V2 / KERNEL_SEL=4]
+    D --> E[HTH / HTr]
+    E --> F[Pack Mapping UpdateInput]
+    F --> G[FPGA mapping EKF update / KERNEL_SEL=5]
+    G --> H[updated_state / updated_cov]
+    H --> I[CPU commit kf_.ChangeX / ChangeP]
+    I --> J[CPU map incremental update / UI / fallback policy]
+```
+
+Stage68 Orin result:
+
+```text
+mapping_backend=FPGA_FULL
+mapping FPGA_FULL observation success=1
+mapping FPGA_FULL ekf_update success=1
+kernel_sel_obs=4
+kernel_sel_ekf=5
+old obs_call= pattern: 0
+fallback markers: 0
+abnormal dt count: 0
+FPGA_FULL full_total_ms mean=28.822
+observation hls_wait_ms mean=19.301
+EKF update hls_wait_ms mean=4.280
+```
+
+This removes the old online behavior where `FPGA_FULL` still entered
+`ObsModelFpgaObservation()` inside the CPU IEKF loop and logged repeated
+`obs_call=1..5` for one lidar frame.
+
+### Version 8: Localization Full Iterative FPGA
+
+Current localization FPGA path:
+
+```text
+SURFEL_FPGA_OBS_SOLVE
+  per iteration:
+    FPGA observation + H/b + solve6x6
+    CPU pose apply
+    CPU convergence check
+```
+
+This is not full localization iteration in FPGA. Increasing
+`lidar_loc.surfel_max_iterations` still increases runtime nearly linearly,
+because each iteration launches another FPGA transaction.
+
+Target Version 8 flow:
+
+```mermaid
+flowchart TD
+    A[run_loc_online localization frame] --> B[CPU LIO frontend / scan preparation]
+    B --> C[CPU active map window]
+    C --> D[Pack scan + active map + initial pose + thresholds]
+    D --> E[FPGA full localization iterative core]
+    E --> F[Iteration 1: candidate / H-b / solve / pose update]
+    F --> G{converged or max iter?}
+    G -- no --> F
+    G -- yes --> H[final_pose / final_dx / counts / residuals / status]
+    H --> I[CPU quality gate / fallback / PGO / UI]
+```
+
+Version 8 should not reuse the mapping `slam_ekf_update_core` directly:
+
+```text
+mapping EKF update core:
+  NavState + covariance + HTH/HTr -> updated mapping state/covariance
+
+localization full iterative core:
+  scan + active map + initial pose -> repeated registration -> final pose
+```
+
+Planned stages:
+
+```text
+Stage70: localization full iterative ABI design
+Stage71: Windows/HLS loc full iterative IP and golden
+Stage72: Orin golden replay and run_loc_online integration
+```
+
+Acceptance for Version 8:
+
+```text
+backend=SURFEL_FPGA_FULL_ITERATIVE
+one FPGA transaction per localization frame
+iterations_used <= configured max
+loc_total_ms no longer scales linearly with surfel_max_iterations
+fallback_cpu_sim=0
+fallback_ndt=0
+red/green trajectory lines do not continuously diverge
+```
