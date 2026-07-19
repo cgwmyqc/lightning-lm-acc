@@ -1,7 +1,7 @@
 # Orin + FPGA + Lightning-LM 性能瓶颈调查与整改决策方案
 
-> 适用项目：`Lightning-LM_Surfel_Unified_Orin_FPGA_Roadmap_7Z100.md` 当前 Stage 55/56 之后的在线 Mapping FPGA_OBS 接入阶段。  
-> 目标读者：Codex / 开发执行者。  
+> 适用项目：`Lightning-LM_Surfel_Unified_Orin_FPGA_Roadmap_7Z100.md` 当前 Stage 55/56 之后的在线 Mapping FPGA_OBS 接入阶段。
+> 目标读者：Codex / 开发执行者。
 > 核心原则：**先做证据闭环，再决定是否改架构；禁止在没有分段耗时证据前直接大改。**
 
 ---
@@ -2086,3 +2086,45 @@ Next Orin gate:
 Acceptance remains: localization `6050/911/2`, mapping `611/0/171`, no XDMA
 config BAR failure, no `CmpltTO`, no AER fatal, and localization full-frame
 `hls_wait <= 0.307s`.
+
+## 25. Stage67 Windows Result: Timing-Clean Full Design After EKF Integration
+
+After Stage65B/66 added the standalone mapping EKF update IP, the full
+`azmig_wrapper.bit` temporarily regressed to negative post-route timing. The
+worst failing path was not the EKF update core; it was in
+`unified_obs_0`, a double multiply DSP chain from the observation HLS IP.
+
+Stage67 fixes this by regenerating `unified_surfel_observation_core` with the
+real board clock target:
+
+```text
+Observation HLS target clock:    8.00 ns
+Observation HLS estimated clock: 7.436 ns
+```
+
+Windows result on 2026-07-18:
+
+```text
+Observation g++ CSim:            PASS
+Observation Vivado HLS CSim:     PASS
+Observation Vivado HLS CSynth:   PASS
+Observation HLS IP export:       PASS
+Vivado BD validate:              PASS
+Vivado project synthesis:        PASS
+Vivado implementation/bitstream: PASS
+Post-route WNS:                  0.123 ns
+Post-route WHS:                  0.016 ns
+Timing:                          all user timing constraints met
+DRC:                             0 errors, 0 critical warnings
+Bitstream: fpga/vivado/.build/azmig_impl/azmig.runs/impl_1/azmig_wrapper.bit
+```
+
+This does not change the Stage61 Candidate ABI V2 performance model. It
+establishes a timing-clean full-design baseline before the next Orin
+regression:
+
+```bash
+./install/lightning/lib/lightning/run_surfel_loc_xdma_golden --golden_dir fpga/golden/localization/frame_000001 --ctrl_base 0x1000 --timeout_sec 120 --abi_v2_candidates
+./install/lightning/lib/lightning/run_surfel_mapping_xdma_golden --golden_dir fpga/golden/mapping/frame_000001 --ctrl_base 0x1000 --timeout_sec 120 --abi_v2_candidates
+./install/lightning/lib/lightning/run_mapping_ekf_update_xdma_golden --golden_dir fpga/golden/mapping_update/frame_000001 --ctrl_base 0x1000 --timeout_sec 120 --repeat 50 --output_dir reports/fpga/runtime/stage66_ekf_update_stability
+```

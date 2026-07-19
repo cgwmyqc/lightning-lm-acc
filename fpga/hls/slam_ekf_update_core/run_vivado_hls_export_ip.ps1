@@ -1,6 +1,7 @@
 param(
     [string]$ProjectDir,
     [string]$Part = "xc7z100ffg900-2",
+    [string]$ClockNs = "8",
     [string]$VivadoHls = "vivado_hls"
 )
 
@@ -21,7 +22,7 @@ $Tcl = Join-Path $ScriptDir "create_vivado_hls_project.tcl"
 $ShortPathInfo = New-LightningVivadoShortPath -ActualPath $ProjectDir -BuildRoot $DefaultBuildRoot
 try {
     $VivadoProjectDir = $ShortPathInfo.ShortPath
-    & $VivadoHls -f $Tcl -tclargs $GoldenDir $VivadoProjectDir $Part "csynth_export_ip"
+    & $VivadoHls -f $Tcl -tclargs $GoldenDir $VivadoProjectDir $Part "csynth_export_ip" $ClockNs
     $HlsExitCode = $LASTEXITCODE
 
     $IpDir = Join-Path $ProjectDir "solution1\impl\ip"

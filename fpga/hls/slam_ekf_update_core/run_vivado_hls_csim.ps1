@@ -2,6 +2,7 @@ param(
     [string]$GoldenDir,
     [string]$ProjectDir,
     [string]$Part = "xc7z100ffg900-2",
+    [string]$ClockNs = "8",
     [string]$VivadoHls = "vivado_hls"
 )
 
@@ -20,6 +21,5 @@ $GoldenDir = (Resolve-Path $GoldenDir).Path
 $ProjectDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ProjectDir)
 $Tcl = Join-Path $ScriptDir "create_vivado_hls_project.tcl"
 
-& $VivadoHls -f $Tcl -tclargs $GoldenDir $ProjectDir $Part "csim"
+& $VivadoHls -f $Tcl -tclargs $GoldenDir $ProjectDir $Part "csim" $ClockNs
 exit $LASTEXITCODE
-
