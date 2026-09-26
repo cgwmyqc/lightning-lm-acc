@@ -36,3 +36,11 @@
 - Reprogrammed the lane-reversal-enabled Stage A2 image after a complete
   power-off reseat, rebooted Orin, and recorded `reseat_01`: enumeration and
   XDMA device creation pass, but both link partners remain at Gen2 x1.
+- Reviewed the vendor chapter 5/6 PCIe tutorial and examples. Confirmed both
+  target XC7Z015 and implement x1; retained their refclk, AXI-frequency, and
+  boot-order guidance without treating their bitstreams as AX7Z100 images.
+- Parameterized Stage A2 for X1/X2/X4 diagnostic widths and distinct PCI device
+  IDs, then generated an X2 bitstream with positive post-route timing.
+- Programmed the X2 image and rebooted Orin. The endpoint advertised Gen2 x2 as
+  `10ee:7022` but negotiated x1, isolating the first failed expansion lane to
+  logical lane 1. Restored and reverified the default X4 Stage A2 image.

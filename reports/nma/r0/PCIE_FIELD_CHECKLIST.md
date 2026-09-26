@@ -13,6 +13,8 @@ the four Golden suites pass. The lidar is not involved in PCIe link training.
 - Live Device Tree: `num-lanes=8`; the root port is not configured as x1.
 - Root-port capability: Gen4 x8; current link: Gen2 x1.
 - FPGA endpoint capability: Gen2 x4; current link: Gen2 x1.
+- A controlled X2 image advertised Gen2 x2 but also trained only x1. Logical
+  lane 1 is the first unavailable expansion lane.
 - FPGA endpoint `0005:01:00.0` binds to `xdma`; user/H2C/C2H/event nodes exist.
 - XDMA must retain `enable_lane_reversal=true`. The `false` diagnostic image
   did not enumerate after either hot recovery or a cold boot.
@@ -65,6 +67,8 @@ Record exactly one physical change per attempt:
 |---|---|---|---|---|
 | `baseline_before_reseat` | none | pending | Gen2 x1 | FAIL |
 | `reseat_01` | power-off reseat only | continuity not measured | Gen2 x1 | FAIL |
+| `vendor_x2_01` | X2 diagnostic image | endpoint MaxWidth x2 | Gen2 x1 | FAIL; inspect logical lane 1 |
+| `vendor_x4_restore_01` | restore default X4 image | endpoint MaxWidth x4 | Gen2 x1 | FAIL; baseline restored |
 | `cable_swap_01` | known-good cable/adapter | pending | pending | pending |
 
 ## Powered Measurements
@@ -75,8 +79,9 @@ equipment and a known ground reference.
 1. Confirm 100 MHz differential REFCLK at FPGA N8/N7.
 2. Confirm PERST# at AB22 is asserted during reset and released before link
    training.
-3. Compare receive activity on all four Bank112 RX pairs. Activity only on RX3
-   is consistent with the observed logical lane-0-only link.
+3. Compare receive activity on Bank112 RX2 (`T6/T5`, logical lane 1) with the
+   known-working RX3 (`P6/P5`, logical lane 0). Then compare TX2 (`P2/P1`) with
+   TX3 (`N4/N3`).
 4. Capture the measurement setup and the exact Change ID; do not change the
    cable, Device Tree, and FPGA image in the same attempt.
 

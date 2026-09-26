@@ -28,6 +28,12 @@ R0 because the endpoint negotiates Gen2 x1 instead of the required Gen2 x4.
   JTAG with clean FPGA configuration status.
 - The Stage A2 flow now accepts an explicit lane-reversal setting. A fresh
   `LaneReversal=false` image passed implementation and was tested on hardware.
+- The same flow now accepts an explicit `X1`/`X2`/`X4` link width and assigns a
+  matching diagnostic device ID. A fresh X2 image passed implementation and
+  was tested on hardware.
+- The vendor chapter 5/6 PCIe examples were audited. Both are
+  `xc7z015clg485-2` x1 designs despite one RIFFA project name containing `x4`;
+  they are configuration references, not compatible AX7Z100 x4 images.
 - Recovery with no initial BDF performs a rescan instead of assuming a prior
   endpoint exists. A cold Orin reboot with the diagnostic image enumerates and
   binds the XDMA driver.
@@ -78,6 +84,8 @@ sha256=556a55ca97f02b8332fc9f059651ff16fd947b77be2f25b3585f35edfb10e62f
 | Stage A2 XDMA-only, no initial BDF, hot rescan | missing | no | unavailable | FAIL |
 | Stage A2 XDMA-only, Orin cold reboot | PASS | PASS | Gen2 x1 | FAIL |
 | Stage A2 XDMA-only, power-off reseat + Orin reboot (`reseat_01`) | PASS | PASS | Gen2 x1 | FAIL |
+| Stage A2 X2, lane reversal enabled + Orin reboot (`vendor_x2_01`) | PASS | PASS | Gen2 x1; endpoint MaxWidth x2 | FAIL |
+| Stage A2 X4 restored + Orin reboot (`vendor_x4_restore_01`) | PASS | PASS | Gen2 x1; endpoint MaxWidth x4 | FAIL |
 | Full NMA, existing BDF, remove/rescan | PASS | PASS | Gen2 x1 | FAIL |
 | Stage A2, lane reversal disabled, remove/rescan | missing | no | unavailable | FAIL |
 | Stage A2, lane reversal disabled, Orin cold reboot | missing | no | unavailable | FAIL |
@@ -85,7 +93,13 @@ sha256=556a55ca97f02b8332fc9f059651ff16fd947b77be2f25b3585f35edfb10e62f
 The endpoint reports a maximum width of x4 and the Orin root port reports a
 maximum width of x8. Both report a current width of x1 at 5.0 GT/s. This rules
 out the HLS cores, MIG, BAR shim, and XDMA driver as the primary cause of the
-width failure and points to training of lanes 1-3.
+width failure and points to training beyond lane 0.
+
+The controlled X2 test further isolates the fault. The image enumerated as
+`10ee:7022`, advertised Gen2 x2, and still negotiated x1 after an Orin reboot.
+Logical lane 1 is therefore already unavailable; lanes 2 and 3 are not needed
+to explain the downgrade. The default X4 Stage A2 image was restored after the
+test and remains loaded.
 
 Disabling lane reversal prevents enumeration in both hot-recovery and cold-boot
 tests. The existing `enable_lane_reversal=true` setting is therefore necessary
@@ -103,7 +117,7 @@ lane reversal enabled, rebooted Orin, and rechecked both link partners after a
 complete power-off reseat. Enumeration, XDMA binding, and device creation all
 passed, but the link remained Gen2 x1. Stage A2 is intentionally left loaded;
 the next isolated change is a known-good cable/adapter A/B test or electrical
-inspection of lanes 1-3.
+inspection of logical lane 1, followed by lanes 2-3 only after x2 trains.
 
 The current XDMA character devices are `root:root 0600`. A dedicated `xdma`
 group udev installer has been added, but it requires one interactive sudo run
@@ -124,13 +138,14 @@ rosbag, map, and benchmark configuration are also still required before the
 
 ## Next Hardware Actions
 
-1. Verify carrier, adapter, and connector continuity/polarity for lanes 1-3 and
-   compare the physical lane order with the XDC and schematic.
+1. Verify carrier, adapter, and connector continuity/polarity for logical lane
+   1 and compare it directly with the known-working lane 0. Check FPGA RX2
+   `T6/T5` and TX2 `P2/P1`, including the TX AC-coupling components.
 2. Probe PCIe refclk and PERST# at the FPGA and confirm timing relative to Orin
    boot and JTAG reconfiguration.
-3. Review the Orin device-tree/root-port lane assignment and confirm the
-   selected connector exposes all four lanes. The active node is already
-   enabled for eight lanes; confirm the physical connector/adapter uses them.
+3. Use a known-good cable/adapter A/B test. The active Orin node is already
+   enabled for eight lanes and the X2 endpoint capability was observed, so do
+   not change Device Tree or XDMA width in the same attempt.
 4. After x4 is restored, execute ten JTAG/recovery loops before XDMA payload,
    Golden, cycle, and rosbag validation.
 5. Install the dedicated XDMA udev rule interactively and reconnect SSH before

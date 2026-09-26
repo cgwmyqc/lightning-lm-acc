@@ -5,6 +5,7 @@ set stage "A2"
 set jobs 18
 set reference_root [file normalize [file join $script_dir ".." ".." ".." ".."]]
 set lane_reversal "true"
+set link_width "X4"
 
 set user_args $argv
 if {[llength $user_args] >= 1 && [string length [lindex $user_args 0]] > 0} {
@@ -25,12 +26,15 @@ if {[llength $user_args] >= 5 && [string length [lindex $user_args 4]] > 0} {
 if {[llength $user_args] >= 6 && [string length [lindex $user_args 5]] > 0} {
     set lane_reversal [string tolower [lindex $user_args 5]]
 }
+if {[llength $user_args] >= 7 && [string length [lindex $user_args 6]] > 0} {
+    set link_width [string toupper [lindex $user_args 6]]
+}
 if {![string is integer -strict $jobs] || $jobs < 1} {
     error "Invalid jobs value: $jobs"
 }
 
 set saved_argv $argv
-set argv [list $project_dir $target_part $stage $reference_root $lane_reversal]
+set argv [list $project_dir $target_part $stage $reference_root $lane_reversal $link_width]
 source [file join $script_dir "create_stage_bd.tcl"]
 set argv $saved_argv
 
@@ -43,6 +47,7 @@ proc write_report_if_possible {report_name report_cmd} {
 set stage_lc [string tolower $stage]
 puts "VIVADO_RUN_JOBS=$jobs"
 puts "PCIE_LANE_REVERSAL=$lane_reversal"
+puts "PCIE_LINK_WIDTH=$link_width"
 launch_runs synth_1 -jobs $jobs
 wait_on_run synth_1
 set synth_status [get_property STATUS [get_runs synth_1]]

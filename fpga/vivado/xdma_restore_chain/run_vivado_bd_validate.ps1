@@ -4,7 +4,8 @@ param(
     [string]$Part = "xc7z100ffg900-2",
     [string]$Vivado = "vivado",
     [string]$ReferenceRoot,
-    [ValidateSet("true", "false")][string]$LaneReversal = "true"
+    [ValidateSet("true", "false")][string]$LaneReversal = "true",
+    [ValidateSet("X1", "X2", "X4")][string]$LinkWidth = "X4"
 )
 
 $ErrorActionPreference = "Stop"
@@ -16,6 +17,7 @@ $BuildRoot = Join-Path $RepoRoot "fpga\vivado\.build"
 
 $StageLower = $Stage.ToLowerInvariant()
 $VariantSuffix = if ($LaneReversal -eq "false") { "_lane_normal" } else { "" }
+if ($LinkWidth -ne "X4") { $VariantSuffix += "_$($LinkWidth.ToLowerInvariant())" }
 if ([string]::IsNullOrWhiteSpace($ProjectDir)) {
     $ProjectDir = Join-Path $BuildRoot "xdma_restore_stage_${StageLower}${VariantSuffix}_bd"
 }
@@ -35,7 +37,7 @@ try {
     $VivadoProjectDir = $ShortPathInfo.ShortPath
     $VivadoLog = Join-Path $VivadoProjectDir "vivado_bd_validate.log"
     $VivadoJournal = Join-Path $VivadoProjectDir "vivado_bd_validate.jou"
-    & $Vivado -mode batch -source $Tcl -journal $VivadoJournal -log $VivadoLog -tclargs $VivadoProjectDir $Part $Stage $ReferenceRoot $LaneReversal
+    & $Vivado -mode batch -source $Tcl -journal $VivadoJournal -log $VivadoLog -tclargs $VivadoProjectDir $Part $Stage $ReferenceRoot $LaneReversal $LinkWidth
     $ExitCode = $LASTEXITCODE
 } finally {
     Remove-LightningVivadoShortPath -ShortPathInfo $ShortPathInfo

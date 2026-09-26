@@ -5,7 +5,8 @@ param(
     [string]$Vivado = "vivado",
     [int]$Jobs = 18,
     [string]$ReferenceRoot,
-    [ValidateSet("true", "false")][string]$LaneReversal = "true"
+    [ValidateSet("true", "false")][string]$LaneReversal = "true",
+    [ValidateSet("X1", "X2", "X4")][string]$LinkWidth = "X4"
 )
 
 $ErrorActionPreference = "Stop"
@@ -20,6 +21,7 @@ if ($Jobs -lt 1) {
 }
 $StageLower = $Stage.ToLowerInvariant()
 $VariantSuffix = if ($LaneReversal -eq "false") { "_lane_normal" } else { "" }
+if ($LinkWidth -ne "X4") { $VariantSuffix += "_$($LinkWidth.ToLowerInvariant())" }
 if ([string]::IsNullOrWhiteSpace($ProjectDir)) {
     $ProjectDir = Join-Path $BuildRoot "xdma_restore_stage_${StageLower}${VariantSuffix}_syn"
 }
@@ -39,7 +41,7 @@ try {
     $VivadoProjectDir = $ShortPathInfo.ShortPath
     $VivadoLog = Join-Path $VivadoProjectDir "vivado_project_synth.log"
     $VivadoJournal = Join-Path $VivadoProjectDir "vivado_project_synth.jou"
-    & $Vivado -mode batch -source $Tcl -journal $VivadoJournal -log $VivadoLog -tclargs $VivadoProjectDir $Part $Stage $Jobs $ReferenceRoot $LaneReversal
+    & $Vivado -mode batch -source $Tcl -journal $VivadoJournal -log $VivadoLog -tclargs $VivadoProjectDir $Part $Stage $Jobs $ReferenceRoot $LaneReversal $LinkWidth
     $ExitCode = $LASTEXITCODE
 } finally {
     Remove-LightningVivadoShortPath -ShortPathInfo $ShortPathInfo

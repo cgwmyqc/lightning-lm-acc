@@ -5,6 +5,7 @@ set project_dir [file normalize [file join $script_dir ".." ".build" "xdma_resto
 set target_part "xc7z100ffg900-2"
 set stage "A2"
 set lane_reversal "true"
+set link_width "X4"
 
 set user_args $argv
 if {[llength $user_args] >= 1 && [string length [lindex $user_args 0]] > 0} {
@@ -22,6 +23,9 @@ if {[llength $user_args] >= 4 && [string length [lindex $user_args 3]] > 0} {
 if {[llength $user_args] >= 5 && [string length [lindex $user_args 4]] > 0} {
     set lane_reversal [string tolower [lindex $user_args 4]]
 }
+if {[llength $user_args] >= 6 && [string length [lindex $user_args 5]] > 0} {
+    set link_width [string toupper [lindex $user_args 5]]
+}
 
 if {$stage ni {"A" "A2" "B" "B2" "C" "C2"}} {
     error "Invalid stage '$stage'. Expected A, A2, B, B2, C, or C2."
@@ -29,28 +33,39 @@ if {$stage ni {"A" "A2" "B" "B2" "C" "C2"}} {
 if {$lane_reversal ni {"true" "false"}} {
     error "Invalid lane_reversal '$lane_reversal'. Expected true or false."
 }
+if {$link_width ni {"X1" "X2" "X4"}} {
+    error "Invalid link_width '$link_width'. Expected X1, X2, or X4."
+}
+
+set pcie_device_id 7024
+if {$link_width eq "X1"} {
+    set pcie_device_id 7021
+}
+if {$link_width eq "X2"} {
+    set pcie_device_id 7022
+}
 
 set use_mig 0
 set axi_width_cfg "64_bit"
 set bram_width 64
 set axisten_freq 250
-set stage_desc "Stage A: X4, 64-bit/250 MHz XDMA, slam_accel_ctrl, BRAM, no MIG/HLS"
+set stage_desc "Stage A: ${link_width}, 64-bit/250 MHz XDMA, slam_accel_ctrl, BRAM, no MIG/HLS"
 set ctrl_module "xdma_restore_slam_accel_ctrl_axi_lite_wrapper"
 if {$stage eq "A2"} {
-    set stage_desc "Stage A2: X4, 64-bit/250 MHz XDMA, BAR shim at 0x0000, slam_accel_ctrl at 0x1000, BRAM, no MIG/HLS"
+    set stage_desc "Stage A2: ${link_width}, 64-bit/250 MHz XDMA, BAR shim at 0x0000, slam_accel_ctrl at 0x1000, BRAM, no MIG/HLS"
     set ctrl_module "xdma_restore_bar_shim_ctrl_wrapper"
 }
 if {$stage eq "B"} {
     set axi_width_cfg "128_bit"
     set bram_width 128
     set axisten_freq 125
-    set stage_desc "Stage B: X4, 128-bit/125 MHz XDMA, slam_accel_ctrl, BRAM, no MIG/HLS"
+    set stage_desc "Stage B: ${link_width}, 128-bit/125 MHz XDMA, slam_accel_ctrl, BRAM, no MIG/HLS"
 }
 if {$stage eq "B2"} {
     set axi_width_cfg "128_bit"
     set bram_width 128
     set axisten_freq 125
-    set stage_desc "Stage B2: X4, 128-bit/125 MHz XDMA, BAR shim at 0x0000, slam_accel_ctrl at 0x1000, BRAM, no MIG/HLS"
+    set stage_desc "Stage B2: ${link_width}, 128-bit/125 MHz XDMA, BAR shim at 0x0000, slam_accel_ctrl at 0x1000, BRAM, no MIG/HLS"
     set ctrl_module "xdma_restore_bar_shim_ctrl_wrapper"
 }
 if {$stage eq "C"} {
@@ -58,14 +73,14 @@ if {$stage eq "C"} {
     set axi_width_cfg "128_bit"
     set bram_width 128
     set axisten_freq 125
-    set stage_desc "Stage C: X4, 128-bit/125 MHz XDMA, slam_accel_ctrl, MIG-backed PL DDR3, no HLS"
+    set stage_desc "Stage C: ${link_width}, 128-bit/125 MHz XDMA, slam_accel_ctrl, MIG-backed PL DDR3, no HLS"
 }
 if {$stage eq "C2"} {
     set use_mig 1
     set axi_width_cfg "128_bit"
     set bram_width 128
     set axisten_freq 125
-    set stage_desc "Stage C2: X4, 128-bit/125 MHz XDMA, BAR shim at 0x0000, slam_accel_ctrl at 0x1000, MIG-backed PL DDR3, no HLS"
+    set stage_desc "Stage C2: ${link_width}, 128-bit/125 MHz XDMA, BAR shim at 0x0000, slam_accel_ctrl at 0x1000, MIG-backed PL DDR3, no HLS"
     set ctrl_module "xdma_restore_bar_shim_ctrl_wrapper"
 }
 
@@ -184,12 +199,14 @@ set_property -dict [list \
     CONFIG.enable_lane_reversal $lane_reversal \
     CONFIG.mode_selection {Basic} \
     CONFIG.pcie_id_if {false} \
-    CONFIG.pf0_device_id {7024} \
+    CONFIG.pf0_device_id $pcie_device_id \
     CONFIG.pl_link_cap_max_link_speed {5.0_GT/s} \
-    CONFIG.pl_link_cap_max_link_width {X4} \
+    CONFIG.pl_link_cap_max_link_width $link_width \
     CONFIG.plltype {QPLL1} \
 ] $xdma_0
 puts "PCIE_LANE_REVERSAL=$lane_reversal"
+puts "PCIE_LINK_WIDTH=$link_width"
+puts "PCIE_DEVICE_ID=$pcie_device_id"
 
 set ctrl [create_bd_cell -type module -reference $ctrl_module ctrl_0]
 set const_zero_32 [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 const_zero_32]
