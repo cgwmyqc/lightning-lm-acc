@@ -33,3 +33,6 @@
   interactive privileged installation remains pending.
 - Extended preflight to require the XDMA event node and non-root read/write
   access, and added a fail-fast post-x4 R0 acceptance orchestrator.
+- Reprogrammed the lane-reversal-enabled Stage A2 image after a complete
+  power-off reseat, rebooted Orin, and recorded `reseat_01`: enumeration and
+  XDMA device creation pass, but both link partners remain at Gen2 x1.

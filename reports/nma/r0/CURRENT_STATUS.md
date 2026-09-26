@@ -77,6 +77,7 @@ sha256=556a55ca97f02b8332fc9f059651ff16fd947b77be2f25b3585f35edfb10e62f
 | Full NMA, no initial BDF, hot rescan | missing | no | unavailable | FAIL |
 | Stage A2 XDMA-only, no initial BDF, hot rescan | missing | no | unavailable | FAIL |
 | Stage A2 XDMA-only, Orin cold reboot | PASS | PASS | Gen2 x1 | FAIL |
+| Stage A2 XDMA-only, power-off reseat + Orin reboot (`reseat_01`) | PASS | PASS | Gen2 x1 | FAIL |
 | Full NMA, existing BDF, remove/rescan | PASS | PASS | Gen2 x1 | FAIL |
 | Stage A2, lane reversal disabled, remove/rescan | missing | no | unavailable | FAIL |
 | Stage A2, lane reversal disabled, Orin cold reboot | missing | no | unavailable | FAIL |
@@ -96,6 +97,13 @@ The live Device Tree and root-port capability now rule out an Orin
 `num-lanes=1` configuration. The highest-priority checks are connector seating,
 cable/adapter continuity, AC-coupling component population, and signal
 integrity on the three non-training lane pairs.
+
+The `reseat_01` attempt programmed the default Stage A2 diagnostic image with
+lane reversal enabled, rebooted Orin, and rechecked both link partners after a
+complete power-off reseat. Enumeration, XDMA binding, and device creation all
+passed, but the link remained Gen2 x1. Stage A2 is intentionally left loaded;
+the next isolated change is a known-good cable/adapter A/B test or electrical
+inspection of lanes 1-3.
 
 The current XDMA character devices are `root:root 0600`. A dedicated `xdma`
 group udev installer has been added, but it requires one interactive sudo run

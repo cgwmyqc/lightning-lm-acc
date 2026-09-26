@@ -64,7 +64,7 @@ Record exactly one physical change per attempt:
 | Change ID | Single change | Visual/continuity result | Cold-boot link | Decision |
 |---|---|---|---|---|
 | `baseline_before_reseat` | none | pending | Gen2 x1 | FAIL |
-| `reseat_01` | reseat only | pending | pending | pending |
+| `reseat_01` | power-off reseat only | continuity not measured | Gen2 x1 | FAIL |
 | `cable_swap_01` | known-good cable/adapter | pending | pending | pending |
 
 ## Powered Measurements
