@@ -44,3 +44,7 @@
 - Programmed the X2 image and rebooted Orin. The endpoint advertised Gen2 x2 as
   `10ee:7022` but negotiated x1, isolating the first failed expansion lane to
   logical lane 1. Restored and reverified the default X4 Stage A2 image.
+- Cross-checked the AX7Z100 Vivado 2023 PCIe and PL DDR tutorials. Confirmed
+  that PCIe `X0Y0`, Gen2, 100 MHz `IBUFDSGTE`, `AB22`, `N8/N7`, and DDR
+  `F9/E8` already match. Documented why x8 AXI width and QSPI startup do not
+  explain a present endpoint that down-trains from x2 to x1.

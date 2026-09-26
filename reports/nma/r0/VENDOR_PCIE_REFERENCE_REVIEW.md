@@ -1,7 +1,9 @@
 # Vendor PCIe Reference Review
 
 Date: 2026-09-26
-Source: vendor high-speed transceiver tutorial V1.0 and its chapter 5/6 examples
+Sources: vendor high-speed transceiver tutorial V1.0 and its chapter 5/6
+examples; AX7Z100 Vivado 2023 PCIe chapter; AX7Z100 Vivado 2023 PL DDR3
+chapter
 
 ## Decision
 
@@ -75,3 +77,41 @@ in both directions:
 
 Keep the default X4 image with `enable_lane_reversal=true` loaded. Do not start
 payload, Golden, R1, or R2 testing until the X4 gate passes.
+
+## AX7Z100 Vivado 2023 Cross-check
+
+The newer AX7Z100 PCIe tutorial is materially more relevant than the earlier
+XC7Z015 x1 example. It configures an XDMA endpoint at Gen2 x8 and therefore
+confirms that the intended AX7Z100 platform is not limited to one PCIe lane.
+The accompanying PL DDR3 tutorial also matches the memory interface used by
+the current full NMA design.
+
+| Item | AX7Z100 tutorial | Current project | Result |
+|---|---|---|---|
+| PCIe block | `X0Y0` | `X0Y0` | Match |
+| Maximum speed | 5.0 GT/s | 5.0 GT/s | Match |
+| Reference clock | 100 MHz | 100 MHz | Match |
+| Reference-clock buffer | `IBUFDSGTE` | `IBUFDSGTE` | Match |
+| PERST# pin | `AB22`, LVCMOS33 | `AB22`, LVCMOS33 | Match |
+| PCIe refclk pins | `N8/N7` | `N8/N7` | Match |
+| XDMA AXI mode | Memory Mapped | Memory Mapped | Match |
+| Tutorial link/AXI | x8, 128-bit, 250 MHz | x4, 64-bit, 250 MHz Stage A2 | Valid width-specific difference |
+| PL DDR sysclk | `F9/E8`, 200 MHz | `F9/E8`, 200 MHz | Match |
+| Endpoint startup | PS7 + QSPI boot | JTAG load before Orin reboot | Both present endpoint before enumeration |
+
+The tutorial does not assign PCIe lane pins in the user XDC. The integrated
+PCIe block and selected `X0Y0` location place the GTX lanes; its shown XDC only
+assigns PERST#, PCIe refclk, and the PL DDR clock. Those assignments are already
+identical to the current project.
+
+The 128-bit/250 MHz setting is required to carry x8 payload bandwidth, but AXI
+width and PL DDR are downstream of PCIe link training. They cannot explain an
+X2 endpoint that advertises x2 yet negotiates x1. Likewise, the tutorial's QSPI
+warning explains a missing endpoint during host boot, not a stable enumerated
+endpoint down-trained to x1. The current procedure loads the FPGA first and
+then reboots Orin, so the endpoint is already configured during enumeration.
+
+No tutorial-side register, XDC pin, clock frequency, or XDMA mode change was
+found that can account for the current x1 result. The X2 experiment remains the
+strongest isolation evidence: logical lane 1 must be checked electrically
+before changing the AXI datapath, MIG, PS7, or host software.

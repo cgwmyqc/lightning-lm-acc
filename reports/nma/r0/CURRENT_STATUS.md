@@ -34,6 +34,11 @@ R0 because the endpoint negotiates Gen2 x1 instead of the required Gen2 x4.
 - The vendor chapter 5/6 PCIe examples were audited. Both are
   `xc7z015clg485-2` x1 designs despite one RIFFA project name containing `x4`;
   they are configuration references, not compatible AX7Z100 x4 images.
+- The AX7Z100 Vivado 2023 PCIe and PL DDR tutorials were also audited. Their
+  `X0Y0`, Gen2, 100 MHz `IBUFDSGTE`, `AB22`, `N8/N7`, and DDR `F9/E8`
+  settings match the current project. The tutorial uses x8/128-bit/250 MHz and
+  QSPI boot, but neither difference explains an enumerated X2 endpoint
+  down-trained to x1.
 - Recovery with no initial BDF performs a rescan instead of assuming a prior
   endpoint exists. A cold Orin reboot with the diagnostic image enumerates and
   binds the XDMA driver.
@@ -100,6 +105,11 @@ The controlled X2 test further isolates the fault. The image enumerated as
 Logical lane 1 is therefore already unavailable; lanes 2 and 3 are not needed
 to explain the downgrade. The default X4 Stage A2 image was restored after the
 test and remains loaded.
+
+The AX7Z100 vendor tutorial confirms the current refclk, reset, PCIe block, and
+PL DDR clock assignments. It does not provide a software-side correction for
+the down-training. Its QSPI requirement protects initial enumeration timing;
+the present JTAG-before-Orin-reboot sequence already provides the same ordering.
 
 Disabling lane reversal prevents enumeration in both hot-recovery and cold-boot
 tests. The existing `enable_lane_reversal=true` setting is therefore necessary
