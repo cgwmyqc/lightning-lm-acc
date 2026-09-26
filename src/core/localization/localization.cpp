@@ -326,6 +326,10 @@ void Localization::LidarLocProcCloud(CloudPtr scan_undist) {
                   << " ui_ms=" << snapshot.ui_ms
                   << " processing_fps=" << snapshot.processing_fps
                   << " scan_points=" << snapshot.scan_points
+                  << " raw_scan_points=" << snapshot.raw_scan_points
+                  << " scan_points_used=" << snapshot.scan_points_used
+                  << " cap_enabled=" << snapshot.scan_cap_enabled
+                  << " cap_target=" << snapshot.scan_cap_target
                   << " active_blocks=" << snapshot.active_blocks
                   << " active_cells=" << snapshot.active_cells
                   << " iterations=" << snapshot.iterations

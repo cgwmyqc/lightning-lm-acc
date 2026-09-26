@@ -17,6 +17,7 @@
 #include <thread>
 
 #include "fpga/host/xdma_smoke/ax7z100_plddr_layout.h"
+#include "fpga/hls/slam_loc_iterative_core/slam_loc_iterative_core.h"
 #include "core/localization/surfel_loc/surfel_loc_backend.h"
 
 namespace lightning::fpga {
@@ -691,6 +692,36 @@ bool ConfigureEkfRegisters(int user_fd, uint32_t ctrl_base, std::string* error) 
     return true;
 }
 
+bool ConfigureLocIterRegisters(int user_fd, uint32_t ctrl_base, uint32_t scan_count, std::string* error) {
+    if (!Write32(user_fd, ctrl_base + LIGHTNING_CTRL_CONTROL, 0x2u, error)) {
+        return false;
+    }
+    const std::array<std::pair<uint32_t, uint32_t>, 16> writes = {{
+        {LIGHTNING_CTRL_KERNEL_SEL, LIGHTNING_KERNEL_LOC_ITERATIVE},
+        {LIGHTNING_CTRL_MODE, LIGHTNING_MODE_LOCALIZATION},
+        {LIGHTNING_CTRL_SCAN_ADDR_LO, LIGHTNING_SCAN_POINTS_BASE},
+        {LIGHTNING_CTRL_SCAN_ADDR_HI, 0},
+        {LIGHTNING_CTRL_OBS_CELLS_ADDR_LO, LIGHTNING_OBS_CELLS_BASE},
+        {LIGHTNING_CTRL_OBS_CELLS_ADDR_HI, 0},
+        {LIGHTNING_CTRL_LOC_ITER_INPUT_ADDR_LO, LIGHTNING_LOC_ITER_INPUT_BASE},
+        {LIGHTNING_CTRL_LOC_ITER_INPUT_ADDR_HI, 0},
+        {LIGHTNING_CTRL_LOC_ITER_OUTPUT_ADDR_LO, LIGHTNING_LOC_ITER_OUTPUT_BASE},
+        {LIGHTNING_CTRL_LOC_ITER_OUTPUT_ADDR_HI, 0},
+        {LIGHTNING_CTRL_POSE_ADDR_HI, 0},
+        {LIGHTNING_CTRL_MAP_HEADER_ADDR_HI, 0},
+        {LIGHTNING_CTRL_ACTIVE_BLOCKS_ADDR_HI, 0},
+        {LIGHTNING_CTRL_OUT_ADDR_HI, 0},
+        {LIGHTNING_CTRL_PARAMS_ADDR_HI, 0},
+        {LIGHTNING_CTRL_SCAN_COUNT, scan_count},
+    }};
+    for (const auto& [offset, value] : writes) {
+        if (!Write32(user_fd, ctrl_base + offset, value, error)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 bool RunObservationImpl(const XdmaRuntime::Options& options, uint32_t mode,
                         const std::vector<SlamAccelScanPoint>& scan_points, const SlamAccelPose& pose,
                         const loc::ActiveMapBuffer& active_map, const SlamAccelObservationParams& params,
@@ -1094,6 +1125,173 @@ bool XdmaRuntime::RunMappingEkfUpdate(const mapping_update::UpdateInput& input, 
         return false;
     }
     result.output = UnpackEkfUpdateOutputWords(result.raw_output_words);
+    result.timing.total_sec = SecondsSince(total_start);
+    return true;
+}
+
+bool XdmaRuntime::RunLocalizationIterative(const std::vector<SlamAccelScanPoint>& scan_points,
+                                           const std::vector<ObsCellFloat64>& candidate_cells,
+                                           const std::vector<uint64_t>& input_words, bool write_full_image,
+                                           bool verify_readback, LocIterativeRunResult& result,
+                                           std::string* error) const {
+    if (scan_points.empty()) {
+        SetError(error, "loc iterative scan_points is empty");
+        return false;
+    }
+    if (candidate_cells.size() != scan_points.size()) {
+        SetError(error, "loc iterative candidate count does not match scan count");
+        return false;
+    }
+    if (input_words.size() != LOC_ITER_INPUT_WORDS) {
+        SetError(error, "loc iterative input_words count mismatch");
+        return false;
+    }
+
+    const auto total_start = Clock::now();
+    const auto mutex_start = Clock::now();
+    std::unique_lock<std::mutex> lock(g_observation_transaction_mutex);
+    result.timing.mutex_wait_sec = SecondsSince(mutex_start);
+
+    FileLock file_lock;
+    auto stage_start = Clock::now();
+    if (!file_lock.Lock("/tmp/lightning_xdma_observation.lock", error)) {
+        result.timing.lock_sec = SecondsSince(stage_start);
+        result.timing.total_sec = SecondsSince(total_start);
+        return false;
+    }
+    result.timing.lock_sec = SecondsSince(stage_start);
+
+    Fd user;
+    Fd h2c;
+    Fd c2h;
+    stage_start = Clock::now();
+    if (!OpenFd(user, options_.user_dev, O_RDWR, error) || !OpenFd(h2c, options_.h2c_dev, O_WRONLY, error) ||
+        !OpenFd(c2h, options_.c2h_dev, O_RDONLY, error)) {
+        result.timing.open_sec = SecondsSince(stage_start);
+        result.timing.total_sec = SecondsSince(total_start);
+        return false;
+    }
+    result.timing.open_sec = SecondsSince(stage_start);
+
+    result.raw_input_words = input_words;
+    result.raw_output_words.assign(LOC_ITER_OUTPUT_WORDS, 0);
+    const std::vector<uint64_t> output_zero(LOC_ITER_OUTPUT_WORDS, 0);
+
+    if (write_full_image) {
+        stage_start = Clock::now();
+        if (!WriteVector(h2c.get(), LIGHTNING_SCAN_POINTS_BASE, scan_points, error, "loc_iter_scan_points")) {
+            result.timing.h2c_scan_sec = SecondsSince(stage_start);
+            result.timing.total_sec = SecondsSince(total_start);
+            return false;
+        }
+        result.timing.h2c_scan_sec = SecondsSince(stage_start);
+
+        stage_start = Clock::now();
+        if (!WriteVector(h2c.get(), LIGHTNING_OBS_CELLS_BASE, candidate_cells, error, "loc_iter_candidate_cells")) {
+            result.timing.h2c_candidate_sec = SecondsSince(stage_start);
+            result.timing.total_sec = SecondsSince(total_start);
+            return false;
+        }
+        result.timing.h2c_candidate_sec = SecondsSince(stage_start);
+
+        stage_start = Clock::now();
+        if (!WriteExact(h2c.get(), input_words.data(), input_words.size() * sizeof(uint64_t),
+                        LIGHTNING_LOC_ITER_INPUT_BASE, error, "loc_iter_input")) {
+            result.timing.h2c_input_sec = SecondsSince(stage_start);
+            result.timing.total_sec = SecondsSince(total_start);
+            return false;
+        }
+        result.timing.h2c_input_sec = SecondsSince(stage_start);
+
+        if (verify_readback) {
+            stage_start = Clock::now();
+            const bool verify_ok =
+                VerifyBytes(c2h.get(), LIGHTNING_SCAN_POINTS_BASE, scan_points.data(),
+                            scan_points.size() * sizeof(SlamAccelScanPoint), error, "loc_iter_scan_points") &&
+                VerifyBytes(c2h.get(), LIGHTNING_OBS_CELLS_BASE, candidate_cells.data(),
+                            candidate_cells.size() * sizeof(ObsCellFloat64), error, "loc_iter_candidate_cells") &&
+                VerifyBytes(c2h.get(), LIGHTNING_LOC_ITER_INPUT_BASE, input_words.data(),
+                            input_words.size() * sizeof(uint64_t), error, "loc_iter_input");
+            result.timing.verify_readback_sec = SecondsSince(stage_start);
+            if (!verify_ok) {
+                result.timing.total_sec = SecondsSince(total_start);
+                return false;
+            }
+        }
+    }
+
+    stage_start = Clock::now();
+    if (!WriteExact(h2c.get(), output_zero.data(), output_zero.size() * sizeof(uint64_t),
+                    LIGHTNING_LOC_ITER_OUTPUT_BASE, error, "loc_iter_output_zero")) {
+        result.timing.output_zero_sec = SecondsSince(stage_start);
+        result.timing.total_sec = SecondsSince(total_start);
+        return false;
+    }
+    result.timing.output_zero_sec = SecondsSince(stage_start);
+
+    stage_start = Clock::now();
+    if (!ConfigureLocIterRegisters(user.get(), options_.ctrl_base, static_cast<uint32_t>(scan_points.size()), error) ||
+        !Read32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_SCAN_COUNT, result.scan_count_readback, error) ||
+        !Read32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_RUN_COUNT, result.run_count_before, error)) {
+        result.timing.reg_config_sec = SecondsSince(stage_start);
+        result.timing.total_sec = SecondsSince(total_start);
+        return false;
+    }
+    result.timing.reg_config_sec = SecondsSince(stage_start);
+
+    const auto start = Clock::now();
+    if (!Write32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_CONTROL, 0x1u, error)) {
+        result.timing.hls_wait_sec = SecondsSince(start);
+        result.timing.total_sec = SecondsSince(total_start);
+        return false;
+    }
+    const auto deadline = start + std::chrono::duration<double>(options_.timeout_sec);
+    while (Clock::now() < deadline) {
+        if (!Read32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_STATUS, result.status, error) ||
+            !Read32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_ERROR, result.error, error)) {
+            result.timing.hls_wait_sec = SecondsSince(start);
+            result.timing.total_sec = SecondsSince(total_start);
+            return false;
+        }
+        if ((result.status & kStatusError) != 0 || result.error != 0) {
+            SetError(error, "loc iterative entered error status");
+            result.timing.hls_wait_sec = SecondsSince(start);
+            result.timing.total_sec = SecondsSince(total_start);
+            return false;
+        }
+        if ((result.status & kStatusDone) != 0) {
+            break;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    if ((result.status & kStatusDone) == 0) {
+        SetError(error, "loc iterative timeout");
+        result.timing.hls_wait_sec = SecondsSince(start);
+        result.timing.total_sec = SecondsSince(total_start);
+        return false;
+    }
+    const auto end = Clock::now();
+    result.elapsed_sec = std::chrono::duration<double>(end - start).count();
+    result.timing.hls_wait_sec = result.elapsed_sec;
+
+    if (!Read32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_RUN_COUNT, result.run_count_after, error)) {
+        result.timing.total_sec = SecondsSince(total_start);
+        return false;
+    }
+    if (result.run_count_after <= result.run_count_before) {
+        SetError(error, "RUN_COUNT did not increment");
+        result.timing.total_sec = SecondsSince(total_start);
+        return false;
+    }
+
+    stage_start = Clock::now();
+    if (!ReadExact(c2h.get(), result.raw_output_words.data(), result.raw_output_words.size() * sizeof(uint64_t),
+                   LIGHTNING_LOC_ITER_OUTPUT_BASE, error, "loc_iter_output")) {
+        result.timing.c2h_output_sec = SecondsSince(stage_start);
+        result.timing.total_sec = SecondsSince(total_start);
+        return false;
+    }
+    result.timing.c2h_output_sec = SecondsSince(stage_start);
     result.timing.total_sec = SecondsSince(total_start);
     return true;
 }

@@ -244,7 +244,8 @@ bool PangolinWindowImpl::UpdatePerformance() {
         lines.emplace_back(make_line("Processing FPS", loc_snapshot.processing_fps, ""));
 
         std::ostringstream pts_line;
-        pts_line << "scan/block/cell: " << loc_snapshot.scan_points << " / " << loc_snapshot.active_blocks << " / "
+        pts_line << "scan raw/used/block/cell: " << loc_snapshot.raw_scan_points << " / "
+                 << loc_snapshot.scan_points_used << " / " << loc_snapshot.active_blocks << " / "
                  << loc_snapshot.active_cells;
         lines.emplace_back(pts_line.str());
 

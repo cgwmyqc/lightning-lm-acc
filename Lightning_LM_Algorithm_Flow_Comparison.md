@@ -525,6 +525,46 @@ now has a downloadable board image with the full iterative localization kernel
 present. The next gate is Stage72D Orin XDMA golden replay with
 `KERNEL_SEL=6`.
 
+Stage72D/E Orin status:
+
+```text
+KERNEL_SEL=6 XDMA golden replay: PASS
+run_loc_online reaches SURFEL_FPGA_FULL_ITERATIVE
+real-lidar online fallback root cause: scan_points can exceed 8192
+loc_iter_status=3 means SLAM_LOC_ITER_INVALID_COUNT
+```
+
+Current Version 8 online limitation:
+
+```text
+Stage72 full iterative HLS kMaxScanPoints = 8192
+
+scan_points=8195 / 8201 / 8299:
+  INVALID_COUNT -> CPU_SIM fallback
+
+scan_points=8183:
+  loc_iter_status=1 -> FPGA success
+```
+
+Fastfix flow:
+
+```mermaid
+flowchart TD
+    A[run_loc_online localization frame] --> B[CPU LIO frontend / raw localization scan]
+    B --> C{raw scan points > cap?}
+    C -- yes --> D[Uniform cap/downsample to 7600]
+    C -- no --> E[Use raw scan]
+    D --> F[Pack scan + candidate list + initial pose + thresholds]
+    E --> F
+    F --> G[FPGA KERNEL_SEL=6 full iterative localization]
+    G --> H[final_pose / counts / residuals / status]
+    H --> I[CPU quality gate / fallback / PGO / UI]
+```
+
+The fastfix does not require bitstream regeneration. Raising the FPGA limit
+above `8192` would require changing HLS `kMaxScanPoints`, regenerating the
+bitstream, and rerunning Orin golden and online tests.
+
 Acceptance for Version 8:
 
 ```text

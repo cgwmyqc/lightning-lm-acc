@@ -86,6 +86,10 @@ struct LocPerfSnapshot {
 
     int iterations = 0;
     size_t scan_points = 0;
+    size_t raw_scan_points = 0;
+    size_t scan_points_used = 0;
+    bool scan_cap_enabled = false;
+    size_t scan_cap_target = 0;
     size_t active_blocks = 0;
     size_t active_cells = 0;
 

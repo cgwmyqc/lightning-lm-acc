@@ -81,6 +81,37 @@ class XdmaRuntime {
         std::vector<uint64_t> raw_output_words;
     };
 
+    struct LocIterativeRunResult {
+        struct Timing {
+            double total_sec = 0.0;
+            double mutex_wait_sec = 0.0;
+            double lock_sec = 0.0;
+            double open_sec = 0.0;
+            double h2c_scan_sec = 0.0;
+            double h2c_candidate_sec = 0.0;
+            double h2c_input_sec = 0.0;
+            double verify_readback_sec = 0.0;
+            double output_zero_sec = 0.0;
+            double reg_config_sec = 0.0;
+            double hls_wait_sec = 0.0;
+            double c2h_output_sec = 0.0;
+        };
+
+        uint32_t status = 0;
+        uint32_t error = 0;
+        uint32_t run_count_before = 0;
+        uint32_t run_count_after = 0;
+        uint32_t scan_count_readback = 0;
+        uint32_t candidate_count = 0;
+        uint32_t candidate_valid_count = 0;
+        uint32_t candidate_miss_count = 0;
+        size_t candidate_bytes = 0;
+        double elapsed_sec = 0.0;
+        Timing timing;
+        std::vector<uint64_t> raw_input_words;
+        std::vector<uint64_t> raw_output_words;
+    };
+
     explicit XdmaRuntime(Options options);
 
     bool ShimSmoke(std::string* error = nullptr) const;
@@ -109,6 +140,11 @@ class XdmaRuntime {
     bool RunMappingEkfUpdate(const mapping_update::UpdateInput& input, bool write_full_image,
                              bool verify_readback, EkfUpdateRunResult& result,
                              std::string* error = nullptr) const;
+    bool RunLocalizationIterative(const std::vector<SlamAccelScanPoint>& scan_points,
+                                  const std::vector<ObsCellFloat64>& candidate_cells,
+                                  const std::vector<uint64_t>& input_words, bool write_full_image,
+                                  bool verify_readback, LocIterativeRunResult& result,
+                                  std::string* error = nullptr) const;
 
     const Options& GetOptions() const { return options_; }
 

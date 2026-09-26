@@ -71,7 +71,7 @@ profile:
 # - fpga.runtime is shared by localization and mapping FPGA_OBS paths.
 fpga:
   enable: true        # Master switch. false forces mapping and localization to CPU paths.
-  mode: fpga_obs            # Global default mode if a subsystem mode is omitted: cpu/cpu_sim/fpga_obs/fpga_full.
+  mode: fpga_full            # Global default mode if a subsystem mode is omitted: cpu/cpu_sim/fpga_obs/fpga_full.
   runtime:
     user_dev: /dev/xdma0_user
     h2c_dev: /dev/xdma0_h2c_0
@@ -85,8 +85,8 @@ fpga:
     mode: fpga_full      # cpu/cpu_sim use CPU. fpga_obs uses FPGA/HLS observation with CPU EKF update.fpga_full fpga obs and ekf
     fallback: cpu      # Mapping FPGA failure fallback target.
   localization:
-    enable: true      # Effective only when fpga.enable=true.
-    mode: fpga_obs_solve      # cpu_sim: surfel CPU_SIM. fpga_obs: FPGA/HLS observation with CPU iteration/solve.
+    enable: false      # Effective only when fpga.enable=true.
+    mode: fpga_full      # cpu_sim: surfel CPU_SIM. fpga_obs: FPGA/HLS observation with CPU iteration/solve.fpga_obs_solve/fpga_full
     fallback: ndt_omp  # Final localization fallback if surfel CPU_SIM/FPGA_OBS fails.
 
 g2p5:
@@ -110,7 +110,7 @@ system:
   evaluation: false
   lidar_loc_skip_num: 4
   lidar_odom_skip_num: 2
-  map_path: ./data/fpga_map/
+  map_path: ./data/lab_map/
   pub_tf: true
 
 loop_closing:
@@ -148,6 +148,7 @@ lidar_loc:
   surfel_quality_max: 0.05         # Max surfel plane quality accepted by lookup.
   surfel_lookup_nearby_type: 26    # 26-neighbor lookup; must match FPGA/HLS ABI expectation.
   surfel_max_iterations: 1         # CPU pose update iterations for CPU_SIM/FPGA_OBS.
+  surfel_fpga_full_max_scan_points: 7600  # Caps localization FPGA_FULL input below HLS kMaxScanPoints=8192.
   surfel_min_valid_count: 300      # Quality gate before accepting surfel localization.
   surfel_max_mean_residual: 0.2    # Quality gate before accepting surfel localization.
   surfel_fpga_user_dev: /dev/xdma0_user   # Used only by localization mode=fpga_obs.

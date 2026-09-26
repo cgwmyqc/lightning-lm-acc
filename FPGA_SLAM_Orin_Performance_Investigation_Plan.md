@@ -2537,3 +2537,158 @@ DSP:               1386 /   2020 = 68.61%
 The next gate is Stage72D Orin XDMA golden replay. This is still an offline
 golden transaction; online ROS `SURFEL_FPGA_FULL_ITERATIVE` remains disabled
 until Stage72D passes.
+
+## Stage72E Real-Lidar Online Fallback Finding
+
+Date: 2026-08-31
+
+After Stage72D, `run_loc_online` was connected to the online full iterative
+localization path. Real MID360 data confirms that the runtime reaches:
+
+```text
+SURFEL_FPGA_FULL_ITERATIVE
+KERNEL_SEL=6
+candidate_abi_v2=1
+```
+
+The observed fallback pattern is deterministic around the current HLS scan
+count limit:
+
+```text
+scan_points=8195 -> loc_iter_status=3 -> fallback to SURFEL_CPU_SIM
+scan_points=8201 -> loc_iter_status=3 -> fallback to SURFEL_CPU_SIM
+scan_points=8299 -> loc_iter_status=3 -> fallback to SURFEL_CPU_SIM
+scan_points=8183 -> loc_iter_status=1 -> SURFEL_FPGA_FULL_ITERATIVE success
+```
+
+`loc_iter_status=3` is:
+
+```text
+SLAM_LOC_ITER_INVALID_COUNT
+```
+
+Hardware status remains clean on these failing frames:
+
+```text
+STATUS=0x204
+ERROR=0x0
+RUN_COUNT increments
+```
+
+Therefore the fallback is not caused by XDMA permission, PCIe x1, ROS2 backlog,
+or numeric divergence. The first root cause is that real-lidar localization
+frames can exceed the Stage72 `slam_loc_iterative_core` input limit:
+
+```text
+kMaxScanPoints = 8192
+```
+
+### Stage72E Fastfix Plan
+
+Implement an Orin-side localization input cap before calling
+`RunLocalizationIterative()`:
+
+```text
+raw localization scan
+-> deterministic uniform downsample / cap
+-> scan_points_used <= 7600
+-> KERNEL_SEL=6 full iterative localization
+```
+
+This fastfix does not require a new FPGA bitstream because it does not enlarge
+the HLS kernel capacity; it only guarantees the online input respects the
+existing `8192` limit.
+
+Recommended first parameter:
+
+```text
+loc_fpga_full_max_scan_points = 7600
+```
+
+Required instrumentation:
+
+```text
+raw_scan_points
+scan_points_used
+cap_enabled
+cap_target
+loc_iter_status
+fallback_cpu_sim
+fallback_ndt
+```
+
+Acceptance:
+
+```text
+No KERNEL_SEL=6 transaction receives scan_points > 8192.
+Real-lidar localization logs show loc_iter_status=1 on capped frames.
+fallback_cpu_sim=0 for the INVALID_COUNT failure mode.
+Red/green trajectory lines do not continuously diverge because of CPU_SIM
+fallback churn.
+```
+
+### Stage72E Fastfix Implementation Result
+
+Date: 2026-08-31
+
+Implemented on Orin:
+
+```text
+Config:
+  lidar_loc.surfel_fpga_full_max_scan_points: 7600
+
+Code path:
+  LocalizeSurfelFpgaFullIterative()
+  -> deterministic uniform cap before ComputeFullIterative()
+  -> KERNEL_SEL=6 receives scan_points_used <= cap_target
+```
+
+New observability:
+
+```text
+[LidarLoc] full iterative log:
+  raw_scan_points
+  scan_points_used
+  cap_enabled
+  cap_target
+
+[loc_profile] and UI:
+  raw_scan_points
+  scan_points_used
+  cap_enabled
+  cap_target
+```
+
+Validation completed:
+
+```text
+colcon build --packages-select lightning: PASS
+git diff --check: PASS
+
+Stage72D golden sanity:
+  LOC_ITER_XDMA_PASS
+  counts=6124/837/2
+  iterations=4
+  STATUS=0x204
+  ERROR=0x0
+  RUN_COUNT=16683->16684
+  hls_wait_sec=0.236790
+```
+
+Remaining real-lidar acceptance:
+
+```text
+Confirm online frames that previously had scan_points > 8192 now report:
+  raw_scan_points=8xxx
+  scan_points_used=7600
+  cap_enabled=1
+  loc_iter_status=1
+  fallback_cpu_sim=0
+```
+
+### Longer-Term Option
+
+If the localization algorithm must preserve every real-lidar point, Windows/HLS
+should raise `kMaxScanPoints` to `12000` or `16384`, then rerun synthesis,
+timing, Stage72D golden replay, and online localization smoke. This is not the
+fastest path because it requires a new bitstream and resource/timing review.

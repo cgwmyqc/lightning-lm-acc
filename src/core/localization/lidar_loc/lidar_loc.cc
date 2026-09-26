@@ -2,6 +2,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <execution>
 #include <filesystem>
 #include <fstream>
@@ -23,6 +24,7 @@
 #include <opencv2/highgui.hpp>
 
 #include "common/fpga_config.h"
+#include "fpga/hls/slam_loc_iterative_core/slam_loc_iterative_core.h"
 #include "glog/logging.h"
 #include "io/file_io.h"
 #include "io/yaml_io.h"
@@ -68,6 +70,8 @@ const char* BackendName(LocBackendType backend) {
             return "SURFEL_FPGA_OBS";
         case LocBackendType::SURFEL_FPGA_OBS_SOLVE:
             return "SURFEL_FPGA_OBS_SOLVE";
+        case LocBackendType::SURFEL_FPGA_FULL_ITERATIVE:
+            return "SURFEL_FPGA_FULL_ITERATIVE";
         case LocBackendType::SURFEL_FPGA_WITH_NDT_FALLBACK:
             return "SURFEL_FPGA_WITH_NDT_FALLBACK";
     }
@@ -76,6 +80,51 @@ const char* BackendName(LocBackendType backend) {
 
 double SecondsSince(const Clock::time_point& start) {
     return std::chrono::duration<double>(Clock::now() - start).count();
+}
+
+uint32_t Low32(uint64_t value) {
+    return static_cast<uint32_t>(value & 0xffffffffULL);
+}
+
+uint32_t High32(uint64_t value) {
+    return static_cast<uint32_t>((value >> 32) & 0xffffffffULL);
+}
+
+double BitsToDouble(uint64_t bits) {
+    double value = 0.0;
+    std::memcpy(&value, &bits, sizeof(value));
+    return value;
+}
+
+constexpr size_t kLocFpgaFullHlsMaxScanPoints = 8192;
+
+size_t EffectiveLocFpgaFullScanCap(int configured_cap) {
+    if (configured_cap <= 0) {
+        return kLocFpgaFullHlsMaxScanPoints;
+    }
+    return std::min(static_cast<size_t>(configured_cap), kLocFpgaFullHlsMaxScanPoints);
+}
+
+CloudPtr UniformCapCloud(const CloudPtr& input, size_t max_points) {
+    if (!input || max_points == 0 || input->size() <= max_points) {
+        return input;
+    }
+
+    CloudPtr capped(new PointCloudType);
+    capped->reserve(max_points);
+    const size_t raw_points = input->size();
+    if (max_points == 1) {
+        capped->points.push_back(input->points.front());
+    } else {
+        for (size_t i = 0; i < max_points; ++i) {
+            const size_t idx = (i * (raw_points - 1)) / (max_points - 1);
+            capped->points.push_back(input->points[idx]);
+        }
+    }
+    capped->width = static_cast<uint32_t>(capped->points.size());
+    capped->height = 1;
+    capped->is_dense = input->is_dense;
+    return capped;
 }
 
 }  // namespace
@@ -163,6 +212,9 @@ bool LidarLoc::Init(const std::string& config_path) {
         GetYamlValue(lidar_loc_node, "surfel_lookup_nearby_type", options_.surfel_options_.lookup_nearby_type);
     options_.surfel_options_.max_iterations =
         GetYamlValue(lidar_loc_node, "surfel_max_iterations", options_.surfel_options_.max_iterations);
+    options_.surfel_fpga_full_max_scan_points_ =
+        GetYamlValue(lidar_loc_node, "surfel_fpga_full_max_scan_points",
+                     options_.surfel_fpga_full_max_scan_points_);
     options_.surfel_options_.min_valid_count =
         GetYamlValue(lidar_loc_node, "surfel_min_valid_count", options_.surfel_options_.min_valid_count);
     options_.surfel_options_.max_mean_residual =
@@ -214,14 +266,10 @@ bool LidarLoc::Init(const std::string& config_path) {
         } else if (fpga_loc.mode == "fpga_obs" || fpga_loc.mode == "fpga_observation" ||
                    fpga_loc.mode == "fpga_with_ndt_fallback") {
             options_.backend_type_ = LocBackendType::SURFEL_FPGA_OBS;
-        } else if (fpga_loc.mode == "fpga_obs_solve" || fpga_loc.mode == "fpga_solve" ||
-                   fpga_loc.mode == "fpga_full") {
-            if (fpga_loc.mode == "fpga_full") {
-                LOG(WARNING) << "[LidarLoc] FPGA localization mode 'fpga_full' requested; "
-                             << "Stage 63 supports observation + solve6x6 only. "
-                             << "Using SURFEL_FPGA_OBS_SOLVE.";
-            }
+        } else if (fpga_loc.mode == "fpga_obs_solve" || fpga_loc.mode == "fpga_solve") {
             options_.backend_type_ = LocBackendType::SURFEL_FPGA_OBS_SOLVE;
+        } else if (fpga_loc.mode == "fpga_full" || fpga_loc.mode == "fpga_full_iterative") {
+            options_.backend_type_ = LocBackendType::SURFEL_FPGA_FULL_ITERATIVE;
         } else if (fpga_loc.mode == "cpu" || fpga_loc.mode == "ndt_omp") {
             options_.backend_type_ = LocBackendType::NDT_OMP;
         } else {
@@ -246,6 +294,7 @@ bool LidarLoc::Init(const std::string& config_path) {
               << " surfel_cell_resolution=" << options_.surfel_options_.cell_resolution
               << " surfel_min_support=" << options_.surfel_options_.min_support
               << " surfel_lookup_nearby_type=" << options_.surfel_options_.lookup_nearby_type
+              << " surfel_fpga_full_max_scan_points=" << options_.surfel_fpga_full_max_scan_points_
               << " surfel_fpga_ctrl_base=0x" << std::hex << options_.surfel_xdma_options_.ctrl_base << std::dec
               << " surfel_fpga_timeout_sec=" << options_.surfel_xdma_options_.timeout_sec
               << " surfel_candidate_abi_v2=" << options_.surfel_xdma_options_.candidate_abi_v2
@@ -604,7 +653,14 @@ LocPerfSnapshot LidarLoc::GetLastPerfSnapshot() const {
 
 void LidarLoc::SetLastPerfSnapshot(const LocPerfSnapshot& snapshot) {
     std::lock_guard<std::mutex> lock(perf_mutex_);
-    last_perf_snapshot_ = snapshot;
+    LocPerfSnapshot normalized = snapshot;
+    if (normalized.raw_scan_points == 0) {
+        normalized.raw_scan_points = normalized.scan_points;
+    }
+    if (normalized.scan_points_used == 0) {
+        normalized.scan_points_used = normalized.scan_points;
+    }
+    last_perf_snapshot_ = normalized;
 }
 
 void LidarLoc::UpdateLastPerfFallback(bool fallback_cpu_sim, bool fallback_ndt) {
@@ -1014,8 +1070,21 @@ bool LidarLoc::Localize(SE3& pose, double& confidence, CloudPtr input, CloudPtr 
     }
 
     bool fallback_cpu_sim = false;
-    if (options_.backend_type_ == LocBackendType::SURFEL_FPGA_OBS ||
-        options_.backend_type_ == LocBackendType::SURFEL_FPGA_OBS_SOLVE) {
+    if (options_.backend_type_ == LocBackendType::SURFEL_FPGA_FULL_ITERATIVE) {
+        SE3 fpga_pose = pose;
+        double fpga_confidence = 0.0;
+        const bool fpga_success = LocalizeSurfelFpgaFullIterative(fpga_pose, fpga_confidence, input, output);
+        if (fpga_success) {
+            pose = fpga_pose;
+            confidence = fpga_confidence;
+            UpdateLastPerfFallback(false, false);
+            return true;
+        }
+
+        fallback_cpu_sim = true;
+        LOG(WARNING) << "[LidarLoc] SURFEL_FPGA_FULL_ITERATIVE failed, fallback to SURFEL_CPU_SIM";
+    } else if (options_.backend_type_ == LocBackendType::SURFEL_FPGA_OBS ||
+               options_.backend_type_ == LocBackendType::SURFEL_FPGA_OBS_SOLVE) {
         SE3 fpga_pose = pose;
         double fpga_confidence = 0.0;
         const bool fpga_success = LocalizeSurfelFpgaObs(fpga_pose, fpga_confidence, input, output);
@@ -1228,6 +1297,166 @@ void LidarLoc::AppendLocFpgaProfileCsv(uint64_t frame_id, uint32_t iter, uint64_
         << result.error << "," << result.run_count_before << "," << result.run_count_after << ","
         << result.scan_count_readback << "," << result.candidate_count << "," << result.candidate_valid_count << ","
         << result.candidate_miss_count << "," << result.candidate_bytes << "\n";
+}
+
+bool LidarLoc::LocalizeSurfelFpgaFullIterative(SE3& pose, double& confidence, CloudPtr input, CloudPtr output) {
+    const auto loc_start = Clock::now();
+    constexpr const char* kBackendName = "SURFEL_FPGA_FULL_ITERATIVE";
+    if (!surfel_xdma_backend_ || !surfel_window_) {
+        LocPerfSnapshot snapshot;
+        snapshot.timestamp = current_timestamp_;
+        snapshot.backend = kBackendName;
+        snapshot.scan_points = input ? input->size() : 0;
+        snapshot.loc_total_ms = SecondsSince(loc_start) * 1000.0;
+        snapshot.success = false;
+        SetLastPerfSnapshot(snapshot);
+        return false;
+    }
+
+    const uint64_t loc_frame_id = ++loc_fpga_frame_count_;
+    map_->LoadOnPose(pose);
+    if (map_->MapUpdated() || map_->DynamicMapUpdated()) {
+        surfel_window_dirty_ = true;
+    }
+
+    double rebuild_window_sec = 0.0;
+    if (surfel_window_dirty_ || surfel_window_->Buffer().Empty()) {
+        const auto rebuild_start = Clock::now();
+        if (!RebuildSurfelWindow()) {
+            LOG(WARNING) << "[LidarLoc] failed to build surfel active window for FPGA_FULL_ITERATIVE";
+            LocPerfSnapshot snapshot;
+            snapshot.timestamp = current_timestamp_;
+            snapshot.backend = kBackendName;
+            snapshot.scan_points = input ? input->size() : 0;
+            snapshot.loc_total_ms = SecondsSince(loc_start) * 1000.0;
+            snapshot.success = false;
+            SetLastPerfSnapshot(snapshot);
+            return false;
+        }
+        rebuild_window_sec = SecondsSince(rebuild_start);
+    }
+
+    const auto& active_buffer = surfel_window_->Buffer();
+    const size_t raw_scan_points = input ? input->size() : 0;
+    const size_t scan_cap_target = EffectiveLocFpgaFullScanCap(options_.surfel_fpga_full_max_scan_points_);
+    const bool scan_cap_enabled = raw_scan_points > scan_cap_target;
+    CloudPtr fpga_input = UniformCapCloud(input, scan_cap_target);
+    const size_t scan_points_used = fpga_input ? fpga_input->size() : 0;
+    SE3 pose_out = pose;
+    LocQuality quality;
+    double elapsed_sec = 0.0;
+    double pack_scan_sec = 0.0;
+    double pack_candidate_sec = 0.0;
+    std::string error;
+    fpga::XdmaRuntime::LocIterativeRunResult result;
+    const uint64_t fpga_call_id = ++loc_fpga_call_count_;
+    const bool compute_ok = surfel_xdma_backend_->ComputeFullIterative(
+        fpga_input, pose, active_buffer, options_.surfel_options_, pose_out, quality, &elapsed_sec, &error, &result,
+        &pack_scan_sec, &pack_candidate_sec);
+
+    uint32_t loc_iter_status = 0;
+    uint32_t loc_iter_flags = 0;
+    Vec6d last_dx = Vec6d::Zero();
+    if (result.raw_output_words.size() >= fpga::LOC_ITER_OUTPUT_WORDS) {
+        loc_iter_status = Low32(result.raw_output_words[fpga::LOC_ITER_OUT_STATUS_FLAGS]);
+        loc_iter_flags = High32(result.raw_output_words[fpga::LOC_ITER_OUT_STATUS_FLAGS]);
+        for (int i = 0; i < 6; ++i) {
+            last_dx[i] = BitsToDouble(result.raw_output_words[fpga::LOC_ITER_OUT_LAST_DX0 + i]);
+        }
+    }
+    const double dx_norm = last_dx.norm();
+    const bool success = compute_ok;
+    if (success) {
+        pose = pose_out;
+        confidence = quality.score;
+        if (output != nullptr) {
+            pcl::transformPointCloud(*input, *output, pose.matrix().cast<float>());
+        }
+    }
+
+    LOG(INFO) << "[LidarLoc] surfel " << kBackendName
+              << " success=" << success
+              << " kernel_sel=6"
+              << " loc_iter_xdma_success=" << compute_ok
+              << " loc_frame=" << loc_frame_id
+              << " fpga_call=" << fpga_call_id
+              << " raw_scan_points=" << raw_scan_points
+              << " scan_points_used=" << scan_points_used
+              << " cap_enabled=" << scan_cap_enabled
+              << " cap_target=" << scan_cap_target
+              << " scan_points=" << scan_points_used
+              << " active_blocks=" << active_buffer.blocks.size()
+              << " active_cells=" << active_buffer.cells.size()
+              << " candidate_abi_v2=" << options_.surfel_xdma_options_.candidate_abi_v2
+              << " candidate_count=" << result.candidate_count
+              << " candidate_valid=" << result.candidate_valid_count
+              << " candidate_miss=" << result.candidate_miss_count
+              << " candidate_bytes=" << result.candidate_bytes
+              << " iterations_used=" << quality.iterations
+              << " valid=" << quality.valid_count
+              << " reject=" << quality.reject_count
+              << " miss=" << quality.miss_count
+              << " score=" << quality.score
+              << " mean_abs_residual=" << quality.mean_abs_residual
+              << " max_abs_residual=" << quality.max_abs_residual
+              << " matrix_ok=" << quality.matrix_ok
+              << " loc_iter_status=" << loc_iter_status
+              << " loc_iter_flags=0x" << std::hex << loc_iter_flags
+              << " status=0x" << result.status
+              << " error=0x" << result.error
+              << std::dec
+              << " dx_norm=" << dx_norm
+              << " timing_sec rebuild_window=" << rebuild_window_sec
+              << " pack_scan=" << pack_scan_sec
+              << " pack_candidate=" << pack_candidate_sec
+              << " total=" << result.timing.total_sec
+              << " mutex_wait=" << result.timing.mutex_wait_sec
+              << " lock=" << result.timing.lock_sec
+              << " open=" << result.timing.open_sec
+              << " h2c_scan=" << result.timing.h2c_scan_sec
+              << " h2c_candidate=" << result.timing.h2c_candidate_sec
+              << " h2c_input=" << result.timing.h2c_input_sec
+              << " verify_readback=" << result.timing.verify_readback_sec
+              << " output_zero=" << result.timing.output_zero_sec
+              << " reg_config=" << result.timing.reg_config_sec
+              << " hls_wait=" << result.timing.hls_wait_sec
+              << " c2h_output=" << result.timing.c2h_output_sec
+              << " run_count=" << result.run_count_before << "->" << result.run_count_after
+              << " last_error=" << error;
+
+    LocPerfSnapshot snapshot;
+    snapshot.timestamp = current_timestamp_;
+    snapshot.backend = kBackendName;
+    snapshot.loc_total_ms = SecondsSince(loc_start) * 1000.0;
+    snapshot.iterations = quality.iterations;
+    snapshot.scan_points = scan_points_used;
+    snapshot.raw_scan_points = raw_scan_points;
+    snapshot.scan_points_used = scan_points_used;
+    snapshot.scan_cap_enabled = scan_cap_enabled;
+    snapshot.scan_cap_target = scan_cap_target;
+    snapshot.active_blocks = active_buffer.blocks.size();
+    snapshot.active_cells = active_buffer.cells.size();
+    snapshot.valid_count = quality.valid_count;
+    snapshot.reject_count = quality.reject_count;
+    snapshot.miss_count = quality.miss_count;
+    snapshot.score = quality.score;
+    snapshot.mean_abs_residual = quality.mean_abs_residual;
+    snapshot.max_abs_residual = quality.max_abs_residual;
+    snapshot.xdma_total_ms = result.timing.total_sec * 1000.0;
+    snapshot.hls_wait_ms = result.timing.hls_wait_sec * 1000.0;
+    snapshot.h2c_map_ms = 0.0;
+    snapshot.h2c_candidate_ms = result.timing.h2c_candidate_sec * 1000.0;
+    snapshot.mutex_wait_ms = result.timing.mutex_wait_sec * 1000.0;
+    snapshot.fpga_solve_ms = result.timing.hls_wait_sec * 1000.0;
+    snapshot.fpga_solve_status = loc_iter_status;
+    snapshot.dx_norm = dx_norm;
+    snapshot.run_count_before = result.run_count_before;
+    snapshot.run_count_after = result.run_count_after;
+    snapshot.status = result.status;
+    snapshot.error = result.error;
+    snapshot.success = success;
+    SetLastPerfSnapshot(snapshot);
+    return success;
 }
 
 bool LidarLoc::LocalizeSurfelFpgaObs(SE3& pose, double& confidence, CloudPtr input, CloudPtr output) {

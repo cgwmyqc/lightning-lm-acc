@@ -49,6 +49,7 @@ class LidarLoc {
         bool surfel_fpga_profile_enable_ = false;
         bool surfel_fpga_profile_csv_enable_ = false;
         std::string surfel_fpga_profile_csv_path_ = "./data/profile/loc_fpga_obs_trace.csv";
+        int surfel_fpga_full_max_scan_points_ = 7600;
         bool try_self_extrap_ = false;                 // 是否尝试自己的外推pose
         bool with_height_ = true;                      // 建图期间是否带有高度约束？
         bool force_2d_ = true;                         // 强制在2D空间
@@ -210,6 +211,7 @@ class LidarLoc {
     bool LocalizeNdt(SE3& pose, double& confidence, CloudPtr input, CloudPtr output, bool use_rough_res);
     bool LocalizeSurfelCpuSim(SE3& pose, double& confidence, CloudPtr input, CloudPtr output);
     bool LocalizeSurfelFpgaObs(SE3& pose, double& confidence, CloudPtr input, CloudPtr output);
+    bool LocalizeSurfelFpgaFullIterative(SE3& pose, double& confidence, CloudPtr input, CloudPtr output);
     bool RebuildSurfelWindow();
     void MaybeCaptureGoldenFrame(const CloudPtr& input, const SE3& pose_guess);
     void AppendLocFpgaProfileCsv(uint64_t frame_id, uint32_t iter, uint64_t fpga_call_id, size_t scan_points,
