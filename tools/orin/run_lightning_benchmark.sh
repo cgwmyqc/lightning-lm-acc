@@ -9,13 +9,18 @@ executable=${5:?missing executable}
 shift 5
 
 cd "$repo_root"
-if [[ -n "${ROS_DISTRO:-}" && -f "/opt/ros/${ROS_DISTRO}/setup.bash" ]]; then
+ros_distro=${ROS_DISTRO:-humble}
+if [[ -f "/opt/ros/${ros_distro}/setup.bash" ]]; then
     # shellcheck disable=SC1090
-    source "/opt/ros/${ROS_DISTRO}/setup.bash"
+    set +u
+    source "/opt/ros/${ros_distro}/setup.bash"
+    set -u
 fi
 if [[ -f install/setup.bash ]]; then
     # shellcheck disable=SC1091
+    set +u
     source install/setup.bash
+    set -u
 fi
 
 mkdir -p "$output_dir"

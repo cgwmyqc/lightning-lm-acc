@@ -17,8 +17,8 @@ $LogDir = Join-Path $ReportRoot "logs"
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 $Target = Get-OrinTarget
 $SshOptions = Get-OrinSshOptions
-& ssh @SshOptions $Target "sudo -n /usr/local/sbin/lightning-pcie-control recover" `
-    2>&1 | Tee-Object -FilePath (Join-Path $LogDir "orin_pcie_rescan.log") | ForEach-Object { $_ }
+& ssh @SshOptions $Target "sudo -n /usr/local/sbin/lightning-pcie-control recover 2>&1" |
+    Tee-Object -FilePath (Join-Path $LogDir "orin_pcie_rescan.log") | ForEach-Object { $_ }
 $ExitCode = $LASTEXITCODE
 if ($ExitCode -ne 0 -and $AllowRebootFallback) {
     Write-Warning "PCIe hot recovery failed; explicit -AllowRebootFallback requested an Orin reboot."

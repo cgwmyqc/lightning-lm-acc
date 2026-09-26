@@ -9,14 +9,20 @@ shift 3
 cd "$repo_root"
 if [[ -n "${ROS_DISTRO:-}" && -f "/opt/ros/${ROS_DISTRO}/setup.bash" ]]; then
     # shellcheck disable=SC1090
+    set +u
     source "/opt/ros/${ROS_DISTRO}/setup.bash"
+    set -u
 elif [[ -f /opt/ros/humble/setup.bash ]]; then
     # shellcheck disable=SC1091
+    set +u
     source /opt/ros/humble/setup.bash
+    set -u
 fi
 if [[ -f install/setup.bash ]]; then
     # shellcheck disable=SC1091
+    set +u
     source install/setup.bash
+    set -u
 fi
 
 mkdir -p "$output_dir"

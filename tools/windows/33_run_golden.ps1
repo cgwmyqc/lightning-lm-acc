@@ -42,7 +42,7 @@ foreach ($Name in $Suites) {
     if ($Name -ne "mapping") { $Arguments += "--output_dir=$RemoteOutput" }
     $CommandParts = @("bash", $RemoteRunner, $env:ORIN_ROOT, $RemoteOutput, $Executable) + $Arguments
     $RemoteCommand = ($CommandParts | ForEach-Object { Quote-Shell $_ }) -join " "
-    & ssh @SshOptions $Target $RemoteCommand 2>&1 |
+    & ssh @SshOptions $Target "$RemoteCommand 2>&1" |
         Tee-Object -FilePath (Join-Path $LogDir "golden_${Name}.log") | ForEach-Object { $_ }
     if ($LASTEXITCODE -ne 0) { throw "$Name golden failed" }
     & scp @ScpOptions -q -r "${Target}:$RemoteOutput" $ResultDir

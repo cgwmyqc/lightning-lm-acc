@@ -25,6 +25,6 @@ ls -l /dev/xdma0_user /dev/xdma0_h2c_0 /dev/xdma0_c2h_0
 echo ORIN_PREFLIGHT_PASS
 '@
 $RemoteRoot = Quote-Shell $env:ORIN_ROOT
-$Remote | & ssh @SshOptions $Target "bash -s -- $RemoteRoot" 2>&1 |
+$Remote | & ssh @SshOptions $Target "bash -s -- $RemoteRoot 2>&1" |
     Tee-Object -FilePath (Join-Path $LogDir "orin_preflight.log") | ForEach-Object { $_ }
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

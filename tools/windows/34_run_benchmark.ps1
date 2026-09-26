@@ -30,7 +30,7 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $PcieCsv = Quote-Shell "$($env:ORIN_ROOT)/reports/nma/r0/benchmark/pcie_xdma.csv"
-& ssh @SshOptions $Target "bash '$XdmaBench' $PcieCsv" 2>&1 |
+& ssh @SshOptions $Target "bash '$XdmaBench' $PcieCsv 2>&1" |
     Tee-Object -FilePath (Join-Path $LogDir "pcie_xdma_benchmark.log") | ForEach-Object { $_ }
 if ($LASTEXITCODE -ne 0) { throw "XDMA bandwidth benchmark failed" }
 
@@ -44,7 +44,7 @@ foreach ($Run in $Runs) {
     $Parts = @("bash", $Runner, $env:ORIN_ROOT, $RemoteOutput, "$WarmupFrames", "$MeasureFrames",
                "run_loc_offline", "--input_bag=$InputBag", "--map_path=$MapPath", "--config=$($Run.Config)")
     $RemoteCommand = ($Parts | ForEach-Object { Quote-Shell $_ }) -join " "
-    & ssh @SshOptions $Target $RemoteCommand 2>&1 |
+    & ssh @SshOptions $Target "$RemoteCommand 2>&1" |
         Tee-Object -FilePath (Join-Path $LogDir "benchmark_$($Run.Name).log") | ForEach-Object { $_ }
     if ($LASTEXITCODE -ne 0) { throw "$($Run.Name) benchmark failed" }
 }

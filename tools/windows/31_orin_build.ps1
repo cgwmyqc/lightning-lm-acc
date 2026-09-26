@@ -22,6 +22,11 @@ $RemoteRoot = Quote-Shell $env:ORIN_ROOT
 $SyncCommand = if ($Sync) {
     "cd $RemoteRoot && test -z `"`$(git status --porcelain)`" && git fetch origin dev-acc && git checkout dev-acc && git merge --ff-only origin/dev-acc && "
 } else { "" }
-& ssh @SshOptions $Target "$SyncCommand bash '$RemoteScript' $RemoteRoot '$BuildType'; rc=`$?; rm -f '$RemoteScript'; exit `$rc" `
-    2>&1 | Tee-Object -FilePath (Join-Path $LogDir "orin_build.log") | ForEach-Object { $_ }
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+$PreviousErrorAction = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+$RemoteCommand = "{ $SyncCommand bash '$RemoteScript' $RemoteRoot '$BuildType'; rc=`$?; rm -f '$RemoteScript'; exit `$rc; } 2>&1"
+& ssh @SshOptions $Target $RemoteCommand |
+    Tee-Object -FilePath (Join-Path $LogDir "orin_build.log") | ForEach-Object { $_ }
+$SshExitCode = $LASTEXITCODE
+$ErrorActionPreference = $PreviousErrorAction
+if ($SshExitCode -ne 0) { exit $SshExitCode }
