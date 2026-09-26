@@ -13,6 +13,10 @@ if ([string]::IsNullOrWhiteSpace($ReportRoot)) { $ReportRoot = $env:NMA_REPORT_R
 Assert-OrinConfig
 if ($Repeat -lt 1) { throw "Repeat must be >= 1" }
 
+& powershell -ExecutionPolicy Bypass -File (Join-Path $ScriptDir "30_orin_preflight.ps1") `
+    -ReportRoot $ReportRoot
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
 $LogDir = Join-Path $ReportRoot "logs"
 $ResultDir = Join-Path $ReportRoot "golden"
 New-Item -ItemType Directory -Force -Path $LogDir, $ResultDir | Out-Null
@@ -37,9 +41,26 @@ foreach ($Name in $Suites) {
     $Executable = $Definitions[$Name][0]
     $Golden = $Definitions[$Name][1]
     $RemoteOutput = "$($env:ORIN_ROOT)/reports/nma/r0/golden/$Name"
+    if ($Name -eq "mapping") {
+        for ($Iteration = 1; $Iteration -le $Repeat; $Iteration++) {
+            $RunName = "run_{0:d2}" -f $Iteration
+            $RunOutput = "$RemoteOutput/$RunName"
+            $CommandParts = @(
+                "bash", $RemoteRunner, $env:ORIN_ROOT, $RunOutput, $Executable,
+                "--golden_dir=$Golden"
+            )
+            $RemoteCommand = ($CommandParts | ForEach-Object { Quote-Shell $_ }) -join " "
+            & ssh @SshOptions $Target "$RemoteCommand 2>&1" |
+                Tee-Object -FilePath (Join-Path $LogDir "golden_${Name}_${RunName}.log") | ForEach-Object { $_ }
+            if ($LASTEXITCODE -ne 0) { throw "$Name $RunName golden failed" }
+        }
+        & scp @ScpOptions -q -r "${Target}:$RemoteOutput" $ResultDir
+        if ($LASTEXITCODE -ne 0) { throw "Failed to collect $Name golden output" }
+        continue
+    }
     $Arguments = @("--golden_dir=$Golden", "--verify_readback=$Verify")
-    if ($Name -ne "mapping") { $Arguments += "--repeat=$Repeat" }
-    if ($Name -ne "mapping") { $Arguments += "--output_dir=$RemoteOutput" }
+    $Arguments += "--repeat=$Repeat"
+    $Arguments += "--output_dir=$RemoteOutput"
     $CommandParts = @("bash", $RemoteRunner, $env:ORIN_ROOT, $RemoteOutput, $Executable) + $Arguments
     $RemoteCommand = ($CommandParts | ForEach-Object { Quote-Shell $_ }) -join " "
     & ssh @SshOptions $Target "$RemoteCommand 2>&1" |

@@ -36,10 +36,17 @@ if [[ "$current_speed" != 5.0\ GT/s* || "$current_width" != "4" ]]; then
     echo "ORIN_PREFLIGHT_FAIL reason=link_not_gen2_x4"
     exit 14
 fi
-test -c /dev/xdma0_user
-test -c /dev/xdma0_h2c_0
-test -c /dev/xdma0_c2h_0
-ls -l /dev/xdma0_user /dev/xdma0_h2c_0 /dev/xdma0_c2h_0
+for node in /dev/xdma0_user /dev/xdma0_h2c_0 /dev/xdma0_c2h_0 /dev/xdma0_events_0; do
+    if [ ! -c "$node" ]; then
+        echo "ORIN_PREFLIGHT_FAIL reason=xdma_node_missing node=$node"
+        exit 15
+    fi
+    if [ ! -r "$node" ] || [ ! -w "$node" ]; then
+        echo "ORIN_PREFLIGHT_FAIL reason=xdma_access_denied node=$node"
+        exit 16
+    fi
+done
+ls -l /dev/xdma0_user /dev/xdma0_h2c_0 /dev/xdma0_c2h_0 /dev/xdma0_events_0
 echo ORIN_PREFLIGHT_PASS
 '@
 $RemoteRoot = Quote-Shell $env:ORIN_ROOT

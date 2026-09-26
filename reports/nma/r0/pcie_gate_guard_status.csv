@@ -1,0 +1,6 @@
+entry,current_link,expected_exit,observed_exit,result
+35_pcie_stability,gen2_x1,14,14,PASS
+36_run_xdma_matrix,gen2_x1,14,14,PASS
+33_run_golden,gen2_x1,14,14,PASS
+34_run_benchmark,gen2_x1,14,14,PASS
+37_complete_r0_after_x4,gen2_x1,14,14,PASS

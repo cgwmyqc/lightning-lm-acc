@@ -31,6 +31,20 @@ R0 because the endpoint negotiates Gen2 x1 instead of the required Gen2 x4.
 - Recovery with no initial BDF performs a rescan instead of assuming a prior
   endpoint exists. A cold Orin reboot with the diagnostic image enumerates and
   binds the XDMA driver.
+- The live Orin Device Tree has been audited. Root port `141a0000.pcie` is
+  `okay`, reports `num-lanes=8`, and maps to PCI domain `0005`; it is not
+  configured as an x1 port.
+- Carrier and core-board schematics confirm an intentional full x4 lane-order
+  reversal with P/N polarity preserved. The verified slot/J30/Bank112 mapping
+  is captured in `PCIE_FIELD_CHECKLIST.md`.
+- Read-only per-change PCIe diagnostics, an initial x4 stability gate, and a
+  gated XDMA payload/BAR/DDR runner are now available.
+- A post-x4 orchestrator fixes the remaining R0 order as full-NMA restore,
+  ten recovery cycles, payload/BAR/DDR, four Golden suites repeated three
+  times, and report collection.
+- All stability, payload, Golden, benchmark, and post-x4 orchestration entry
+  points were exercised against the current x1 link and stopped at the x4 gate
+  with exit code 14 before touching their data paths.
 
 ## Fresh FPGA Baseline
 
@@ -78,6 +92,15 @@ for this board path and should remain enabled. The remaining fault domain is
 the physical path or platform assignment for lanes 1-3, not the reversal
 property itself.
 
+The live Device Tree and root-port capability now rule out an Orin
+`num-lanes=1` configuration. The highest-priority checks are connector seating,
+cable/adapter continuity, AC-coupling component population, and signal
+integrity on the three non-training lane pairs.
+
+The current XDMA character devices are `root:root 0600`. A dedicated `xdma`
+group udev installer has been added, but it requires one interactive sudo run
+on Orin before non-root payload and Golden tests can execute.
+
 ## Intentionally Not Run
 
 - XDMA payload matrix
@@ -98,6 +121,9 @@ rosbag, map, and benchmark configuration are also still required before the
 2. Probe PCIe refclk and PERST# at the FPGA and confirm timing relative to Orin
    boot and JTAG reconfiguration.
 3. Review the Orin device-tree/root-port lane assignment and confirm the
-   selected connector exposes all four lanes.
+   selected connector exposes all four lanes. The active node is already
+   enabled for eight lanes; confirm the physical connector/adapter uses them.
 4. After x4 is restored, execute ten JTAG/recovery loops before XDMA payload,
    Golden, cycle, and rosbag validation.
+5. Install the dedicated XDMA udev rule interactively and reconnect SSH before
+   running the non-root payload and Golden gates.

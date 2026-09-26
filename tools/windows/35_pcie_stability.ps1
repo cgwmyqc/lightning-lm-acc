@@ -14,6 +14,13 @@ $LogDir = Join-Path $ReportRoot "logs\pcie_stability"
 $CsvPath = Join-Path $ReportRoot "pcie_recovery_cycles.csv"
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 
+& powershell -ExecutionPolicy Bypass -File (Join-Path $ScriptDir "30_orin_preflight.ps1") `
+    -ReportRoot $ReportRoot
+if ($LASTEXITCODE -ne 0) {
+    Write-Output "R0_PCIE_RECOVERY_STABILITY_BLOCKED reason=initial_link_not_gen2_x4"
+    exit $LASTEXITCODE
+}
+
 $Rows = @()
 for ($Cycle = 1; $Cycle -le $Cycles; $Cycle++) {
     $Started = Get-Date

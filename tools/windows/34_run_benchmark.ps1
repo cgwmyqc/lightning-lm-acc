@@ -16,6 +16,10 @@ if ([string]::IsNullOrWhiteSpace($ReportRoot)) { $ReportRoot = $env:NMA_REPORT_R
 Assert-OrinConfig
 if ($WarmupFrames -lt 0 -or $MeasureFrames -lt 1) { throw "Invalid warmup/measure frame counts" }
 
+& powershell -ExecutionPolicy Bypass -File (Join-Path $ScriptDir "30_orin_preflight.ps1") `
+    -ReportRoot $ReportRoot
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
 $LogDir = Join-Path $ReportRoot "logs"
 $BenchmarkDir = Join-Path $ReportRoot "benchmark"
 New-Item -ItemType Directory -Force -Path $LogDir, $BenchmarkDir | Out-Null
