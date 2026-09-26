@@ -2,6 +2,10 @@ $ErrorActionPreference = "Stop"
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = (Resolve-Path (Join-Path $ScriptDir "..\..")).Path
+$LocalEnv = Join-Path $ScriptDir "env.local.ps1"
+if (Test-Path -LiteralPath $LocalEnv) {
+    . $LocalEnv
+}
 
 if ([string]::IsNullOrWhiteSpace($env:ORIN_HOST)) {
     $env:ORIN_HOST = "192.168.31.119"
@@ -41,3 +45,46 @@ if ([string]::IsNullOrWhiteSpace($env:NMA_REPORT_ROOT)) {
 
 $script:NmaRepoRoot = $RepoRoot
 
+function Assert-OrinConfig {
+    if ([string]::IsNullOrWhiteSpace($env:ORIN_USER)) { throw "ORIN_USER is unset" }
+    if ([string]::IsNullOrWhiteSpace($env:ORIN_ROOT)) { throw "ORIN_ROOT is unset" }
+    if ([string]::IsNullOrWhiteSpace($env:ORIN_IDENTITY_FILE)) { throw "ORIN_IDENTITY_FILE is unset" }
+    if (!(Test-Path -LiteralPath $env:ORIN_IDENTITY_FILE)) {
+        throw "ORIN_IDENTITY_FILE does not exist: $($env:ORIN_IDENTITY_FILE)"
+    }
+    if ([string]::IsNullOrWhiteSpace($env:ORIN_KNOWN_HOSTS)) { throw "ORIN_KNOWN_HOSTS is unset" }
+    if (!(Test-Path -LiteralPath $env:ORIN_KNOWN_HOSTS)) {
+        throw "ORIN_KNOWN_HOSTS does not exist: $($env:ORIN_KNOWN_HOSTS)"
+    }
+}
+
+function Get-OrinTarget {
+    return "$($env:ORIN_USER)@$($env:ORIN_HOST)"
+}
+
+function Get-OrinSshOptions {
+    return @(
+        "-o", "BatchMode=yes",
+        "-o", "IdentitiesOnly=yes",
+        "-o", "StrictHostKeyChecking=yes",
+        "-o", "UserKnownHostsFile=$($env:ORIN_KNOWN_HOSTS)",
+        "-o", "ConnectTimeout=5",
+        "-i", $env:ORIN_IDENTITY_FILE
+    )
+}
+
+function Get-OrinScpOptions {
+    return @(
+        "-o", "BatchMode=yes",
+        "-o", "IdentitiesOnly=yes",
+        "-o", "StrictHostKeyChecking=yes",
+        "-o", "UserKnownHostsFile=$($env:ORIN_KNOWN_HOSTS)",
+        "-o", "ConnectTimeout=5",
+        "-i", $env:ORIN_IDENTITY_FILE
+    )
+}
+
+function Quote-Shell([string]$Value) {
+    $Escape = "'" + '"' + "'" + '"' + "'"
+    return "'" + $Value.Replace("'", $Escape) + "'"
+}

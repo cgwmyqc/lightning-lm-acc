@@ -101,13 +101,28 @@ struct LocPerfSnapshot {
     double max_abs_residual = 0.0;
 
     double xdma_total_ms = 0.0;
+    double candidate_build_ms = 0.0;
+    double map_export_ms = 0.0;
+    double pack_scan_ms = 0.0;
+    double open_ms = 0.0;
+    double h2c_scan_ms = 0.0;
+    double h2c_input_ms = 0.0;
     double hls_wait_ms = 0.0;
     double h2c_map_ms = 0.0;
     double h2c_candidate_ms = 0.0;
+    double register_ms = 0.0;
+    uint64_t fpga_cycles = 0;
+    double fpga_kernel_ms = 0.0;
+    double polling_overhead_ms = 0.0;
+    double c2h_ms = 0.0;
     double mutex_wait_ms = 0.0;
     double fpga_solve_ms = 0.0;
     double dx_norm = 0.0;
     uint32_t fpga_solve_status = 0;
+
+    double eskf_ms = 0.0;
+    double frame_total_ms = 0.0;
+    double cpu_usage_pct = 0.0;
 
     uint64_t run_count_before = 0;
     uint64_t run_count_after = 0;

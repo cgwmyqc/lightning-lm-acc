@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+action=${1:-}
+if [[ $# -ne 1 || "$action" != "status" && "$action" != "recover" && "$action" != "reboot" ]]; then
+    echo "usage: lightning-pcie-control {status|recover|reboot}" >&2
+    exit 2
+fi
+
+if [[ $(id -u) -ne 0 ]]; then
+    echo "PCIE_CONTROL_FAIL reason=root_required" >&2
+    exit 3
+fi
+
+find_xilinx_bdf() {
+    lspci -Dn -d 10ee: 2>/dev/null | awk 'NR == 1 { print $1 }'
+}
+
+print_status() {
+    local bdf link_status
+    bdf=$(find_xilinx_bdf)
+    if [[ -z "$bdf" ]]; then
+        echo "PCIE_BDF=missing"
+        return 10
+    fi
+    echo "PCIE_BDF=$bdf"
+    link_status=$(lspci -s "$bdf" -vv | grep -m1 'LnkSta:' || true)
+    echo "PCIE_LINK_STATUS=$link_status"
+    for node in /dev/xdma0_user /dev/xdma0_h2c_0 /dev/xdma0_c2h_0; do
+        if [[ -c "$node" ]]; then
+            echo "XDMA_NODE_OK=$node"
+        else
+            echo "XDMA_NODE_MISSING=$node"
+        fi
+    done
+}
+
+if [[ "$action" == "status" ]]; then
+    print_status
+    exit $?
+fi
+
+if [[ "$action" == "reboot" ]]; then
+    echo "PCIE_CONTROL_REBOOT_REQUESTED"
+    /sbin/reboot
+    exit 0
+fi
+
+bdf=$(find_xilinx_bdf)
+echo "PCIE_BDF_BEFORE=${bdf:-missing}"
+if lsmod | awk '{print $1}' | grep -qx xdma; then
+    modprobe -r xdma
+fi
+
+if [[ -n "$bdf" ]]; then
+    remove_path="/sys/bus/pci/devices/${bdf}/remove"
+    if [[ ! -w "$remove_path" ]]; then
+        echo "PCIE_RECOVER_FAIL reason=remove_path_not_writable path=$remove_path" >&2
+        exit 11
+    fi
+    printf '1\n' > "$remove_path"
+fi
+
+new_bdf=""
+for _ in $(seq 1 3); do
+    printf '1\n' > /sys/bus/pci/rescan
+    for _ in $(seq 1 20); do
+        new_bdf=$(find_xilinx_bdf)
+        [[ -n "$new_bdf" ]] && break 2
+        sleep 0.25
+    done
+done
+if [[ -z "$new_bdf" ]]; then
+    echo "PCIE_RECOVER_FAIL reason=xilinx_endpoint_not_found_after_rescan" >&2
+    exit 12
+fi
+echo "PCIE_BDF_AFTER=$new_bdf"
+
+modprobe xdma
+for _ in $(seq 1 40); do
+    if [[ -c /dev/xdma0_user && -c /dev/xdma0_h2c_0 && -c /dev/xdma0_c2h_0 ]]; then
+        break
+    fi
+    sleep 0.25
+done
+for node in /dev/xdma0_user /dev/xdma0_h2c_0 /dev/xdma0_c2h_0; do
+    [[ -c "$node" ]] || { echo "PCIE_RECOVER_FAIL reason=missing_device node=$node" >&2; exit 13; }
+done
+
+link_status=$(lspci -s "$new_bdf" -vv | grep -m1 'LnkSta:' || true)
+echo "PCIE_LINK_STATUS=$link_status"
+if [[ "$link_status" != *"Speed 5GT/s"* || "$link_status" != *"Width x4"* ]]; then
+    echo "PCIE_RECOVER_FAIL reason=link_not_gen2_x4" >&2
+    exit 14
+fi
+
+ls -l /dev/xdma0_user /dev/xdma0_h2c_0 /dev/xdma0_c2h_0
+echo "PCIE_RECOVER_PASS"

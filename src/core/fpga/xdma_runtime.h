@@ -26,6 +26,7 @@ class XdmaRuntime {
 
     struct RunResult {
         struct Timing {
+            double candidate_build_sec = 0.0;
             double total_sec = 0.0;
             double mutex_wait_sec = 0.0;
             double lock_sec = 0.0;

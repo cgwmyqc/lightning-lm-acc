@@ -19,6 +19,9 @@ if [[ -f install/setup.bash ]]; then
 fi
 
 mkdir -p "$output_dir"
+frame_csv="$output_dir/all_frames.csv"
+rm -f "$frame_csv" "$output_dir/measured_frames.csv" "$output_dir/frame_summary.csv" \
+    "$output_dir/stdout.log" "$output_dir/tegrastats.log"
 binary=$(command -v "$executable" || true)
 if [[ -z "$binary" && -x "install/lightning/lib/lightning/$executable" ]]; then
     binary="install/lightning/lib/lightning/$executable"
@@ -33,6 +36,7 @@ fi
 
 export NMA_WARMUP_FRAMES="$warmup_frames"
 export NMA_MEASURE_FRAMES="$measure_frames"
+export NMA_LOC_PROFILE_CSV="$frame_csv"
 {
     echo "timestamp_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     echo "git_commit=$(git rev-parse HEAD)"
@@ -44,66 +48,90 @@ export NMA_MEASURE_FRAMES="$measure_frames"
     printf '\n'
 } > "$output_dir/run_metadata.txt"
 
+tegrastats_pid=""
+if command -v tegrastats >/dev/null 2>&1; then
+    tegrastats --interval 1000 > "$output_dir/tegrastats.log" 2>&1 &
+    tegrastats_pid=$!
+fi
+
 set +e
 "$binary" "$@" 2>&1 | tee "$output_dir/stdout.log"
 status=${PIPESTATUS[0]}
+if [[ -n "$tegrastats_pid" ]]; then
+    kill -INT "$tegrastats_pid" 2>/dev/null || true
+    wait "$tegrastats_pid" 2>/dev/null || true
+fi
 set -e
 if [[ $status -ne 0 ]]; then
     echo "BENCHMARK_FAIL exit_code=$status" >&2
     exit "$status"
 fi
 
-python3 - "$output_dir/stdout.log" "$output_dir/frame_summary.csv" "$output_dir/measured_frames.csv" \
+python3 - "$frame_csv" "$output_dir/frame_summary.csv" "$output_dir/measured_frames.csv" \
     "$warmup_frames" "$measure_frames" <<'PY'
 import csv
 import math
-import re
+import statistics
 import sys
 
-log_path, summary_path, frames_path, warmup_text, measure_text = sys.argv[1:]
+input_path, summary_path, frames_path, warmup_text, measure_text = sys.argv[1:]
 warmup = int(warmup_text)
 measure = int(measure_text)
-records = []
+with open(input_path, newline="", encoding="utf-8") as stream:
+    reader = csv.DictReader(stream)
+    fieldnames = reader.fieldnames or []
+    records = list(reader)
 
-with open(log_path, encoding="utf-8", errors="replace") as stream:
-    for line in stream:
-        if "[loc_profile]" not in line:
-            continue
-        record = {}
-        for key, value in re.findall(r"([A-Za-z0-9_/]+)=([^\s]+)", line):
-            try:
-                record[key] = float(value)
-            except ValueError:
-                continue
-        if "frame" in record:
-            records.append(record)
+required_fields = {
+    "frame_id", "backend", "candidate_build_ms", "map_export_ms", "pack_scan_ms", "h2c_scan_ms",
+    "fpga_cycles", "fpga_kernel_ms", "host_wait_ms", "polling_overhead_ms", "c2h_ms", "eskf_ms",
+    "frame_total_ms", "cpu_usage_pct", "fallback_cpu_sim", "fallback_ndt",
+}
+missing = sorted(required_fields - set(fieldnames))
+if missing:
+    raise SystemExit(f"BENCHMARK_FAIL reason=missing_frame_csv_fields fields={','.join(missing)}")
 
 required = warmup + measure
 if len(records) < required:
     raise SystemExit(
-        f"BENCHMARK_FAIL reason=insufficient_loc_profile_samples actual={len(records)} "
-        f"required={required}; set profile.enable=true and profile.log_every_n_frames=1"
+        f"BENCHMARK_FAIL reason=insufficient_frame_csv_samples actual={len(records)} required={required}"
     )
 
 selected = records[warmup:required]
-common_fields = set.intersection(*(set(record) for record in selected))
-if "loc_total_ms" not in common_fields:
-    raise SystemExit("BENCHMARK_FAIL reason=loc_total_ms_missing_from_profile")
-metrics = sorted(common_fields - {"frame"})
+frame_ids = [int(record["frame_id"]) for record in selected]
+if any(right <= left for left, right in zip(frame_ids, frame_ids[1:])):
+    raise SystemExit("BENCHMARK_FAIL reason=frame_ids_not_strictly_increasing")
+
 with open(frames_path, "w", newline="", encoding="utf-8") as stream:
-    writer = csv.DictWriter(stream, fieldnames=["frame"] + metrics)
+    writer = csv.DictWriter(stream, fieldnames=fieldnames)
     writer.writeheader()
+    writer.writerows(selected)
+
+numeric_metrics = []
+for field in fieldnames:
+    if field == "backend":
+        continue
+    values = []
     for record in selected:
-        writer.writerow({key: record[key] for key in writer.fieldnames})
+        try:
+            value = float(record[field])
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(value):
+            values.append(value)
+    if values:
+        numeric_metrics.append((field, values))
 
 with open(summary_path, "w", newline="", encoding="utf-8") as stream:
     writer = csv.writer(stream)
-    writer.writerow(["metric", "samples", "mean", "p95", "min", "max"])
-    for metric in metrics:
-        values = sorted(record[metric] for record in selected)
+    writer.writerow(["metric", "samples", "mean", "p50", "p95", "min", "max", "std"])
+    for metric, raw_values in numeric_metrics:
+        values = sorted(raw_values)
+        p50 = values[max(0, math.ceil(0.50 * len(values)) - 1)]
         p95 = values[max(0, math.ceil(0.95 * len(values)) - 1)]
         writer.writerow(
-            [metric, len(values), sum(values) / len(values), p95, values[0], values[-1]]
+            [metric, len(values), statistics.fmean(values), p50, p95, values[0], values[-1],
+             statistics.pstdev(values)]
         )
 
 print(

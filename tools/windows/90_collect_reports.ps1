@@ -33,11 +33,10 @@ foreach ($ReportName in $TopReports) {
 }
 
 if ($CollectRemote) {
-    if ([string]::IsNullOrWhiteSpace($env:ORIN_USER) -or [string]::IsNullOrWhiteSpace($env:ORIN_ROOT)) {
-        throw "ORIN_USER and ORIN_ROOT are required with -CollectRemote"
-    }
-    $Target = "$($env:ORIN_USER)@$($env:ORIN_HOST)"
-    & scp -q -r "${Target}:$($env:ORIN_ROOT)/reports/nma/r0/." $ReportRoot
+    Assert-OrinConfig
+    $Target = Get-OrinTarget
+    $ScpOptions = Get-OrinScpOptions
+    & scp @ScpOptions -q -r "${Target}:$($env:ORIN_ROOT)/reports/nma/r0/." $ReportRoot
     if ($LASTEXITCODE -ne 0) { throw "Remote report collection failed" }
 }
 

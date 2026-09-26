@@ -5,6 +5,11 @@
 #include "core/localization/localization.h"
 
 #include <chrono>
+#include <cmath>
+#include <cstdlib>
+#include <ctime>
+#include <filesystem>
+#include <fstream>
 #include <iomanip>
 #include <opencv2/highgui.hpp>
 
@@ -19,6 +24,10 @@ using Clock = std::chrono::steady_clock;
 
 double MsSince(const Clock::time_point& start) {
     return std::chrono::duration<double, std::milli>(Clock::now() - start).count();
+}
+
+double CpuMsSince(std::clock_t start) {
+    return 1000.0 * static_cast<double>(std::clock() - start) / static_cast<double>(CLOCKS_PER_SEC);
 }
 
 template <typename T>
@@ -48,6 +57,13 @@ bool Localization::Init(const std::string& yaml_path, const std::string& global_
     profile_enable_ = GetYamlValue(profile_node, "enable", profile_enable_);
     profile_ui_enable_ = GetYamlValue(profile_node, "ui_enable", profile_ui_enable_);
     profile_log_every_n_frames_ = GetYamlValue(profile_node, "log_every_n_frames", profile_log_every_n_frames_);
+    profile_csv_enable_ = GetYamlValue(profile_node, "loc_benchmark_csv_enable", profile_csv_enable_);
+    profile_csv_path_ = GetYamlValue(profile_node, "loc_benchmark_csv_path", profile_csv_path_);
+    if (const char* csv_path = std::getenv("NMA_LOC_PROFILE_CSV"); csv_path != nullptr && csv_path[0] != '\0') {
+        profile_csv_enable_ = true;
+        profile_enable_ = true;
+        profile_csv_path_ = csv_path;
+    }
     options_.with_ui_ = !options_.force_disable_ui_ && yaml.GetValue<bool>("system", "with_ui");
 
     /// lidar odom前端
@@ -169,12 +185,14 @@ void Localization::ProcessLidarMsg(const sensor_msgs::msg::PointCloud2::SharedPt
 
     // 串行模式
     const auto preprocess_start = Clock::now();
+    const auto preprocess_cpu_start = std::clock();
     CloudPtr laser_cloud(new PointCloudType);
     preprocess_->Process(cloud, laser_cloud);
     laser_cloud->header.stamp = cloud->header.stamp.sec * 1e9 + cloud->header.stamp.nanosec;
     {
         std::lock_guard<std::mutex> profile_lock(loc_profile_mutex_);
         latest_preprocess_ms_ = MsSince(preprocess_start);
+        latest_preprocess_cpu_ms_ = CpuMsSince(preprocess_cpu_start);
     }
 
     if (options_.online_mode_) {
@@ -192,12 +210,14 @@ void Localization::ProcessLivoxLidarMsg(const livox_ros_driver2::msg::CustomMsg:
 
     // 串行模式
     const auto preprocess_start = Clock::now();
+    const auto preprocess_cpu_start = std::clock();
     CloudPtr laser_cloud(new PointCloudType);
     preprocess_->Process(cloud, laser_cloud);
     laser_cloud->header.stamp = cloud->header.stamp.sec * 1e9 + cloud->header.stamp.nanosec;
     {
         std::lock_guard<std::mutex> profile_lock(loc_profile_mutex_);
         latest_preprocess_ms_ = MsSince(preprocess_start);
+        latest_preprocess_cpu_ms_ = CpuMsSince(preprocess_cpu_start);
     }
 
     if (options_.online_mode_) {
@@ -214,16 +234,21 @@ void Localization::LidarOdomProcCloud(CloudPtr cloud) {
 
     /// NOTE: 在NCLT这种数据集中，lio内部是有缓存的，它拿到的点云不一定是最新时刻的点云
     const auto lio_start = Clock::now();
+    const auto lio_cpu_start = std::clock();
     lio_->ProcessPointCloud2(cloud);
     if (!lio_->Run()) {
         std::lock_guard<std::mutex> profile_lock(loc_profile_mutex_);
         latest_lio_frontend_ms_ = MsSince(lio_start);
+        latest_lio_cpu_ms_ = CpuMsSince(lio_cpu_start);
+        latest_eskf_ms_ = lio_->GetLastEskfUpdateMs();
         return;
     }
     const double lio_frontend_ms = MsSince(lio_start);
     {
         std::lock_guard<std::mutex> profile_lock(loc_profile_mutex_);
         latest_lio_frontend_ms_ = lio_frontend_ms;
+        latest_lio_cpu_ms_ = CpuMsSince(lio_cpu_start);
+        latest_eskf_ms_ = lio_->GetLastEskfUpdateMs();
     }
 
     auto lo_state = lio_->GetState();
@@ -275,6 +300,7 @@ void Localization::LidarOdomProcCloud(CloudPtr cloud) {
 
 void Localization::LidarLocProcCloud(CloudPtr scan_undist) {
     const auto loc_total_start = Clock::now();
+    const auto loc_cpu_start = std::clock();
     const auto lidar_loc_start = Clock::now();
     lidar_loc_->ProcessCloud(scan_undist);
     const double lidar_loc_ms = MsSince(lidar_loc_start);
@@ -303,6 +329,10 @@ void Localization::LidarLocProcCloud(CloudPtr scan_undist) {
         std::lock_guard<std::mutex> profile_lock(loc_profile_mutex_);
         snapshot.preprocess_ms = latest_preprocess_ms_;
         snapshot.lio_frontend_ms = latest_lio_frontend_ms_;
+        snapshot.eskf_ms = latest_eskf_ms_;
+        snapshot.frame_total_ms = snapshot.preprocess_ms + snapshot.lio_frontend_ms + snapshot.loc_total_ms;
+        const double frame_cpu_ms = latest_preprocess_cpu_ms_ + latest_lio_cpu_ms_ + CpuMsSince(loc_cpu_start);
+        snapshot.cpu_usage_pct = snapshot.frame_total_ms > 1e-9 ? 100.0 * frame_cpu_ms / snapshot.frame_total_ms : 0.0;
     }
     const auto now = Clock::now();
     if (!have_first_loc_profile_time_) {
@@ -352,6 +382,8 @@ void Localization::LidarLocProcCloud(CloudPtr scan_undist) {
                   << " run_count=" << snapshot.run_count_before << "->" << snapshot.run_count_after;
     }
 
+    AppendLocProfileCsv(snapshot);
+
     if (ui_ && profile_enable_ && profile_ui_enable_) {
         ui_->UpdateLocPerfStats(snapshot);
     }
@@ -366,6 +398,51 @@ void Localization::LidarLocProcCloud(CloudPtr scan_undist) {
     // cv::Mat img(100, 100, CV_8UC3, cv::Scalar(255, 255, 255));
     // cv::imshow("img", img);
     // cv::waitKey(0);
+}
+
+void Localization::AppendLocProfileCsv(const LocPerfSnapshot& s) {
+    if (!profile_csv_enable_ || profile_csv_path_.empty()) {
+        return;
+    }
+
+    const std::filesystem::path path(profile_csv_path_);
+    std::error_code ec;
+    if (path.has_parent_path()) {
+        std::filesystem::create_directories(path.parent_path(), ec);
+        if (ec) {
+            LOG(ERROR) << "failed to create localization profile directory: " << path.parent_path()
+                       << " error=" << ec.message();
+            return;
+        }
+    }
+
+    const bool write_header = !std::filesystem::exists(path, ec) || std::filesystem::file_size(path, ec) == 0;
+    std::ofstream ofs(path, std::ios::app);
+    if (!ofs) {
+        LOG(ERROR) << "failed to open localization profile CSV: " << path;
+        return;
+    }
+    if (write_header) {
+        ofs << "frame_id,timestamp,backend,success,processing_fps,preprocess_ms,lio_frontend_ms,eskf_ms,"
+               "candidate_build_ms,map_export_ms,pack_scan_ms,open_ms,h2c_scan_ms,h2c_input_ms,h2c_map_ms,"
+               "h2c_candidate_ms,register_ms,fpga_cycles,fpga_kernel_ms,host_wait_ms,polling_overhead_ms,c2h_ms,"
+               "xdma_total_ms,fpga_solve_ms,frame_total_ms,cpu_usage_pct,iterations,scan_points,raw_scan_points,"
+               "scan_points_used,scan_cap_enabled,scan_cap_target,active_blocks,active_cells,valid_count,"
+               "reject_count,miss_count,score,mean_abs_residual,max_abs_residual,dx_norm,fpga_solve_status,"
+               "run_count_before,run_count_after,status,error,fallback_cpu_sim,fallback_ndt\n";
+    }
+    ofs << std::setprecision(12) << s.frame_id << ',' << s.timestamp << ',' << s.backend << ',' << s.success << ','
+        << s.processing_fps << ',' << s.preprocess_ms << ',' << s.lio_frontend_ms << ',' << s.eskf_ms << ','
+        << s.candidate_build_ms << ',' << s.map_export_ms << ',' << s.pack_scan_ms << ',' << s.open_ms << ','
+        << s.h2c_scan_ms << ',' << s.h2c_input_ms << ',' << s.h2c_map_ms << ',' << s.h2c_candidate_ms << ','
+        << s.register_ms << ',' << s.fpga_cycles << ',' << s.fpga_kernel_ms << ',' << s.hls_wait_ms << ','
+        << s.polling_overhead_ms << ',' << s.c2h_ms << ',' << s.xdma_total_ms << ',' << s.fpga_solve_ms << ','
+        << s.frame_total_ms << ',' << s.cpu_usage_pct << ',' << s.iterations << ',' << s.scan_points << ','
+        << s.raw_scan_points << ',' << s.scan_points_used << ',' << s.scan_cap_enabled << ',' << s.scan_cap_target
+        << ',' << s.active_blocks << ',' << s.active_cells << ',' << s.valid_count << ',' << s.reject_count << ','
+        << s.miss_count << ',' << s.score << ',' << s.mean_abs_residual << ',' << s.max_abs_residual << ','
+        << s.dx_norm << ',' << s.fpga_solve_status << ',' << s.run_count_before << ',' << s.run_count_after << ','
+        << s.status << ',' << s.error << ',' << s.fallback_cpu_sim << ',' << s.fallback_ndt << '\n';
 }
 
 void Localization::ProcessIMUMsg(IMUPtr imu) {

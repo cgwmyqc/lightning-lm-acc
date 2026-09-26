@@ -2,14 +2,19 @@
 
 These scripts implement the Stage R0 order from the NMA redesign roadmap. Run them from a PowerShell prompt on the Windows development machine.
 
-Set only machine-specific, non-secret values in the caller environment:
+Copy `tools/windows/env.local.example.ps1` to the ignored
+`tools/windows/env.local.ps1` and set only machine-specific, non-secret values there:
 
 ```powershell
+$env:ORIN_HOST = "<orin-ip>"
 $env:ORIN_USER = "<user>"
 $env:ORIN_ROOT = "<absolute-path-on-orin>"
+$env:ORIN_IDENTITY_FILE = "$HOME\.ssh\lightning_nma_ed25519"
+$env:ORIN_KNOWN_HOSTS = "$HOME\.ssh\known_hosts_lightning_nma"
 ```
 
-SSH must use a key and BatchMode. Do not add passwords to `env.ps1`.
+SSH uses that identity with `BatchMode`, `IdentitiesOnly`, strict host-key checking,
+and the dedicated known-hosts file. Do not add passwords to either environment file.
 
 Typical flow:
 
@@ -32,4 +37,4 @@ Typical flow:
 
 `21_program_jtag.ps1` runs PCIe recovery by default. Orin reboot fallback is never automatic; it requires an explicit `-AllowRebootFallback` on `32_orin_pcie_rescan.ps1`.
 
-The three benchmark configs must set `profile.enable: true` and `profile.log_every_n_frames: 1`. The runner rejects runs with fewer than 100 warm-up plus 500 measured `[loc_profile]` samples, then writes `measured_frames.csv` and mean/P95/min/max values to `frame_summary.csv`.
+The benchmark runner sets `NMA_LOC_PROFILE_CSV` for each backend, rejects runs with fewer than 100 warm-up plus 500 structured frame samples, and writes `all_frames.csv`, `measured_frames.csv`, `tegrastats.log`, and mean/P50/P95/min/max/std values to `frame_summary.csv`. Golden capture uses the separate `run_lightning_golden.sh` path and never participates in sample counting.

@@ -2,6 +2,7 @@
 #define FASTER_LIO_LASER_MAPPING_H
 
 #include <pcl/filters/voxel_grid.h>
+#include <atomic>
 #include <condition_variable>
 #include <functional>
 #include <limits>
@@ -134,6 +135,7 @@ class LaserMapping {
 
     /// 获取激光的状态
     NavState GetState() const { return state_point_; }
+    double GetLastEskfUpdateMs() const { return last_eskf_update_ms_.load(std::memory_order_relaxed); }
 
     /// 获取IMU状态
     NavState GetIMUState() const {
@@ -276,6 +278,7 @@ class LaserMapping {
     uint64_t mapping_fpga_success_count_ = 0;
     uint64_t mapping_fpga_fallback_count_ = 0;
     uint64_t mapping_fpga_call_count_ = 0;
+    std::atomic<double> last_eskf_update_ms_{0.0};
     int mapping_golden_target_frame_index_ = -1;
     int mapping_golden_valid_frame_count_ = 0;
     uint64_t mapping_golden_current_scan_serial_ = 0;

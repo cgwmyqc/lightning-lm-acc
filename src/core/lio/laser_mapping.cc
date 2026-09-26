@@ -433,14 +433,19 @@ bool LaserMapping::Run() {
 
     if (options_.mapping_backend_type_ == MappingBackendType::FPGA_FULL) {
         ScopedPerfStage perf("Mapping FPGA_FULL one-shot total");
+        const auto eskf_start = Clock::now();
         if (!RunMappingFpgaFullOneShot()) {
             if (!RunCpuEskfUpdateForFpgaFallback()) {
+                last_eskf_update_ms_.store(SecondsSince(eskf_start) * 1000.0, std::memory_order_relaxed);
                 return false;
             }
         }
+        last_eskf_update_ms_.store(SecondsSince(eskf_start) * 1000.0, std::memory_order_relaxed);
     } else {
         ScopedPerfStage perf("ESKF Update total");
+        const auto eskf_start = Clock::now();
         kf_.Update(ESKF::ObsType::LIDAR, 1.0);
+        last_eskf_update_ms_.store(SecondsSince(eskf_start) * 1000.0, std::memory_order_relaxed);
     }
 
     state_point_ = kf_.GetX();

@@ -1,0 +1,5 @@
+$env:ORIN_HOST = "192.168.31.119"
+$env:ORIN_USER = "hit"
+$env:ORIN_ROOT = "/home/hit/Cheng/FPGA_ACC/lightning-lm-acc"
+$env:ORIN_IDENTITY_FILE = "$HOME\.ssh\lightning_nma_ed25519"
+$env:ORIN_KNOWN_HOSTS = "$HOME\.ssh\known_hosts_lightning_nma"

@@ -1415,6 +1415,7 @@ bool LidarLoc::LocalizeSurfelFpgaFullIterative(SE3& pose, double& confidence, Cl
               << " timing_sec rebuild_window=" << rebuild_window_sec
               << " pack_scan=" << pack_scan_sec
               << " pack_candidate=" << pack_candidate_sec
+              << " candidate_build=" << pack_candidate_sec
               << " total=" << result.timing.total_sec
               << " mutex_wait=" << result.timing.mutex_wait_sec
               << " lock=" << result.timing.lock_sec
@@ -1452,9 +1453,20 @@ bool LidarLoc::LocalizeSurfelFpgaFullIterative(SE3& pose, double& confidence, Cl
     snapshot.mean_abs_residual = quality.mean_abs_residual;
     snapshot.max_abs_residual = quality.max_abs_residual;
     snapshot.xdma_total_ms = result.timing.total_sec * 1000.0;
+    snapshot.candidate_build_ms = pack_candidate_sec * 1000.0;
+    snapshot.map_export_ms = rebuild_window_sec * 1000.0;
+    snapshot.pack_scan_ms = pack_scan_sec * 1000.0;
+    snapshot.open_ms = result.timing.open_sec * 1000.0;
+    snapshot.h2c_scan_ms = result.timing.h2c_scan_sec * 1000.0;
+    snapshot.h2c_input_ms = result.timing.h2c_input_sec * 1000.0;
     snapshot.hls_wait_ms = result.timing.hls_wait_sec * 1000.0;
     snapshot.h2c_map_ms = 0.0;
     snapshot.h2c_candidate_ms = result.timing.h2c_candidate_sec * 1000.0;
+    snapshot.register_ms = result.timing.reg_config_sec * 1000.0;
+    snapshot.fpga_cycles = result.fpga_cycle_count;
+    snapshot.fpga_kernel_ms = result.fpga_kernel_sec * 1000.0;
+    snapshot.polling_overhead_ms = result.polling_overhead_sec * 1000.0;
+    snapshot.c2h_ms = result.timing.c2h_output_sec * 1000.0;
     snapshot.mutex_wait_ms = result.timing.mutex_wait_sec * 1000.0;
     snapshot.fpga_solve_ms = result.timing.hls_wait_sec * 1000.0;
     snapshot.fpga_solve_status = loc_iter_status;
@@ -1515,11 +1527,20 @@ bool LidarLoc::LocalizeSurfelFpgaObs(SE3& pose, double& confidence, CloudPtr inp
     double xdma_elapsed_sum = 0.0;
     double xdma_elapsed_max = 0.0;
     double xdma_total_sum = 0.0;
+    double candidate_build_sum = 0.0;
     double hls_wait_sum = 0.0;
     double h2c_map_sum = 0.0;
     double h2c_candidate_sum = 0.0;
     double mutex_wait_sum = 0.0;
     double pack_scan_sum = 0.0;
+    double open_sum = 0.0;
+    double h2c_scan_sum = 0.0;
+    double h2c_input_sum = 0.0;
+    double register_sum = 0.0;
+    uint64_t fpga_cycles_sum = 0;
+    double fpga_kernel_sum = 0.0;
+    double polling_overhead_sum = 0.0;
+    double c2h_sum = 0.0;
     double solve_sum = 0.0;
     double fpga_solve_sum = 0.0;
     double pose_update_sum = 0.0;
@@ -1554,11 +1575,20 @@ bool LidarLoc::LocalizeSurfelFpgaObs(SE3& pose, double& confidence, CloudPtr inp
         xdma_elapsed_sum += elapsed_sec;
         xdma_elapsed_max = std::max(xdma_elapsed_max, elapsed_sec);
         xdma_total_sum += run_result.timing.total_sec;
+        candidate_build_sum += run_result.timing.candidate_build_sec;
         hls_wait_sum += run_result.timing.hls_wait_sec;
         h2c_map_sum += run_result.timing.h2c_map_sec;
         h2c_candidate_sum += run_result.timing.h2c_candidate_sec;
         mutex_wait_sum += run_result.timing.mutex_wait_sec;
         pack_scan_sum += pack_scan_sec;
+        open_sum += run_result.timing.open_sec;
+        h2c_scan_sum += run_result.timing.h2c_scan_sec;
+        h2c_input_sum += run_result.timing.h2c_pose_header_params_sec;
+        register_sum += run_result.timing.reg_config_sec;
+        fpga_cycles_sum += run_result.fpga_cycle_count;
+        fpga_kernel_sum += run_result.fpga_kernel_sec;
+        polling_overhead_sum += run_result.polling_overhead_sec;
+        c2h_sum += run_result.timing.c2h_output_sec;
         if (quality.iterations == 0) {
             run_count_before = run_result.run_count_before;
         }
@@ -1600,6 +1630,7 @@ bool LidarLoc::LocalizeSurfelFpgaObs(SE3& pose, double& confidence, CloudPtr inp
                           << " score=" << quality.score
                           << " timing_sec rebuild_window=" << rebuild_window_sec
                           << " pack_scan=" << pack_scan_sec
+                          << " candidate_build=" << run_result.timing.candidate_build_sec
                           << " total=" << run_result.timing.total_sec
                           << " mutex_wait=" << run_result.timing.mutex_wait_sec
                           << " lock=" << run_result.timing.lock_sec
@@ -1713,6 +1744,7 @@ bool LidarLoc::LocalizeSurfelFpgaObs(SE3& pose, double& confidence, CloudPtr inp
               << " matrix_ok=" << quality.matrix_ok << " xdma_elapsed_sum=" << xdma_elapsed_sum
               << " xdma_elapsed_max=" << xdma_elapsed_max
               << " xdma_total_sum=" << xdma_total_sum
+              << " candidate_build_sum=" << candidate_build_sum
               << " hls_wait_sum=" << hls_wait_sum
               << " h2c_map_sum=" << h2c_map_sum
               << " h2c_candidate_sum=" << h2c_candidate_sum
@@ -1742,9 +1774,20 @@ bool LidarLoc::LocalizeSurfelFpgaObs(SE3& pose, double& confidence, CloudPtr inp
     snapshot.mean_abs_residual = quality.mean_abs_residual;
     snapshot.max_abs_residual = quality.max_abs_residual;
     snapshot.xdma_total_ms = xdma_total_sum * 1000.0;
+    snapshot.candidate_build_ms = candidate_build_sum * 1000.0;
+    snapshot.map_export_ms = rebuild_window_sec * 1000.0;
+    snapshot.pack_scan_ms = pack_scan_sum * 1000.0;
+    snapshot.open_ms = open_sum * 1000.0;
+    snapshot.h2c_scan_ms = h2c_scan_sum * 1000.0;
+    snapshot.h2c_input_ms = h2c_input_sum * 1000.0;
     snapshot.hls_wait_ms = hls_wait_sum * 1000.0;
     snapshot.h2c_map_ms = h2c_map_sum * 1000.0;
     snapshot.h2c_candidate_ms = h2c_candidate_sum * 1000.0;
+    snapshot.register_ms = register_sum * 1000.0;
+    snapshot.fpga_cycles = fpga_cycles_sum;
+    snapshot.fpga_kernel_ms = fpga_kernel_sum * 1000.0;
+    snapshot.polling_overhead_ms = polling_overhead_sum * 1000.0;
+    snapshot.c2h_ms = c2h_sum * 1000.0;
     snapshot.mutex_wait_ms = mutex_wait_sum * 1000.0;
     snapshot.fpga_solve_ms = fpga_solve_sum * 1000.0;
     snapshot.fpga_solve_status = last_solve_status;

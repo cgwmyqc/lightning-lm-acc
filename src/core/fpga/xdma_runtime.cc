@@ -950,8 +950,10 @@ bool XdmaRuntime::RunLocalizationObservationV2(const std::vector<SlamAccelScanPo
     params.flags |= SLAM_ACCEL_OBS_FLAG_CANDIDATE_ABI_V2;
     uint32_t candidate_valid = 0;
     uint32_t candidate_miss = 0;
+    const auto candidate_start = Clock::now();
     const auto candidates =
         BuildCandidateCells(scan_points, pose, active_map, LOCALIZATION_OBSERVATION, candidate_valid, candidate_miss);
+    result.timing.candidate_build_sec = SecondsSince(candidate_start);
     result.candidate_count = static_cast<uint32_t>(candidates.size());
     result.candidate_valid_count = candidate_valid;
     result.candidate_miss_count = candidate_miss;
@@ -970,8 +972,10 @@ bool XdmaRuntime::RunLocalizationObservationV2Solve6x6(const std::vector<SlamAcc
     params.flags |= SLAM_ACCEL_OBS_FLAG_SOLVE6X6;
     uint32_t candidate_valid = 0;
     uint32_t candidate_miss = 0;
+    const auto candidate_start = Clock::now();
     const auto candidates =
         BuildCandidateCells(scan_points, pose, active_map, LOCALIZATION_OBSERVATION, candidate_valid, candidate_miss);
+    result.timing.candidate_build_sec = SecondsSince(candidate_start);
     result.candidate_count = static_cast<uint32_t>(candidates.size());
     result.candidate_valid_count = candidate_valid;
     result.candidate_miss_count = candidate_miss;
@@ -996,8 +1000,10 @@ bool XdmaRuntime::RunMappingObservationV2(const std::vector<SlamAccelScanPoint>&
     params.flags |= SLAM_ACCEL_OBS_FLAG_CANDIDATE_ABI_V2;
     uint32_t candidate_valid = 0;
     uint32_t candidate_miss = 0;
+    const auto candidate_start = Clock::now();
     const auto candidates =
         BuildCandidateCells(scan_points, pose, active_map, MAPPING_OBSERVATION, candidate_valid, candidate_miss);
+    result.timing.candidate_build_sec = SecondsSince(candidate_start);
     result.candidate_count = static_cast<uint32_t>(candidates.size());
     result.candidate_valid_count = candidate_valid;
     result.candidate_miss_count = candidate_miss;

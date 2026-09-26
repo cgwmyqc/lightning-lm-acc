@@ -96,6 +96,8 @@ class Localization {
     // void SetHealthDiagNormalCallback(interface::health_diag_normal_callback&& callback);
 
    private:
+    void AppendLocProfileCsv(const LocPerfSnapshot& snapshot);
+
     /// 模块  ========================================================================================================
     std::mutex global_mutex_;  // 防止处理过程中被重复init
     Options options_;
@@ -134,7 +136,12 @@ class Localization {
     int profile_log_every_n_frames_ = 10;
     uint64_t loc_profile_frame_count_ = 0;
     double latest_preprocess_ms_ = 0.0;
+    double latest_preprocess_cpu_ms_ = 0.0;
     double latest_lio_frontend_ms_ = 0.0;
+    double latest_lio_cpu_ms_ = 0.0;
+    double latest_eskf_ms_ = 0.0;
+    bool profile_csv_enable_ = false;
+    std::string profile_csv_path_ = "./data/profile/loc_frame_trace.csv";
     std::mutex loc_profile_mutex_;
     std::chrono::steady_clock::time_point first_loc_profile_time_;
     bool have_first_loc_profile_time_ = false;

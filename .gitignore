@@ -5,6 +5,7 @@
 *libs
 **data
 **/.vscode/
+tools/windows/env.local.ps1
 __pycache__/
 **/__pycache__/
 bin
