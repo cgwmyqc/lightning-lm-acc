@@ -21,6 +21,7 @@ class XdmaRuntime {
         std::string c2h_dev = "/dev/xdma0_c2h_0";
         uint32_t ctrl_base = 0x1000;
         double timeout_sec = 120.0;
+        double kernel_clock_hz = 125000000.0;
     };
 
     struct RunResult {
@@ -44,6 +45,9 @@ class XdmaRuntime {
         uint32_t error = 0;
         uint32_t run_count_before = 0;
         uint32_t run_count_after = 0;
+        uint32_t fpga_cycle_count = 0;
+        double fpga_kernel_sec = 0.0;
+        double polling_overhead_sec = 0.0;
         uint32_t scan_count_readback = 0;
         uint32_t candidate_count = 0;
         uint32_t candidate_valid_count = 0;
@@ -74,6 +78,9 @@ class XdmaRuntime {
         uint32_t error = 0;
         uint32_t run_count_before = 0;
         uint32_t run_count_after = 0;
+        uint32_t fpga_cycle_count = 0;
+        double fpga_kernel_sec = 0.0;
+        double polling_overhead_sec = 0.0;
         double elapsed_sec = 0.0;
         Timing timing;
         mapping_update::UpdateOutput output;
@@ -101,6 +108,9 @@ class XdmaRuntime {
         uint32_t error = 0;
         uint32_t run_count_before = 0;
         uint32_t run_count_after = 0;
+        uint32_t fpga_cycle_count = 0;
+        double fpga_kernel_sec = 0.0;
+        double polling_overhead_sec = 0.0;
         uint32_t scan_count_readback = 0;
         uint32_t candidate_count = 0;
         uint32_t candidate_valid_count = 0;

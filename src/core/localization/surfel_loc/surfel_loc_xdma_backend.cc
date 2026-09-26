@@ -48,6 +48,7 @@ fpga::XdmaRuntime::Options ToRuntimeOptions(const SurfelLocXdmaOptions& options)
     runtime_options.c2h_dev = options.c2h_dev;
     runtime_options.ctrl_base = options.ctrl_base;
     runtime_options.timeout_sec = options.timeout_sec;
+    runtime_options.kernel_clock_hz = options.kernel_clock_hz;
     return runtime_options;
 }
 

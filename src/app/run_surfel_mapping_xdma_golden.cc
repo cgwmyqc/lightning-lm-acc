@@ -77,7 +77,10 @@ int main(int argc, char** argv) {
               << " candidate_miss=" << result.candidate_miss_count
               << " candidate_bytes=" << result.candidate_bytes
               << " h2c_candidate_sec=" << result.timing.h2c_candidate_sec
-              << " hls_wait_sec=" << result.timing.hls_wait_sec << " " << report;
+              << " hls_wait_sec=" << result.timing.hls_wait_sec
+              << " fpga_cycles=" << result.fpga_cycle_count
+              << " fpga_kernel_sec=" << result.fpga_kernel_sec
+              << " polling_overhead_sec=" << result.polling_overhead_sec << " " << report;
     if (!pass) {
         LOG(ERROR) << "MAPPING_XDMA_REPLAY_FAIL";
         return 2;

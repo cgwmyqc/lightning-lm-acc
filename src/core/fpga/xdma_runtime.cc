@@ -221,6 +221,21 @@ bool Write32(int fd, uint32_t offset, uint32_t value, std::string* error) {
     return WriteExact(fd, &value, sizeof(value), offset, error, "reg32");
 }
 
+template <typename Result>
+bool CaptureFpgaCycleTiming(int user_fd, const XdmaRuntime::Options& options, Result& result,
+                            std::string* error) {
+    if (!Read32(user_fd, options.ctrl_base + LIGHTNING_CTRL_CYCLE_COUNT, result.fpga_cycle_count, error)) {
+        return false;
+    }
+    if (options.kernel_clock_hz <= 0.0) {
+        SetError(error, "kernel_clock_hz must be positive");
+        return false;
+    }
+    result.fpga_kernel_sec = static_cast<double>(result.fpga_cycle_count) / options.kernel_clock_hz;
+    result.polling_overhead_sec = std::max(0.0, result.timing.hls_wait_sec - result.fpga_kernel_sec);
+    return true;
+}
+
 bool OpenFd(Fd& fd, const std::string& path, int flags, std::string* error) {
     if (!fd.Open(path, flags)) {
         SetError(error, "failed to open " + path + ": " + std::strerror(errno));
@@ -399,9 +414,10 @@ std::vector<ObsCellFloat64> BuildCandidateCells(const std::vector<SlamAccelScanP
 }
 
 bool ConfigureRegisters(int user_fd, uint32_t ctrl_base, uint32_t mode, uint32_t scan_count, std::string* error) {
-    const std::array<std::pair<uint32_t, uint32_t>, 16> writes = {{
+    const std::array<std::pair<uint32_t, uint32_t>, 17> writes = {{
         {LIGHTNING_CTRL_KERNEL_SEL, LIGHTNING_KERNEL_UNIFIED_OBSERVATION},
         {LIGHTNING_CTRL_MODE, mode},
+        {LIGHTNING_CTRL_CYCLE_COUNT, 0},
         {LIGHTNING_CTRL_SCAN_ADDR_LO, LIGHTNING_SCAN_POINTS_BASE},
         {LIGHTNING_CTRL_SCAN_ADDR_HI, 0},
         {LIGHTNING_CTRL_POSE_ADDR_LO, LIGHTNING_POSE_BASE},
@@ -668,8 +684,9 @@ bool ConfigureEkfRegisters(int user_fd, uint32_t ctrl_base, std::string* error) 
     if (!Write32(user_fd, ctrl_base + LIGHTNING_CTRL_CONTROL, 0x2u, error)) {
         return false;
     }
-    const std::array<std::pair<uint32_t, uint32_t>, 14> writes = {{
+    const std::array<std::pair<uint32_t, uint32_t>, 15> writes = {{
         {LIGHTNING_CTRL_KERNEL_SEL, LIGHTNING_KERNEL_EKF_UPDATE},
+        {LIGHTNING_CTRL_CYCLE_COUNT, 0},
         {LIGHTNING_CTRL_SCAN_ADDR_HI, 0},
         {LIGHTNING_CTRL_POSE_ADDR_HI, 0},
         {LIGHTNING_CTRL_MAP_HEADER_ADDR_HI, 0},
@@ -696,9 +713,10 @@ bool ConfigureLocIterRegisters(int user_fd, uint32_t ctrl_base, uint32_t scan_co
     if (!Write32(user_fd, ctrl_base + LIGHTNING_CTRL_CONTROL, 0x2u, error)) {
         return false;
     }
-    const std::array<std::pair<uint32_t, uint32_t>, 16> writes = {{
+    const std::array<std::pair<uint32_t, uint32_t>, 17> writes = {{
         {LIGHTNING_CTRL_KERNEL_SEL, LIGHTNING_KERNEL_LOC_ITERATIVE},
         {LIGHTNING_CTRL_MODE, LIGHTNING_MODE_LOCALIZATION},
+        {LIGHTNING_CTRL_CYCLE_COUNT, 0},
         {LIGHTNING_CTRL_SCAN_ADDR_LO, LIGHTNING_SCAN_POINTS_BASE},
         {LIGHTNING_CTRL_SCAN_ADDR_HI, 0},
         {LIGHTNING_CTRL_OBS_CELLS_ADDR_LO, LIGHTNING_OBS_CELLS_BASE},
@@ -887,7 +905,8 @@ bool RunObservationImpl(const XdmaRuntime::Options& options, uint32_t mode,
     result.elapsed_sec = std::chrono::duration<double>(end - start).count();
     result.timing.hls_wait_sec = result.elapsed_sec;
 
-    if (!Read32(user.get(), options.ctrl_base + LIGHTNING_CTRL_RUN_COUNT, result.run_count_after, error)) {
+    if (!CaptureFpgaCycleTiming(user.get(), options, result, error) ||
+        !Read32(user.get(), options.ctrl_base + LIGHTNING_CTRL_RUN_COUNT, result.run_count_after, error)) {
         result.timing.total_sec = SecondsSince(total_start);
         return false;
     }
@@ -1096,7 +1115,8 @@ bool XdmaRuntime::RunMappingEkfUpdate(const mapping_update::UpdateInput& input, 
     result.elapsed_sec = std::chrono::duration<double>(end - start).count();
     result.timing.hls_wait_sec = result.elapsed_sec;
 
-    if (!Read32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_RUN_COUNT, result.run_count_after, error)) {
+    if (!CaptureFpgaCycleTiming(user.get(), options_, result, error) ||
+        !Read32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_RUN_COUNT, result.run_count_after, error)) {
         result.timing.total_sec = SecondsSince(total_start);
         return false;
     }
@@ -1274,7 +1294,8 @@ bool XdmaRuntime::RunLocalizationIterative(const std::vector<SlamAccelScanPoint>
     result.elapsed_sec = std::chrono::duration<double>(end - start).count();
     result.timing.hls_wait_sec = result.elapsed_sec;
 
-    if (!Read32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_RUN_COUNT, result.run_count_after, error)) {
+    if (!CaptureFpgaCycleTiming(user.get(), options_, result, error) ||
+        !Read32(user.get(), options_.ctrl_base + LIGHTNING_CTRL_RUN_COUNT, result.run_count_after, error)) {
         result.timing.total_sec = SecondsSince(total_start);
         return false;
     }

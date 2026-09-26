@@ -178,6 +178,8 @@ bool LaserMapping::LoadParamsFromYAML(const std::string &yaml_file) {
             GetYamlUint32(fpga_runtime, "ctrl_base", options_.mapping_xdma_options_.ctrl_base);
         options_.mapping_xdma_options_.timeout_sec =
             GetYamlValue(fpga_runtime, "timeout_sec", options_.mapping_xdma_options_.timeout_sec);
+        options_.mapping_xdma_options_.kernel_clock_hz =
+            GetYamlValue(fpga_runtime, "kernel_clock_hz", options_.mapping_xdma_options_.kernel_clock_hz);
         options_.mapping_xdma_verify_readback_ =
             GetYamlValue(fpga_runtime, "verify_readback", options_.mapping_xdma_verify_readback_);
         options_.mapping_candidate_abi_v2_ =
@@ -964,9 +966,15 @@ bool LaserMapping::RunMappingFpgaFullOneShot() {
               << " residual_abs_sum=" << equation.residual_abs_sum
               << " residual_max_abs=" << equation.residual_max_abs
               << " obs_hls_wait=" << obs_result.timing.hls_wait_sec
+              << " obs_fpga_cycles=" << obs_result.fpga_cycle_count
+              << " obs_fpga_kernel_sec=" << obs_result.fpga_kernel_sec
+              << " obs_polling_overhead_sec=" << obs_result.polling_overhead_sec
               << " obs_total=" << obs_result.timing.total_sec
               << " obs_runtime_call=" << observation_call_sec
               << " ekf_hls_wait=" << ekf_result.timing.hls_wait_sec
+              << " ekf_fpga_cycles=" << ekf_result.fpga_cycle_count
+              << " ekf_fpga_kernel_sec=" << ekf_result.fpga_kernel_sec
+              << " ekf_polling_overhead_sec=" << ekf_result.polling_overhead_sec
               << " ekf_total=" << ekf_result.timing.total_sec
               << " ekf_runtime_call=" << ekf_call_sec
               << " ekf_status=" << ekf_result.output.status
@@ -1133,6 +1141,9 @@ void LaserMapping::ObsModelFpgaObservation(NavState &s, ESKF::CustomObservationM
               << " output_zero=" << result.timing.output_zero_sec
               << " reg_config=" << result.timing.reg_config_sec
               << " hls_wait=" << result.timing.hls_wait_sec
+              << " fpga_cycles=" << result.fpga_cycle_count
+              << " fpga_kernel_sec=" << result.fpga_kernel_sec
+              << " polling_overhead_sec=" << result.polling_overhead_sec
               << " c2h_output=" << result.timing.c2h_output_sec
               << " status=0x" << std::hex << result.status
               << " error=0x" << result.error
@@ -1165,7 +1176,8 @@ void LaserMapping::AppendMappingFpgaProfileCsv(int64_t frame_id, uint64_t obs_ca
                "valid_count,reject_count,miss_count,residual_abs_sum,residual_max_abs,"
                "export_active_map_ms,pack_scan_ms,total_ms,mutex_wait_ms,lock_ms,open_ms,"
                "h2c_scan_ms,h2c_pose_header_params_ms,h2c_map_ms,h2c_candidate_ms,verify_readback_ms,output_zero_ms,"
-               "reg_config_ms,hls_wait_ms,c2h_output_ms,status,error,run_count_before,run_count_after,"
+               "reg_config_ms,hls_wait_ms,fpga_cycles,fpga_kernel_ms,polling_overhead_ms,c2h_output_ms,status,error,"
+               "run_count_before,run_count_after,"
                "scan_count_readback,candidate_count,candidate_valid,candidate_miss,candidate_bytes\n";
     }
     const auto ms = [](double sec) { return sec * 1000.0; };
@@ -1179,7 +1191,9 @@ void LaserMapping::AppendMappingFpgaProfileCsv(int64_t frame_id, uint64_t obs_ca
         << ms(result.timing.h2c_pose_header_params_sec) << "," << ms(result.timing.h2c_map_sec) << ","
         << ms(result.timing.h2c_candidate_sec) << "," << ms(result.timing.verify_readback_sec) << ","
         << ms(result.timing.output_zero_sec) << "," << ms(result.timing.reg_config_sec) << ","
-        << ms(result.timing.hls_wait_sec) << "," << ms(result.timing.c2h_output_sec) << "," << result.status << ","
+        << ms(result.timing.hls_wait_sec) << "," << result.fpga_cycle_count << ","
+        << ms(result.fpga_kernel_sec) << "," << ms(result.polling_overhead_sec) << ","
+        << ms(result.timing.c2h_output_sec) << "," << result.status << ","
         << result.error << "," << result.run_count_before << "," << result.run_count_after << ","
         << result.scan_count_readback << "," << result.candidate_count << "," << result.candidate_valid_count << ","
         << result.candidate_miss_count << "," << result.candidate_bytes << "\n";

@@ -1,0 +1,4 @@
+﻿"core","stage","exit_code","log"
+"unified_surfel_observation_core","csim","0","F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\reports\nma\r0\logs\unified_surfel_observation_core_hls_csim.log"
+"slam_ekf_update_core","csim","0","F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\reports\nma\r0\logs\slam_ekf_update_core_hls_csim.log"
+"slam_loc_iterative_core","csim","0","F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\reports\nma\r0\logs\slam_loc_iterative_core_hls_csim.log"

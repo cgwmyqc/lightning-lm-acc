@@ -136,6 +136,9 @@ bool WriteResultJson(const std::string& output_dir, const std::string& golden_di
     os << "  \"error\": " << result.error << ",\n";
     os << "  \"run_count_before\": " << result.run_count_before << ",\n";
     os << "  \"run_count_after\": " << result.run_count_after << ",\n";
+    os << "  \"fpga_cycle_count\": " << result.fpga_cycle_count << ",\n";
+    os << "  \"fpga_kernel_sec\": " << std::setprecision(9) << result.fpga_kernel_sec << ",\n";
+    os << "  \"polling_overhead_sec\": " << std::setprecision(9) << result.polling_overhead_sec << ",\n";
     os << "  \"elapsed_sec\": " << std::setprecision(9) << result.elapsed_sec << ",\n";
     os << "  \"hls_wait_sec\": " << std::setprecision(9) << result.timing.hls_wait_sec << ",\n";
     os << "  \"compare_report\": \"" << compare_report << "\",\n";
@@ -203,7 +206,10 @@ int main(int argc, char** argv) {
         LOG(INFO) << "[mapping_ekf_update_xdma] iter=" << (iter + 1) << "/" << FLAGS_repeat
                   << " STATUS=0x" << std::hex << result.status << " ERROR=0x" << result.error << std::dec
                   << " RUN_COUNT=" << result.run_count_before << "->" << result.run_count_after
-                  << " hls_wait_sec=" << result.timing.hls_wait_sec << " " << report;
+                  << " hls_wait_sec=" << result.timing.hls_wait_sec
+                  << " fpga_cycles=" << result.fpga_cycle_count
+                  << " fpga_kernel_sec=" << result.fpga_kernel_sec
+                  << " polling_overhead_sec=" << result.polling_overhead_sec << " " << report;
 
         if (!WriteResultJson(FLAGS_output_dir, FLAGS_golden_dir, options.ctrl_base, iter, result, frame.expected,
                              report, &error)) {

@@ -15,6 +15,7 @@ struct SurfelLocXdmaOptions {
     std::string c2h_dev = "/dev/xdma0_c2h_0";
     uint32_t ctrl_base = 0x1000;
     double timeout_sec = 120.0;
+    double kernel_clock_hz = 125000000.0;
     bool verify_readback = false;
     bool candidate_abi_v2 = false;
 };

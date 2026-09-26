@@ -244,6 +244,8 @@ bool LidarLoc::Init(const std::string& config_path) {
         GetYamlUint32(fpga_runtime, "ctrl_base", options_.surfel_xdma_options_.ctrl_base);
     options_.surfel_xdma_options_.timeout_sec =
         GetYamlValue(fpga_runtime, "timeout_sec", options_.surfel_xdma_options_.timeout_sec);
+    options_.surfel_xdma_options_.kernel_clock_hz =
+        GetYamlValue(fpga_runtime, "kernel_clock_hz", options_.surfel_xdma_options_.kernel_clock_hz);
     options_.surfel_xdma_options_.verify_readback =
         GetYamlValue(fpga_runtime, "verify_readback", options_.surfel_xdma_options_.verify_readback);
     options_.surfel_xdma_options_.candidate_abi_v2 =
@@ -297,6 +299,7 @@ bool LidarLoc::Init(const std::string& config_path) {
               << " surfel_fpga_full_max_scan_points=" << options_.surfel_fpga_full_max_scan_points_
               << " surfel_fpga_ctrl_base=0x" << std::hex << options_.surfel_xdma_options_.ctrl_base << std::dec
               << " surfel_fpga_timeout_sec=" << options_.surfel_xdma_options_.timeout_sec
+              << " surfel_fpga_kernel_clock_hz=" << options_.surfel_xdma_options_.kernel_clock_hz
               << " surfel_candidate_abi_v2=" << options_.surfel_xdma_options_.candidate_abi_v2
               << " loc_fpga_obs_trace_enable=" << options_.surfel_fpga_profile_enable_
               << " loc_fpga_obs_trace_csv_enable=" << options_.surfel_fpga_profile_csv_enable_
@@ -1269,7 +1272,8 @@ void LidarLoc::AppendLocFpgaProfileCsv(uint64_t frame_id, uint32_t iter, uint64_
                "valid_count,reject_count,miss_count,mean_abs_residual,max_abs_residual,score,"
                "rebuild_window_ms,pack_scan_ms,total_ms,mutex_wait_ms,lock_ms,open_ms,h2c_scan_ms,"
                "h2c_pose_header_params_ms,h2c_map_ms,h2c_candidate_ms,verify_readback_ms,output_zero_ms,reg_config_ms,"
-               "hls_wait_ms,c2h_output_ms,solve_ms,pose_update_ms,fpga_solve_status,dx_norm,solve_damping,"
+               "hls_wait_ms,fpga_cycles,fpga_kernel_ms,polling_overhead_ms,c2h_output_ms,solve_ms,pose_update_ms,"
+               "fpga_solve_status,dx_norm,solve_damping,"
                "solve_min_pivot,solve_max_diag,solve_residual_norm,status,error,run_count_before,"
                "run_count_after,scan_count_readback,candidate_count,candidate_valid,candidate_miss,candidate_bytes\n";
     }
@@ -1286,7 +1290,9 @@ void LidarLoc::AppendLocFpgaProfileCsv(uint64_t frame_id, uint32_t iter, uint64_
         << ms(result.timing.h2c_map_sec) << "," << ms(result.timing.h2c_candidate_sec) << ","
         << ms(result.timing.verify_readback_sec) << "," << ms(result.timing.output_zero_sec) << ","
         << ms(result.timing.reg_config_sec) << "," << ms(result.timing.hls_wait_sec) << ","
-        << ms(result.timing.c2h_output_sec) << "," << ms(solve_sec) << "," << ms(pose_update_sec) << ","
+        << result.fpga_cycle_count << "," << ms(result.fpga_kernel_sec) << ","
+        << ms(result.polling_overhead_sec) << "," << ms(result.timing.c2h_output_sec) << "," << ms(solve_sec)
+        << "," << ms(pose_update_sec) << ","
         << result.solve.status << ",";
     double dx_norm = 0.0;
     for (int i = 0; i < 6; ++i) {
@@ -1420,6 +1426,9 @@ bool LidarLoc::LocalizeSurfelFpgaFullIterative(SE3& pose, double& confidence, Cl
               << " output_zero=" << result.timing.output_zero_sec
               << " reg_config=" << result.timing.reg_config_sec
               << " hls_wait=" << result.timing.hls_wait_sec
+              << " fpga_cycles=" << result.fpga_cycle_count
+              << " fpga_kernel_sec=" << result.fpga_kernel_sec
+              << " polling_overhead_sec=" << result.polling_overhead_sec
               << " c2h_output=" << result.timing.c2h_output_sec
               << " run_count=" << result.run_count_before << "->" << result.run_count_after
               << " last_error=" << error;
@@ -1603,6 +1612,9 @@ bool LidarLoc::LocalizeSurfelFpgaObs(SE3& pose, double& confidence, CloudPtr inp
                           << " output_zero=" << run_result.timing.output_zero_sec
                           << " reg_config=" << run_result.timing.reg_config_sec
                           << " hls_wait=" << run_result.timing.hls_wait_sec
+                          << " fpga_cycles=" << run_result.fpga_cycle_count
+                          << " fpga_kernel_sec=" << run_result.fpga_kernel_sec
+                          << " polling_overhead_sec=" << run_result.polling_overhead_sec
                           << " c2h_output=" << run_result.timing.c2h_output_sec
                           << " solve=" << solve_sec
                           << " fpga_solve=" << (use_fpga_solve ? solve_sec : 0.0)

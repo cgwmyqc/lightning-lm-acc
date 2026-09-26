@@ -1,0 +1,5 @@
+benchmark,status,reason
+pcie_xdma,NOT_RUN,ORIN_USER_and_ORIN_ROOT_unset
+cpu_same_bag,NOT_RUN,remote_dataset_and_config_not_provided
+fpga_obs_same_bag,NOT_RUN,remote_dataset_and_config_not_provided
+fpga_full_iterative_same_bag,NOT_RUN,remote_dataset_and_config_not_provided

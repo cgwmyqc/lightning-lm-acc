@@ -228,6 +228,9 @@ bool WriteResultJson(const std::string& output_dir, int iteration, const std::st
     os << "  \"error\": " << result.error << ",\n";
     os << "  \"run_count_before\": " << result.run_count_before << ",\n";
     os << "  \"run_count_after\": " << result.run_count_after << ",\n";
+    os << "  \"fpga_cycle_count\": " << result.fpga_cycle_count << ",\n";
+    os << "  \"fpga_kernel_sec\": " << std::setprecision(9) << result.fpga_kernel_sec << ",\n";
+    os << "  \"polling_overhead_sec\": " << std::setprecision(9) << result.polling_overhead_sec << ",\n";
     os << "  \"elapsed_sec\": " << std::setprecision(9) << result.elapsed_sec << ",\n";
     os << "  \"raw_output_words\": ";
     WriteJsonArray(os, result.raw_output_words);
@@ -403,6 +406,9 @@ int main(int argc, char** argv) {
         std::cout << "CANDIDATE_BYTES=" << result.candidate_bytes << "\n";
         std::cout << "H2C_CANDIDATE_SEC=" << std::setprecision(6) << result.timing.h2c_candidate_sec << "\n";
         std::cout << "HLS_WAIT_SEC=" << std::setprecision(6) << result.timing.hls_wait_sec << "\n";
+        std::cout << "FPGA_CYCLES=" << result.fpga_cycle_count << "\n";
+        std::cout << "FPGA_KERNEL_SEC=" << std::setprecision(9) << result.fpga_kernel_sec << "\n";
+        std::cout << "POLLING_OVERHEAD_SEC=" << std::setprecision(9) << result.polling_overhead_sec << "\n";
         std::cout << "COUNTS=" << Counts(actual) << "\n";
         std::cout << "OUTPUT_WORD[27]=0x" << std::hex << std::setw(16) << std::setfill('0')
                   << result.raw_output_words[27] << "\n";

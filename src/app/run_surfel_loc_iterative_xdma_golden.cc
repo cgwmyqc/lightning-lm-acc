@@ -139,6 +139,9 @@ bool WriteResultJson(const std::string& output_dir, int iteration, const std::st
     os << "  \"run_count_before\": " << result.run_count_before << ",\n";
     os << "  \"run_count_after\": " << result.run_count_after << ",\n";
     os << "  \"scan_count_readback\": " << result.scan_count_readback << ",\n";
+    os << "  \"fpga_cycle_count\": " << result.fpga_cycle_count << ",\n";
+    os << "  \"fpga_kernel_sec\": " << std::setprecision(9) << result.fpga_kernel_sec << ",\n";
+    os << "  \"polling_overhead_sec\": " << std::setprecision(9) << result.polling_overhead_sec << ",\n";
     os << "  \"elapsed_sec\": " << std::setprecision(9) << result.elapsed_sec << ",\n";
     os << "  \"hls_wait_sec\": " << std::setprecision(9) << result.timing.hls_wait_sec << ",\n";
     os << "  \"compare_report\": \"" << compare_report << "\",\n";
@@ -231,7 +234,10 @@ int main(int argc, char** argv) {
         LOG(INFO) << "[loc_iter_xdma] iter=" << iter << "/" << FLAGS_repeat << " STATUS=0x" << std::hex
                   << result.status << " ERROR=0x" << result.error << std::dec << " RUN_COUNT="
                   << result.run_count_before << "->" << result.run_count_after
-                  << " hls_wait_sec=" << result.timing.hls_wait_sec << " " << report;
+                  << " hls_wait_sec=" << result.timing.hls_wait_sec
+                  << " fpga_cycles=" << result.fpga_cycle_count
+                  << " fpga_kernel_sec=" << result.fpga_kernel_sec
+                  << " polling_overhead_sec=" << result.polling_overhead_sec << " " << report;
 
         if (!WriteResultJson(FLAGS_output_dir, iter, FLAGS_golden_dir, options.ctrl_base, result, actual, expected,
                              report, &error)) {
@@ -249,6 +255,9 @@ int main(int argc, char** argv) {
                   << std::setfill(' ') << " RUN_COUNT=" << result.run_count_before << "->" << result.run_count_after
                   << " ELAPSED_SEC=" << std::setprecision(6) << result.elapsed_sec << "\n";
         std::cout << "SCAN_COUNT_READBACK=" << result.scan_count_readback << "\n";
+        std::cout << "FPGA_CYCLES=" << result.fpga_cycle_count << "\n";
+        std::cout << "FPGA_KERNEL_SEC=" << std::setprecision(9) << result.fpga_kernel_sec << "\n";
+        std::cout << "POLLING_OVERHEAD_SEC=" << std::setprecision(9) << result.polling_overhead_sec << "\n";
         std::cout << "iterations=" << actual.iterations << "\n";
         std::cout << "counts=" << actual.valid_count << "/" << actual.reject_count << "/" << actual.miss_count
                   << "\n";
