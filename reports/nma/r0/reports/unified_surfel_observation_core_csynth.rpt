@@ -3,10 +3,10 @@
 ================================================================
 == Vivado HLS Report for 'unified_surfel_observation_core'
 ================================================================
-* Date:           Sat Sep 26 11:41:54 2026
+* Date:           Sat Sep 26 13:47:23 2026
 
 * Version:        2018.3 (Build 2405991 on Thu Dec 06 23:56:15 MST 2018)
-* Project:        r0_unified_surfel_observation_core_csynth
+* Project:        hls_unified_obs
 * Solution:       solution1
 * Product family: zynq
 * Target device:  xc7z100ffg900-2

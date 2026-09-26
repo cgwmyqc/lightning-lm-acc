@@ -1,5 +1,27 @@
 # AX7Z100 PCIe/XDMA + PL DDR3/MIG Board Skeleton
 
+## R0 Rebaseline 2026-09-26
+
+- Fresh HLS IP export, full Vivado implementation, bitstream generation, and
+  JTAG programming: PASS.
+- Fresh timing: WNS `0.086 ns`, WHS `0.016 ns`.
+- Fresh utilization: LUT `78.08%`, FF `44.41%`, BRAM `19.34%`, DSP `68.61%`.
+- Product resource gate: FAIL because LUT exceeds 72% and DSP exceeds 65%.
+- Full NMA hot recovery: endpoint enumerates and XDMA binds when a BDF already
+  exists, but the link remains Gen2 x1.
+- Stage A2 XDMA-only image after Orin reboot: endpoint enumerates and XDMA
+  binds, but the link also remains Gen2 x1.
+- A fresh Stage A2 image with lane reversal disabled cannot enumerate after
+  either remove/rescan or an Orin cold boot. Lane reversal must remain enabled.
+- Endpoint maximum width is x4 and Orin root-port maximum width is x8; both
+  report current width x1. `R0_PCIE_GEN2_X4_GATE=FAIL`.
+- Golden, cycle, payload, benchmark, R1, and R2 work is intentionally stopped
+  until the x4 gate passes ten consecutive JTAG/recovery cycles.
+
+The detailed current result is recorded in
+`reports/nma/r0/CURRENT_STATUS.md`. Older sections below are retained as
+historical bring-up records and do not override this R0 status.
+
 ## Status
 
 - Board profile static validation: PASS

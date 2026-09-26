@@ -3,7 +3,8 @@ param(
     [string]$ProjectDir,
     [string]$Part = "xc7z100ffg900-2",
     [string]$Vivado = "vivado",
-    [string]$ReferenceRoot
+    [string]$ReferenceRoot,
+    [ValidateSet("true", "false")][string]$LaneReversal = "true"
 )
 
 $ErrorActionPreference = "Stop"
@@ -14,8 +15,9 @@ $BuildRoot = Join-Path $RepoRoot "fpga\vivado\.build"
 . (Join-Path $RepoRoot "fpga\vivado\slam_accel_hls_mem_harness\vivado_path.ps1")
 
 $StageLower = $Stage.ToLowerInvariant()
+$VariantSuffix = if ($LaneReversal -eq "false") { "_lane_normal" } else { "" }
 if ([string]::IsNullOrWhiteSpace($ProjectDir)) {
-    $ProjectDir = Join-Path $BuildRoot "xdma_restore_stage_${StageLower}_bd"
+    $ProjectDir = Join-Path $BuildRoot "xdma_restore_stage_${StageLower}${VariantSuffix}_bd"
 }
 if ([string]::IsNullOrWhiteSpace($ReferenceRoot)) {
     $ReferenceRoot = Resolve-Path (Join-Path $RepoRoot "..")
@@ -33,13 +35,13 @@ try {
     $VivadoProjectDir = $ShortPathInfo.ShortPath
     $VivadoLog = Join-Path $VivadoProjectDir "vivado_bd_validate.log"
     $VivadoJournal = Join-Path $VivadoProjectDir "vivado_bd_validate.jou"
-    & $Vivado -mode batch -source $Tcl -journal $VivadoJournal -log $VivadoLog -tclargs $VivadoProjectDir $Part $Stage $ReferenceRoot
+    & $Vivado -mode batch -source $Tcl -journal $VivadoJournal -log $VivadoLog -tclargs $VivadoProjectDir $Part $Stage $ReferenceRoot $LaneReversal
     $ExitCode = $LASTEXITCODE
 } finally {
     Remove-LightningVivadoShortPath -ShortPathInfo $ShortPathInfo
 }
 
-$ReportDir = Join-Path $RepoRoot "reports\fpga\vivado\xdma_restore_chain\stage_$StageLower"
+$ReportDir = Join-Path $RepoRoot "reports\fpga\vivado\xdma_restore_chain\stage_${StageLower}${VariantSuffix}"
 New-Item -ItemType Directory -Force -Path $ReportDir | Out-Null
 foreach ($Item in @(
     @{ Source = $Log; Target = "vivado_bd_validate_log.txt" },

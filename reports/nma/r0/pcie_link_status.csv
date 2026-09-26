@@ -1,0 +1,8 @@
+"image","initial_bdf","recovery","enumerated","xdma_nodes","speed","width","endpoint_max_width","root_max_width","status","reason"
+"full_nma_r0","missing","hot_rescan","false","false","","","4","8","FAIL","xilinx_endpoint_not_found_after_rescan"
+"stage_a2_xdma_only","missing","hot_rescan","false","false","","","4","8","FAIL","xilinx_endpoint_not_found_after_rescan"
+"stage_a2_xdma_only","missing","orin_reboot","true","true","5.0 GT/s","1","4","8","FAIL","link_not_gen2_x4"
+"full_nma_r0","0005:01:00.0","remove_rescan","true","true","5.0 GT/s","1","4","8","FAIL","link_not_gen2_x4"
+"stage_a2_lane_reversal_false","0005:01:00.0","remove_rescan","false","false","","","4","8","FAIL","xilinx_endpoint_not_found_after_rescan"
+"stage_a2_lane_reversal_false","missing","orin_reboot","false","false","","","4","8","FAIL","xilinx_endpoint_missing"
+"full_nma_r0_restored","missing","orin_reboot","true","true","5.0 GT/s","1","4","8","FAIL","link_not_gen2_x4"

@@ -4,7 +4,8 @@ param(
     [string]$Part = "xc7z100ffg900-2",
     [string]$Vivado = "vivado",
     [int]$Jobs = 18,
-    [string]$ReferenceRoot
+    [string]$ReferenceRoot,
+    [ValidateSet("true", "false")][string]$LaneReversal = "true"
 )
 
 $ErrorActionPreference = "Stop"
@@ -18,8 +19,9 @@ if ($Jobs -lt 1) {
     throw "Jobs must be >= 1"
 }
 $StageLower = $Stage.ToLowerInvariant()
+$VariantSuffix = if ($LaneReversal -eq "false") { "_lane_normal" } else { "" }
 if ([string]::IsNullOrWhiteSpace($ProjectDir)) {
-    $ProjectDir = Join-Path $BuildRoot "xdma_restore_stage_${StageLower}_impl"
+    $ProjectDir = Join-Path $BuildRoot "xdma_restore_stage_${StageLower}${VariantSuffix}_impl"
 }
 if ([string]::IsNullOrWhiteSpace($ReferenceRoot)) {
     $ReferenceRoot = Resolve-Path (Join-Path $RepoRoot "..")
@@ -37,13 +39,13 @@ try {
     $VivadoProjectDir = $ShortPathInfo.ShortPath
     $VivadoLog = Join-Path $VivadoProjectDir "vivado_impl_bitstream.log"
     $VivadoJournal = Join-Path $VivadoProjectDir "vivado_impl_bitstream.jou"
-    & $Vivado -mode batch -source $Tcl -journal $VivadoJournal -log $VivadoLog -tclargs $VivadoProjectDir $Part $Stage $Jobs $ReferenceRoot
+    & $Vivado -mode batch -source $Tcl -journal $VivadoJournal -log $VivadoLog -tclargs $VivadoProjectDir $Part $Stage $Jobs $ReferenceRoot $LaneReversal
     $ExitCode = $LASTEXITCODE
 } finally {
     Remove-LightningVivadoShortPath -ShortPathInfo $ShortPathInfo
 }
 
-$ReportDir = Join-Path $RepoRoot "reports\fpga\vivado\xdma_restore_chain\stage_$StageLower"
+$ReportDir = Join-Path $RepoRoot "reports\fpga\vivado\xdma_restore_chain\stage_${StageLower}${VariantSuffix}"
 New-Item -ItemType Directory -Force -Path $ReportDir | Out-Null
 $ActualBitstream = Get-ChildItem -Path (Join-Path $ProjectDir "xdma_restore_stage_${StageLower}.runs\impl_1") -Filter "*.bit" -ErrorAction SilentlyContinue | Select-Object -First 1
 $ActualBitstreamReport = Join-Path $ProjectDir "xdma_restore_stage_${StageLower}_bitstream_path_actual.txt"

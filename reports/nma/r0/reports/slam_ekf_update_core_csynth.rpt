@@ -3,10 +3,10 @@
 ================================================================
 == Vivado HLS Report for 'slam_ekf_update_core'
 ================================================================
-* Date:           Sat Sep 26 11:43:05 2026
+* Date:           Sat Sep 26 13:49:43 2026
 
 * Version:        2018.3 (Build 2405991 on Thu Dec 06 23:56:15 MST 2018)
-* Project:        r0_slam_ekf_update_core_csynth
+* Project:        hls_slam_ekf_update_export
 * Solution:       solution1
 * Product family: zynq
 * Target device:  xc7z100ffg900-2

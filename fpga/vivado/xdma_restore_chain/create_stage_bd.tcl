@@ -4,6 +4,7 @@ set reference_root [file normalize [file join $repo_root ".."]]
 set project_dir [file normalize [file join $script_dir ".." ".build" "xdma_restore_stage_a2_bd"]]
 set target_part "xc7z100ffg900-2"
 set stage "A2"
+set lane_reversal "true"
 
 set user_args $argv
 if {[llength $user_args] >= 1 && [string length [lindex $user_args 0]] > 0} {
@@ -18,32 +19,38 @@ if {[llength $user_args] >= 3 && [string length [lindex $user_args 2]] > 0} {
 if {[llength $user_args] >= 4 && [string length [lindex $user_args 3]] > 0} {
     set reference_root [file normalize [lindex $user_args 3]]
 }
+if {[llength $user_args] >= 5 && [string length [lindex $user_args 4]] > 0} {
+    set lane_reversal [string tolower [lindex $user_args 4]]
+}
 
 if {$stage ni {"A" "A2" "B" "B2" "C" "C2"}} {
     error "Invalid stage '$stage'. Expected A, A2, B, B2, C, or C2."
+}
+if {$lane_reversal ni {"true" "false"}} {
+    error "Invalid lane_reversal '$lane_reversal'. Expected true or false."
 }
 
 set use_mig 0
 set axi_width_cfg "64_bit"
 set bram_width 64
 set axisten_freq 250
-set stage_desc "Stage A: X4 lane reversal, 64-bit/250 MHz XDMA, slam_accel_ctrl, BRAM, no MIG/HLS"
+set stage_desc "Stage A: X4, 64-bit/250 MHz XDMA, slam_accel_ctrl, BRAM, no MIG/HLS"
 set ctrl_module "xdma_restore_slam_accel_ctrl_axi_lite_wrapper"
 if {$stage eq "A2"} {
-    set stage_desc "Stage A2: X4 lane reversal, 64-bit/250 MHz XDMA, BAR shim at 0x0000, slam_accel_ctrl at 0x1000, BRAM, no MIG/HLS"
+    set stage_desc "Stage A2: X4, 64-bit/250 MHz XDMA, BAR shim at 0x0000, slam_accel_ctrl at 0x1000, BRAM, no MIG/HLS"
     set ctrl_module "xdma_restore_bar_shim_ctrl_wrapper"
 }
 if {$stage eq "B"} {
     set axi_width_cfg "128_bit"
     set bram_width 128
     set axisten_freq 125
-    set stage_desc "Stage B: X4 lane reversal, 128-bit/125 MHz XDMA, slam_accel_ctrl, BRAM, no MIG/HLS"
+    set stage_desc "Stage B: X4, 128-bit/125 MHz XDMA, slam_accel_ctrl, BRAM, no MIG/HLS"
 }
 if {$stage eq "B2"} {
     set axi_width_cfg "128_bit"
     set bram_width 128
     set axisten_freq 125
-    set stage_desc "Stage B2: X4 lane reversal, 128-bit/125 MHz XDMA, BAR shim at 0x0000, slam_accel_ctrl at 0x1000, BRAM, no MIG/HLS"
+    set stage_desc "Stage B2: X4, 128-bit/125 MHz XDMA, BAR shim at 0x0000, slam_accel_ctrl at 0x1000, BRAM, no MIG/HLS"
     set ctrl_module "xdma_restore_bar_shim_ctrl_wrapper"
 }
 if {$stage eq "C"} {
@@ -51,14 +58,14 @@ if {$stage eq "C"} {
     set axi_width_cfg "128_bit"
     set bram_width 128
     set axisten_freq 125
-    set stage_desc "Stage C: X4 lane reversal, 128-bit/125 MHz XDMA, slam_accel_ctrl, MIG-backed PL DDR3, no HLS"
+    set stage_desc "Stage C: X4, 128-bit/125 MHz XDMA, slam_accel_ctrl, MIG-backed PL DDR3, no HLS"
 }
 if {$stage eq "C2"} {
     set use_mig 1
     set axi_width_cfg "128_bit"
     set bram_width 128
     set axisten_freq 125
-    set stage_desc "Stage C2: X4 lane reversal, 128-bit/125 MHz XDMA, BAR shim at 0x0000, slam_accel_ctrl at 0x1000, MIG-backed PL DDR3, no HLS"
+    set stage_desc "Stage C2: X4, 128-bit/125 MHz XDMA, BAR shim at 0x0000, slam_accel_ctrl at 0x1000, MIG-backed PL DDR3, no HLS"
     set ctrl_module "xdma_restore_bar_shim_ctrl_wrapper"
 }
 
@@ -174,7 +181,7 @@ set_property -dict [list \
     CONFIG.axilite_master_scale {Kilobytes} \
     CONFIG.axilite_master_size {64} \
     CONFIG.axisten_freq $axisten_freq \
-    CONFIG.enable_lane_reversal {true} \
+    CONFIG.enable_lane_reversal $lane_reversal \
     CONFIG.mode_selection {Basic} \
     CONFIG.pcie_id_if {false} \
     CONFIG.pf0_device_id {7024} \
@@ -182,6 +189,7 @@ set_property -dict [list \
     CONFIG.pl_link_cap_max_link_width {X4} \
     CONFIG.plltype {QPLL1} \
 ] $xdma_0
+puts "PCIE_LANE_REVERSAL=$lane_reversal"
 
 set ctrl [create_bd_cell -type module -reference $ctrl_module ctrl_0]
 set const_zero_32 [create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 const_zero_32]

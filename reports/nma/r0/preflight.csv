@@ -14,6 +14,6 @@
 "path_fpga_golden_mapping_frame_000001","True","True","F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\golden\mapping\frame_000001"
 "path_fpga_golden_mapping_update_frame_000001","True","True","F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\golden\mapping_update\frame_000001"
 "path_fpga_vivado_slam_accel_ax7z100_pcie_mig_create_bd_tcl","True","True","F:\Project_HITZRI\26-06-06_Lightninglm_fpga_acc\lightning-lm-acc\fpga\vivado\slam_accel_ax7z100_pcie_mig\create_bd.tcl"
-"orin_user_configured","False","True","ORIN_USER is unset"
-"orin_root_configured","False","True","ORIN_ROOT is unset"
+"orin_user_configured","True","True","set"
+"orin_root_configured","True","True","set"
 "orin_ssh_port","True","True","192.168.31.119:22 reachable"

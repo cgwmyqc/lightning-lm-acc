@@ -27,6 +27,7 @@ Typical flow:
 .\tools\windows\21_program_jtag.ps1
 .\tools\windows\30_orin_preflight.ps1
 .\tools\windows\31_orin_build.ps1
+.\tools\windows\35_pcie_stability.ps1 -Cycles 10
 .\tools\windows\33_run_golden.ps1
 .\tools\windows\34_run_benchmark.ps1 `
   -InputBag "/data/input.bag" -MapPath "/data/map" `
@@ -36,5 +37,9 @@ Typical flow:
 ```
 
 `21_program_jtag.ps1` runs PCIe recovery by default. Orin reboot fallback is never automatic; it requires an explicit `-AllowRebootFallback` on `32_orin_pcie_rescan.ps1`.
+
+Run `35_pcie_stability.ps1` only after a single Gen2 x4 recovery passes. It
+reprograms and recovers the endpoint ten times by default, writes one log per
+cycle plus `pcie_recovery_cycles.csv`, and stops at the first failure.
 
 The benchmark runner sets `NMA_LOC_PROFILE_CSV` for each backend, rejects runs with fewer than 100 warm-up plus 500 structured frame samples, and writes `all_frames.csv`, `measured_frames.csv`, `tegrastats.log`, and mean/P50/P95/min/max/std values to `frame_summary.csv`. Golden capture uses the separate `run_lightning_golden.sh` path and never participates in sample counting.

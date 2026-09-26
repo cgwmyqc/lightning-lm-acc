@@ -26,6 +26,20 @@ All stages keep:
 - Stage C2: `128_bit` XDMA AXI, `125` MHz AXI target, XDMA BAR shim at `0x0000`,
   `slam_accel_ctrl` remapped to `0x1000`, MIG-backed PL DDR3, no HLS.
 
+The PowerShell build wrappers accept `-LaneReversal true|false`. The default is
+`true` and preserves the product board configuration. A `false` build uses a
+separate `_lane_normal` build/report directory so it cannot overwrite the
+default Stage A2 evidence:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\run_vivado_bd_validate.ps1 -Stage A2 -LaneReversal false
+powershell -ExecutionPolicy Bypass -File .\fpga\vivado\xdma_restore_chain\run_vivado_impl_bitstream.ps1 -Stage A2 -LaneReversal false -Jobs 18
+```
+
+On the 2026-09-26 R0 hardware test, the `false` image failed to enumerate after
+both hot rescan and an Orin cold boot. The default `true` image enumerated at
+Gen2 x1, proving lane reversal is necessary but not sufficient for x4.
+
 Stage A failed on Orin with PCIe enumeration present but no `/dev/xdma0_*`.
 Because the XDMA IP settings match the passing `xdma_config_bar_diag` flow, the
 current working assumption is that the Linux XDMA driver expects a compatible

@@ -16,8 +16,26 @@ echo "HOSTNAME=$(hostname)"
 uname -a
 test -d "$1"
 echo "ORIN_ROOT_OK=$1"
-lspci -nn | grep -i '10ee:'
-lspci -d 10ee: -vv | grep -m1 'LnkSta:'
+bdf=$(lspci -Dn -d 10ee: | awk 'NR == 1 { print $1 }')
+if [ -z "$bdf" ]; then
+    echo "ORIN_PREFLIGHT_FAIL reason=xilinx_endpoint_missing"
+    exit 12
+fi
+echo "PCIE_BDF=$bdf"
+lspci -nn -s "$bdf"
+pcie_path="/sys/bus/pci/devices/$bdf"
+current_speed=$(cat "$pcie_path/current_link_speed")
+current_width=$(cat "$pcie_path/current_link_width")
+max_speed=$(cat "$pcie_path/max_link_speed")
+max_width=$(cat "$pcie_path/max_link_width")
+echo "PCIE_CURRENT_SPEED=$current_speed"
+echo "PCIE_CURRENT_WIDTH=$current_width"
+echo "PCIE_MAX_SPEED=$max_speed"
+echo "PCIE_MAX_WIDTH=$max_width"
+if [[ "$current_speed" != 5.0\ GT/s* || "$current_width" != "4" ]]; then
+    echo "ORIN_PREFLIGHT_FAIL reason=link_not_gen2_x4"
+    exit 14
+fi
 test -c /dev/xdma0_user
 test -c /dev/xdma0_h2c_0
 test -c /dev/xdma0_c2h_0

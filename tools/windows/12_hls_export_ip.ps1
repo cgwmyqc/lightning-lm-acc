@@ -16,10 +16,15 @@ $Cores = if ($Core -eq "all") {
     @("unified_surfel_observation_core", "slam_ekf_update_core", "slam_loc_iterative_core")
 } else { @($Core) }
 $VivadoHls = Join-Path $env:VIVADO_HLS_2018_3 "bin\vivado_hls.bat"
+$ProjectNames = @{
+    unified_surfel_observation_core = "hls_unified_obs"
+    slam_ekf_update_core = "hls_slam_ekf_update_export"
+    slam_loc_iterative_core = "hls_slam_loc_iterative_export"
+}
 $Rows = @()
 foreach ($Name in $Cores) {
     $CoreDir = Join-Path $script:NmaRepoRoot "fpga\hls\$Name"
-    $ProjectDir = Join-Path $script:NmaRepoRoot "fpga\vivado\.build\r0_${Name}_export"
+    $ProjectDir = Join-Path $script:NmaRepoRoot "fpga\vivado\.build\$($ProjectNames[$Name])"
     $Log = Join-Path $LogDir "${Name}_hls_export.log"
     & powershell -ExecutionPolicy Bypass -File (Join-Path $CoreDir "run_vivado_hls_export_ip.ps1") `
         -ProjectDir $ProjectDir -ClockNs $ClockNs -VivadoHls $VivadoHls 2>&1 | Tee-Object -FilePath $Log
@@ -31,4 +36,3 @@ foreach ($Name in $Cores) {
 }
 $Rows | Export-Csv -NoTypeInformation -Encoding UTF8 -Path (Join-Path $ReportRoot "hls_export_status.csv")
 Write-Output "R0_HLS_EXPORT_IP_PASS"
-
